@@ -15,8 +15,15 @@ import {
   type MarketplacesModule,
 } from '../../modules/marketplaces/index.js';
 import { createOffersModule, type OffersModule } from '../../modules/offers/index.js';
+import { createOrdersModule, type OrdersModule } from '../../modules/orders/index.js';
+import {
+  createCancellationsModule,
+  type CancellationsModule,
+} from '../../modules/cancellations/index.js';
+import { createShipmentsModule, type ShipmentsModule } from '../../modules/shipments/index.js';
 import { createPricingModule, type PricingModule } from '../../modules/pricing/index.js';
 import { createProductsModule, type ProductsModule } from '../../modules/products/index.js';
+import { createReturnsModule, type ReturnsModule } from '../../modules/returns/index.js';
 import { createTenantsModule } from '../../modules/tenants/index.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import type { HttpServer } from '../http/types.js';
@@ -37,6 +44,10 @@ export interface Application {
   readonly pricing: PricingModule;
   readonly offers: OffersModule;
   readonly inventory: InventoryModule;
+  readonly orders: OrdersModule;
+  readonly cancellations: CancellationsModule;
+  readonly shipments: ShipmentsModule;
+  readonly returns: ReturnsModule;
   readonly readiness: ReadinessService;
   readonly httpServer: HttpServer;
 }
@@ -137,6 +148,41 @@ export async function createApplication(infra: Infrastructure): Promise<Applicat
     auditRecorder: audit.auditRecorder,
   });
 
+  const orders = createOrdersModule({
+    database: infra.database,
+    productQueryService: products.productQueryService,
+    channelQueryService: channels.channelQueryService,
+    offerQueryService: offers.offerQueryService,
+    pricingService: pricing.pricingService,
+    inventoryService: inventory.inventoryService,
+    eventRecorder: infra.eventRecorder,
+    idempotency: infra.idempotency,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const cancellations = createCancellationsModule({
+    database: infra.database,
+    orders: orders.orders,
+    orderFulfillmentService: orders.orderFulfillmentService,
+    inventoryService: inventory.inventoryService,
+    eventRecorder: infra.eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const shipments = createShipmentsModule({
+    database: infra.database,
+    orderFulfillmentService: orders.orderFulfillmentService,
+    eventRecorder: infra.eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const returns = createReturnsModule({
+    database: infra.database,
+    inventoryService: inventory.inventoryService,
+    eventRecorder: infra.eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
   const httpServer = await createHttpServer({
     config: infra.config,
     logger: infra.logger,
@@ -154,6 +200,10 @@ export async function createApplication(infra: Infrastructure): Promise<Applicat
     pricing,
     offers,
     inventory,
+    orders,
+    cancellations,
+    shipments,
+    returns,
     authenticateAccessToken,
     verifyApiKey: apiKeys.useCases.verifyApiKey,
   });
@@ -171,6 +221,10 @@ export async function createApplication(infra: Infrastructure): Promise<Applicat
     pricing,
     offers,
     inventory,
+    orders,
+    cancellations,
+    shipments,
+    returns,
     readiness,
     httpServer,
   };
