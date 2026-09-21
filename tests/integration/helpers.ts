@@ -6,18 +6,34 @@ import {
 
 let sharedInfra: Infrastructure | undefined;
 
+async function closeInfrastructure(infra: Infrastructure): Promise<void> {
+  await infra.queue.close().catch(() => undefined);
+  await infra.redis.close().catch(() => undefined);
+  await infra.database.close().catch(() => undefined);
+}
+
+async function createFreshInfrastructure(): Promise<Infrastructure> {
+  const config = loadConfig(process.env);
+  sharedInfra = await createInfrastructure(config);
+  return sharedInfra;
+}
+
 export async function getTestInfrastructure(): Promise<Infrastructure> {
   if (sharedInfra === undefined) {
-    const config = loadConfig(process.env);
-    sharedInfra = await createInfrastructure(config);
+    return createFreshInfrastructure();
   }
-  return sharedInfra;
+
+  try {
+    await sharedInfra.redis.healthCheck();
+    return sharedInfra;
+  } catch {
+    await closeInfrastructure(sharedInfra);
+    return createFreshInfrastructure();
+  }
 }
 
 export async function closeTestInfrastructure(): Promise<void> {
   if (sharedInfra === undefined) return;
-  await sharedInfra.queue.close();
-  await sharedInfra.redis.close();
-  await sharedInfra.database.close();
+  await closeInfrastructure(sharedInfra);
   sharedInfra = undefined;
 }

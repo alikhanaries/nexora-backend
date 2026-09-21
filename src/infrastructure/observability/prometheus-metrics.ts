@@ -1,5 +1,6 @@
 import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics } from 'prom-client';
 import type {
+  AuthEventSample,
   DbPoolSnapshot,
   DbQuerySample,
   HttpRequestSample,
@@ -42,6 +43,7 @@ export class PrometheusMetrics implements MetricsRecorder {
   private readonly queueJobsTotal: Counter<'queue' | 'job_name' | 'state'>;
   private readonly queueJobDuration: Histogram<'queue' | 'job_name'>;
   private readonly rateLimitHitsTotal: Counter<'policy' | 'outcome'>;
+  private readonly authEventsTotal: Counter<'method' | 'outcome'>;
 
   constructor(serviceName: string) {
     this.registry = new Registry();
@@ -124,6 +126,13 @@ export class PrometheusMetrics implements MetricsRecorder {
       labelNames: ['policy', 'outcome'],
       registers: [this.registry],
     });
+
+    this.authEventsTotal = new Counter({
+      name: 'auth_events_total',
+      help: 'Authentication attempts by method and outcome.',
+      labelNames: ['method', 'outcome'],
+      registers: [this.registry],
+    });
   }
 
   recordHttpRequest(sample: HttpRequestSample): void {
@@ -179,6 +188,10 @@ export class PrometheusMetrics implements MetricsRecorder {
 
   recordRateLimitHit(policy: string, allowed: boolean): void {
     this.rateLimitHitsTotal.inc({ policy, outcome: allowed ? 'allowed' : 'limited' });
+  }
+
+  recordAuthEvent(sample: AuthEventSample): void {
+    this.authEventsTotal.inc({ method: sample.method, outcome: sample.outcome });
   }
 
   setDbPoolConnections(snapshot: DbPoolSnapshot): void {
