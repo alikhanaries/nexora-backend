@@ -14,3 +14,7 @@ process.env.STORAGE_FORCE_PATH_STYLE ??= 'true';
 process.env.LOG_PRETTY ??= 'false';
 process.env.TRACING_ENABLED ??= 'false';
 process.env.DOCS_ENABLED ??= 'true';
+process.env.AUTH_JWT_SECRET ??= 'test-jwt-secret-32chars-minimum!!';
+process.env.AUTH_MFA_ENCRYPTION_KEY ??= '0123456789abcdef0123456789abcdef';
+process.env.AUTH_JWT_SECRET ??= 'test-jwt-secret-32chars-min!!';
+process.env.AUTH_MFA_ENCRYPTION_KEY ??= '0123456789abcdef0123456789abcdef';

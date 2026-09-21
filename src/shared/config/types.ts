@@ -78,6 +78,18 @@ export interface SecurityConfig {
   readonly trustIncomingRequestId: boolean;
 }
 
+export interface AuthConfig {
+  readonly jwtSecret: string | undefined;
+  readonly jwtPrivateKey: string | undefined;
+  readonly jwtPublicKey: string | undefined;
+  readonly accessTokenTtlSeconds: number;
+  readonly refreshTokenTtlSeconds: number;
+  readonly mfaEncryptionKey: string;
+  readonly stepUpTtlSeconds: number;
+  readonly passwordMinLength: number;
+  readonly passwordMaxLength: number;
+}
+
 export interface AppConfig {
   readonly env: NodeEnvironment;
   readonly isProduction: boolean;
@@ -94,5 +106,6 @@ export interface AppConfig {
   readonly observability: ObservabilityConfig;
   readonly httpClient: HttpClientConfig;
   readonly security: SecurityConfig;
+  readonly auth: AuthConfig;
   readonly docsEnabled: boolean;
 }

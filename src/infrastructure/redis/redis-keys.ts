@@ -34,7 +34,8 @@ export class RedisKeyBuilder {
   }
 
   rateLimit(policy: string, subject: string): string {
-    return this.build('ratelimit', policy, subject);
+    // Subjects may contain tenant/user ids joined with reserved `:` separators.
+    return this.build('ratelimit', policy, encodeRateLimitSubject(subject));
   }
 
   /** Prefix for `SCAN MATCH`. Never use `KEYS` against a production instance. */
@@ -53,6 +54,10 @@ export class RedisKeyBuilder {
  * Silently replacing characters would let two distinct inputs collapse onto
  * the same key, which is a correctness bug in a cache or a lock.
  */
+function encodeRateLimitSubject(subject: string): string {
+  return Buffer.from(subject, 'utf8').toString('base64url');
+}
+
 function sanitise(segment: string): string {
   if (segment.length === 0) {
     throw new Error('Redis key segment must not be empty');

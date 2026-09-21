@@ -1,5 +1,6 @@
 export type {
   AppConfig,
+  AuthConfig,
   DatabaseConfig,
   HttpClientConfig,
   IdempotencyConfig,

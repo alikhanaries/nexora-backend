@@ -8,6 +8,7 @@ const baseEnv = {
   STORAGE_BUCKET: 'nexora-local',
   STORAGE_ACCESS_KEY_ID: 'nexora',
   STORAGE_SECRET_ACCESS_KEY: 'nexora-secret',
+  AUTH_JWT_SECRET: 'test-jwt-secret-for-unit-tests-only',
 };
 
 describe('configuration', () => {
