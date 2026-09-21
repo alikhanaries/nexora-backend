@@ -1,0 +1,94 @@
+name: nexora
+
+# Default `docker compose up -d` starts only the dependencies the API needs:
+# PostgreSQL, Redis and MinIO. The observability stack is behind the
+# `observability` profile so nobody has to run Prometheus just to boot the API.
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexora
+      POSTGRES_PASSWORD: nexora
+      POSTGRES_DB: nexora
+    ports:
+      # Host 5433 avoids conflict with a locally installed PostgreSQL on 5432.
+      - '5433:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nexora -d nexora']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # BullMQ requires `noeviction`: evicting queue keys silently loses jobs.
+    command: ['redis-server', '--maxmemory-policy', 'noeviction', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: unless-stopped
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: nexora
+      MINIO_ROOT_PASSWORD: nexora-secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Creates the local bucket once MinIO is healthy, then exits.
+  minio-init:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 nexora nexora-secret &&
+      mc mb --ignore-existing local/nexora-local &&
+      echo 'bucket ready'
+      "
+    restart: 'no'
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.116.1
+    profiles: ['observability']
+    restart: unless-stopped
+    command: ['--config=/etc/otel-collector.yaml']
+    volumes:
+      - ./infrastructure/observability/otel-collector.yaml:/etc/otel-collector.yaml:ro
+    ports:
+      - '4318:4318'
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    profiles: ['observability']
+    restart: unless-stopped
+    volumes:
+      - ./infrastructure/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - '9090:9090'
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

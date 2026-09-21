@@ -1,0 +1,28 @@
+# Local-only OpenTelemetry collector. Started with:
+#   docker compose --profile observability up -d
+#
+# Point the application at it with:
+#   TRACING_ENABLED=true
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+
+exporters:
+  # Prints spans to the collector's stdout. Swap for a real backend when one
+  # exists; nothing in the application changes.
+  debug:
+    verbosity: normal
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
