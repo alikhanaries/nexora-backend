@@ -34,7 +34,7 @@ module.exports = {
       name: 'no-orphans',
       severity: 'warn',
       comment: 'An unreachable file is usually dead code.',
-      from: { orphan: true, pathNot: ['\\.d\\.ts$', '(^|/)src/(app|workers)/main\\.ts$'] },
+      from: { orphan: true, pathNot: ['(^|/)src/(app|workers)/main\\.js$'] },
       to: {},
     },
     {
@@ -104,7 +104,7 @@ module.exports = {
       name: 'no-dev-dep-in-src',
       severity: 'error',
       comment: 'Runtime code must not import devDependencies.',
-      from: { path: '^src/', pathNot: '\\.test\\.ts$' },
+      from: { path: '^src/', pathNot: '\\.test\\.js$' },
       to: { dependencyTypes: ['npm-dev'] },
     },
     {
@@ -117,12 +117,10 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
-    tsConfig: { fileName: 'tsconfig.json' },
-    tsPreCompilationDeps: true,
     enhancedResolveOptions: {
       exportsFields: ['exports'],
-      conditionNames: ['import', 'require', 'node', 'default', 'types'],
-      extensions: ['.js', '.ts', '.json'],
+      conditionNames: ['import', 'require', 'node', 'default'],
+      extensions: ['.js', '.json'],
     },
     reporterOptions: {
       text: { highlightFocused: true },
