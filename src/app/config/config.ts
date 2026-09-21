@@ -16,6 +16,7 @@ export type {
   SecurityConfig,
   ServerConfig,
   StorageConfig,
+  AuthConfig,
 } from '../../shared/config/index.js';
 
 export type EnvironmentSource = Readonly<Record<string, string | undefined>>;
@@ -96,6 +97,17 @@ function toAppConfig(raw: RawConfig): AppConfig {
       allowedOrigins: raw.SERVER_CORS_ORIGINS,
       trustIncomingRequestId: raw.SERVER_TRUST_INCOMING_REQUEST_ID,
     },
+    auth: {
+      jwtSecret: raw.AUTH_JWT_SECRET,
+      jwtPrivateKey: raw.AUTH_JWT_PRIVATE_KEY,
+      jwtPublicKey: raw.AUTH_JWT_PUBLIC_KEY,
+      accessTokenTtlSeconds: raw.AUTH_ACCESS_TOKEN_TTL_SECONDS,
+      refreshTokenTtlSeconds: raw.AUTH_REFRESH_TOKEN_TTL_SECONDS,
+      mfaEncryptionKey: raw.AUTH_MFA_ENCRYPTION_KEY,
+      stepUpTtlSeconds: raw.AUTH_STEP_UP_TTL_SECONDS,
+      passwordMinLength: raw.AUTH_PASSWORD_MIN_LENGTH,
+      passwordMaxLength: raw.AUTH_PASSWORD_MAX_LENGTH,
+    },
     docsEnabled: raw.DOCS_ENABLED,
   };
 }
@@ -111,6 +123,16 @@ function assertConsistency(config: AppConfig): void {
   }
   if (config.isProduction && config.security.allowedOrigins.includes('*')) {
     problems.push('SERVER_CORS_ORIGINS must list exact origins; "*" is not allowed');
+  }
+  const hasJwtKeys =
+    config.auth.jwtPrivateKey !== undefined && config.auth.jwtPublicKey !== undefined;
+  if (!hasJwtKeys && config.auth.jwtSecret === undefined) {
+    problems.push(
+      'Either AUTH_JWT_SECRET or both AUTH_JWT_PRIVATE_KEY and AUTH_JWT_PUBLIC_KEY must be set',
+    );
+  }
+  if (config.auth.mfaEncryptionKey.length !== 32) {
+    problems.push('AUTH_MFA_ENCRYPTION_KEY must be exactly 32 bytes');
   }
 
   if (problems.length > 0) {

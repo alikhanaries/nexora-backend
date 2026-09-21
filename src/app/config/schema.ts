@@ -84,6 +84,16 @@ export const configSchema = z.object({
   HTTP_CLIENT_TIMEOUT_MS: envInteger({ default: 10_000, min: 100, max: 300_000 }),
 
   DOCS_ENABLED: envBoolean(true),
+
+  AUTH_JWT_SECRET: envOptionalString(),
+  AUTH_JWT_PRIVATE_KEY: envOptionalString(),
+  AUTH_JWT_PUBLIC_KEY: envOptionalString(),
+  AUTH_ACCESS_TOKEN_TTL_SECONDS: envInteger({ default: 900, min: 60, max: 86_400 }),
+  AUTH_REFRESH_TOKEN_TTL_SECONDS: envInteger({ default: 2_592_000, min: 3_600, max: 31_536_000 }),
+  AUTH_MFA_ENCRYPTION_KEY: envString('0123456789abcdef0123456789abcdef'),
+  AUTH_STEP_UP_TTL_SECONDS: envInteger({ default: 900, min: 60, max: 3_600 }),
+  AUTH_PASSWORD_MIN_LENGTH: envInteger({ default: 12, min: 8, max: 128 }),
+  AUTH_PASSWORD_MAX_LENGTH: envInteger({ default: 128, min: 12, max: 256 }),
 });
 
 export type RawConfig = z.infer<typeof configSchema>;

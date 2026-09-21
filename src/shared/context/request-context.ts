@@ -7,11 +7,18 @@ import { AsyncLocalStorage } from 'node:async_hooks';
  * Phase 2. The shape exists now so that adding auth middleware later does not
  * require changing every use-case signature.
  */
+export type AuthenticationMethod = 'password' | 'refresh' | 'api-key';
+
 export interface Principal {
   readonly kind: 'user' | 'api-key' | 'system';
   readonly id: string;
   readonly tenantId: string;
   readonly permissions: readonly string[];
+  readonly authenticationMethod: AuthenticationMethod;
+  readonly sessionId?: string;
+  readonly apiKeyId?: string;
+  readonly scopes?: readonly string[];
+  readonly email?: string;
 }
 
 export interface RequestContext {

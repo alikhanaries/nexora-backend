@@ -4,6 +4,7 @@ import swagger from '@fastify/swagger';
 import scalarReference from '@scalar/fastify-api-reference';
 import Fastify from 'fastify';
 import {
+  jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
   type ZodTypeProvider,
@@ -16,6 +17,15 @@ import errorHandlerPlugin from './plugins/error-handler.plugin.js';
 import loggingPlugin from './plugins/logging.plugin.js';
 import metricsPlugin from './plugins/metrics.plugin.js';
 import requestContextPlugin from './plugins/request-context.plugin.js';
+import authenticationPlugin from './plugins/authentication.plugin.js';
+import type { AuthorizationModule } from '../../modules/authorization/index.js';
+import type { IdentityModule } from '../../modules/identity/index.js';
+import type { TenantsModule } from '../../modules/tenants/index.js';
+import type { AuditModule } from '../../modules/audit/index.js';
+import type { ApiKeysModule } from '../../modules/api-keys/index.js';
+import type { MfaModule } from '../../modules/mfa/index.js';
+import type { AuthenticateAccessTokenUseCase } from '../../modules/identity/application/authenticate-access-token.js';
+import type { VerifyApiKeyUseCase } from '../../modules/api-keys/application/use-cases/verify-api-key.js';
 import foundationRoutes from './routes/foundation.routes.js';
 import healthRoutes from './routes/health.routes.js';
 import metricsRoutes from './routes/metrics.routes.js';
@@ -26,6 +36,14 @@ export interface HttpServerDependencies {
   readonly logger: Logger;
   readonly metrics: MetricsRecorder;
   readonly readiness: ReadinessService;
+  readonly tenants: TenantsModule;
+  readonly identity: IdentityModule;
+  readonly authorization: AuthorizationModule;
+  readonly audit: AuditModule;
+  readonly apiKeys: ApiKeysModule;
+  readonly mfa: MfaModule;
+  readonly authenticateAccessToken: AuthenticateAccessTokenUseCase;
+  readonly verifyApiKey: VerifyApiKeyUseCase;
 }
 
 export async function createHttpServer(deps: HttpServerDependencies): Promise<HttpServer> {
@@ -62,10 +80,12 @@ export async function createHttpServer(deps: HttpServerDependencies): Promise<Ht
       info: {
         title: `${deps.config.appName} API`,
         version: '0.1.0',
-        description: 'Nexora native API — Phase 1 foundation endpoints only.',
+        description:
+          'Nexora native API — tenants, identity, authorization, audit, API keys, and MFA.',
       },
       servers: [{ url: `http://localhost:${deps.config.server.port}` }],
     },
+    transform: jsonSchemaTransform,
   });
 
   if (deps.config.docsEnabled) {
@@ -81,6 +101,19 @@ export async function createHttpServer(deps: HttpServerDependencies): Promise<Ht
     await app.register(metricsRoutes, { metrics: deps.metrics });
   }
   await app.register(foundationRoutes);
+  await app.register(deps.tenants.routes, deps.tenants.useCases);
+  await app.register(deps.identity.routes.auth);
+
+  await app.register(authenticationPlugin, {
+    authenticateAccessToken: deps.authenticateAccessToken,
+    verifyApiKey: deps.verifyApiKey,
+    metrics: deps.metrics,
+  });
+
+  await app.register(deps.authorization.routes.plugin, deps.authorization.routes.options);
+  await app.register(deps.audit.routes.plugin, deps.audit.routes.options);
+  await app.register(deps.apiKeys.routes.plugin, deps.apiKeys.routes.options);
+  await app.register(deps.mfa.routes.plugin, deps.mfa.routes.options);
 
   return app;
 }

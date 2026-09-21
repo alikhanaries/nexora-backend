@@ -44,6 +44,14 @@ export interface DbPoolSnapshot {
   readonly waiting: number;
 }
 
+export type AuthMethodLabel = 'jwt' | 'api-key';
+export type AuthOutcomeLabel = 'success' | 'failure';
+
+export interface AuthEventSample {
+  readonly method: AuthMethodLabel;
+  readonly outcome: AuthOutcomeLabel;
+}
+
 export interface MetricsRecorder {
   recordHttpRequest(sample: HttpRequestSample): void;
   recordDbQuery(sample: DbQuerySample): void;
@@ -51,6 +59,7 @@ export interface MetricsRecorder {
   recordQueueJobEnqueued(queue: string, jobName: string): void;
   recordQueueJob(sample: QueueJobSample): void;
   recordRateLimitHit(policy: string, allowed: boolean): void;
+  recordAuthEvent(sample: AuthEventSample): void;
   setDbPoolConnections(snapshot: DbPoolSnapshot): void;
   /** Prometheus exposition text. */
   render(): Promise<string>;
@@ -65,6 +74,7 @@ export const noopMetricsRecorder: MetricsRecorder = {
   recordQueueJobEnqueued: () => undefined,
   recordQueueJob: () => undefined,
   recordRateLimitHit: () => undefined,
+  recordAuthEvent: () => undefined,
   setDbPoolConnections: () => undefined,
   render: () => Promise.resolve(''),
   contentType: 'text/plain; charset=utf-8',
