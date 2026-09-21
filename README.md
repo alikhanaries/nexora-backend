@@ -1,6 +1,6 @@
 # Nexora Backend
 
-Commerce and channel-management platform backend. **Phase 1** delivers the runtime foundation — HTTP server, PostgreSQL persistence, Redis infrastructure, object storage, job queue, transactional outbox, inbox deduplication, and idempotency — without business modules.
+Commerce and channel-management platform backend implemented in **JavaScript (ES Modules)** on **Node.js 24**. The runtime foundation includes HTTP server, PostgreSQL persistence, Redis infrastructure, object storage, job queue, transactional outbox, inbox deduplication, and idempotency — plus Phases 2–4 identity, commerce, and fulfillment modules.
 
 ## Phase 1 scope
 
@@ -53,7 +53,7 @@ Run the full Phase 1 quality gate (no Docker required for unit tests):
 npm run verify
 ```
 
-This runs typecheck, ESLint, architecture boundary checks (`dependency-cruiser`), and unit tests.
+This runs ESLint, architecture boundary checks (`dependency-cruiser`), and unit tests.
 
 With Docker services running, exercise integration tests:
 
@@ -81,8 +81,8 @@ OpenAPI docs (when `DOCS_ENABLED=true`): [http://localhost:3000/docs](http://loc
 | ------------------------ | ----------------------------- |
 | `npm run dev`            | API with hot reload           |
 | `npm run dev:worker`     | Worker with hot reload        |
-| `npm run build`          | Compile TypeScript to `dist/` |
-| `npm run start`          | Run compiled API              |
+| `npm run build`          | JavaScript syntax validation  |
+| `npm run start`          | Run API (`src/app/main.js`)   |
 | `npm run migrate`        | Apply pending SQL migrations  |
 | `npm run migrate:status` | Show migration status         |
 | `npm run arch:check`     | Enforce module boundary rules |
@@ -96,7 +96,7 @@ src/
   app/            HTTP server, config, bootstrap
   infrastructure/ Adapters (Postgres, Redis, BullMQ, S3, …)
   shared/         Ports and cross-cutting utilities (no I/O)
-  modules/        Business modules (empty in Phase 1)
+  modules/        Business modules (identity, commerce, orders, …)
   workers/        Background job entrypoint
 docs/             Architecture, ADRs, operations guides
 infrastructure/   Docker observability configs (Prometheus, OTel)

@@ -19,7 +19,7 @@ Wires the running API process.
 
 | Path             | Role                                                               |
 | ---------------- | ------------------------------------------------------------------ |
-| `main.ts`        | Process entry — load config, create infra, start HTTP server       |
+| `main.js`        | Process entry — load config, create infra, start HTTP server       |
 | `bootstrap/`     | `createInfrastructure`, `createApplication`, shutdown, migrate CLI |
 | `config/`        | Zod schema, env parsing — **only** place that reads `process.env`  |
 | `http/`          | Fastify server factory, plugins, routes                            |

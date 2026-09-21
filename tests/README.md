@@ -1,6 +1,6 @@
 # Tests
 
-Nexora uses **Vitest** with two projects defined in `vitest.config.ts`: `unit` and `integration`.
+Nexora uses **Vitest** with two projects defined in `vitest.config.js`: `unit` and `integration`.
 
 ## Commands
 
@@ -80,5 +80,5 @@ Full gate before release: `npm run test:all` with Docker services.
 
 ## Related
 
-- [vitest.config.ts](../vitest.config.ts)
+- [vitest.config.js](../vitest.config.js)
 - [docs/architecture/requirements.md](../docs/architecture/requirements.md) — NFR-4
