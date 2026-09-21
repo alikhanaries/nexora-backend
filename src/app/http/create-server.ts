@@ -28,8 +28,12 @@ import type { InventoryModule } from '../../modules/inventory/index.js';
 import type { MarketplacesModule } from '../../modules/marketplaces/index.js';
 import type { MfaModule } from '../../modules/mfa/index.js';
 import type { OffersModule } from '../../modules/offers/index.js';
+import type { CancellationsModule } from '../../modules/cancellations/index.js';
+import type { OrdersModule } from '../../modules/orders/index.js';
+import type { ShipmentsModule } from '../../modules/shipments/index.js';
 import type { PricingModule } from '../../modules/pricing/index.js';
 import type { ProductsModule } from '../../modules/products/index.js';
+import type { ReturnsModule } from '../../modules/returns/index.js';
 import type { AuthenticateAccessTokenUseCase } from '../../modules/identity/application/authenticate-access-token.js';
 import type { VerifyApiKeyUseCase } from '../../modules/api-keys/application/use-cases/verify-api-key.js';
 import foundationRoutes from './routes/foundation.routes.js';
@@ -54,6 +58,10 @@ export interface HttpServerDependencies {
   readonly pricing: PricingModule;
   readonly offers: OffersModule;
   readonly inventory: InventoryModule;
+  readonly orders: OrdersModule;
+  readonly cancellations: CancellationsModule;
+  readonly shipments: ShipmentsModule;
+  readonly returns: ReturnsModule;
   readonly authenticateAccessToken: AuthenticateAccessTokenUseCase;
   readonly verifyApiKey: VerifyApiKeyUseCase;
 }
@@ -93,7 +101,7 @@ export async function createHttpServer(deps: HttpServerDependencies): Promise<Ht
         title: `${deps.config.appName} API`,
         version: '0.1.0',
         description:
-          'Nexora native API — tenants, identity, authorization, audit, API keys, MFA, commerce modules (marketplaces, channels, products, pricing, offers, inventory).',
+          'Nexora native API — tenants, identity, authorization, audit, API keys, MFA, commerce modules (marketplaces, channels, products, pricing, offers, inventory, orders, cancellations, shipments, returns).',
       },
       servers: [{ url: `http://localhost:${deps.config.server.port}` }],
     },
@@ -135,6 +143,10 @@ export async function createHttpServer(deps: HttpServerDependencies): Promise<Ht
     ...deps.inventory.useCases,
     metrics: deps.metrics,
   });
+  await app.register(deps.orders.routes, deps.orders.useCases);
+  await app.register(deps.cancellations.routes, deps.cancellations.useCases);
+  await app.register(deps.shipments.routes, deps.shipments.useCases);
+  await app.register(deps.returns.routes, deps.returns.useCases);
 
   return app;
 }
