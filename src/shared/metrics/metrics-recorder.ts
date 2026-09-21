@@ -52,6 +52,23 @@ export interface AuthEventSample {
   readonly outcome: AuthOutcomeLabel;
 }
 
+/** Bounded commerce operation labels for Phase 3 modules. */
+export type CommerceOperationLabel =
+  | 'inventory.reserve'
+  | 'inventory.release'
+  | 'inventory.adjust'
+  | 'inventory.receive'
+  | 'pricing.resolve'
+  | 'offer.activate'
+  | 'product.create';
+
+export type CommerceOutcomeLabel = 'success' | 'failure';
+
+export interface CommerceOperationSample {
+  readonly operation: CommerceOperationLabel;
+  readonly outcome: CommerceOutcomeLabel;
+}
+
 export interface MetricsRecorder {
   recordHttpRequest(sample: HttpRequestSample): void;
   recordDbQuery(sample: DbQuerySample): void;
@@ -60,6 +77,7 @@ export interface MetricsRecorder {
   recordQueueJob(sample: QueueJobSample): void;
   recordRateLimitHit(policy: string, allowed: boolean): void;
   recordAuthEvent(sample: AuthEventSample): void;
+  recordCommerceOperation(sample: CommerceOperationSample): void;
   setDbPoolConnections(snapshot: DbPoolSnapshot): void;
   /** Prometheus exposition text. */
   render(): Promise<string>;
@@ -75,6 +93,7 @@ export const noopMetricsRecorder: MetricsRecorder = {
   recordQueueJob: () => undefined,
   recordRateLimitHit: () => undefined,
   recordAuthEvent: () => undefined,
+  recordCommerceOperation: () => undefined,
   setDbPoolConnections: () => undefined,
   render: () => Promise.resolve(''),
   contentType: 'text/plain; charset=utf-8',
