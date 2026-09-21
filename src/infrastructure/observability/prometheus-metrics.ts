@@ -1,6 +1,7 @@
 import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics } from 'prom-client';
 import type {
   AuthEventSample,
+  CommerceOperationSample,
   DbPoolSnapshot,
   DbQuerySample,
   HttpRequestSample,
@@ -44,6 +45,7 @@ export class PrometheusMetrics implements MetricsRecorder {
   private readonly queueJobDuration: Histogram<'queue' | 'job_name'>;
   private readonly rateLimitHitsTotal: Counter<'policy' | 'outcome'>;
   private readonly authEventsTotal: Counter<'method' | 'outcome'>;
+  private readonly commerceOperationsTotal: Counter<'operation' | 'outcome'>;
 
   constructor(serviceName: string) {
     this.registry = new Registry();
@@ -133,6 +135,13 @@ export class PrometheusMetrics implements MetricsRecorder {
       labelNames: ['method', 'outcome'],
       registers: [this.registry],
     });
+
+    this.commerceOperationsTotal = new Counter({
+      name: 'commerce_operations_total',
+      help: 'Commerce domain operations by operation name and outcome.',
+      labelNames: ['operation', 'outcome'],
+      registers: [this.registry],
+    });
   }
 
   recordHttpRequest(sample: HttpRequestSample): void {
@@ -192,6 +201,13 @@ export class PrometheusMetrics implements MetricsRecorder {
 
   recordAuthEvent(sample: AuthEventSample): void {
     this.authEventsTotal.inc({ method: sample.method, outcome: sample.outcome });
+  }
+
+  recordCommerceOperation(sample: CommerceOperationSample): void {
+    this.commerceOperationsTotal.inc({
+      operation: sample.operation,
+      outcome: sample.outcome,
+    });
   }
 
   setDbPoolConnections(snapshot: DbPoolSnapshot): void {

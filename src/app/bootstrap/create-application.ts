@@ -8,7 +8,17 @@ import { PostgresMembershipRoleRepository } from '../../modules/authorization/in
 import { createIdentityModule, type IdentityModule } from '../../modules/identity/index.js';
 import { AuthenticateAccessTokenUseCase } from '../../modules/identity/application/authenticate-access-token.js';
 import { createMfaModule, type MfaModule } from '../../modules/mfa/index.js';
+import { createChannelsModule, type ChannelsModule } from '../../modules/channels/index.js';
+import { createInventoryModule, type InventoryModule } from '../../modules/inventory/index.js';
+import {
+  createMarketplacesModule,
+  type MarketplacesModule,
+} from '../../modules/marketplaces/index.js';
+import { createOffersModule, type OffersModule } from '../../modules/offers/index.js';
+import { createPricingModule, type PricingModule } from '../../modules/pricing/index.js';
+import { createProductsModule, type ProductsModule } from '../../modules/products/index.js';
 import { createTenantsModule } from '../../modules/tenants/index.js';
+import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import type { HttpServer } from '../http/types.js';
 import { createHttpServer } from '../http/create-server.js';
 import { createDefaultProbes, ReadinessService } from '../observability/readiness.js';
@@ -21,6 +31,12 @@ export interface Application {
   readonly audit: AuditModule;
   readonly apiKeys: ApiKeysModule;
   readonly mfa: MfaModule;
+  readonly marketplaces: MarketplacesModule;
+  readonly channels: ChannelsModule;
+  readonly products: ProductsModule;
+  readonly pricing: PricingModule;
+  readonly offers: OffersModule;
+  readonly inventory: InventoryModule;
   readonly readiness: ReadinessService;
   readonly httpServer: HttpServer;
 }
@@ -76,6 +92,51 @@ export async function createApplication(infra: Infrastructure): Promise<Applicat
     transactionManager: infra.database,
   });
 
+  const marketplaces = createMarketplacesModule({
+    database: infra.database,
+    eventRecorder: infra.eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const channels = createChannelsModule({
+    database: infra.database,
+    eventRecorder: infra.eventRecorder,
+    verifyMarketplaceExists: marketplaces.verifyMarketplaceExists,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const products = createProductsModule({
+    database: infra.database,
+    authorization: new DefaultAuthorizationService(),
+    auditRecorder: audit.auditRecorder,
+    eventRecorder: infra.eventRecorder,
+  });
+
+  const pricing = createPricingModule({
+    database: infra.database,
+    productQueryService: products.productQueryService,
+    channelQueryService: channels.channelQueryService,
+    eventRecorder: infra.eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const offers = createOffersModule({
+    database: infra.database,
+    productQueryService: products.productQueryService,
+    channelQueryService: channels.channelQueryService,
+    pricingService: pricing.pricingService,
+    eventRecorder: infra.eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const inventory = createInventoryModule({
+    queryable: infra.database,
+    transactionManager: infra.database,
+    productQueryService: products.productQueryService,
+    eventRecorder: infra.eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
   const httpServer = await createHttpServer({
     config: infra.config,
     logger: infra.logger,
@@ -87,6 +148,12 @@ export async function createApplication(infra: Infrastructure): Promise<Applicat
     audit,
     apiKeys,
     mfa,
+    marketplaces,
+    channels,
+    products,
+    pricing,
+    offers,
+    inventory,
     authenticateAccessToken,
     verifyApiKey: apiKeys.useCases.verifyApiKey,
   });
@@ -98,6 +165,12 @@ export async function createApplication(infra: Infrastructure): Promise<Applicat
     audit,
     apiKeys,
     mfa,
+    marketplaces,
+    channels,
+    products,
+    pricing,
+    offers,
+    inventory,
     readiness,
     httpServer,
   };

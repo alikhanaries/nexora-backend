@@ -1,0 +1,25 @@
+export {
+  ActivateMarketplace,
+  CreateMarketplace,
+  DeactivateMarketplace,
+  GetMarketplace,
+  ListMarketplaces,
+  UpdateMarketplace,
+  type ActivateMarketplaceInput,
+  type ActivateMarketplaceResult,
+  type CreateMarketplaceInput,
+  type CreateMarketplaceResult,
+  type DeactivateMarketplaceInput,
+  type DeactivateMarketplaceResult,
+  type GetMarketplaceInput,
+  type GetMarketplaceResult,
+  type ListMarketplacesInput,
+  type ListMarketplacesResult,
+  type UpdateMarketplaceInput,
+  type UpdateMarketplaceResult,
+  VerifyMarketplaceExists,
+  type VerifyMarketplaceExistsInput,
+  type VerifyMarketplaceExistsResult,
+} from '../application/index.js';
+
+export { Marketplace, MarketplaceStatus, type MarketplaceProps } from '../domain/index.js';
