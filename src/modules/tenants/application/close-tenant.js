@@ -1,12 +1,16 @@
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { requireTenantLifecycleAccess } from './tenant-permissions.js';
 export class CloseTenant {
     repository;
     transactionManager;
-    constructor(repository, transactionManager) {
+    authorization;
+    constructor(repository, transactionManager, authorization) {
         this.repository = repository;
         this.transactionManager = transactionManager;
+        this.authorization = authorization;
     }
     async execute(input) {
+        requireTenantLifecycleAccess(this.authorization, input.actorTenantId, input.tenantId, input.actorPermissions);
         const tenant = await this.transactionManager.execute(async (tx) => {
             const existing = await this.repository.findById(tx, input.tenantId);
             if (existing === null) {

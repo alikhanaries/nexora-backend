@@ -1,4 +1,6 @@
 import { requireActorContext } from '../../../shared/context/require-principal.js';
+import { actorFingerprint } from '../../../shared/http/actor-fingerprint.js';
+import { fingerprintRequest, requireIdempotencyKey, } from '../../../shared/idempotency/index.js';
 import { toReturnResponse } from './return.mapper.js';
 import { createReturnBodySchema, listReturnsQuerySchema, orderIdParamsSchema, returnIdParamsSchema, returnListSuccessResponseSchema, returnSuccessResponseSchema, } from './return.schemas.js';
 const returnRoutes = async (app, deps) => {
@@ -17,25 +19,39 @@ const returnRoutes = async (app, deps) => {
         const actor = requireActorContext();
         const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
         const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
-        const { return: returnDetail } = await deps.createReturn.execute({
-            tenantId: actor.tenantId,
-            actorId,
-            actorKind,
-            actorPermissions: actor.permissions,
+        const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+        const requestFingerprint = fingerprintRequest({
             orderId: request.params.orderId,
-            lines: request.body.lines.map((line) => ({
-                orderLineId: line.orderLineId,
-                quantity: line.quantity,
-                ...(line.reason === undefined ? {} : { reason: line.reason }),
-            })),
-            ...(request.body.shipmentId === undefined ? {} : { shipmentId: request.body.shipmentId }),
-            ...(request.body.reason === undefined ? {} : { reason: request.body.reason }),
+            ...request.body,
         });
+        const outcome = await deps.idempotency.execute({
+            tenantId: actor.tenantId,
+            principalFingerprint: actorFingerprint(actor),
+            routeId: 'POST /api/v1/orders/:orderId/returns',
+            idempotencyKey,
+        }, requestFingerprint, async (tx) => {
+            const { return: returnDetail } = await deps.createReturn.execute({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                orderId: request.params.orderId,
+                lines: request.body.lines.map((line) => ({
+                    orderLineId: line.orderLineId,
+                    quantity: line.quantity,
+                    ...(line.reason === undefined ? {} : { reason: line.reason }),
+                })),
+                ...(request.body.shipmentId === undefined ? {} : { shipmentId: request.body.shipmentId }),
+                ...(request.body.reason === undefined ? {} : { reason: request.body.reason }),
+                transaction: tx,
+            });
+            return {
+                success: true,
+                data: toReturnResponse(returnDetail),
+            };
+        }, (body) => ({ statusCode: 201, body }), { useTransaction: true });
         void reply.status(201);
-        return {
-            success: true,
-            data: toReturnResponse(returnDetail),
-        };
+        return outcome.value;
     });
     typed.get('/api/v1/returns', {
         schema: {

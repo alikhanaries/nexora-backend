@@ -26,6 +26,7 @@ export async function createApplication(infra) {
     const identity = await createIdentityModule({
         database: infra.database,
         config: infra.config,
+        rateLimiter: infra.rateLimiter,
         auditRecorder: audit.auditRecorder,
     });
     const mfa = createMfaModule({
@@ -113,22 +114,26 @@ export async function createApplication(infra) {
     });
     const cancellations = createCancellationsModule({
         database: infra.database,
-        orders: orders.orders,
+        orderQueryService: orders.orderQueryService,
         orderFulfillmentService: orders.orderFulfillmentService,
         inventoryService: inventory.inventoryService,
         eventRecorder: infra.eventRecorder,
+        idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
     });
     const shipments = createShipmentsModule({
         database: infra.database,
         orderFulfillmentService: orders.orderFulfillmentService,
         eventRecorder: infra.eventRecorder,
+        idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
     });
     const returns = createReturnsModule({
         database: infra.database,
+        orderReturnGateway: orders.orderReturnGateway,
         inventoryService: inventory.inventoryService,
         eventRecorder: infra.eventRecorder,
+        idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
     });
     const httpServer = await createHttpServer({

@@ -5,6 +5,7 @@ import { GetOrder } from './application/get-order.js';
 import { ListOrders } from './application/list-orders.js';
 import { DefaultOrderFulfillmentService } from './application/order-fulfillment-service.js';
 import { DefaultOrderQueryService } from './application/order-query-service.js';
+import { DefaultOrderReturnGateway } from './application/order-return-gateway.js';
 import { PostgresOrderRepository } from './infrastructure/index.js';
 import orderRoutes, {} from './presentation/order.routes.js';
 export function createOrdersModule(deps) {
@@ -18,6 +19,7 @@ export function createOrdersModule(deps) {
         queryable: deps.database,
         orders,
     });
+    const orderReturnGateway = new DefaultOrderReturnGateway({ orders });
     const sharedDeps = {
         authorization,
         database: deps.database,
@@ -51,8 +53,8 @@ export function createOrdersModule(deps) {
     return {
         orderFulfillmentService,
         orderQueryService,
+        orderReturnGateway,
         createOrder,
-        orders,
         useCases,
         routes: orderRoutes,
     };

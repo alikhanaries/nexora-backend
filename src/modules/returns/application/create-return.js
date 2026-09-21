@@ -16,7 +16,7 @@ export class CreateReturn {
         if (input.lines.length === 0) {
             throw new ValidationError('Return must contain at least one line');
         }
-        const returnDetail = await this.deps.database.execute(async (tx) => {
+        const work = async (tx) => {
             const order = await this.deps.orders.findOrder(tx, input.tenantId, input.orderId);
             if (order === null) {
                 throw new NotFoundError('Order was not found', {
@@ -108,7 +108,10 @@ export class CreateReturn {
                 ...auditRequestFields(),
             });
             return detail;
-        }, { tenantId: input.tenantId });
+        };
+        const returnDetail = input.transaction !== undefined
+            ? await work(input.transaction)
+            : await this.deps.database.execute(work, { tenantId: input.tenantId });
         return { return: returnDetail };
     }
 }

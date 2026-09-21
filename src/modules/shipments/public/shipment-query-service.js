@@ -1,3 +1,10 @@
+/**
+ * @typedef {object} ShipmentQueryService
+ * @property {(tenantId: string, shipmentId: string, tx?: object) => Promise<object>} getShipmentById
+ * Returns shipment detail with lines. Throws {@link NotFoundError} when missing.
+ * @property {(tenantId: string, shipmentId: string, tx?: object) => Promise<object>} getShipmentSummaryById
+ * Returns shipment header without lines.
+ */
 import { NotFoundError } from '../../../shared/errors/index.js';
 import { toShipmentDetailDto, toShipmentDto, } from '../application/shipment-dto.js';
 export class DefaultShipmentQueryService {

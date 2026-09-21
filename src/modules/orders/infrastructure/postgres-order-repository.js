@@ -318,6 +318,11 @@ export class PostgresOrderRepository {
             p.updatedAt,
         ], { operation: 'order_lines.update' });
     }
+    async updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt) {
+        await transaction.query(`UPDATE order_lines
+       SET returned_quantity = $3, updated_at = $4
+       WHERE tenant_id = $1 AND id = $2`, [tenantId, orderLineId, returnedQuantity, updatedAt], { operation: 'order_lines.update_returned_quantity' });
+    }
     async listOrderLines(queryable, tenantId, orderId) {
         const result = await queryable.query(`SELECT ${orderLineSelect} FROM order_lines WHERE tenant_id = $1 AND order_id = $2 ORDER BY created_at`, [tenantId, orderId], { operation: 'order_lines.list' });
         return result.rows.map((row) => toOrderLine(parseOrThrow(orderLineRowSchema, row, 'order_lines row')));

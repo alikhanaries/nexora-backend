@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../audit/public/index.js';
-import { BusinessRuleError, ConflictError, NotFoundError, ValidationError, } from '../../../shared/errors/index.js';
+import { BusinessRuleError, NotFoundError, ValidationError, } from '../../../shared/errors/index.js';
 import { parseCurrency } from '../../../shared/money/index.js';
 import { CustomerSnapshot } from '../domain/customer-snapshot.js';
 import { OrderLine } from '../domain/order-line.js';
@@ -91,13 +91,7 @@ export class CreateOrder {
         const externalOrderReference = input.externalOrderReference === undefined || input.externalOrderReference === null
             ? null
             : input.externalOrderReference.trim() || null;
-        const detail = await this.deps.database.execute(async (tx) => {
-            if (externalOrderReference !== null) {
-                const existing = await this.deps.orders.findById(tx, input.tenantId, orderId);
-                if (existing !== null) {
-                    throw new ConflictError('Order identifier conflict');
-                }
-            }
+        const work = async (tx) => {
             for (const line of resolvedLines) {
                 await this.deps.inventoryService.reserve({
                     tenantId: input.tenantId,
@@ -186,7 +180,10 @@ export class CreateOrder {
                 lines: orderLines.map(toOrderLineDto),
                 customer: toCustomerSnapshotDto(snapshot),
             };
-        }, { tenantId: input.tenantId });
+        };
+        const detail = input.transaction !== undefined
+            ? await work(input.transaction)
+            : await this.deps.database.execute(work, { tenantId: input.tenantId });
         return { order: detail };
     }
 }

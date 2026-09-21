@@ -1,4 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-policies.js';
+import { passwordResetRequestRateLimitSubject } from '../../../../shared/auth/rate-limit-subject.js';
+import { RateLimitError } from '../../../../shared/errors/index.js';
 import { generateSecureToken, hashSecret } from '../../../../shared/security/index.js';
 import { Email } from '../../domain/index.js';
 const RESET_TOKEN_TTL_SECONDS = 3_600;
@@ -15,6 +18,15 @@ export class RequestPasswordResetUseCase {
         }
         catch {
             return;
+        }
+        if (this.deps.rateLimiter !== undefined) {
+            const rateLimit = await this.deps.rateLimiter.consume({
+                policy: AUTH_RATE_LIMIT_POLICIES.passwordResetRequest,
+                subject: passwordResetRequestRateLimitSubject(email.normalized),
+            });
+            if (!rateLimit.allowed) {
+                throw new RateLimitError(rateLimit.retryAfterSeconds);
+            }
         }
         await this.deps.db.execute(async (tx) => {
             const user = await this.deps.users.findByNormalizedEmail(tx, email.normalized);

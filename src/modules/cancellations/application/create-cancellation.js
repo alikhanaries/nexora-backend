@@ -21,7 +21,7 @@ export class CreateCancellation {
         else {
             requireOrdersCancel(this.deps.authorization, input.actorPermissions);
         }
-        const order = await this.deps.orders.findById(this.deps.database, input.tenantId, input.orderId);
+        const order = await this.deps.orderQueryService.findOrderById(input.tenantId, input.orderId);
         if (order === null) {
             throw new NotFoundError('Order was not found', {
                 tenantId: input.tenantId,
@@ -37,7 +37,7 @@ export class CreateCancellation {
         }
         const cancellationId = randomUUID();
         const now = new Date();
-        const detail = await this.deps.database.execute(async (tx) => {
+        const work = async (tx) => {
             const cancellation = Cancellation.create({
                 id: cancellationId,
                 tenantId: input.tenantId,
@@ -93,7 +93,10 @@ export class CreateCancellation {
                 ...auditRequestFields(),
             });
             return dto;
-        }, { tenantId: input.tenantId });
+        };
+        const detail = input.transaction !== undefined
+            ? await work(input.transaction)
+            : await this.deps.database.execute(work, { tenantId: input.tenantId });
         return { cancellation: detail };
     }
     async releaseInventoryForCancellation(tx, tenantId, orderId, cancellationId, applied) {

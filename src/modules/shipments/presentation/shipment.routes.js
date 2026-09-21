@@ -1,4 +1,6 @@
 import { requireActorContext } from '../../../shared/context/require-principal.js';
+import { actorFingerprint } from '../../../shared/http/actor-fingerprint.js';
+import { fingerprintRequest, requireIdempotencyKey, } from '../../../shared/idempotency/index.js';
 import { toShipmentDetailResponse, toShipmentResponse } from './shipment.mapper.js';
 import { createShipmentBodySchema, listShipmentsQuerySchema, orderIdParamsSchema, shipmentIdParamsSchema, shipmentListSuccessResponseSchema, shipmentSuccessResponseSchema, shipShipmentBodySchema, } from './shipment.schemas.js';
 const shipmentRoutes = async (app, deps) => {
@@ -17,24 +19,38 @@ const shipmentRoutes = async (app, deps) => {
         const actor = requireActorContext();
         const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
         const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
-        const { shipment } = await deps.createShipment.execute({
-            tenantId: actor.tenantId,
-            actorId,
-            actorKind,
-            actorPermissions: actor.permissions,
+        const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+        const requestFingerprint = fingerprintRequest({
             orderId: request.params.orderId,
-            lines: request.body.lines,
-            ...(request.body.carrier === undefined ? {} : { carrier: request.body.carrier }),
-            ...(request.body.service === undefined ? {} : { service: request.body.service }),
-            ...(request.body.trackingNumber === undefined
-                ? {}
-                : { trackingNumber: request.body.trackingNumber }),
+            ...request.body,
         });
+        const outcome = await deps.idempotency.execute({
+            tenantId: actor.tenantId,
+            principalFingerprint: actorFingerprint(actor),
+            routeId: 'POST /api/v1/orders/:orderId/shipments',
+            idempotencyKey,
+        }, requestFingerprint, async (tx) => {
+            const { shipment } = await deps.createShipment.execute({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                orderId: request.params.orderId,
+                lines: request.body.lines,
+                ...(request.body.carrier === undefined ? {} : { carrier: request.body.carrier }),
+                ...(request.body.service === undefined ? {} : { service: request.body.service }),
+                ...(request.body.trackingNumber === undefined
+                    ? {}
+                    : { trackingNumber: request.body.trackingNumber }),
+                transaction: tx,
+            });
+            return {
+                success: true,
+                data: toShipmentDetailResponse(shipment),
+            };
+        }, (body) => ({ statusCode: 201, body }), { useTransaction: true });
         void reply.status(201);
-        return {
-            success: true,
-            data: toShipmentDetailResponse(shipment),
-        };
+        return outcome.value;
     });
     typed.get('/api/v1/shipments', {
         schema: {

@@ -21,4 +21,9 @@ export class DefaultOrderQueryService {
     async verifyOrderBelongsToTenant(tenantId, orderId, tx) {
         return this.getOrderById(tenantId, orderId, tx);
     }
+    async findOrderById(tenantId, orderId, tx) {
+        const queryable = tx ?? this.deps.queryable;
+        const order = await this.deps.orders.findById(queryable, tenantId, orderId);
+        return order === null ? null : toOrderDto(order);
+    }
 }

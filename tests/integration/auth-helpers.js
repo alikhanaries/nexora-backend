@@ -70,3 +70,43 @@ export function authHeaders(accessToken) {
 export function apiKeyHeaders(rawKey) {
     return { 'x-api-key': rawKey };
 }
+export async function createAuthenticatedUserWithSystemRole(app, tenantId, tenantSlug, systemRoleKey) {
+    const email = `user-${randomUUID().slice(0, 8)}@example.com`;
+    const password = 'SecurePassword123!';
+    const user = await app.identity.useCases.createUser.execute({ email, password });
+    const membership = await app.identity.useCases.addMembership.execute({
+        tenantId,
+        userId: user.id,
+    });
+    await app.identity.useCases.activateMembership.execute({
+        tenantId,
+        membershipId: membership.id,
+    });
+    await seedTenantRoles(app, tenantId);
+    const roles = await app.authorization.useCases.listRoles.execute({
+        tenantId,
+        actorPermissions: [...ADMIN_PERMISSIONS],
+    });
+    const role = roles.find((entry) => entry.systemKey === systemRoleKey);
+    expect(role).toBeDefined();
+    await app.authorization.useCases.assignRole.execute({
+        tenantId,
+        actorPermissions: [...ADMIN_PERMISSIONS],
+        membershipId: membership.id,
+        roleId: role.id,
+    });
+    const login = await app.identity.useCases.login.execute({
+        tenantSlug,
+        email,
+        password,
+    });
+    return {
+        tenantId,
+        slug: tenantSlug,
+        accessToken: login.accessToken,
+        refreshToken: login.refreshToken,
+        userId: user.id,
+        email,
+        membershipId: membership.id,
+    };
+}

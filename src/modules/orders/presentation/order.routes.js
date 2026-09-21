@@ -1,7 +1,6 @@
 import { requireActorContext } from '../../../shared/context/require-principal.js';
-import { ValidationError } from '../../../shared/errors/index.js';
 import { actorFingerprint } from '../../../shared/http/actor-fingerprint.js';
-import { fingerprintRequest } from '../../../shared/idempotency/index.js';
+import { fingerprintRequest, requireIdempotencyKey, } from '../../../shared/idempotency/index.js';
 import { toOrderDetailResponse, toOrderResponse } from './order.mapper.js';
 import { createOrderBodySchema, listOrdersQuerySchema, orderIdParamsSchema, orderListSuccessResponseSchema, orderSuccessResponseSchema, } from './order.schemas.js';
 function mapAddressInput(address) {
@@ -36,13 +35,6 @@ function mapCustomerInput(customer) {
         ...(customer.metadata === undefined ? {} : { metadata: customer.metadata }),
     };
 }
-function requireIdempotencyKey(header) {
-    const value = Array.isArray(header) ? header[0] : header;
-    if (value === undefined || value.trim().length === 0) {
-        throw new ValidationError('Idempotency-Key header is required');
-    }
-    return value.trim();
-}
 const orderRoutes = async (app, deps) => {
     const typed = app.withTypeProvider();
     typed.post('/api/v1/orders', {
@@ -64,7 +56,7 @@ const orderRoutes = async (app, deps) => {
             principalFingerprint: actorFingerprint(actor),
             routeId: 'POST /api/v1/orders',
             idempotencyKey,
-        }, fingerprintRequest(request.body), async () => {
+        }, fingerprintRequest(request.body), async (tx) => {
             const { order } = await deps.createOrder.execute({
                 tenantId: actor.tenantId,
                 actorId,
@@ -91,12 +83,13 @@ const orderRoutes = async (app, deps) => {
                 ...(request.body.shippingMinor === undefined
                     ? {}
                     : { shippingMinor: request.body.shippingMinor }),
+                transaction: tx,
             });
             return {
                 success: true,
                 data: toOrderDetailResponse(order),
             };
-        }, (body) => ({ statusCode: 201, body }));
+        }, (body) => ({ statusCode: 201, body }), { useTransaction: true });
         void reply.status(201);
         return outcome.value;
     });

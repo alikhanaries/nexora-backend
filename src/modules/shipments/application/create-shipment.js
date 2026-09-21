@@ -16,7 +16,7 @@ export class CreateShipment {
         if (input.lines.length === 0) {
             throw new ValidationError('Shipment must contain at least one line');
         }
-        const shipment = await this.deps.database.execute(async (tx) => {
+        const work = async (tx) => {
             const lockedLines = await this.deps.orderFulfillmentService.lockOrderLinesForFulfillment(input.tenantId, input.orderId, tx);
             const lockedById = new Map(lockedLines.map((line) => [line.id, line]));
             const requestedByLine = new Map();
@@ -95,7 +95,10 @@ export class CreateShipment {
                 ...auditRequestFields(),
             });
             return detail;
-        }, { tenantId: input.tenantId });
+        };
+        const shipment = input.transaction !== undefined
+            ? await work(input.transaction)
+            : await this.deps.database.execute(work, { tenantId: input.tenantId });
         return { shipment };
     }
 }

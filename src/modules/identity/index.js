@@ -64,12 +64,14 @@ export async function createIdentityModule(deps) {
             memberships,
             refreshSessions,
             passwordHasher,
+            ...(deps.rateLimiter === undefined ? {} : { rateLimiter: deps.rateLimiter }),
             ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
             ...authDeps,
         }),
         refreshToken: new RefreshTokenUseCase({
             db: deps.database,
             refreshSessions,
+            ...(deps.rateLimiter === undefined ? {} : { rateLimiter: deps.rateLimiter }),
             ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
             ...authDeps,
         }),
@@ -86,6 +88,7 @@ export async function createIdentityModule(deps) {
             users,
             resetTokens,
             notifier: resetNotifier,
+            ...(deps.rateLimiter === undefined ? {} : { rateLimiter: deps.rateLimiter }),
         }),
         confirmPasswordReset: new ConfirmPasswordResetUseCase({
             db: deps.database,
@@ -94,6 +97,7 @@ export async function createIdentityModule(deps) {
             refreshSessions,
             passwordHasher,
             passwordPolicy,
+            ...(deps.rateLimiter === undefined ? {} : { rateLimiter: deps.rateLimiter }),
         }),
     };
     const authRoutes = createAuthRoutes({

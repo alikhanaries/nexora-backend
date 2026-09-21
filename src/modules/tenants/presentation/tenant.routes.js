@@ -1,3 +1,4 @@
+import { requireActorContext } from '../../../shared/context/require-principal.js';
 import { toTenantResponse } from './tenant.mapper.js';
 import { createTenantBodySchema, tenantIdParamsSchema, tenantSuccessResponseSchema, } from './tenant.schemas.js';
 const tenantRoutes = async (app, deps) => {
@@ -45,7 +46,12 @@ const tenantRoutes = async (app, deps) => {
             },
         },
     }, async (request) => {
-        const { tenant } = await deps.suspendTenant.execute({ tenantId: request.params.tenantId });
+        const actor = requireActorContext();
+        const { tenant } = await deps.suspendTenant.execute({
+            tenantId: request.params.tenantId,
+            actorTenantId: actor.tenantId,
+            actorPermissions: actor.permissions,
+        });
         return {
             success: true,
             data: toTenantResponse(tenant),
@@ -61,8 +67,11 @@ const tenantRoutes = async (app, deps) => {
             },
         },
     }, async (request) => {
+        const actor = requireActorContext();
         const { tenant } = await deps.reactivateTenant.execute({
             tenantId: request.params.tenantId,
+            actorTenantId: actor.tenantId,
+            actorPermissions: actor.permissions,
         });
         return {
             success: true,
@@ -79,7 +88,12 @@ const tenantRoutes = async (app, deps) => {
             },
         },
     }, async (request) => {
-        const { tenant } = await deps.closeTenant.execute({ tenantId: request.params.tenantId });
+        const actor = requireActorContext();
+        const { tenant } = await deps.closeTenant.execute({
+            tenantId: request.params.tenantId,
+            actorTenantId: actor.tenantId,
+            actorPermissions: actor.permissions,
+        });
         return {
             success: true,
             data: toTenantResponse(tenant),

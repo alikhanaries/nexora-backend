@@ -1,1 +1,1 @@
-export { DefaultProductQueryService, } from '../application/index.js';
+export { DefaultProductQueryService } from './product-query-service.js';

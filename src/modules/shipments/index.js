@@ -20,6 +20,7 @@ export function createShipmentsModule(deps) {
         database: deps.database,
         shipments,
         eventRecorder: deps.eventRecorder,
+        idempotency: deps.idempotency,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
     const useCases = {
@@ -39,6 +40,7 @@ export function createShipmentsModule(deps) {
             ...lifecycleDeps,
             orderFulfillmentService: deps.orderFulfillmentService,
         }),
+        idempotency: deps.idempotency,
     };
     return {
         shipmentQueryService,

@@ -5,7 +5,6 @@ import cancellationRoutes, {} from './presentation/cancellation.routes.js';
 export function createCancellationsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const cancellations = new PostgresCancellationRepository();
-    const orders = deps.orders;
     const cancellationQueryService = new DefaultCancellationQueryService({
         queryable: deps.database,
         cancellations,
@@ -14,10 +13,11 @@ export function createCancellationsModule(deps) {
         authorization,
         database: deps.database,
         cancellations,
-        orders,
+        orderQueryService: deps.orderQueryService,
         orderFulfillmentService: deps.orderFulfillmentService,
         inventoryService: deps.inventoryService,
         eventRecorder: deps.eventRecorder,
+        idempotency: deps.idempotency,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
     const useCases = {
@@ -28,6 +28,7 @@ export function createCancellationsModule(deps) {
             queryable: deps.database,
             cancellations,
         }),
+        idempotency: deps.idempotency,
     };
     return {
         cancellationQueryService,

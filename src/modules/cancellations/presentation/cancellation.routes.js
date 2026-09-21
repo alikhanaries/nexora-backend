@@ -1,4 +1,6 @@
 import { requireActorContext } from '../../../shared/context/require-principal.js';
+import { actorFingerprint } from '../../../shared/http/actor-fingerprint.js';
+import { fingerprintRequest, requireIdempotencyKey, } from '../../../shared/idempotency/index.js';
 import { toCancellationDetailResponse, toCancellationResponse } from './cancellation.mapper.js';
 import { cancelOrderBodySchema, cancellationIdParamsSchema, cancellationListSuccessResponseSchema, cancellationSuccessResponseSchema, createCancellationBodySchema, listCancellationsQuerySchema, orderIdParamsSchema, } from './cancellation.schemas.js';
 const cancellationRoutes = async (app, deps) => {
@@ -44,21 +46,31 @@ const cancellationRoutes = async (app, deps) => {
         const actor = requireActorContext();
         const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
         const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
-        const { cancellation } = await deps.createCancellation.execute({
+        const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+        const outcome = await deps.idempotency.execute({
             tenantId: actor.tenantId,
-            actorId,
-            actorKind,
-            actorPermissions: actor.permissions,
-            orderId: request.body.orderId,
-            permission: 'cancellations.create',
-            ...(request.body.reason === undefined ? {} : { reason: request.body.reason }),
-            ...(request.body.lines === undefined ? {} : { lines: request.body.lines }),
-        });
+            principalFingerprint: actorFingerprint(actor),
+            routeId: 'POST /api/v1/cancellations',
+            idempotencyKey,
+        }, fingerprintRequest(request.body), async (tx) => {
+            const { cancellation } = await deps.createCancellation.execute({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                orderId: request.body.orderId,
+                permission: 'cancellations.create',
+                ...(request.body.reason === undefined ? {} : { reason: request.body.reason }),
+                ...(request.body.lines === undefined ? {} : { lines: request.body.lines }),
+                transaction: tx,
+            });
+            return {
+                success: true,
+                data: toCancellationDetailResponse(cancellation),
+            };
+        }, (body) => ({ statusCode: 201, body }), { useTransaction: true });
         void reply.status(201);
-        return {
-            success: true,
-            data: toCancellationDetailResponse(cancellation),
-        };
+        return outcome.value;
     });
     typed.get('/api/v1/cancellations/:cancellationId', {
         schema: {

@@ -1,4 +1,7 @@
 import { auditRequestFields } from '../../../audit/public/index.js';
+import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-policies.js';
+import { refreshRateLimitSubject } from '../../../../shared/auth/rate-limit-subject.js';
+import { RateLimitError } from '../../../../shared/errors/index.js';
 import { hashSecret } from '../../../../shared/security/index.js';
 import { evaluateRefreshSession, InvalidCredentialsError, RefreshSession, } from '../../domain/index.js';
 import { createRefreshSessionDraft } from '../auth-tokens.js';
@@ -8,6 +11,15 @@ export class RefreshTokenUseCase {
         this.deps = deps;
     }
     async execute(input) {
+        if (this.deps.rateLimiter !== undefined) {
+            const rateLimit = await this.deps.rateLimiter.consume({
+                policy: AUTH_RATE_LIMIT_POLICIES.refresh,
+                subject: refreshRateLimitSubject(input.refreshToken),
+            });
+            if (!rateLimit.allowed) {
+                throw new RateLimitError(rateLimit.retryAfterSeconds);
+            }
+        }
         const tokenHash = hashSecret(input.refreshToken);
         const now = new Date();
         const existing = await this.deps.db.execute(async (tx) => this.deps.refreshSessions.findByTokenHash(tx, tokenHash));

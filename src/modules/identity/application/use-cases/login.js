@@ -1,5 +1,8 @@
 import { auditRequestFields } from '../../../audit/public/index.js';
 import { Email, InvalidCredentialsError, RefreshSession } from '../../domain/index.js';
+import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-policies.js';
+import { loginRateLimitSubject } from '../../../../shared/auth/rate-limit-subject.js';
+import { RateLimitError } from '../../../../shared/errors/index.js';
 import { normalizeTenantSlug, validateTenantSlug } from '../../../../shared/security/index.js';
 import { createRefreshSessionDraft } from '../auth-tokens.js';
 export class LoginUseCase {
@@ -10,6 +13,15 @@ export class LoginUseCase {
     async execute(input) {
         validateTenantSlug(input.tenantSlug);
         const tenantSlug = normalizeTenantSlug(input.tenantSlug);
+        if (this.deps.rateLimiter !== undefined) {
+            const rateLimit = await this.deps.rateLimiter.consume({
+                policy: AUTH_RATE_LIMIT_POLICIES.login,
+                subject: loginRateLimitSubject(tenantSlug),
+            });
+            if (!rateLimit.allowed) {
+                throw new RateLimitError(rateLimit.retryAfterSeconds);
+            }
+        }
         let email;
         try {
             email = Email.create(input.email);
