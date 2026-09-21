@@ -1,0 +1,15 @@
+# Local-only Prometheus scrape config. Started with:
+#   docker compose --profile observability up -d
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: nexora-api
+    metrics_path: /internal/metrics
+    static_configs:
+      # `host.docker.internal` reaches the API running on the developer's
+      # machine rather than inside the compose network.
+      - targets: ['host.docker.internal:3000']
+        labels:
+          component: api
