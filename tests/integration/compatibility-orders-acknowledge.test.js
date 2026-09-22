@@ -10,9 +10,13 @@ import {
     createTestTenant,
 } from './auth-helpers.js';
 import {
+    ExternalIdMappingResourceType,
+} from '../../src/modules/external-id-mapping/public/index.js';
+import {
     acknowledgeHeaders,
     acknowledgePayload,
     createOrder,
+    findCompatExternalId,
     seedCommerceFixture,
     setOrderToNew,
     snapshotAcknowledgeSideEffects,
@@ -39,7 +43,7 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: { 'idempotency-key': 'ack-unauth' },
-            payload: acknowledgePayload('ORD-MISSING'),
+            payload: acknowledgePayload('ORD-MISSING', 1),
         });
         expect(response.statusCode).toBe(401);
         expect(response.json()).toMatchObject({ Success: false, StatusCode: 401 });
@@ -47,12 +51,23 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
 
     it('returns 403 without orders.update permission', async () => {
         const { tenantId, slug } = await createTestTenant(server);
+        const admin = await createAuthenticatedUser(app, tenantId, slug);
+        const adminHeaders = authHeaders(admin.accessToken);
+        const fixture = await seedCommerceFixture(server, adminHeaders);
+        const order = await createOrder(server, adminHeaders, fixture, 'ack-forbidden-order');
+        await setOrderToNew(app.infra.database, tenantId, order.id);
+        const orderExternalId = await findCompatExternalId(
+            app,
+            tenantId,
+            ExternalIdMappingResourceType.ORDER,
+            order.id,
+        );
         const user = await createAuthenticatedUserWithSystemRole(app, tenantId, slug, 'fulfillment_operator');
         const response = await server.inject({
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(authHeaders(user.accessToken), 'ack-forbidden'),
-            payload: acknowledgePayload('ORD-FORBIDDEN'),
+            payload: acknowledgePayload(order.orderNumber, orderExternalId),
         });
         expect(response.statusCode).toBe(403);
         expect(response.json().Message).toContain('orders.update');
@@ -65,12 +80,18 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
         const fixture = await seedCommerceFixture(server, headers);
         const order = await createOrder(server, headers, fixture, 'ack-new-1');
         await setOrderToNew(app.infra.database, tenantId, order.id);
+        const orderExternalId = await findCompatExternalId(
+            app,
+            tenantId,
+            ExternalIdMappingResourceType.ORDER,
+            order.id,
+        );
 
         const response = await server.inject({
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(headers, 'ack-happy-1'),
-            payload: acknowledgePayload(order.orderNumber, 999001),
+            payload: acknowledgePayload(order.orderNumber, orderExternalId),
         });
         expect(response.statusCode).toBe(201);
         expect(response.json()).toEqual({
@@ -98,13 +119,19 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
         const headers = authHeaders(user.accessToken);
         const fixture = await seedCommerceFixture(server, headers);
         const order = await createOrder(server, headers, fixture, 'ack-confirmed-1');
+        const orderExternalId = await findCompatExternalId(
+            app,
+            tenantId,
+            ExternalIdMappingResourceType.ORDER,
+            order.id,
+        );
         const baseline = await snapshotAcknowledgeSideEffects(app.infra.database, tenantId, order.id);
 
         const first = await server.inject({
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(headers, 'ack-idem-confirmed-1'),
-            payload: acknowledgePayload(order.orderNumber),
+            payload: acknowledgePayload(order.orderNumber, orderExternalId),
         });
         expect(first.statusCode).toBe(201);
 
@@ -112,7 +139,7 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(headers, 'ack-idem-confirmed-2'),
-            payload: acknowledgePayload(order.orderNumber),
+            payload: acknowledgePayload(order.orderNumber, orderExternalId),
         });
         expect(second.statusCode).toBe(201);
 
@@ -127,9 +154,15 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
         const fixture = await seedCommerceFixture(server, headers);
         const order = await createOrder(server, headers, fixture, 'ack-concurrent');
         await setOrderToNew(app.infra.database, tenantId, order.id);
+        const orderExternalId = await findCompatExternalId(
+            app,
+            tenantId,
+            ExternalIdMappingResourceType.ORDER,
+            order.id,
+        );
 
         const baseline = await snapshotAcknowledgeSideEffects(app.infra.database, tenantId, order.id);
-        const payload = acknowledgePayload(order.orderNumber, 888001);
+        const payload = acknowledgePayload(order.orderNumber, orderExternalId);
 
         const [responseA, responseB] = await Promise.all([
             server.inject({
@@ -171,8 +204,14 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
         const fixture = await seedCommerceFixture(server, headers);
         const order = await createOrder(server, headers, fixture, 'ack-idem-replay');
         await setOrderToNew(app.infra.database, tenantId, order.id);
+        const orderExternalId = await findCompatExternalId(
+            app,
+            tenantId,
+            ExternalIdMappingResourceType.ORDER,
+            order.id,
+        );
         const idempotencyKey = 'ack-replay-key';
-        const payload = acknowledgePayload(order.orderNumber);
+        const payload = acknowledgePayload(order.orderNumber, orderExternalId);
 
         const first = await server.inject({
             method: 'POST',
@@ -200,13 +239,25 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
         const orderB = await createOrder(server, headers, fixture, 'ack-conflict-b');
         await setOrderToNew(app.infra.database, tenantId, orderA.id);
         await setOrderToNew(app.infra.database, tenantId, orderB.id);
+        const orderExternalIdA = await findCompatExternalId(
+            app,
+            tenantId,
+            ExternalIdMappingResourceType.ORDER,
+            orderA.id,
+        );
+        const orderExternalIdB = await findCompatExternalId(
+            app,
+            tenantId,
+            ExternalIdMappingResourceType.ORDER,
+            orderB.id,
+        );
         const idempotencyKey = 'ack-conflict-key';
 
         const first = await server.inject({
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(headers, idempotencyKey),
-            payload: acknowledgePayload(orderA.orderNumber),
+            payload: acknowledgePayload(orderA.orderNumber, orderExternalIdA),
         });
         expect(first.statusCode).toBe(201);
 
@@ -214,7 +265,7 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(headers, idempotencyKey),
-            payload: acknowledgePayload(orderB.orderNumber),
+            payload: acknowledgePayload(orderB.orderNumber, orderExternalIdB),
         });
         expect(conflict.statusCode).toBe(409);
     });
@@ -227,7 +278,7 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(headers, 'ack-not-found'),
-            payload: acknowledgePayload('DOES-NOT-EXIST'),
+            payload: acknowledgePayload('DOES-NOT-EXIST', 999999),
         });
         expect(response.statusCode).toBe(404);
         expect(response.json().Success).toBe(false);
@@ -249,7 +300,7 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(headersB, 'ack-cross-tenant'),
-            payload: acknowledgePayload(orderA.orderNumber),
+            payload: acknowledgePayload(orderA.orderNumber, 1),
         });
         expect(crossTenant.statusCode).toBe(404);
     });
@@ -261,6 +312,12 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
         const fixture = await seedCommerceFixture(server, headers);
         const order = await createOrder(server, headers, fixture, 'ack-api-key');
         await setOrderToNew(app.infra.database, tenantId, order.id);
+        const orderExternalId = await findCompatExternalId(
+            app,
+            tenantId,
+            ExternalIdMappingResourceType.ORDER,
+            order.id,
+        );
         const permissions = await app.authorization.useCases.getEffectivePermissions.execute({
             tenantId,
             actorPermissions: ['roles.read'],
@@ -281,7 +338,7 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
                 ...apiKeyHeaders(apiKey.secret),
                 'idempotency-key': 'ack-api-key-req',
             },
-            payload: acknowledgePayload(order.orderNumber),
+            payload: acknowledgePayload(order.orderNumber, orderExternalId),
         });
         expect(response.statusCode).toBe(201);
     });
@@ -292,6 +349,12 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
         const headers = authHeaders(user.accessToken);
         const fixture = await seedCommerceFixture(server, headers);
         const order = await createOrder(server, headers, fixture, 'ack-shipped');
+        const orderExternalId = await findCompatExternalId(
+            app,
+            tenantId,
+            ExternalIdMappingResourceType.ORDER,
+            order.id,
+        );
         await app.infra.database.query(
             `UPDATE orders SET status = 'SHIPPED', shipped_at = now() WHERE tenant_id = $1 AND id = $2`,
             [tenantId, order.id],
@@ -302,7 +365,7 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(headers, 'ack-invalid-state'),
-            payload: acknowledgePayload(order.orderNumber),
+            payload: acknowledgePayload(order.orderNumber, orderExternalId),
         });
         expect(response.statusCode).toBe(422);
         expect(response.json().Success).toBe(false);
@@ -331,7 +394,7 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
             method: 'POST',
             url: '/api/v2/orders/acknowledge',
             headers: acknowledgeHeaders(headers, 'ack-rate-limited'),
-            payload: acknowledgePayload('ORD-RATE-LIMIT'),
+            payload: acknowledgePayload('ORD-RATE-LIMIT', 1),
         });
         expect(response.statusCode).toBe(429);
     });

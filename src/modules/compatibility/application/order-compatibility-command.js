@@ -5,6 +5,7 @@ import {
     mapExternalAcknowledgeRequest,
 } from './mappers/compatibility-acknowledge.mapper.js';
 import { loadOrderExternalIdMaps } from './compatibility-external-id-enrichment.js';
+import { resolveOrderForCompatibility } from './compatibility-external-id-resolution.js';
 import {
     fingerprintChannelFulfilledOrderCommand,
     fingerprintChannelOrderCommand,
@@ -25,6 +26,7 @@ export class OrderCompatibilityCommand {
     /**
      * @param {object} deps
      * @param {import('../../orders/public/order-command-service.js').DefaultOrderCommandService} deps.orderCommandService
+     * @param {import('../../orders/public/order-query-service.js').DefaultOrderQueryService} deps.orderQueryService
      * @param {import('../../channels/public/channel-query-service.js').DefaultChannelQueryService} deps.channelQueryService
      * @param {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} deps.externalIntegerIdMappingQueryService
      */
@@ -152,6 +154,13 @@ export class OrderCompatibilityCommand {
      */
     async acknowledgeOrder(input) {
         const mapped = mapExternalAcknowledgeRequest(input.body);
+        await resolveOrderForCompatibility(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            mapped.externalOrderId,
+            mapped.orderNumber,
+            this.deps.orderQueryService,
+        );
         const { order } = await this.deps.orderCommandService.acknowledgeOrder({
             tenantId: input.tenantId,
             actorId: input.actorId,

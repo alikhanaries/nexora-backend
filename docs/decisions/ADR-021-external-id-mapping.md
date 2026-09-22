@@ -157,11 +157,30 @@ Core domain entities are unchanged — integer IDs live only in `external_intege
 
 ---
 
-## Deferred (Phase 8.4+)
+## Phase 8.4 implementation (completed)
+
+### Inbound integer ID resolution
+
+Compatibility mutation endpoints resolve inbound external integer IDs through the public `ExternalIntegerIdMappingQueryService` (`provider = compat_v2`, authenticated `tenantId`).
+
+| External field | Resource type | Behavior |
+| -------------- | ------------- | -------- |
+| `OrderId` | `order` | Validated against `MerchantOrderNo`; mismatch → conflict error |
+| `OrderLineId` | `order_line` | Resolved and verified to belong to the requested order |
+| `ReturnId` | `return` | Resolved for receive/acknowledge; validated against `MerchantReturnNo` when both supplied |
+
+Unknown IDs return the existing compatibility not-found/conflict envelope. Compatibility does not import mapping repositories or query mapping tables directly.
+
+**OQ-8-02:** `OrderId` alone is sufficient for persistence lookup; acknowledge still requires `MerchantOrderNo` per the verified contract, with cross-validation when both are supplied.
+
+**Not in scope:** `ShipmentId` and `CancellationId` are not accepted on any current inbound `/api/v2` request schema — no resolution added until a contract surface exists.
+
+---
+
+## Deferred (Phase 8.5+)
 
 | Phase | Scope |
 | ----- | ----- |
-| **8.4** | Inbound integer ID resolution (`OrderId`, `ReturnId`, …); remove remaining documented limitations |
 | **8.5** | Historical backfill for pre-Phase-8.2 resources; full integration verification |
 
 ---

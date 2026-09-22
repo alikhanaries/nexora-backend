@@ -1,5 +1,36 @@
 import { randomBytes } from 'node:crypto';
 import { expect } from 'vitest';
+import {
+    ExternalIdMappingProvider,
+    ExternalIdMappingResourceType,
+} from '../../src/modules/external-id-mapping/public/index.js';
+
+export async function findCompatExternalId(app, tenantId, resourceType, resourceId) {
+    const queryService = app.compatibility.coreContracts.externalIntegerIdMappingQueryService;
+    const externalId = await queryService.findExternalIdByResourceId(
+        tenantId,
+        ExternalIdMappingProvider.COMPAT_V2,
+        resourceType,
+        resourceId,
+    );
+    expect(externalId).not.toBeNull();
+    return externalId;
+}
+
+export async function findReturnExternalIdByMerchantNo(app, tenantId, merchantReturnNo) {
+    const result = await app.infra.database.query(
+        'SELECT id FROM returns WHERE tenant_id = $1 AND external_reference = $2',
+        [tenantId, merchantReturnNo],
+        { operation: 'test.find_return_by_external_reference' },
+    );
+    expect(result.rows).toHaveLength(1);
+    return findCompatExternalId(
+        app,
+        tenantId,
+        ExternalIdMappingResourceType.RETURN,
+        result.rows[0].id,
+    );
+}
 
 export async function seedCommerceFixture(server, headers) {
     const suffix = randomBytes(8).toString('hex');
@@ -108,7 +139,7 @@ export async function setOrderToNew(database, tenantId, orderId) {
     await database.query(`UPDATE orders SET status = 'NEW', confirmed_at = NULL WHERE tenant_id = $1 AND id = $2`, [tenantId, orderId], { operation: 'test.set_order_new' });
 }
 
-export function acknowledgePayload(merchantOrderNo, orderId = 12345) {
+export function acknowledgePayload(merchantOrderNo, orderId) {
     return {
         MerchantOrderNo: merchantOrderNo,
         OrderId: orderId,
@@ -129,7 +160,6 @@ export function shipmentPayload(merchantOrderNo, merchantSku, quantity, merchant
         Lines: [{
             MerchantProductNo: merchantSku,
             Quantity: quantity,
-            OrderLineId: 999001,
         }],
         Method: 'DHL',
         TrackTraceNo: 'TRACK-123',
@@ -150,7 +180,6 @@ export function cancellationPayload(merchantOrderNo, merchantSku, quantity, merc
         Lines: [{
             MerchantProductNo: merchantSku,
             Quantity: quantity,
-            OrderLineId: 999001,
         }],
         Reason: 'Customer request',
     };
@@ -183,7 +212,6 @@ export function returnPayload(merchantOrderNo, merchantSku, quantity, merchantRe
         Lines: [{
             MerchantProductNo: merchantSku,
             Quantity: quantity,
-            OrderLineId: 999001,
         }],
         Reason: 'PRODUCT_DEFECT',
         MerchantComment: 'Customer reported defect',
@@ -197,14 +225,14 @@ export function returnHeaders(baseHeaders, idempotencyKey) {
     };
 }
 
-export function acknowledgeReturnPayload(merchantReturnNo, returnId = 12345) {
+export function acknowledgeReturnPayload(merchantReturnNo, returnId) {
     return {
         MerchantReturnNo: merchantReturnNo,
         ReturnId: returnId,
     };
 }
 
-export function receiveReturnPayload(merchantSku, quantity, acceptedQuantity = quantity, rejectedQuantity = 0, returnId = 12345) {
+export function receiveReturnPayload(merchantSku, quantity, returnId, acceptedQuantity = quantity, rejectedQuantity = 0) {
     return {
         ReturnId: returnId,
         Lines: [{

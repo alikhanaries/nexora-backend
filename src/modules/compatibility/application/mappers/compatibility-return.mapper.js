@@ -39,14 +39,31 @@ function returnEligibleQuantity(orderLine) {
  * Maps external return lines to Nexora order line allocations.
  *
  * `MerchantProductNo` maps to the order line's snapshotted `merchantSku`.
- * External integer `OrderLineId` is accepted for contract compliance but is not used.
+ * When `resolvedOrderLineId` is present, the line is allocated directly to that order line.
  *
- * @param {Array<{ MerchantProductNo: string, Quantity: string|number, OrderLineId?: string|number|null }>} externalLines
+ * @param {Array<{ MerchantProductNo: string, Quantity: string|number, OrderLineId?: string|number|null, resolvedOrderLineId?: string }>} externalLines
  * @param {Array<{ id: string, merchantSku: string, quantity: number, shippedQuantity: number, returnedQuantity: number }>} orderLines
  * @returns {Array<{ orderLineId: string, quantity: number }>}
  */
 export function mapExternalReturnLinesToOrderLines(externalLines, orderLines) {
-    const aggregated = aggregateExternalLines(externalLines);
+    /** @type {Map<string, number>} */
+    const allocations = new Map();
+    const skuLines = [];
+    for (const line of externalLines) {
+        if (line.resolvedOrderLineId !== undefined) {
+            const quantity = parsePositiveInteger(line.Quantity);
+            allocations.set(
+                line.resolvedOrderLineId,
+                (allocations.get(line.resolvedOrderLineId) ?? 0) + quantity,
+            );
+            continue;
+        }
+        skuLines.push(line);
+    }
+    if (skuLines.length === 0) {
+        return [...allocations.entries()].map(([orderLineId, quantity]) => ({ orderLineId, quantity }));
+    }
+    const aggregated = aggregateExternalLines(skuLines);
     /** @type {Map<string, Array<{ id: string, merchantSku: string, quantity: number, shippedQuantity: number, returnedQuantity: number }>>} */
     const linesBySku = new Map();
     for (const line of orderLines) {
@@ -57,8 +74,6 @@ export function mapExternalReturnLinesToOrderLines(externalLines, orderLines) {
         linesBySku.get(sku).push(line);
     }
 
-    /** @type {Map<string, number>} */
-    const allocations = new Map();
     for (const [sku, requestedQuantity] of aggregated) {
         const candidates = linesBySku.get(sku);
         if (candidates === undefined || candidates.length === 0) {
@@ -164,7 +179,10 @@ export function mapExternalReturnAcknowledgeRequest(body) {
     if (merchantReturnNo.length === 0) {
         throw new ValidationError('MerchantReturnNo is required');
     }
-    return { merchantReturnNo };
+    return {
+        merchantReturnNo,
+        externalReturnId: body.ReturnId ?? null,
+    };
 }
 
 /**
@@ -186,17 +204,23 @@ export function mapExternalReturnReceiveRequest(body) {
 }
 
 /**
- * @param {{ merchantReturnNo: string }} mapped
+ * @param {{ merchantReturnNo: string, externalReturnId?: string|number|null }} mapped
  */
 export function fingerprintAcknowledgeReturnCommand(mapped) {
-    return JSON.stringify({ merchantReturnNo: mapped.merchantReturnNo });
+    return JSON.stringify({
+        merchantReturnNo: mapped.merchantReturnNo,
+        externalReturnId: mapped.externalReturnId ?? null,
+    });
 }
 
 /**
- * @param {{ lineDecisions: object[] }} mapped
+ * @param {{ externalReturnId: string|number, lineDecisions: object[] }} mapped
  */
 export function fingerprintProcessReturnReceiveCommand(mapped) {
-    return JSON.stringify({ lineDecisions: mapped.lineDecisions });
+    return JSON.stringify({
+        externalReturnId: mapped.externalReturnId,
+        lineDecisions: mapped.lineDecisions,
+    });
 }
 
 /**

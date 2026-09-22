@@ -2,15 +2,14 @@
  * Maps an external acknowledge request to the Nexora order command input.
  *
  * Order lookup uses `MerchantOrderNo` → Nexora `orderNumber`.
- * External integer `OrderId` is accepted for contract compliance but is not
- * persisted or validated — Nexora does not store external integer order IDs.
+ * External integer `OrderId` is resolved in the compatibility command layer.
  *
  * @param {{ MerchantOrderNo: string, OrderId: string|number }} body
- * @returns {{ orderNumber: string }}
+ * @returns {{ orderNumber: string, externalOrderId: string|number }}
  */
 export function mapExternalAcknowledgeRequest(body) {
     const orderNumber = body.MerchantOrderNo.trim();
-    return { orderNumber };
+    return { orderNumber, externalOrderId: body.OrderId };
 }
 
 /**

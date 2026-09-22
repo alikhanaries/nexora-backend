@@ -1,4 +1,5 @@
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { resolveExternalOrderLines } from './compatibility-external-id-resolution.js';
 import {
     fingerprintShipmentCommand,
     fingerprintUpdateShipmentTrackingCommand,
@@ -19,6 +20,7 @@ export class ShipmentCompatibilityCommand {
      * @param {object} deps
      * @param {import('../../orders/public/order-query-service.js').DefaultOrderQueryService} deps.orderQueryService
      * @param {import('../../shipments/public/shipment-command-service.js').DefaultShipmentCommandService} deps.shipmentCommandService
+     * @param {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} deps.externalIntegerIdMappingQueryService
      */
     constructor(deps) {
         this.deps = deps;
@@ -44,7 +46,13 @@ export class ShipmentCompatibilityCommand {
             });
         }
         const orderLines = await this.deps.orderQueryService.getOrderLines(input.tenantId, order.id);
-        const lines = mapExternalShipmentLinesToOrderLines(mapped.externalLines, orderLines);
+        const resolvedExternalLines = await resolveExternalOrderLines(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            mapped.externalLines,
+            orderLines,
+        );
+        const lines = mapExternalShipmentLinesToOrderLines(resolvedExternalLines, orderLines);
         const commandInput = {
             orderNumber: mapped.orderNumber,
             merchantShipmentNo: mapped.merchantShipmentNo,
