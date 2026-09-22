@@ -30,6 +30,7 @@ export function createShipmentsModule(deps) {
     const createShipment = new CreateShipment({
         ...lifecycleDeps,
         orderFulfillmentService: deps.orderFulfillmentService,
+        externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
     });
     const updateShipmentTracking = new UpdateShipmentTracking(lifecycleDeps);
     const shipmentCommandService = new DefaultShipmentCommandService({

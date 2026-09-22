@@ -8,6 +8,7 @@ import { Order } from '../domain/order.js';
 import { toCustomerSnapshotDto, toOrderDto, toOrderLineDto, } from './order-dto.js';
 import { orderCreatedEvent, orderConfirmedEvent } from './order-events.js';
 import { requireOrdersCreate } from './order-permissions.js';
+import { assignOrderCompatibilityExternalIds } from './assign-order-compatibility-external-ids.js';
 import { resolveOrderLines } from './resolve-order-lines.js';
 const ORDER_REFERENCE_TYPE = 'ORDER';
 export class CreateOrder {
@@ -114,6 +115,13 @@ export class CreateOrder {
                 metadata: customerInput.metadata ?? {},
             });
             await this.deps.orders.insertCustomerSnapshot(tx, snapshot);
+            await assignOrderCompatibilityExternalIds(
+                this.deps.externalIntegerIdMappingCommandService,
+                tx,
+                input.tenantId,
+                order.id,
+                orderLines,
+            );
             const orderDto = toOrderDto(order);
             await this.deps.eventRecorder.record(tx, orderCreatedEvent(orderDto));
             await this.deps.eventRecorder.record(tx, orderConfirmedEvent(orderDto));

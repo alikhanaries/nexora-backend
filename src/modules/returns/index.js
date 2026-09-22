@@ -18,6 +18,7 @@ export function createReturnsModule(deps) {
         orders: deps.orderReturnGateway,
         eventRecorder: deps.eventRecorder,
         idempotency: deps.idempotency,
+        externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
     const createReturn = new CreateReturn(lifecycleDeps);

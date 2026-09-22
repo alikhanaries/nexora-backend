@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../audit/public/index.js';
+import {
+    ExternalIdMappingProvider,
+    ExternalIdMappingResourceType,
+} from '../../external-id-mapping/public/index.js';
 import { AppError, ConflictError, NotFoundError, ValidationError, } from '../../../shared/errors/index.js';
 import { CancellationLine } from '../domain/cancellation-line.js';
 import { Cancellation } from '../domain/cancellation.js';
@@ -106,6 +110,12 @@ export class CreateCancellation {
             }
             const completed = cancellation.complete(now);
             await this.deps.cancellations.updateCancellation(tx, completed);
+            await this.deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
+                tenantId: input.tenantId,
+                provider: ExternalIdMappingProvider.COMPAT_V2,
+                resourceType: ExternalIdMappingResourceType.CANCELLATION,
+                resourceId: cancellationId,
+            });
             const dto = {
                 ...toCancellationDto(completed),
                 lines: persistedLines.map(toCancellationLineDto),

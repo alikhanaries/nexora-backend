@@ -6,6 +6,7 @@ import { CustomerSnapshot } from '../domain/customer-snapshot.js';
 import { OrderLine } from '../domain/order-line.js';
 import { Order } from '../domain/order.js';
 import { OrderStatus } from '../domain/order-status.js';
+import { assignOrderCompatibilityExternalIds } from './assign-order-compatibility-external-ids.js';
 import { isEquivalentChannelFulfilledOrderRequest } from './channel-fulfilled-order-request-equivalence.js';
 import { toCustomerSnapshotDto, toOrderDto, toOrderLineDto, } from './order-dto.js';
 import { orderConfirmedEvent, orderCreatedEvent } from './order-events.js';
@@ -234,6 +235,13 @@ export class CreateChannelFulfilledOrder {
             metadata: customerInput.metadata ?? {},
         });
         await this.deps.orders.insertCustomerSnapshot(tx, snapshot);
+        await assignOrderCompatibilityExternalIds(
+            this.deps.externalIntegerIdMappingCommandService,
+            tx,
+            input.tenantId,
+            order.id,
+            orderLines,
+        );
         const orderDto = toOrderDto(order);
         await this.deps.eventRecorder.record(tx, orderCreatedEvent(orderDto));
         await this.deps.eventRecorder.record(tx, orderConfirmedEvent(orderDto));

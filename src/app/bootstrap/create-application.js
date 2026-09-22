@@ -18,6 +18,7 @@ import { createProductsModule } from '../../modules/products/index.js';
 import { createReturnsModule } from '../../modules/returns/index.js';
 import { createTenantsModule } from '../../modules/tenants/index.js';
 import { createCompatibilityModule } from '../../modules/compatibility/index.js';
+import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
 import { createWebhooksModule } from '../../modules/webhooks/index.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { createHttpServer } from '../http/create-server.js';
@@ -103,6 +104,7 @@ export async function createApplication(infra) {
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
     });
+    const externalIdMapping = createExternalIdMappingModule({ database: infra.database });
     const orders = createOrdersModule({
         database: infra.database,
         productQueryService: products.productQueryService,
@@ -113,6 +115,7 @@ export async function createApplication(infra) {
         eventRecorder: infra.eventRecorder,
         idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
+        externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
     });
     const cancellations = createCancellationsModule({
         database: infra.database,
@@ -122,6 +125,7 @@ export async function createApplication(infra) {
         eventRecorder: infra.eventRecorder,
         idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
+        externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
     });
     const shipments = createShipmentsModule({
         database: infra.database,
@@ -129,6 +133,7 @@ export async function createApplication(infra) {
         eventRecorder: infra.eventRecorder,
         idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
+        externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
     });
     orders.wireChannelFulfilledOrder({
         createShipment: shipments.useCases.createShipment,
@@ -142,6 +147,7 @@ export async function createApplication(infra) {
         eventRecorder: infra.eventRecorder,
         idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
+        externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
     });
     const webhooks = createWebhooksModule({
         database: infra.database,

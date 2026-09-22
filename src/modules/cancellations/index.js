@@ -20,6 +20,7 @@ export function createCancellationsModule(deps) {
         inventoryService: deps.inventoryService,
         eventRecorder: deps.eventRecorder,
         idempotency: deps.idempotency,
+        externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
     const createCancellation = new CreateCancellation(lifecycleDeps);

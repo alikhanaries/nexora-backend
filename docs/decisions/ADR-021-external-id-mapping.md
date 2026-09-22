@@ -91,22 +91,51 @@ No backfill in Phase 8.1. Mappings are allocated only when Phase 8.2 creation fl
 | `findExternalIdByResourceId(...)` | Reverse lookup |
 | `findExternalIdsByResourceIds(...)` | Bounded batch reverse lookup |
 
-Internal use case: `AssignExternalIntegerIdMapping` (Phase 8.2 will expose public ports).
+Internal use case: `AssignExternalIntegerIdMapping` (used by public command service).
 
-Constants: `src/modules/external-id-mapping/domain/external-id-mapping-namespace.js`.
+Constants: exported via `src/modules/external-id-mapping/public/index.js` (domain namespace).
 
 ### OQ-8-02 — OrderId-only acknowledge
 
-Not implemented in 8.1. Persistence supports forward lookup for future Phase 8.3 validation.
+Not implemented in 8.1/8.2. Persistence supports forward lookup for future Phase 8.3 validation.
 
 ---
 
-## Deferred (Phase 8.2+)
+## Phase 8.2 implementation (completed)
+
+### Public contracts
+
+| Service | Methods |
+| ------- | ------- |
+| `ExternalIntegerIdMappingCommandService` | `assignMapping(transaction, { tenantId, provider, resourceType, resourceId })` |
+| `ExternalIntegerIdMappingQueryService` | `findResourceIdByExternalId`, `findExternalIdByResourceId`, `findExternalIdsByResourceIds` |
+
+Repository remains module-internal. Wired via `createExternalIdMappingModule({ database })` in `create-application.js`.
+
+### Creation wiring
+
+External IDs (`provider = compat_v2`) are assigned inside the **same transaction** as resource creation in:
+
+| Resource | Use case |
+| -------- | -------- |
+| `order`, `order_line` | `CreateOrder`, `CreateChannelOrder`, `CreateChannelFulfilledOrder` |
+| `shipment` | `CreateShipment` (including channel-fulfilled nested path) |
+| `cancellation` | `CreateCancellation` |
+| `return` | `CreateReturn` |
+
+Dedup/idempotent replay paths that return an existing resource without insert do not allocate new mappings. Idempotent HTTP replay relies on existing idempotency records — no duplicate mappings.
+
+### OQ-8-05 — ChannelId vs `channels.external_reference`
+
+**Finding:** `channels.external_reference` is the established tenant-scoped **string** channel key for inbound resolution (`X-Channel-Reference` header, `ChannelQueryService.getChannelByExternalReference`). Compatibility responses currently expose `ChannelReference` (string), not an integer `ChannelId`. Integer channel mapping is **not** added in Phase 8.2 — defer to Phase 8.3 if integer `ChannelId` is required in outbound responses.
+
+---
+
+## Deferred (Phase 8.3+)
 
 | Phase | Scope |
 | ----- | ----- |
-| **8.2** | Public `ExternalIntegerIdMappingCommandService` / `QueryService`; wire into resource create use cases |
-| **8.3** | Compatibility response enrichment; inbound `OrderId`/`ReturnId` resolution |
+| **8.3** | Compatibility response enrichment; inbound `OrderId`/`ReturnId` resolution; optional integer `ChannelId` |
 | **8.4** | Remove documented limitations; optional backfill |
 | **8.5** | Full integration verification |
 
