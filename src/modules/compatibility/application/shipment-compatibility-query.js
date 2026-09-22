@@ -1,4 +1,5 @@
 import { loadOrdersWithLines } from './compatibility-order-enrichment.js';
+import { loadShipmentExternalIdMaps } from './compatibility-external-id-enrichment.js';
 import { mapShipmentPageToExternalCollection, } from './mappers/compatibility-shipment.mapper.js';
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -31,6 +32,11 @@ export class ShipmentCompatibilityQuery {
             sortDirection: 'asc',
         });
         const ordersById = await loadOrdersWithLines(this.deps.orderQueryService, input.tenantId, result.items.map((item) => item.orderId));
-        return mapShipmentPageToExternalCollection(result, ordersById);
+        const externalIdMaps = await loadShipmentExternalIdMaps(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            result.items,
+        );
+        return mapShipmentPageToExternalCollection(result, ordersById, externalIdMaps);
     }
 }

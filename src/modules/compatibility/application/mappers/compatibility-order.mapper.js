@@ -31,7 +31,11 @@ function mapExternalAddress(address) {
     };
 }
 
-function mapExternalOrderLine(line) {
+/**
+ * @param {object} line
+ * @param {number|undefined} externalLineId
+ */
+function mapExternalOrderLine(line, externalLineId) {
     const quantity = line.quantity;
     const currency = line.currency;
     const lineTotalDecimal = minorUnitsToDecimal(currency, line.lineTotalMinor);
@@ -40,6 +44,7 @@ function mapExternalOrderLine(line) {
         ? Number((lineTotalDecimal / quantity).toFixed(exponent))
         : minorUnitsToDecimal(currency, line.unitPriceMinor);
     return {
+        ...(externalLineId === undefined ? {} : { Id: externalLineId }),
         ChannelProductNo: line.merchantSku,
         MerchantProductNo: line.merchantSku,
         Quantity: quantity,
@@ -59,11 +64,18 @@ function toDate(value) {
     throw new TypeError('Expected a Date or ISO date string');
 }
 
-export function mapExternalOrder(order, channel) {
+/**
+ * @param {object} order
+ * @param {object|null|undefined} channel
+ * @param {{ orderIds?: Map<string, number>, orderLineIds?: Map<string, number> }} [externalIdMaps]
+ */
+export function mapExternalOrder(order, channel, externalIdMaps) {
     const customer = order.customer;
     const createdAt = toDate(order.createdAt);
     const updatedAt = toDate(order.updatedAt);
+    const orderExternalId = externalIdMaps?.orderIds?.get(order.id);
     return {
+        ...(orderExternalId === undefined ? {} : { Id: orderExternalId }),
         MerchantOrderNo: order.orderNumber,
         ChannelOrderNo: order.externalOrderReference,
         ChannelName: channel?.name ?? null,
@@ -80,7 +92,10 @@ export function mapExternalOrder(order, channel) {
         SubTotalInclVat: minorUnitsToDecimal(order.currency, order.subtotalMinor),
         TotalInclVat: minorUnitsToDecimal(order.currency, order.totalMinor),
         ShippingCostsInclVat: minorUnitsToDecimal(order.currency, order.shippingMinor),
-        Lines: order.lines.map(mapExternalOrderLine),
+        Lines: order.lines.map((line) => mapExternalOrderLine(
+            line,
+            externalIdMaps?.orderLineIds?.get(line.id),
+        )),
     };
 }
 
@@ -88,8 +103,12 @@ export function mapExternalOrder(order, channel) {
  * @param {{ items: object[], totalCount: number, page: number, pageSize: number }} page
  * @param {Map<string, object>} channelsById
  */
-export function mapOrderPageToExternalCollection(page, channelsById) {
-    const content = page.items.map((order) => mapExternalOrder(order, channelsById.get(order.channelId)));
+export function mapOrderPageToExternalCollection(page, channelsById, externalIdMaps) {
+    const content = page.items.map((order) => mapExternalOrder(
+        order,
+        channelsById.get(order.channelId),
+        externalIdMaps,
+    ));
     return {
         Success: true,
         StatusCode: 200,

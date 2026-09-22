@@ -53,7 +53,7 @@ describe('GET /api/v2/orders/new integration', () => {
         expect(body.Content[0].Email).toBe('customer@example.com');
         expect(body.Content[0].CurrencyCode).toBe('USD');
         expect(body.Content[0].Lines?.[0]?.ChannelProductNo).toBeTruthy();
-        expect(body.Content[0].Id).toBeUndefined();
+        expect(body.Content[0].Id).toEqual(expect.any(Number));
         expect(body.Content[0].tenantId).toBeUndefined();
     });
 

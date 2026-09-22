@@ -73,6 +73,7 @@ const externalShipmentLineResponseSchema = z.object({
 });
 
 export const externalShipmentSchema = z.object({
+    Id: externalIntegerSchema.optional(),
     MerchantShipmentNo: z.string().nullable().optional(),
     MerchantOrderNo: z.string().nullable().optional(),
     ChannelOrderNo: z.string().nullable().optional(),

@@ -17,10 +17,12 @@ export function createCompatibilityModule(deps) {
     const orderCompatibilityQuery = new OrderCompatibilityQuery({
         orderQueryService: deps.coreContracts.orderQueryService,
         channelQueryService: deps.coreContracts.channelQueryService,
+        externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const orderCompatibilityCommand = new OrderCompatibilityCommand({
         orderCommandService: deps.coreContracts.orderCommandService,
         channelQueryService: deps.coreContracts.channelQueryService,
+        externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const shipmentCompatibilityCommand = new ShipmentCompatibilityCommand({
         orderQueryService: deps.coreContracts.orderQueryService,
@@ -38,15 +40,18 @@ export function createCompatibilityModule(deps) {
     const shipmentCompatibilityQuery = new ShipmentCompatibilityQuery({
         shipmentQueryService: deps.coreContracts.shipmentQueryService,
         orderQueryService: deps.coreContracts.orderQueryService,
+        externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const cancellationCompatibilityQuery = new CancellationCompatibilityQuery({
         cancellationQueryService: deps.coreContracts.cancellationQueryService,
         orderQueryService: deps.coreContracts.orderQueryService,
+        externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const returnCompatibilityQuery = new ReturnCompatibilityQuery({
         returnQueryService: deps.coreContracts.returnQueryService,
         orderQueryService: deps.coreContracts.orderQueryService,
         channelQueryService: deps.coreContracts.channelQueryService,
+        externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     return {
         routes: compatibilityRoutes,

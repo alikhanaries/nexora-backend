@@ -329,8 +329,13 @@ function mapExternalReturnLine(line, orderLine) {
  * @param {Map<string, object>} orderLinesById
  * @param {object|undefined} channel
  */
-export function mapExternalReturn(returnEntity, order, orderLinesById, channel) {
+/**
+ * @param {{ returnIds?: Map<string, number> }} [externalIdMaps]
+ */
+export function mapExternalReturn(returnEntity, order, orderLinesById, channel, externalIdMaps) {
+    const returnExternalId = externalIdMaps?.returnIds?.get(returnEntity.id);
     return {
+        ...(returnExternalId === undefined ? {} : { Id: returnExternalId }),
         MerchantOrderNo: order?.orderNumber ?? null,
         ChannelOrderNo: order?.externalOrderReference ?? null,
         ChannelName: channel?.name ?? null,
@@ -348,8 +353,10 @@ export function mapExternalReturn(returnEntity, order, orderLinesById, channel) 
  * @param {object|undefined} order
  * @param {Map<string, object>} orderLinesById
  */
-export function mapExternalSingleOrderReturn(returnEntity, order, orderLinesById) {
+export function mapExternalSingleOrderReturn(returnEntity, order, orderLinesById, externalIdMaps) {
+    const returnExternalId = externalIdMaps?.returnIds?.get(returnEntity.id);
     return {
+        ...(returnExternalId === undefined ? {} : { Id: returnExternalId }),
         MerchantOrderNo: order?.orderNumber ?? null,
         Lines: returnEntity.lines.map((line) => mapExternalReturnLine(line, orderLinesById.get(line.orderLineId))),
         CreatedAt: returnEntity.createdAt.toISOString(),
@@ -364,12 +371,12 @@ export function mapExternalSingleOrderReturn(returnEntity, order, orderLinesById
  * @param {Map<string, object>} ordersById
  * @param {Map<string, object>} channelsById
  */
-export function mapReturnPageToExternalCollection(page, ordersById, channelsById) {
+export function mapReturnPageToExternalCollection(page, ordersById, channelsById, externalIdMaps) {
     const content = page.items.map((returnEntity) => {
         const order = ordersById.get(returnEntity.orderId);
         const orderLinesById = new Map((order?.lines ?? []).map((line) => [line.id, line]));
         const channel = order === undefined ? undefined : channelsById.get(order.channelId);
-        return mapExternalReturn(returnEntity, order, orderLinesById, channel);
+        return mapExternalReturn(returnEntity, order, orderLinesById, channel, externalIdMaps);
     });
     return {
         Success: true,
@@ -385,11 +392,11 @@ export function mapReturnPageToExternalCollection(page, ordersById, channelsById
  * @param {object[]} items
  * @param {Map<string, object>} ordersById
  */
-export function mapSingleOrderReturnCollection(items, ordersById) {
+export function mapSingleOrderReturnCollection(items, ordersById, externalIdMaps) {
     const content = items.map((returnEntity) => {
         const order = ordersById.get(returnEntity.orderId);
         const orderLinesById = new Map((order?.lines ?? []).map((line) => [line.id, line]));
-        return mapExternalSingleOrderReturn(returnEntity, order, orderLinesById);
+        return mapExternalSingleOrderReturn(returnEntity, order, orderLinesById, externalIdMaps);
     });
     return {
         Success: true,

@@ -1,5 +1,6 @@
 import { NotFoundError } from '../../../shared/errors/index.js';
 import { loadOrdersWithLines } from './compatibility-order-enrichment.js';
+import { loadReturnExternalIdMaps } from './compatibility-external-id-enrichment.js';
 import {
     mapEmptyReturnPageToExternalCollection,
     mapExternalReturnStatusesToNexoraStatuses,
@@ -40,7 +41,12 @@ export class ReturnCompatibilityQuery {
             pageSize: 100,
         });
         const ordersById = await loadOrdersWithLines(this.deps.orderQueryService, input.tenantId, [order.id]);
-        return mapSingleOrderReturnCollection(result.items, ordersById);
+        const externalIdMaps = await loadReturnExternalIdMaps(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            result.items,
+        );
+        return mapSingleOrderReturnCollection(result.items, ordersById, externalIdMaps);
     }
     async listReturns(input) {
         const pageSize = input.pageSize ?? DEFAULT_PAGE_SIZE;
@@ -72,6 +78,11 @@ export class ReturnCompatibilityQuery {
             const channel = await this.deps.channelQueryService.getChannelById(input.tenantId, channelId);
             channelsById.set(channelId, channel);
         }));
-        return mapReturnPageToExternalCollection(result, ordersById, channelsById);
+        const externalIdMaps = await loadReturnExternalIdMaps(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            result.items,
+        );
+        return mapReturnPageToExternalCollection(result, ordersById, channelsById, externalIdMaps);
     }
 }

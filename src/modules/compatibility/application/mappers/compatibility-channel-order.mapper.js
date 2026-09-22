@@ -141,11 +141,11 @@ export function mapExternalChannelOrderRequest(body, context) {
 /**
  * @param {{ order: object, channel?: object|null }} result
  */
-export function mapChannelOrderResultToExternalResponse(result) {
+export function mapChannelOrderResultToExternalResponse(result, externalIdMaps) {
     return {
         Success: true,
         StatusCode: 201,
-        Content: mapExternalOrder(result.order, result.channel ?? null),
+        Content: mapExternalOrder(result.order, result.channel ?? null, externalIdMaps),
     };
 }
 
@@ -177,11 +177,11 @@ export function mapExternalChannelFulfilledOrderRequest(body, context) {
 /**
  * @param {{ order: object, shipment?: object|null, channel?: object|null }} result
  */
-export function mapChannelFulfilledOrderResultToExternalResponse(result) {
+export function mapChannelFulfilledOrderResultToExternalResponse(result, externalIdMaps) {
     return mapChannelOrderResultToExternalResponse({
         order: result.order,
         channel: result.channel ?? null,
-    });
+    }, externalIdMaps);
 }
 
 /**

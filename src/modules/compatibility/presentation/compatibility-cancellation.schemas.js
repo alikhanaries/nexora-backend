@@ -43,7 +43,13 @@ const externalCancellationLineResponseSchema = z.object({
     Quantity: z.number().int(),
 });
 
+const externalIntegerSchema = z.union([
+    z.string().regex(/^-?(?:0|[1-9]\d*)$/),
+    z.number().int(),
+]);
+
 export const externalCancellationSchema = z.object({
+    Id: externalIntegerSchema.optional(),
     MerchantCancellationNo: z.string().nullable().optional(),
     MerchantOrderNo: z.string().nullable().optional(),
     ChannelOrderNo: z.string().nullable().optional(),

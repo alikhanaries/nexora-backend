@@ -2,10 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
 import {
     fingerprintCancellationCommand,
+    mapExternalCancellation,
     mapExternalCancellationLinesToOrderLines,
     mapExternalCancellationRequest,
     mapCancellationResultToExternalResponse,
 } from '../../../src/modules/compatibility/application/mappers/compatibility-cancellation.mapper.js';
+
+const createdAt = new Date('2026-01-15T10:00:00.000Z');
+
+function buildCancellation(overrides = {}) {
+    return {
+        id: '11111111-1111-4111-8111-111111111111',
+        externalReference: 'CAN-001',
+        orderId: '22222222-2222-4222-8222-222222222222',
+        reason: 'Out of stock',
+        createdAt,
+        lines: [{
+            orderLineId: '33333333-3333-4333-8333-333333333333',
+            quantity: 1,
+        }],
+        ...overrides,
+    };
+}
 
 describe('compatibility cancellation mapper', () => {
     it('maps MerchantOrderNo and reason fields', () => {
@@ -81,6 +99,32 @@ describe('compatibility cancellation mapper', () => {
             StatusCode: 201,
             Message: null,
         });
+    });
+
+    it('populates external cancellation ID when mapping is provided', () => {
+        const order = {
+            orderNumber: 'ORD-001',
+            externalOrderReference: 'channel-001',
+            lines: [{ id: '33333333-3333-4333-8333-333333333333', merchantSku: 'SKU-001' }],
+        };
+        const orderLinesById = new Map(order.lines.map((line) => [line.id, line]));
+        const mapped = mapExternalCancellation(buildCancellation(), order, orderLinesById, {
+            cancellationIds: new Map([['11111111-1111-4111-8111-111111111111', 15]]),
+        });
+        expect(mapped.Id).toBe(15);
+    });
+
+    it('omits external cancellation ID when mapping is missing', () => {
+        const order = {
+            orderNumber: 'ORD-001',
+            externalOrderReference: 'channel-001',
+            lines: [{ id: '33333333-3333-4333-8333-333333333333', merchantSku: 'SKU-001' }],
+        };
+        const orderLinesById = new Map(order.lines.map((line) => [line.id, line]));
+        const mapped = mapExternalCancellation(buildCancellation(), order, orderLinesById, {
+            cancellationIds: new Map(),
+        });
+        expect(mapped.Id).toBeUndefined();
     });
 
     it('fingerprints mapped cancellation command input', () => {

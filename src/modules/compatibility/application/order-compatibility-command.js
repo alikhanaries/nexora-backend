@@ -4,6 +4,7 @@ import {
     mapAcknowledgeResultToExternalResponse,
     mapExternalAcknowledgeRequest,
 } from './mappers/compatibility-acknowledge.mapper.js';
+import { loadOrderExternalIdMaps } from './compatibility-external-id-enrichment.js';
 import {
     fingerprintChannelFulfilledOrderCommand,
     fingerprintChannelOrderCommand,
@@ -25,6 +26,7 @@ export class OrderCompatibilityCommand {
      * @param {object} deps
      * @param {import('../../orders/public/order-command-service.js').DefaultOrderCommandService} deps.orderCommandService
      * @param {import('../../channels/public/channel-query-service.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} deps.externalIntegerIdMappingQueryService
      */
     constructor(deps) {
         this.deps = deps;
@@ -65,7 +67,12 @@ export class OrderCompatibilityCommand {
             requestFingerprint: fingerprintChannelOrderCommand(mapped),
             routeId: CREATE_CHANNEL_ORDER_ROUTE_ID,
         });
-        return mapChannelOrderResultToExternalResponse({ order, channel });
+        const externalIdMaps = await loadOrderExternalIdMaps(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            [order],
+        );
+        return mapChannelOrderResultToExternalResponse({ order, channel }, externalIdMaps);
     }
 
     /**
@@ -104,7 +111,12 @@ export class OrderCompatibilityCommand {
             requestFingerprint: fingerprintChannelFulfilledOrderCommand(mapped),
             routeId: CREATE_CHANNEL_FULFILLED_ORDER_ROUTE_ID,
         });
-        return mapChannelFulfilledOrderResultToExternalResponse({ ...result, channel });
+        const externalIdMaps = await loadOrderExternalIdMaps(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            [result.order],
+        );
+        return mapChannelFulfilledOrderResultToExternalResponse({ ...result, channel }, externalIdMaps);
     }
 
     /**

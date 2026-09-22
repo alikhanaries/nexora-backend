@@ -127,17 +127,42 @@ Dedup/idempotent replay paths that return an existing resource without insert do
 
 ### OQ-8-05 — ChannelId vs `channels.external_reference`
 
-**Finding:** `channels.external_reference` is the established tenant-scoped **string** channel key for inbound resolution (`X-Channel-Reference` header, `ChannelQueryService.getChannelByExternalReference`). Compatibility responses currently expose `ChannelReference` (string), not an integer `ChannelId`. Integer channel mapping is **not** added in Phase 8.2 — defer to Phase 8.3 if integer `ChannelId` is required in outbound responses.
+**Finding:** `channels.external_reference` is the established tenant-scoped **string** channel key for inbound resolution (`X-Channel-Reference` header, `ChannelQueryService.getChannelByExternalReference`). Compatibility responses expose `ChannelReference` (string), not an integer `ChannelId`.
 
 ---
 
-## Deferred (Phase 8.3+)
+## Phase 8.3 implementation (completed)
+
+### Outbound response enrichment
+
+Compatibility read responses resolve external integer IDs through the public `ExternalIntegerIdMappingQueryService` (`provider = compat_v2`). Compatibility does **not** import repository implementations or execute mapping SQL directly.
+
+| Resource | Response field | Lookup |
+| -------- | -------------- | ------ |
+| `order` | `Id` | `resourceType = order`, `resourceId = order.id` |
+| `order_line` | `Lines[].Id` | `resourceType = order_line`, `resourceId = line.id` |
+| `shipment` | `Id` | `resourceType = shipment`, `resourceId = shipment.id` |
+| `cancellation` | `Id` | `resourceType = cancellation`, `resourceId = cancellation.id` |
+| `return` | `Id` | `resourceType = return`, `resourceId = return.id` |
+
+**Endpoints enriched:** `GET /api/v2/orders`, `GET /api/v2/orders/new`, `GET /api/v2/shipments/merchant`, `GET /api/v2/cancellations/merchant`, `GET /api/v2/returns/merchant`, `GET /api/v2/returns/merchant/new`, `GET /api/v2/returns/merchant/:merchantOrderNo`, and channel order create responses (`POST /api/v2/orders`, `POST /api/v2/orders/channel-fulfilled`).
+
+**Batch lookups:** List endpoints collect UUIDs for the current page and call `findExternalIdsByResourceIds` once per resource type (no N+1 per entity).
+
+**Missing mappings:** When no mapping row exists (e.g. resources created before Phase 8.2), the integer field is **omitted** from the JSON response. No fabricated IDs; no HTTP 500.
+
+**ChannelId (OQ-8-05):** Verified outbound contracts use `ChannelReference` (string). Integer `ChannelId` is **not** implemented — no channel resource type in the mapping table. Remains a documented gap if a future contract revision requires it.
+
+Core domain entities are unchanged — integer IDs live only in `external_integer_id_mappings`.
+
+---
+
+## Deferred (Phase 8.4+)
 
 | Phase | Scope |
 | ----- | ----- |
-| **8.3** | Compatibility response enrichment; inbound `OrderId`/`ReturnId` resolution; optional integer `ChannelId` |
-| **8.4** | Remove documented limitations; optional backfill |
-| **8.5** | Full integration verification |
+| **8.4** | Inbound integer ID resolution (`OrderId`, `ReturnId`, …); remove remaining documented limitations |
+| **8.5** | Historical backfill for pre-Phase-8.2 resources; full integration verification |
 
 ---
 

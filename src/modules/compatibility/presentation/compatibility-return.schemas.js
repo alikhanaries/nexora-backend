@@ -99,6 +99,7 @@ const externalReturnLineResponseSchema = z.object({
 });
 
 export const externalReturnSchema = z.object({
+    Id: externalIntegerSchema.optional(),
     MerchantOrderNo: z.string().nullable().optional(),
     ChannelOrderNo: z.string().nullable().optional(),
     ChannelName: z.string().nullable().optional(),
@@ -111,6 +112,7 @@ export const externalReturnSchema = z.object({
 });
 
 export const externalSingleOrderReturnSchema = z.object({
+    Id: externalIntegerSchema.optional(),
     MerchantOrderNo: z.string().nullable().optional(),
     Lines: z.array(externalReturnLineResponseSchema).nullable().optional(),
     CreatedAt: z.string(),

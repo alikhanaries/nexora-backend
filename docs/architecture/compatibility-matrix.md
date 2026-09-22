@@ -77,7 +77,7 @@ Only documented gaps — no speculative contracts.
 | Identifiers | External integer `Id` vs Nexora UUID — mapper required |
 | Money | External decimal incl. VAT vs Nexora minor units — converted via `shared/money.minorUnitsToDecimal` (ISO 4217 exponents; default 2). **VAT-inclusive labelling** may exceed Nexora tax fields — see audit notes |
 | NEW order semantics | Native `/api/v1/orders` creates `CONFIRMED`; endpoint returns only Nexora `NEW` — see audit notes |
-| Integer IDs | External `Id` / `ChannelId` omitted — no persistent external identifier model |
+| Integer IDs | External `Id` populated from `external_integer_id_mappings` when a mapping exists; omitted when missing. Integer `ChannelId` not exposed — use `ChannelReference` (string) |
 | ChannelProductNo | Only `merchantSku` on order lines; channel-specific SKU not stored separately |
 | Product references | External `MerchantProductNo` / `ChannelProductNo` vs Nexora UUID `productId` — lookup via ProductQueryService |
 | `GET /v2/orders/new` data shape | Merchant response includes lines, customer, addresses, channel metadata — OrderQueryService must expose enough data or list contract must return detail DTOs |
@@ -90,7 +90,7 @@ Only documented gaps — no speculative contracts.
 
 **Money:** Amounts convert from Nexora integer minor units using ISO 4217 exponents (`shared/money/minorUnitsToDecimal`). Fields labelled `*InclVat` in the external contract are populated from Nexora totals that may not include line-level VAT breakdown — treat as a representation gap until tax modelling matures.
 
-**Identifiers:** External integer `Id`, `ChannelId`, and line `Id` are omitted. The external schema does not require order `Id` (only `Email`, `CurrencyCode`, `OrderDate`). Acknowledge flows needing integer IDs remain blocked until a persistent external-identifier strategy is decided.
+**Identifiers:** External integer `Id` and line `Id` are populated from `external_integer_id_mappings` (`provider = compat_v2`) when mappings exist; omitted for historical resources without mappings. Integer `ChannelId` is not exposed — `ChannelReference` (string) is used. Inbound integer ID resolution (e.g. acknowledge by `OrderId`) remains Phase 8.4.
 
 **Product identifiers:** Both `MerchantProductNo` and `ChannelProductNo` map to the order line's snapshotted `merchantSku`. Nexora does not store a separate channel-specific SKU on the line; `product.externalReference` and `offer.externalReference` exist but are not channel-listing SKUs.
 
@@ -401,7 +401,7 @@ When `configurationReference` is missing or not a UUID, ingest returns `422`. No
 
 **Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
 
-**Response:** `{ Success: true, StatusCode: 201, Content: <mapped order summary> }` with external status `NEW`, `MerchantOrderNo`, and `ChannelOrderNo`. Integer `Id` / `ChannelId` omitted per identifier policy.
+**Response:** `{ Success: true, StatusCode: 201, Content: <mapped order summary> }` with external status `NEW`, `MerchantOrderNo`, `ChannelOrderNo`, and integer `Id` when mapping exists. Integer `ChannelId` not exposed — `ChannelReference` (string) only.
 
 ## `POST /api/v2/orders/channel-fulfilled` — implemented notes (2026-09-22)
 
@@ -486,7 +486,7 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 | `ChannelShipmentNos`, `ChannelId` | No channel shipment integer IDs |
 | `ChannelExportStatus`, `ChannelExportAttempts` | No export pipeline state |
 
-**Response mapping:** `MerchantShipmentNo` ← `externalReference`; lines map `MerchantProductNo` from order line `merchantSku`. Integer `Id`, `ChannelId`, `ChannelExportStatus`, and line integer IDs are **omitted** (not required by response schema).
+**Response mapping:** `MerchantShipmentNo` ← `externalReference`; lines map `MerchantProductNo` from order line `merchantSku`. Integer `Id` populated when mapping exists. `ChannelId`, `ChannelExportStatus`, and line integer IDs remain omitted.
 
 **Tenant isolation:** All queries scoped by authenticated `tenantId`.
 

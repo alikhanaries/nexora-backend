@@ -1,3 +1,4 @@
+import { loadOrderExternalIdMaps } from './compatibility-external-id-enrichment.js';
 import { mapEmptyOrderPageToExternalCollection, mapExternalStatusesToNexoraStatuses, mapNewOrderStatusFilter, mapOrderPageToExternalCollection, } from './mappers/compatibility-order.mapper.js';
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -63,6 +64,11 @@ export class OrderCompatibilityQuery {
             const channel = await this.deps.channelQueryService.getChannelById(input.tenantId, channelId);
             channelsById.set(channelId, channel);
         }));
-        return mapOrderPageToExternalCollection(result, channelsById);
+        const externalIdMaps = await loadOrderExternalIdMaps(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            result.items,
+        );
+        return mapOrderPageToExternalCollection(result, channelsById, externalIdMaps);
     }
 }

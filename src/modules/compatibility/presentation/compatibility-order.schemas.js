@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const externalIntegerSchema = z.union([
+    z.string().regex(/^-?(?:0|[1-9]\d*)$/),
+    z.number().int(),
+]);
+
 const externalAddressSchema = z.object({
     Line1: z.string().nullable().optional(),
     Line2: z.string().nullable().optional(),
@@ -10,6 +15,7 @@ const externalAddressSchema = z.object({
 });
 
 const externalOrderLineSchema = z.object({
+    Id: externalIntegerSchema.optional(),
     ChannelProductNo: z.string(),
     MerchantProductNo: z.string().optional(),
     Quantity: z.number().int(),
@@ -19,6 +25,7 @@ const externalOrderLineSchema = z.object({
 });
 
 export const externalOrderSchema = z.object({
+    Id: externalIntegerSchema.optional(),
     MerchantOrderNo: z.string(),
     ChannelOrderNo: z.string().nullable().optional(),
     ChannelName: z.string().nullable().optional(),

@@ -1,4 +1,5 @@
 import { loadOrdersWithLines } from './compatibility-order-enrichment.js';
+import { loadCancellationExternalIdMaps } from './compatibility-external-id-enrichment.js';
 import { mapCancellationPageToExternalCollection, } from './mappers/compatibility-cancellation.mapper.js';
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -28,6 +29,11 @@ export class CancellationCompatibilityQuery {
             sortDirection: 'asc',
         });
         const ordersById = await loadOrdersWithLines(this.deps.orderQueryService, input.tenantId, result.items.map((item) => item.orderId));
-        return mapCancellationPageToExternalCollection(result, ordersById);
+        const externalIdMaps = await loadCancellationExternalIdMaps(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            result.items,
+        );
+        return mapCancellationPageToExternalCollection(result, ordersById, externalIdMaps);
     }
 }

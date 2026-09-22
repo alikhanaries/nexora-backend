@@ -50,10 +50,10 @@ Unresolved design items tracked across phases. Move to an ADR when decided.
 | ID       | Question | Resolution |
 | -------- | -------- | ---------- |
 | OQ-8-01  | Integer allocation algorithm? | **Resolved** — PostgreSQL counter table with atomic upsert per `(tenant_id, provider, resource_type)` ([ADR-021](../decisions/ADR-021-external-id-mapping.md), migration `0042`) |
-| OQ-8-02  | Is `OrderId` alone sufficient for acknowledge lookup? | **Open** — persistence supports lookup; Phase 8.3 |
+| OQ-8-02  | Is `OrderId` alone sufficient for acknowledge lookup? | **Open** — persistence supports lookup; inbound resolution deferred to Phase 8.4 |
 | OQ-8-03  | Retain mapping rows after resource deletion? | **Resolved** — insert-only, no cascade delete ([ADR-021](../decisions/ADR-021-external-id-mapping.md)) |
 | OQ-8-04  | Are compatibility integer IDs channel-scoped within a tenant? | **Resolved** — tenant-scoped per provider/resource type; channel column deferred ([ADR-021](../decisions/ADR-021-external-id-mapping.md)) |
-| OQ-8-05  | `ChannelId` — mapping table vs `channels.external_reference`? | **Partially resolved** — inbound uses `channels.external_reference` (string); integer `ChannelId` outbound deferred to Phase 8.3 ([ADR-021](../decisions/ADR-021-external-id-mapping.md)) |
+| OQ-8-05  | `ChannelId` — mapping table vs `channels.external_reference`? | **Resolved for Phase 8.3** — inbound and outbound use `channels.external_reference` via `ChannelReference` (string); integer `ChannelId` not implemented ([ADR-021](../decisions/ADR-021-external-id-mapping.md)) |
 | OQ-8-06  | Backfill mappings for entities created before Phase 8? | **Open** — product decision before 8.4 |
 | OQ-8-07  | Shared vs separate integer ID space for Merchant vs Channel API? | **Resolved** — shared `provider = compat_v2` ([ADR-021](../decisions/ADR-021-external-id-mapping.md)) |
 

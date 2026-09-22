@@ -121,4 +121,34 @@ describe('compatibility order mapper', () => {
         expect(result.Content[0].tenantId).toBeUndefined();
         expect(result.Content[0].Lines[0].Id).toBeUndefined();
     });
+    it('populates external order and line IDs when mappings are provided', () => {
+        const page = {
+            items: [buildOrder()],
+            totalCount: 1,
+            page: 1,
+            pageSize: 50,
+        };
+        const externalIdMaps = {
+            orderIds: new Map([['11111111-1111-4111-8111-111111111111', 42]]),
+            orderLineIds: new Map([['44444444-4444-4444-8444-444444444444', 7]]),
+        };
+        const result = mapOrderPageToExternalCollection(page, new Map(), externalIdMaps);
+        expect(result.Content[0].Id).toBe(42);
+        expect(result.Content[0].Lines[0].Id).toBe(7);
+    });
+    it('omits external IDs when mappings are missing', () => {
+        const page = {
+            items: [buildOrder()],
+            totalCount: 1,
+            page: 1,
+            pageSize: 50,
+        };
+        const externalIdMaps = {
+            orderIds: new Map(),
+            orderLineIds: new Map(),
+        };
+        const result = mapOrderPageToExternalCollection(page, new Map(), externalIdMaps);
+        expect(result.Content[0].Id).toBeUndefined();
+        expect(result.Content[0].Lines[0].Id).toBeUndefined();
+    });
 });
