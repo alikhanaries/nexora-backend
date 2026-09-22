@@ -50,12 +50,12 @@ export class PostgresOutboxRepository {
         // business transaction and a round trip per event is wasted latency.
         const values = [];
         const placeholders = events.map((event, index) => {
-            const base = index * 8;
-            values.push(event.id ?? randomUUID(), event.type, event.version, event.aggregateType, event.aggregateId, event.tenantId ?? null, JSON.stringify(event.payload), event.occurredAt ?? new Date());
-            return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}::jsonb, $${base + 8})`;
+            const base = index * 9;
+            values.push(event.id ?? randomUUID(), event.type, event.version, event.aggregateType, event.aggregateId, event.tenantId ?? null, JSON.stringify(event.payload), event.correlationId ?? null, event.occurredAt ?? new Date());
+            return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}::jsonb, $${base + 8}, $${base + 9})`;
         });
         await transaction.query(`INSERT INTO outbox_events
-         (id, event_type, event_version, aggregate_type, aggregate_id, tenant_id, payload, occurred_at)
+         (id, event_type, event_version, aggregate_type, aggregate_id, tenant_id, payload, correlation_id, occurred_at)
        VALUES ${placeholders.join(', ')}`, values, { operation: 'outbox.record' });
     }
     /**

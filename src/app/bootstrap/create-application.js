@@ -18,6 +18,7 @@ import { createProductsModule } from '../../modules/products/index.js';
 import { createReturnsModule } from '../../modules/returns/index.js';
 import { createTenantsModule } from '../../modules/tenants/index.js';
 import { createCompatibilityModule } from '../../modules/compatibility/index.js';
+import { createWebhooksModule } from '../../modules/webhooks/index.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { createHttpServer } from '../http/create-server.js';
 import { createDefaultProbes, ReadinessService } from '../observability/readiness.js';
@@ -137,6 +138,11 @@ export async function createApplication(infra) {
         idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
     });
+    const webhooks = createWebhooksModule({
+        database: infra.database,
+        secretEncryptor: identity.auth.secretEncryptor,
+        auditRecorder: audit.auditRecorder,
+    });
     const compatibility = createCompatibilityModule({
         rateLimiter: infra.rateLimiter,
         coreContracts: {
@@ -199,6 +205,7 @@ export async function createApplication(infra) {
         shipments,
         returns,
         compatibility,
+        webhooks,
         readiness,
         httpServer,
     };
