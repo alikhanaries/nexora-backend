@@ -1,6 +1,7 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
 import { AcknowledgeOrder } from './application/acknowledge-order.js';
 import { ConfirmOrder } from './application/confirm-order.js';
+import { CreateChannelOrder } from './application/create-channel-order.js';
 import { CreateOrder } from './application/create-order.js';
 import { GetOrder } from './application/get-order.js';
 import { ListOrders } from './application/list-orders.js';
@@ -30,14 +31,16 @@ export function createOrdersModule(deps) {
         eventRecorder: deps.eventRecorder,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
-    const createOrder = new CreateOrder({
+    const orderCreationDeps = {
         ...sharedDeps,
         productQueryService: deps.productQueryService,
         channelQueryService: deps.channelQueryService,
         offerQueryService: deps.offerQueryService,
         pricingService: deps.pricingService,
         inventoryService: deps.inventoryService,
-    });
+    };
+    const createOrder = new CreateOrder(orderCreationDeps);
+    const createChannelOrder = new CreateChannelOrder(orderCreationDeps);
     const confirmOrder = new ConfirmOrder(sharedDeps);
     const acknowledgeOrder = new AcknowledgeOrder({
         ...sharedDeps,
@@ -45,6 +48,7 @@ export function createOrdersModule(deps) {
     });
     const orderCommandService = new DefaultOrderCommandService({
         createOrder,
+        createChannelOrder,
         acknowledgeOrder,
         idempotency: deps.idempotency,
     });
@@ -70,6 +74,7 @@ export function createOrdersModule(deps) {
         orderQueryService,
         orderReturnGateway,
         createOrder,
+        createChannelOrder,
         useCases,
         routes: orderRoutes,
     };

@@ -37,6 +37,18 @@ export class PostgresChannelRepository {
             return null;
         return toChannel(parseOrThrow(channelRowSchema, row, 'channels row'));
     }
+    async findByExternalReference(queryable, tenantId, externalReference) {
+        const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
+              configuration_reference, created_at, updated_at
+       FROM channels
+       WHERE tenant_id = $1 AND external_reference = $2
+       ORDER BY created_at ASC
+       LIMIT 1`, [tenantId, externalReference], { operation: 'channels.find_by_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toChannel(parseOrThrow(channelRowSchema, row, 'channels row'));
+    }
     async list(queryable, tenantId, filters) {
         const conditions = ['tenant_id = $1'];
         const parameters = [tenantId];

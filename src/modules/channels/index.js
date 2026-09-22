@@ -15,6 +15,7 @@ export function createChannelsModule(deps) {
     const channelQueryService = new DefaultChannelQueryService({
         queryable: deps.database,
         getChannelById: (tenantId, channelId, queryable) => repository.findById(queryable, tenantId, channelId),
+        getChannelByExternalReference: (tenantId, externalReference, queryable) => repository.findByExternalReference(queryable, tenantId, externalReference),
         listChannels: (tenantId, filters, queryable) => repository.list(queryable, tenantId, filters),
     });
     const useCases = {

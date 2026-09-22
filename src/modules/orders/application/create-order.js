@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../audit/public/index.js';
-import { BusinessRuleError, NotFoundError, ValidationError, } from '../../../shared/errors/index.js';
+import { BusinessRuleError, ValidationError, } from '../../../shared/errors/index.js';
 import { parseCurrency } from '../../../shared/money/index.js';
 import { CustomerSnapshot } from '../domain/customer-snapshot.js';
 import { OrderLine } from '../domain/order-line.js';
@@ -8,6 +8,7 @@ import { Order } from '../domain/order.js';
 import { toCustomerSnapshotDto, toOrderDto, toOrderLineDto, } from './order-dto.js';
 import { orderCreatedEvent, orderConfirmedEvent } from './order-events.js';
 import { requireOrdersCreate } from './order-permissions.js';
+import { resolveOrderLines } from './resolve-order-lines.js';
 const ORDER_REFERENCE_TYPE = 'ORDER';
 export class CreateOrder {
     deps;
@@ -34,55 +35,12 @@ export class CreateOrder {
         }
         await this.deps.channelQueryService.verifyChannelUsable(input.tenantId, input.channelId);
         const orderId = randomUUID();
-        const resolvedLines = [];
-        for (const line of input.lines) {
-            if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
-                throw new ValidationError('Line quantity must be a positive integer');
-            }
-            const product = await this.deps.productQueryService.getProductById(input.tenantId, line.productId);
-            if (product === null) {
-                throw new NotFoundError('Product was not found', {
-                    tenantId: input.tenantId,
-                    productId: line.productId,
-                });
-            }
-            if (product.status !== 'ACTIVE') {
-                throw new BusinessRuleError('Product is not active', { productId: line.productId });
-            }
-            let offerId = line.offerId ?? null;
-            if (offerId !== null) {
-                await this.deps.offerQueryService.verifyOfferUsable(input.tenantId, offerId);
-            }
-            else {
-                const offer = await this.deps.offerQueryService.getOfferForProductAndChannel(input.tenantId, line.productId, input.channelId);
-                if (offer !== null) {
-                    if (offer.status !== 'ACTIVE') {
-                        throw new BusinessRuleError('Offer is not usable for this product and channel', {
-                            productId: line.productId,
-                            channelId: input.channelId,
-                        });
-                    }
-                    offerId = offer.id;
-                }
-            }
-            const price = await this.deps.pricingService.getEffectivePrice(input.tenantId, line.productId, input.channelId, currency);
-            if (price === null) {
-                throw new NotFoundError('No effective price found for product and channel', {
-                    productId: line.productId,
-                    channelId: input.channelId,
-                    currency,
-                });
-            }
-            const lineTotalMinor = price.amountMinor * line.quantity;
-            resolvedLines.push({
-                input: line,
-                merchantSku: product.merchantSku,
-                productTypeSnapshot: product.productType,
-                unitPriceMinor: price.amountMinor,
-                lineTotalMinor,
-                offerId,
-            });
-        }
+        const resolvedLines = await resolveOrderLines(this.deps, {
+            tenantId: input.tenantId,
+            channelId: input.channelId,
+            currency,
+            lines: input.lines,
+        });
         const subtotalMinor = resolvedLines.reduce((sum, line) => sum + line.lineTotalMinor, 0);
         const totalMinor = subtotalMinor - discountMinor + taxMinor + shippingMinor;
         if (totalMinor < 0) {
@@ -96,7 +54,7 @@ export class CreateOrder {
                 await this.deps.inventoryService.reserve({
                     tenantId: input.tenantId,
                     stockLocationId: line.input.stockLocationId,
-                    productId: line.input.productId,
+                    productId: line.productId,
                     quantity: line.input.quantity,
                     referenceType: ORDER_REFERENCE_TYPE,
                     referenceId: orderId,
@@ -125,7 +83,7 @@ export class CreateOrder {
                     id: randomUUID(),
                     tenantId: input.tenantId,
                     orderId,
-                    productId: line.input.productId,
+                    productId: line.productId,
                     offerId: line.offerId,
                     stockLocationId: line.input.stockLocationId,
                     merchantSku: line.merchantSku,

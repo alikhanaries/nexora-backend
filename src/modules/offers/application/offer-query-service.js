@@ -35,4 +35,13 @@ export class DefaultOfferQueryService {
         }
         return offer;
     }
+    async getOfferByExternalReference(tenantId, channelId, externalReference, tx) {
+        const normalized = externalReference.trim();
+        if (normalized.length === 0) {
+            return null;
+        }
+        const queryable = tx ?? this.deps.queryable;
+        const offer = await this.deps.offers.findByExternalReference(queryable, tenantId, channelId, normalized);
+        return offer === null ? null : toOfferDto(offer);
+    }
 }

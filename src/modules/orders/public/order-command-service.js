@@ -3,7 +3,7 @@
  * compatibility adapters, jobs, and future integrations.
  *
  * Compatibility must depend on this contract — never on `create-order.js` or repositories.
- * `createOrder` supports native and future Channel-ingestion flows — not Merchant `POST /v2/orders` (which does not exist on the Merchant contract).
+ * `createOrder` is the native direct-entry path. Channel ingestion uses `createChannelOrder`.
  *
  * @typedef {object} CreateOrderAddressCommand
  * @property {string|null} [line1]
@@ -30,6 +30,14 @@
  * @property {number} quantity
  * @property {string|null} [offerId]
  *
+ * @typedef {object} CreateChannelOrderLineCommand
+ * @property {string} stockLocationId
+ * @property {number} quantity
+ * @property {string} [merchantSku]
+ * @property {string} [channelProductNo]
+ * @property {string} [productId]
+ * @property {string|null} [offerId]
+ *
  * @typedef {object} CreateOrderCommand
  * @property {string} tenantId
  * @property {string} actorId
@@ -40,6 +48,25 @@
  * @property {CreateOrderLineCommand[]} lines
  * @property {CreateOrderCustomerCommand} [customer]
  * @property {string|null} [externalOrderReference]
+ * @property {number} [discountMinor]
+ * @property {number} [taxMinor]
+ * @property {number} [shippingMinor]
+ * @property {string} [idempotencyKey]
+ * @property {string} [principalFingerprint]
+ * @property {string} [routeId]
+ * @property {string} [requestFingerprint]
+ * @property {object} [transaction]
+ *
+ * @typedef {object} CreateChannelOrderCommand
+ * @property {string} tenantId
+ * @property {string} actorId
+ * @property {'user'|'api-key'} actorKind
+ * @property {readonly string[]} actorPermissions
+ * @property {string} channelId
+ * @property {string} externalOrderReference
+ * @property {string} currency
+ * @property {CreateChannelOrderLineCommand[]} lines
+ * @property {CreateOrderCustomerCommand} [customer]
  * @property {number} [discountMinor]
  * @property {number} [taxMinor]
  * @property {number} [shippingMinor]
@@ -74,6 +101,9 @@
  * @typedef {object} CreateOrderResult
  * @property {OrderDetailDto} order
  *
+ * @typedef {object} CreateChannelOrderResult
+ * @property {OrderDetailDto} order
+ *
  * @typedef {object} AcknowledgeOrderCommand
  * @property {string} tenantId
  * @property {string} actorId
@@ -91,6 +121,9 @@
  *
  * @typedef {object} OrderCommandService
  * @property {(command: CreateOrderCommand) => Promise<CreateOrderResult>} createOrder
+ * Native order entry — creates `CONFIRMED` orders and emits `order.created` + `order.confirmed`.
+ * @property {(command: CreateChannelOrderCommand) => Promise<CreateChannelOrderResult>} createChannelOrder
+ * Channel ingestion — creates `NEW` orders, reserves inventory, emits `order.created` only.
  * @property {(command: AcknowledgeOrderCommand) => Promise<AcknowledgeOrderResult>} acknowledgeOrder
  */
 

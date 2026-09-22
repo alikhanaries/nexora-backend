@@ -30,4 +30,16 @@ export class DefaultChannelQueryService {
         }
         return channel;
     }
+    async getChannelByExternalReference(tenantId, externalReference, tx) {
+        const normalized = externalReference.trim();
+        if (normalized.length === 0) {
+            throw new NotFoundError('Channel was not found', { tenantId, externalReference });
+        }
+        const queryable = tx ?? this.deps.queryable;
+        const channel = await this.deps.getChannelByExternalReference(tenantId, normalized, queryable);
+        if (channel === null) {
+            throw new NotFoundError('Channel was not found', { tenantId, externalReference: normalized });
+        }
+        return channel;
+    }
 }

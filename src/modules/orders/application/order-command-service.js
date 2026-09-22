@@ -1,4 +1,5 @@
 const DEFAULT_CREATE_ROUTE_ID = 'orders.create';
+const DEFAULT_CREATE_CHANNEL_ROUTE_ID = 'orders.create_channel';
 const DEFAULT_ACKNOWLEDGE_ROUTE_ID = 'orders.acknowledge';
 
 /**
@@ -28,12 +29,40 @@ function toCreateOrderInput(command) {
     };
 }
 
+/**
+ * @param {import('../public/order-command-service.js').CreateChannelOrderCommand} command
+ */
+function toCreateChannelOrderInput(command) {
+    return {
+        tenantId: command.tenantId,
+        actorId: command.actorId,
+        actorKind: command.actorKind,
+        actorPermissions: command.actorPermissions,
+        channelId: command.channelId,
+        externalOrderReference: command.externalOrderReference,
+        currency: command.currency,
+        lines: command.lines.map((line) => ({
+            stockLocationId: line.stockLocationId,
+            quantity: line.quantity,
+            ...(line.merchantSku === undefined ? {} : { merchantSku: line.merchantSku }),
+            ...(line.channelProductNo === undefined ? {} : { channelProductNo: line.channelProductNo }),
+            ...(line.productId === undefined ? {} : { productId: line.productId }),
+            ...(line.offerId === undefined ? {} : { offerId: line.offerId ?? null }),
+        })),
+        ...(command.customer === undefined ? {} : { customer: command.customer }),
+        ...(command.discountMinor === undefined ? {} : { discountMinor: command.discountMinor }),
+        ...(command.taxMinor === undefined ? {} : { taxMinor: command.taxMinor }),
+        ...(command.shippingMinor === undefined ? {} : { shippingMinor: command.shippingMinor }),
+    };
+}
+
 export class DefaultOrderCommandService {
     deps;
 
     /**
      * @param {object} deps
      * @param {import('./create-order.js').CreateOrder} deps.createOrder
+     * @param {import('./create-channel-order.js').CreateChannelOrder} deps.createChannelOrder
      * @param {import('./acknowledge-order.js').AcknowledgeOrder} deps.acknowledgeOrder
      * @param {import('../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
      */
@@ -79,6 +108,47 @@ export class DefaultOrderCommandService {
         }
 
         const { order } = await this.deps.createOrder.execute(createInput);
+        return { order };
+    }
+
+    /**
+     * @param {import('../public/order-command-service.js').CreateChannelOrderCommand} command
+     * @returns {Promise<import('../public/order-command-service.js').CreateChannelOrderResult>}
+     */
+    async createChannelOrder(command) {
+        const createInput = toCreateChannelOrderInput(command);
+
+        if (command.transaction !== undefined) {
+            const { order } = await this.deps.createChannelOrder.execute({
+                ...createInput,
+                transaction: command.transaction,
+            });
+            return { order };
+        }
+
+        if (command.idempotencyKey !== undefined) {
+            if (this.deps.idempotency === undefined) {
+                throw new Error('Idempotency service is required when idempotencyKey is provided');
+            }
+            if (command.principalFingerprint === undefined || command.requestFingerprint === undefined) {
+                throw new Error('principalFingerprint and requestFingerprint are required when idempotencyKey is provided');
+            }
+            const outcome = await this.deps.idempotency.execute({
+                tenantId: command.tenantId,
+                principalFingerprint: command.principalFingerprint,
+                routeId: command.routeId ?? DEFAULT_CREATE_CHANNEL_ROUTE_ID,
+                idempotencyKey: command.idempotencyKey,
+            }, command.requestFingerprint, async (tx) => {
+                const { order } = await this.deps.createChannelOrder.execute({
+                    ...createInput,
+                    transaction: tx,
+                });
+                return { order };
+            }, (result) => ({ statusCode: 201, body: result }), { useTransaction: true });
+            return outcome.value;
+        }
+
+        const { order } = await this.deps.createChannelOrder.execute(createInput);
         return { order };
     }
 
