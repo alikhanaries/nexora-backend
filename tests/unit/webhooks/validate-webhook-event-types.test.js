@@ -8,13 +8,21 @@ describe('validateWebhookEventTypes', () => {
         expect(eventTypes).toEqual(['order.created', 'shipment.shipped']);
     });
 
+    it('accepts Phase 7.5 product and inventory event types', () => {
+        const eventTypes = validateWebhookEventTypes([
+            'product.created',
+            'inventory.inventory_changed',
+        ]);
+        expect(eventTypes).toEqual(['product.created', 'inventory.inventory_changed']);
+    });
+
     it('deduplicates event types', () => {
         const eventTypes = validateWebhookEventTypes(['order.created', 'order.created']);
         expect(eventTypes).toEqual(['order.created']);
     });
 
     it('rejects unknown event types', () => {
-        expect(() => validateWebhookEventTypes(['product.created'])).toThrow(ValidationError);
+        expect(() => validateWebhookEventTypes(['marketplace.created'])).toThrow(ValidationError);
     });
 
     it('rejects empty event type lists', () => {

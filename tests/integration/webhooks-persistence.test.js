@@ -76,7 +76,7 @@ describe('webhook persistence integration', () => {
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
             url: 'https://example.com/webhooks/nexora',
-            eventTypes: ['product.created'],
+            eventTypes: ['marketplace.created'],
         })).rejects.toBeInstanceOf(ValidationError);
         await app.httpServer.close();
     });

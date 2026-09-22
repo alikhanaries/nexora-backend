@@ -10,7 +10,7 @@ import {
     PHASE_6_EXTERNAL_EVENT_ALLOWLIST,
 } from '../../../src/shared/events/event-catalog.js';
 
-const expectedAllowlist = [
+const phase6Allowlist = [
     'order.created',
     'order.confirmed',
     'order.status_changed',
@@ -26,8 +26,19 @@ const expectedAllowlist = [
     'return.status_changed',
 ];
 
+const phase75Allowlist = [
+    'product.created',
+    'product.updated',
+    'product.status_changed',
+    'inventory.inventory_changed',
+    'inventory.inventory_reserved',
+    'inventory.inventory_released',
+];
+
+const expectedAllowlist = [...phase6Allowlist, ...phase75Allowlist];
+
 describe('integration event catalog', () => {
-    it('contains exactly the Phase 6 initial external allowlist', () => {
+    it('contains the cumulative external allowlist through Phase 7.5', () => {
         expect(PHASE_6_EXTERNAL_EVENT_ALLOWLIST).toEqual(expectedAllowlist);
         expect(Object.keys(INTEGRATION_EVENT_CATALOG)).toEqual(expectedAllowlist);
     });
@@ -51,9 +62,9 @@ describe('integration event catalog', () => {
     });
 
     it('returns null for unknown event types', () => {
-        expect(getCatalogEntry('product.created')).toBeNull();
-        expect(isKnownEventType('product.created')).toBe(false);
-        expect(isExternallyDeliverable('product.created')).toBe(false);
+        expect(getCatalogEntry('marketplace.created')).toBeNull();
+        expect(isKnownEventType('marketplace.created')).toBe(false);
+        expect(isExternallyDeliverable('marketplace.created')).toBe(false);
     });
 
     it('classifies free-text reason events as medium PII risk', () => {
@@ -61,9 +72,11 @@ describe('integration event catalog', () => {
         expect(getCatalogEntry('return.status_changed')?.piiClassification).toBe('medium');
     });
 
-    it('classifies order and shipment events as low PII risk', () => {
+    it('classifies order, shipment, product, and inventory events as low PII risk', () => {
         expect(getCatalogEntry('order.created')?.piiClassification).toBe('low');
         expect(getCatalogEntry('shipment.delivered')?.piiClassification).toBe('low');
+        expect(getCatalogEntry('product.created')?.piiClassification).toBe('low');
+        expect(getCatalogEntry('inventory.inventory_changed')?.piiClassification).toBe('low');
     });
 
     it('lists externally deliverable types in allowlist order', () => {
@@ -71,7 +84,33 @@ describe('integration event catalog', () => {
     });
 
     it('finds undeliverable event types for subscription validation', () => {
-        expect(findUndeliverableEventTypes(['order.created', 'product.created', 'unknown.event']))
-            .toEqual(['product.created', 'unknown.event']);
+        expect(findUndeliverableEventTypes(['order.created', 'marketplace.created', 'unknown.event']))
+            .toEqual(['marketplace.created', 'unknown.event']);
+    });
+
+    describe('Phase 7.5 catalog and inventory events', () => {
+        it('registers product lifecycle events as externally deliverable', () => {
+            for (const eventType of phase75Allowlist.filter((type) => type.startsWith('product.'))) {
+                expect(isExternallyDeliverable(eventType)).toBe(true);
+                expect(getCatalogEntry(eventType)?.producerModule).toBe('products');
+            }
+        });
+
+        it('registers inventory events as externally deliverable', () => {
+            for (const eventType of phase75Allowlist.filter((type) => type.startsWith('inventory.'))) {
+                expect(isExternallyDeliverable(eventType)).toBe(true);
+                expect(getCatalogEntry(eventType)?.producerModule).toBe('inventory');
+            }
+        });
+
+        it('rejects marketplace events that are not in the catalog', () => {
+            expect(isExternallyDeliverable('marketplace.created')).toBe(false);
+            expect(isExternallyDeliverable('marketplace.status_changed')).toBe(false);
+        });
+
+        it('rejects malformed event types', () => {
+            expect(isExternallyDeliverable('')).toBe(false);
+            expect(isExternallyDeliverable('not-a-valid-event')).toBe(false);
+        });
     });
 });

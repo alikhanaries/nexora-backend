@@ -134,7 +134,42 @@ Rules:
 4. Delivery rows are unique on `(subscription_id, event_id)`; duplicate event processing is idempotent.
 5. Queue jobs contain only `tenantId`, `deliveryId`, `subscriptionId`, `eventId`, and `eventType` — never webhook secrets.
 
-Initial externally deliverable event types are listed in `PHASE_6_EXTERNAL_EVENT_ALLOWLIST` inside `event-catalog.js`.
+Externally deliverable event types are listed in `PHASE_6_EXTERNAL_EVENT_ALLOWLIST` inside `event-catalog.js` (cumulative allowlist extended in Phase 7.5).
+
+## Phase 7.5 webhook catalog expansion
+
+Phase 7.5 extends the Phase 6 external allowlist so tenants can subscribe to catalog/inventory integration events that were already emitted to the outbox but previously rejected by webhook subscription validation.
+
+### Newly externally deliverable events
+
+| Event type | Producer | Aggregate | PII |
+| ---------- | -------- | --------- | --- |
+| `product.created` | products | product | low |
+| `product.updated` | products | product | low |
+| `product.status_changed` | products | product | low |
+| `inventory.inventory_changed` | inventory | inventory_balance | low |
+| `inventory.inventory_reserved` | inventory | inventory_balance | low |
+| `inventory.inventory_released` | inventory | inventory_balance | low |
+
+Rules (unchanged from Phase 6):
+
+1. Only events marked `externallyDeliverable: true` in `INTEGRATION_EVENT_CATALOG` may appear on webhook subscriptions.
+2. Dispatch still requires a non-null `tenantId` on the integration event envelope.
+3. No new queues, dispatchers, or delivery workers were introduced.
+
+### Payload and PII notes
+
+- **Product events** expose product identifiers, merchant SKU, product type, and status transitions. `product.updated` includes a `changes` object with field-level from/to diffs for `externalReference` and `productType` only — no customer data.
+- **Inventory events** expose product/location identifiers, movement quantities, optional reference metadata, and a balance snapshot (`onHand`, `reserved`, `available`). No secrets or customer PII are included.
+- Webhook job payloads remain identifier-only; the HTTP delivery worker loads the outbox payload under tenant context.
+
+### Intentionally excluded (Phase 7.5)
+
+| Event family | Reason |
+| ------------ | ------ |
+| `marketplace.*` | Producers emit `tenantId: null` (platform-scoped). Dispatch skips null-tenant events. |
+| `offer.*`, `channel.*`, `price.*` | Already tenant-scoped and low PII, but deferred to keep Phase 7.5 focused on catalog/inventory minimum scope. |
+| `webhook_deliveries` retention | Remains deferred from Phase 6.6. |
 
 ## Phase 6.2 webhook persistence
 
