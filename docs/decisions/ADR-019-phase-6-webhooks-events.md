@@ -21,7 +21,8 @@ Phase 6 implements **Integration Events & External Webhooks**:
 2. **Phase 6.2 (persistence foundation)** — webhook subscription/delivery tables, encrypted secret storage, application repositories, correlation ID outbox persistence fix, permissions.
 3. **Phase 6.3 (dispatch enqueue)** — composite router, webhook delivery row creation, `webhook-deliveries` job enqueue (no HTTP).
 4. **Phase 6.4 (HTTP delivery worker)** — SSRF validation, HMAC signing, outbound HTTPS POST, delivery state transitions, BullMQ retry/dead-letter.
-5. **Phase 6.5+ (later slices)** — admin HTTP API, secret rotation, retention jobs.
+5. **Phase 6.5 (admin HTTP API)** — subscription CRUD, secret rotation.
+6. **Phase 6.6 (retention jobs)** — bounded outbox/inbox/idempotency cleanup sweeps on the worker process.
 
 Phase 6 does **not** include:
 

@@ -23,14 +23,15 @@ export class PostgresIdempotencyService {
         }
         return this.runAndPersist(key, operation, toRecord, options);
     }
-    async purgeExpired(batchSize) {
+    /** Deletes expired records whose `expires_at` is older than `cutoff`. */
+    async purgeExpiredBefore(cutoff, batchSize) {
         const limit = clampBatchSize(batchSize);
         const result = await this.database.query(`DELETE FROM idempotency_records
        WHERE ctid IN (
          SELECT ctid FROM idempotency_records
-         WHERE expires_at < now()
-         LIMIT $1
-       )`, [limit], { operation: 'idempotency.purge_expired' });
+         WHERE expires_at < $1
+         LIMIT $2
+       )`, [cutoff, limit], { operation: 'idempotency.purge_expired' });
         return result.rowCount;
     }
     async handleExisting(key, existing, fingerprint, operation, toRecord, options) {

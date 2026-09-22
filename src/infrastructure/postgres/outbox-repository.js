@@ -134,6 +134,24 @@ export class PostgresOutboxRepository {
         const parsed = parseOrThrow(z.object({ pending: z.number().int() }), result.rows[0] ?? { pending: 0 }, 'outbox pending count');
         return parsed.pending;
     }
+    /**
+     * Deletes successfully published events older than `cutoff`.
+     *
+     * Unpublished, claimed, retryable and dead-lettered rows are never removed.
+     */
+    async purgePublishedBefore(cutoff, batchSize) {
+        const limit = clampBatchSize(batchSize);
+        const result = await this.database.query(`DELETE FROM outbox_events
+       WHERE id IN (
+         SELECT id
+         FROM outbox_events
+         WHERE published_at IS NOT NULL
+           AND published_at < $1
+         ORDER BY published_at, id
+         LIMIT $2
+       )`, [cutoff, limit], { operation: 'outbox.purge_published' });
+        return result.rowCount;
+    }
     /** Loads a persisted integration event for webhook payload delivery. */
     async findByIdForTenant(tenantId, eventId) {
         const result = await this.database.query(`SELECT id, event_type, event_version, aggregate_type, aggregate_id,

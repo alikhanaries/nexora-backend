@@ -60,6 +60,13 @@ function toAppConfig(raw) {
         idempotency: {
             ttlSeconds: raw.IDEMPOTENCY_TTL_SECONDS,
         },
+        retention: {
+            outboxDays: raw.OUTBOX_RETENTION_DAYS,
+            inboxDays: raw.INBOX_RETENTION_DAYS,
+            idempotencyDays: raw.IDEMPOTENCY_RETENTION_DAYS,
+            batchSize: raw.RETENTION_CLEANUP_BATCH_SIZE,
+            intervalMs: raw.RETENTION_CLEANUP_INTERVAL_MS,
+        },
         observability: {
             logLevel: raw.LOG_LEVEL,
             logPretty: raw.LOG_PRETTY && !isProduction,

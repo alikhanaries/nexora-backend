@@ -33,6 +33,7 @@ async function main() {
         integrationEventRouter,
         webhookDeliveryService,
     });
+    infra.retentionCleanupScheduler.start();
     infra.logger.info({}, 'Worker started');
     let shuttingDown = false;
     const shutdown = async (signal) => {
@@ -42,6 +43,7 @@ async function main() {
         infra.logger.info({ signal }, 'Worker shutdown signal received');
         await gracefulShutdown({
             workerRuntime: infra.workerRuntime,
+            retentionCleanupScheduler: infra.retentionCleanupScheduler,
             queue: infra.queue,
             redis: infra.redis,
             database: infra.database,
