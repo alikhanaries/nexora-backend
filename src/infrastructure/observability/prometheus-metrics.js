@@ -115,6 +115,19 @@ export class PrometheusMetrics {
             labelNames: ['operation', 'outcome'],
             registers: [this.registry],
         });
+        this.webhookDeliveryAttemptsTotal = new Counter({
+            name: 'webhook_delivery_attempts_total',
+            help: 'Webhook delivery attempts by outcome.',
+            labelNames: ['outcome'],
+            registers: [this.registry],
+        });
+        this.webhookDeliveryDuration = new Histogram({
+            name: 'webhook_delivery_duration_seconds',
+            help: 'Successful webhook delivery duration in seconds.',
+            labelNames: ['outcome'],
+            buckets: DURATION_BUCKETS,
+            registers: [this.registry],
+        });
     }
     recordHttpRequest(sample) {
         const statusClass = classifyStatus(sample.statusCode);
@@ -164,6 +177,12 @@ export class PrometheusMetrics {
             operation: sample.operation,
             outcome: sample.outcome,
         });
+    }
+    recordWebhookDelivery(sample) {
+        this.webhookDeliveryAttemptsTotal.inc({ outcome: sample.outcome });
+        if (sample.durationMs !== undefined) {
+            this.webhookDeliveryDuration.observe({ outcome: sample.outcome }, sample.durationMs / 1_000);
+        }
     }
     setDbPoolConnections(snapshot) {
         this.dbPoolConnections.set({ state: 'total' }, snapshot.total);

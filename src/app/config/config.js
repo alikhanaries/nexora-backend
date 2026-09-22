@@ -71,6 +71,10 @@ function toAppConfig(raw) {
         httpClient: {
             timeoutMs: raw.HTTP_CLIENT_TIMEOUT_MS,
         },
+        webhooks: {
+            deliveryTimeoutMs: raw.WEBHOOK_DELIVERY_TIMEOUT_MS,
+            deliveryLeaseSeconds: raw.WEBHOOK_DELIVERY_LEASE_SECONDS,
+        },
         security: {
             corsEnabled: raw.SERVER_CORS_ORIGINS.length > 0,
             allowedOrigins: raw.SERVER_CORS_ORIGINS,
@@ -110,6 +114,9 @@ function assertConsistency(config) {
     }
     if (config.database.migrationUrl !== undefined && !URL.canParse(config.database.migrationUrl)) {
         problems.push('DATABASE_MIGRATION_URL must be a valid URL when set');
+    }
+    if (config.webhooks.deliveryTimeoutMs > config.webhooks.deliveryLeaseSeconds * 1_000) {
+        problems.push('WEBHOOK_DELIVERY_TIMEOUT_MS must not exceed WEBHOOK_DELIVERY_LEASE_SECONDS');
     }
     if (problems.length > 0) {
         throw new ConfigurationError('Configuration is inconsistent', { problems });

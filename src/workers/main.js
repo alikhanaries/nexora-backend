@@ -1,7 +1,8 @@
 import { loadConfigFromEnvironment } from '../app/config/index.js';
 import { createInfrastructure } from '../app/bootstrap/create-infrastructure.js';
 import { gracefulShutdown } from '../app/bootstrap/shutdown.js';
-import { createWebhookDispatchService } from '../modules/webhooks/index.js';
+import { AesSecretEncryptor } from '../infrastructure/auth/aes-secret-encryptor.js';
+import { createWebhookDeliveryService, createWebhookDispatchService } from '../modules/webhooks/index.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
 import { createIntegrationEventConsumers } from './create-integration-event-consumers.js';
 import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
@@ -12,6 +13,15 @@ async function main() {
         database: infra.database,
         queue: infra.queue,
     });
+    const webhookDeliveryService = createWebhookDeliveryService({
+        database: infra.database,
+        outbox: infra.outbox,
+        httpClient: infra.httpClient,
+        secretEncryptor: new AesSecretEncryptor(config.auth.mfaEncryptionKey),
+        logger: infra.logger,
+        metrics: infra.metrics,
+        config,
+    });
     const { integrationEventRouter } = createIntegrationEventConsumers({
         database: infra.database,
         inbox: infra.inbox,
@@ -21,6 +31,7 @@ async function main() {
     registerWorkerHandlers({
         workerRuntime: infra.workerRuntime,
         integrationEventRouter,
+        webhookDeliveryService,
     });
     infra.logger.info({}, 'Worker started');
     let shuttingDown = false;

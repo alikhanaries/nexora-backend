@@ -22,6 +22,7 @@ const outboxRowSchema = z.object({
     occurred_at: z.date(),
     attempt_count: z.number().int(),
 });
+const outboxReadRowSchema = outboxRowSchema.omit({ attempt_count: true });
 function toIntegrationEvent(row) {
     return {
         id: row.id,
@@ -132,5 +133,17 @@ export class PostgresOutboxRepository {
        WHERE published_at IS NULL AND dead_lettered_at IS NULL`, [], { operation: 'outbox.count_pending' });
         const parsed = parseOrThrow(z.object({ pending: z.number().int() }), result.rows[0] ?? { pending: 0 }, 'outbox pending count');
         return parsed.pending;
+    }
+    /** Loads a persisted integration event for webhook payload delivery. */
+    async findByIdForTenant(tenantId, eventId) {
+        const result = await this.database.query(`SELECT id, event_type, event_version, aggregate_type, aggregate_id,
+                tenant_id, payload, correlation_id, occurred_at
+       FROM outbox_events
+       WHERE id = $1 AND tenant_id = $2`, [eventId, tenantId], { operation: 'outbox.find_by_id_for_tenant' });
+        const row = result.rows[0];
+        if (row === undefined) {
+            return null;
+        }
+        return toIntegrationEvent(parseOrThrow(outboxReadRowSchema, row, 'outbox_events row'));
     }
 }
