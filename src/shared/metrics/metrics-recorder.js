@@ -17,6 +17,7 @@ export const noopMetricsRecorder = {
     recordRateLimitHit: () => undefined,
     recordAuthEvent: () => undefined,
     recordCommerceOperation: () => undefined,
+    recordWebhookDelivery: () => undefined,
     setDbPoolConnections: () => undefined,
     render: () => Promise.resolve(''),
     contentType: 'text/plain; charset=utf-8',

@@ -121,7 +121,9 @@ CompositeIntegrationEventRouter
             ↓
     webhook-deliveries (BullMQ)
             ↓
-    HTTP delivery worker (Phase 6.4)
+    WebhookDeliveryService (Phase 6.4)
+            ↓
+    SSRF validation → HMAC signing → HTTPS POST
 ```
 
 Rules:
@@ -150,12 +152,41 @@ Phase 6.3 wires the composite router and dispatch handler:
 - After the delivery row is persisted, a `webhook-deliveries` / `deliver-webhook` job is enqueued
 - Delivery creation runs in a tenant-scoped database transaction; queue enqueue runs afterward (same pattern as the outbox publisher). Enqueue failures surface as handler errors so BullMQ/inbox retry can recover; duplicate job IDs are treated as idempotent.
 
-Outbound HTTP, HMAC signing, SSRF enforcement, retry/backoff, and dead-letter processing belong to **Phase 6.4+**. SSRF validation will live in the future delivery worker before any outbound HTTP request is made.
+## Phase 6.4 webhook HTTP delivery worker
+
+Phase 6.4 implements `WebhookDeliveryService`, registered on the `webhook-deliveries` queue as `deliver-webhook`:
+
+1. Load and validate the delivery row, subscription, and outbox event payload under tenant context.
+2. Skip or dead-letter inactive subscriptions (`DISABLED`, `DELETED`) without HTTP.
+3. Atomically claim the delivery attempt (`PENDING`/`FAILED` → `DELIVERING`, increment `attempt_count`).
+4. Validate the subscription URL with SSRF checks (HTTPS-only, no private/loopback/metadata destinations).
+5. Decrypt the signing secret immediately before signing; never log or persist plaintext secrets.
+6. POST the integration-event envelope JSON with headers:
+   - `Content-Type: application/json; charset=utf-8`
+   - `X-Nexora-Event`, `X-Nexora-Event-Id`, `X-Nexora-Delivery-Id`
+   - `X-Nexora-Signature: v1=<hex-hmac-sha256>` over the exact request body bytes
+7. Classify HTTP responses:
+   - `2xx` → `DELIVERED`
+   - retryable (`408`, `425`, `429`, `5xx`, network/timeout) → `FAILED` and BullMQ retry until attempts exhausted
+   - permanent `4xx` and redirects (`redirect: manual`) → `DEAD_LETTERED`
+8. After BullMQ attempts are exhausted, mark `DEAD_LETTERED` with bounded `last_error` metadata.
+
+Configuration:
+
+- `WEBHOOK_DELIVERY_TIMEOUT_MS` — hard outbound HTTP timeout (default 10s)
+- `WEBHOOK_DELIVERY_LEASE_SECONDS` — stale `DELIVERING` reclaim lease (default 300s)
+- BullMQ retry/backoff uses existing `QUEUE_DEFAULT_ATTEMPTS` and `QUEUE_BACKOFF_BASE_MS`
+
+Concurrency notes:
+
+- Duplicate BullMQ jobs for the same delivery are serialized by `claimAttempt`: only one worker owns `DELIVERING` until the lease expires.
+- Terminal updates require the row to still be `DELIVERING`, so a late HTTP response cannot overwrite `DELIVERED` or `DEAD_LETTERED`.
+- `WEBHOOK_DELIVERY_TIMEOUT_MS` must not exceed the lease; with defaults (10s timeout, 300s lease) a slow HTTP call cannot overlap a lease reclaim. Misconfigured timeouts that exceed the lease could allow a second worker to reclaim and send a duplicate webhook.
 
 ## Not yet implemented
 
-- Webhook HTTP delivery worker (Phase 6.4)
 - Webhook admin HTTP API (`/api/v1/webhooks`)
+- Secret rotation
 - Full JSON Schema / Avro event registry (OQ-032)
 - Kafka / NATS alternative transports
 - Saga orchestration

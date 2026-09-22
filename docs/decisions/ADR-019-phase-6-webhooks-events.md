@@ -20,7 +20,8 @@ Phase 6 implements **Integration Events & External Webhooks**:
 1. **Phase 6.0–6.1 (foundation)** — ADR, OQ-031 resolution, shared integration event contract, central event catalog.
 2. **Phase 6.2 (persistence foundation)** — webhook subscription/delivery tables, encrypted secret storage, application repositories, correlation ID outbox persistence fix, permissions.
 3. **Phase 6.3 (dispatch enqueue)** — composite router, webhook delivery row creation, `webhook-deliveries` job enqueue (no HTTP).
-4. **Phase 6.4+ (later slices)** — HTTP delivery worker, HMAC signing, admin HTTP API, retention jobs.
+4. **Phase 6.4 (HTTP delivery worker)** — SSRF validation, HMAC signing, outbound HTTPS POST, delivery state transitions, BullMQ retry/dead-letter.
+5. **Phase 6.5+ (later slices)** — admin HTTP API, secret rotation, retention jobs.
 
 Phase 6 does **not** include:
 
