@@ -70,7 +70,7 @@ describe('GET /api/v2/cancellations/merchant integration', () => {
         const cancellation = body.Content.find((entry) => entry.MerchantCancellationNo === merchantCancellationNo);
         expect(cancellation.MerchantOrderNo).toBe(order.orderNumber);
         expect(cancellation.Lines[0].Quantity).toBe(1);
-        expect(cancellation.Id).toBeUndefined();
+        expect(cancellation.Id).toEqual(expect.any(Number));
     });
 
     it('isolates tenants', async () => {

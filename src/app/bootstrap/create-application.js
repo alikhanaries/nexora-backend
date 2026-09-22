@@ -173,6 +173,7 @@ export async function createApplication(infra) {
             returnQueryService: returns.returnQueryService,
             returnCommandService: returns.returnCommandService,
             orderCommandService: orders.orderCommandService,
+            externalIntegerIdMappingQueryService: externalIdMapping.externalIntegerIdMappingQueryService,
         },
     });
     const httpServer = await createHttpServer({

@@ -76,7 +76,7 @@ describe('GET /api/v2/returns merchant read integration', () => {
             MerchantOrderNo: order.orderNumber,
             Status: 'IN_PROGRESS',
         });
-        expect(entry.Id).toBeUndefined();
+        expect(entry.Id).toEqual(expect.any(Number));
     });
 
     it('lists new returns using IN_PROGRESS semantics', async () => {

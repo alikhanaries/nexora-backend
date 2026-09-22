@@ -215,8 +215,16 @@ function mapExternalShipmentLine(line, orderLine) {
  * @param {object|undefined} order
  * @param {Map<string, object>} orderLinesById
  */
-export function mapExternalShipment(shipment, order, orderLinesById) {
+/**
+ * @param {object} shipment
+ * @param {object|undefined} order
+ * @param {Map<string, object>} orderLinesById
+ * @param {{ shipmentIds?: Map<string, number> }} [externalIdMaps]
+ */
+export function mapExternalShipment(shipment, order, orderLinesById, externalIdMaps) {
+    const shipmentExternalId = externalIdMaps?.shipmentIds?.get(shipment.id);
     return {
+        ...(shipmentExternalId === undefined ? {} : { Id: shipmentExternalId }),
         MerchantShipmentNo: shipment.externalReference,
         MerchantOrderNo: order?.orderNumber ?? null,
         ChannelOrderNo: order?.externalOrderReference ?? null,
@@ -234,11 +242,11 @@ export function mapExternalShipment(shipment, order, orderLinesById) {
  * @param {{ items: object[], totalCount: number, page: number, pageSize: number }} page
  * @param {Map<string, object>} ordersById
  */
-export function mapShipmentPageToExternalCollection(page, ordersById) {
+export function mapShipmentPageToExternalCollection(page, ordersById, externalIdMaps) {
     const content = page.items.map((shipment) => {
         const order = ordersById.get(shipment.orderId);
         const orderLinesById = new Map((order?.lines ?? []).map((line) => [line.id, line]));
-        return mapExternalShipment(shipment, order, orderLinesById);
+        return mapExternalShipment(shipment, order, orderLinesById, externalIdMaps);
     });
     return {
         Success: true,

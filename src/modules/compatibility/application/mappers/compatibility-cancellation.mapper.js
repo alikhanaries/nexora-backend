@@ -168,8 +168,13 @@ function mapExternalCancellationLine(line, orderLine) {
  * @param {object|undefined} order
  * @param {Map<string, object>} orderLinesById
  */
-export function mapExternalCancellation(cancellation, order, orderLinesById) {
+/**
+ * @param {{ cancellationIds?: Map<string, number> }} [externalIdMaps]
+ */
+export function mapExternalCancellation(cancellation, order, orderLinesById, externalIdMaps) {
+    const cancellationExternalId = externalIdMaps?.cancellationIds?.get(cancellation.id);
     return {
+        ...(cancellationExternalId === undefined ? {} : { Id: cancellationExternalId }),
         MerchantCancellationNo: cancellation.externalReference,
         MerchantOrderNo: order?.orderNumber ?? null,
         ChannelOrderNo: order?.externalOrderReference ?? null,
@@ -184,11 +189,11 @@ export function mapExternalCancellation(cancellation, order, orderLinesById) {
  * @param {{ items: object[], totalCount: number, page: number, pageSize: number }} page
  * @param {Map<string, object>} ordersById
  */
-export function mapCancellationPageToExternalCollection(page, ordersById) {
+export function mapCancellationPageToExternalCollection(page, ordersById, externalIdMaps) {
     const content = page.items.map((cancellation) => {
         const order = ordersById.get(cancellation.orderId);
         const orderLinesById = new Map((order?.lines ?? []).map((line) => [line.id, line]));
-        return mapExternalCancellation(cancellation, order, orderLinesById);
+        return mapExternalCancellation(cancellation, order, orderLinesById, externalIdMaps);
     });
     return {
         Success: true,

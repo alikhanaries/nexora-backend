@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     mapEmptyReturnPageToExternalCollection,
+    mapExternalReturn,
     mapExternalReturnStatusesToNexoraStatuses,
     mapNewReturnStatusFilter,
     mapReturnPageToExternalCollection,
@@ -61,6 +62,42 @@ describe('compatibility return read mapper', () => {
             'APPROVED',
             'RECEIVED',
         ]);
+    });
+
+    it('populates external return ID when mapping is provided', () => {
+        const order = {
+            orderNumber: 'ORD-001',
+            externalOrderReference: 'channel-001',
+            channelId: '66666666-6666-4666-8666-666666666666',
+            lines: [{ id: '55555555-5555-4555-8555-555555555555', merchantSku: 'SKU-001' }],
+        };
+        const orderLinesById = new Map(order.lines.map((line) => [line.id, line]));
+        const mapped = mapExternalReturn(
+            buildReturn(),
+            order,
+            orderLinesById,
+            { name: 'Test Channel' },
+            { returnIds: new Map([['11111111-1111-4111-8111-111111111111', 88]]) },
+        );
+        expect(mapped.Id).toBe(88);
+    });
+
+    it('omits external return ID when mapping is missing', () => {
+        const order = {
+            orderNumber: 'ORD-001',
+            externalOrderReference: 'channel-001',
+            channelId: '66666666-6666-4666-8666-666666666666',
+            lines: [{ id: '55555555-5555-4555-8555-555555555555', merchantSku: 'SKU-001' }],
+        };
+        const orderLinesById = new Map(order.lines.map((line) => [line.id, line]));
+        const mapped = mapExternalReturn(
+            buildReturn(),
+            order,
+            orderLinesById,
+            { name: 'Test Channel' },
+            { returnIds: new Map() },
+        );
+        expect(mapped.Id).toBeUndefined();
     });
 
     it('returns empty page for unmapped external statuses', () => {

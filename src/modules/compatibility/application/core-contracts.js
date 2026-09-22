@@ -20,6 +20,7 @@
  * @property {import('../../returns/public/return-command-service.js').DefaultReturnCommandService} returnCommandService
  * @property {import('../../orders/public/order-command-service.js').DefaultOrderCommandService} orderCommandService
  *   Command port for order mutations (Merchant acknowledge; Channel ingestion in separate future scope).
+ * @property {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} externalIntegerIdMappingQueryService
  */
 
 export {};

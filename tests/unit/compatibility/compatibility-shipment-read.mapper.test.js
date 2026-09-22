@@ -51,6 +51,32 @@ describe('compatibility shipment read mapper', () => {
         expect(mapped.Id).toBeUndefined();
     });
 
+    it('populates external shipment ID when mapping is provided', () => {
+        const order = {
+            orderNumber: 'ORD-001',
+            externalOrderReference: 'channel-001',
+            lines: [{ id: '55555555-5555-4555-8555-555555555555', merchantSku: 'SKU-001' }],
+        };
+        const orderLinesById = new Map(order.lines.map((line) => [line.id, line]));
+        const mapped = mapExternalShipment(buildShipment(), order, orderLinesById, {
+            shipmentIds: new Map([['11111111-1111-4111-8111-111111111111', 99]]),
+        });
+        expect(mapped.Id).toBe(99);
+    });
+
+    it('omits external shipment ID when mapping is missing', () => {
+        const order = {
+            orderNumber: 'ORD-001',
+            externalOrderReference: 'channel-001',
+            lines: [{ id: '55555555-5555-4555-8555-555555555555', merchantSku: 'SKU-001' }],
+        };
+        const orderLinesById = new Map(order.lines.map((line) => [line.id, line]));
+        const mapped = mapExternalShipment(buildShipment(), order, orderLinesById, {
+            shipmentIds: new Map(),
+        });
+        expect(mapped.Id).toBeUndefined();
+    });
+
     it('maps pagination metadata from core page results', () => {
         const order = {
             orderNumber: 'ORD-001',
