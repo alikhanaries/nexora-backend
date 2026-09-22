@@ -43,6 +43,19 @@ export class DefaultShipmentQueryService {
         }
         return toShipmentDto(shipment);
     }
+    async findShipmentByExternalReference(tenantId, externalReference, tx) {
+        const queryable = tx ?? this.deps.queryable;
+        const trimmed = externalReference.trim();
+        const shipment = await this.deps.shipments.findByExternalReference(queryable, tenantId, trimmed);
+        if (shipment === null) {
+            throw new NotFoundError('Shipment was not found', {
+                tenantId,
+                externalReference: trimmed,
+            });
+        }
+        const lines = await this.deps.shipments.listShipmentLines(queryable, tenantId, shipment.id);
+        return toShipmentDetailDto(shipment, lines);
+    }
     async listShipments(input) {
         requireShipmentsRead(this.deps.authorization, input.actorPermissions);
         const page = clampPage(input.page);

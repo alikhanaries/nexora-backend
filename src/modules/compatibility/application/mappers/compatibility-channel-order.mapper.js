@@ -152,6 +152,60 @@ export function mapChannelOrderResultToExternalResponse(result) {
 /**
  * @param {object} mapped
  */
+/**
+ * Maps a verified Channel API channel-fulfilled request to core input.
+ *
+ * @param {object} body
+ * @param {object} context
+ * @param {string} context.channelId
+ * @param {string} context.stockLocationId
+ */
+export function mapExternalChannelFulfilledOrderRequest(body, context) {
+    const mapped = mapExternalChannelOrderRequest(body, context);
+    const externalOrderReference = mapped.externalOrderReference;
+    return {
+        ...mapped,
+        shipment: {
+            externalReference: `${externalOrderReference}-fulfillment`,
+            carrier: body.ShippingMethod?.trim() || null,
+            service: body.ShippingServiceLevel?.trim() || null,
+            trackingNumber: null,
+        },
+    };
+}
+
+/**
+ * @param {{ order: object, shipment?: object|null, channel?: object|null }} result
+ */
+export function mapChannelFulfilledOrderResultToExternalResponse(result) {
+    return mapChannelOrderResultToExternalResponse({
+        order: result.order,
+        channel: result.channel ?? null,
+    });
+}
+
+/**
+ * @param {object} mapped
+ */
+export function fingerprintChannelFulfilledOrderCommand(mapped) {
+    return JSON.stringify({
+        channelId: mapped.channelId,
+        externalOrderReference: mapped.externalOrderReference,
+        currency: mapped.currency,
+        shippingMinor: mapped.shippingMinor,
+        lines: mapped.lines.map((line) => ({
+            stockLocationId: line.stockLocationId,
+            quantity: line.quantity,
+            ...(line.merchantSku === undefined ? {} : { merchantSku: line.merchantSku }),
+            ...(line.channelProductNo === undefined ? {} : { channelProductNo: line.channelProductNo }),
+            ...(line.productId === undefined ? {} : { productId: line.productId }),
+            ...(line.offerId === undefined ? {} : { offerId: line.offerId }),
+        })),
+        customer: mapped.customer,
+        shipment: mapped.shipment,
+    });
+}
+
 export function fingerprintChannelOrderCommand(mapped) {
     return JSON.stringify({
         channelId: mapped.channelId,

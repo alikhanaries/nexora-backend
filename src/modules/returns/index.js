@@ -1,5 +1,5 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { ApproveReturn, CancelReturn, CompleteReturn, CreateReturn, DefaultReturnQueryService, GetReturn, ListReturns, ReceiveReturn, RejectReturn, } from './application/index.js';
+import { AcknowledgeReturn, ApproveReturn, CancelReturn, CompleteReturn, CreateReturn, DefaultReturnQueryService, GetReturn, ListReturns, ProcessReturnReceive, ReceiveReturn, RejectReturn, } from './application/index.js';
 import { DefaultReturnCommandService } from './public/return-command-service.js';
 import { PostgresReturnRepository } from './infrastructure/index.js';
 import returnRoutes, {} from './presentation/return.routes.js';
@@ -21,8 +21,15 @@ export function createReturnsModule(deps) {
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
     const createReturn = new CreateReturn(lifecycleDeps);
+    const acknowledgeReturn = new AcknowledgeReturn(lifecycleDeps);
+    const processReturnReceive = new ProcessReturnReceive({
+        ...lifecycleDeps,
+        inventoryService: deps.inventoryService,
+    });
     const returnCommandService = new DefaultReturnCommandService({
         createReturn,
+        acknowledgeReturn,
+        processReturnReceive,
         idempotency: deps.idempotency,
     });
     const useCases = {
@@ -33,7 +40,9 @@ export function createReturnsModule(deps) {
             queryable: deps.database,
             returns,
         }),
+        acknowledgeReturn,
         approveReturn: new ApproveReturn(lifecycleDeps),
+        processReturnReceive,
         receiveReturn: new ReceiveReturn({
             ...lifecycleDeps,
             inventoryService: deps.inventoryService,

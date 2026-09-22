@@ -7,6 +7,9 @@ export function requireOrdersCreate(authorization, permissions) {
 export function requireOrdersIngest(authorization, permissions) {
     authorization.requirePermission(permissions, 'orders.ingest');
 }
+export function requireOrdersIngestChannelFulfilled(authorization, permissions) {
+    authorization.requirePermission(permissions, 'orders.ingest_channel_fulfilled');
+}
 export function requireOrdersUpdate(authorization, permissions) {
     authorization.requirePermission(permissions, 'orders.update');
 }

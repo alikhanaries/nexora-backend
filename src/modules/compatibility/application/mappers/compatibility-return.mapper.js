@@ -146,6 +146,116 @@ export function mapReturnResultToExternalResponse(_result) {
 }
 
 /**
+ * @param {object} _result
+ */
+export function mapReturnMutationResultToExternalResponse(_result) {
+    return {
+        Success: true,
+        StatusCode: 200,
+        Message: null,
+    };
+}
+
+/**
+ * @param {object} body
+ */
+export function mapExternalReturnAcknowledgeRequest(body) {
+    const merchantReturnNo = body.MerchantReturnNo?.trim() ?? '';
+    if (merchantReturnNo.length === 0) {
+        throw new ValidationError('MerchantReturnNo is required');
+    }
+    return { merchantReturnNo };
+}
+
+/**
+ * @param {object} body
+ */
+export function mapExternalReturnReceiveRequest(body) {
+    if (!Array.isArray(body.Lines) || body.Lines.length === 0) {
+        throw new ValidationError('Lines are required');
+    }
+    const lineDecisions = body.Lines.map((line) => ({
+        merchantProductNo: line.MerchantProductNo.trim(),
+        acceptedQuantity: parseNonNegativeInteger(line.AcceptedQuantity, 'AcceptedQuantity'),
+        rejectedQuantity: parseNonNegativeInteger(line.RejectedQuantity, 'RejectedQuantity'),
+    }));
+    return {
+        externalReturnId: body.ReturnId,
+        lineDecisions,
+    };
+}
+
+/**
+ * @param {{ merchantReturnNo: string }} mapped
+ */
+export function fingerprintAcknowledgeReturnCommand(mapped) {
+    return JSON.stringify({ merchantReturnNo: mapped.merchantReturnNo });
+}
+
+/**
+ * @param {{ lineDecisions: object[] }} mapped
+ */
+export function fingerprintProcessReturnReceiveCommand(mapped) {
+    return JSON.stringify({ lineDecisions: mapped.lineDecisions });
+}
+
+/**
+ * @param {string|number} value
+ * @param {string} fieldName
+ */
+function parseNonNegativeInteger(value, fieldName) {
+    const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+    if (!Number.isInteger(parsed) || parsed < 0) {
+        throw new ValidationError(`${fieldName} must be a non-negative integer`);
+    }
+    return parsed;
+}
+
+/**
+ * @param {object} returnEntity
+ * @param {object[]} orderLines
+ * @param {Array<{ merchantProductNo: string, acceptedQuantity: number, rejectedQuantity: number }>} lineDecisions
+ */
+export function returnMatchesReceiveRequest(returnEntity, orderLines, lineDecisions) {
+    const orderLineById = new Map(orderLines.map((line) => [line.id, line]));
+    /** @type {Map<string, number>} */
+    const returnQtyBySku = new Map();
+    for (const returnLine of returnEntity.lines) {
+        const orderLine = orderLineById.get(returnLine.orderLineId);
+        if (orderLine === undefined) {
+            return false;
+        }
+        const sku = orderLine.merchantSku;
+        returnQtyBySku.set(sku, (returnQtyBySku.get(sku) ?? 0) + returnLine.quantity);
+    }
+    /** @type {Map<string, { acceptedQuantity: number, rejectedQuantity: number }>} */
+    const decisionsBySku = new Map();
+    for (const line of lineDecisions) {
+        const existing = decisionsBySku.get(line.merchantProductNo) ?? {
+            acceptedQuantity: 0,
+            rejectedQuantity: 0,
+        };
+        decisionsBySku.set(line.merchantProductNo, {
+            acceptedQuantity: existing.acceptedQuantity + line.acceptedQuantity,
+            rejectedQuantity: existing.rejectedQuantity + line.rejectedQuantity,
+        });
+    }
+    if (decisionsBySku.size !== returnQtyBySku.size) {
+        return false;
+    }
+    for (const [sku, returnQuantity] of returnQtyBySku) {
+        const decision = decisionsBySku.get(sku);
+        if (decision === undefined) {
+            return false;
+        }
+        if (decision.acceptedQuantity + decision.rejectedQuantity !== returnQuantity) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * @param {{
  *   orderNumber: string,
  *   merchantReturnNo: string,

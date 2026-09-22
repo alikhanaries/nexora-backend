@@ -65,10 +65,23 @@ function createService(overrides = {}) {
 describe('WebhookDispatchService', () => {
     it('ignores non-deliverable event types', async () => {
         const { service, deps } = createService();
-        const result = await service.dispatch(buildEvent({ type: 'product.created' }));
+        const result = await service.dispatch(buildEvent({ type: 'marketplace.created' }));
         expect(result).toEqual({ deliveriesEnsured: 0, jobsEnqueued: 0 });
         expect(deps.subscriptions.listActiveForEventType).not.toHaveBeenCalled();
         expect(deps.queue.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('dispatches Phase 7.5 product events through the existing pipeline', async () => {
+        const event = buildEvent({ type: 'product.created' });
+        const subscription = buildSubscription({
+            tenantId: event.tenantId,
+            eventTypes: ['product.created'],
+        });
+        const { service, deps } = createService();
+        deps.subscriptions.listActiveForEventType.mockResolvedValue([subscription]);
+        const result = await service.dispatch(event);
+        expect(result).toEqual({ deliveriesEnsured: 1, jobsEnqueued: 1 });
+        expect(deps.subscriptions.listActiveForEventType).toHaveBeenCalledWith({}, event.tenantId, 'product.created');
     });
 
     it('ignores events without tenant scope', async () => {

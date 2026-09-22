@@ -9,7 +9,7 @@ export const ReturnStatus = {
 };
 const LEGAL_TRANSITIONS = {
     [ReturnStatus.REQUESTED]: [ReturnStatus.APPROVED, ReturnStatus.REJECTED, ReturnStatus.CANCELLED],
-    [ReturnStatus.APPROVED]: [ReturnStatus.RECEIVED, ReturnStatus.CANCELLED],
+    [ReturnStatus.APPROVED]: [ReturnStatus.RECEIVED, ReturnStatus.REJECTED, ReturnStatus.CANCELLED],
     [ReturnStatus.RECEIVED]: [ReturnStatus.COMPLETED],
     [ReturnStatus.COMPLETED]: [],
     [ReturnStatus.REJECTED]: [],

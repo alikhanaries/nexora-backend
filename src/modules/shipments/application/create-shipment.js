@@ -16,7 +16,9 @@ export class CreateShipment {
         this.deps = deps;
     }
     async execute(input) {
-        requireShipmentsCreate(this.deps.authorization, input.actorPermissions);
+        if (input.skipAuthorization !== true) {
+            requireShipmentsCreate(this.deps.authorization, input.actorPermissions);
+        }
         if (input.lines.length === 0) {
             throw new ValidationError('Shipment must contain at least one line');
         }

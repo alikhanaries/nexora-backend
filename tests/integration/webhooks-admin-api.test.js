@@ -127,7 +127,7 @@ describe('webhooks admin api integration', () => {
             headers: authHeaders(user.accessToken),
             payload: {
                 url: 'https://example.com/hook',
-                eventTypes: ['product.created'],
+                eventTypes: ['marketplace.created'],
             },
         });
         expect(invalidEvent.statusCode).toBe(400);

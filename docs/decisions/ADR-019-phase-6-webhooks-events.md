@@ -59,7 +59,7 @@ Phase 6 external delivery allowlist is defined in `src/shared/events/event-catal
 - `cancellation.*` (created, completed)
 - `return.*` (created, status_changed)
 
-Catalog/product/inventory/pricing/offer/channel/marketplace events are **not** externally deliverable in the initial Phase 6 allowlist.
+Catalog/product/inventory/pricing/offer/channel/marketplace events were **not** externally deliverable in the initial Phase 6 allowlist (see Phase 7.5 addendum below).
 
 ### Architecture constraints (unchanged)
 
@@ -80,6 +80,19 @@ Catalog/product/inventory/pricing/offer/channel/marketplace events are **not** e
 
 - Two queue hops for webhook delivery (integration-events → webhook-deliveries).
 - Operators must manage two worker concerns until a unified dashboard exists.
+
+## Phase 7.5 addendum — catalog/inventory allowlist expansion
+
+**Date:** 2026-09-22
+
+Phase 7.5 extends the existing `INTEGRATION_EVENT_CATALOG` and cumulative `PHASE_6_EXTERNAL_EVENT_ALLOWLIST` with six tenant-scoped events already produced by commerce modules:
+
+- `product.created`, `product.updated`, `product.status_changed`
+- `inventory.inventory_changed`, `inventory.inventory_reserved`, `inventory.inventory_released`
+
+No new queues, dispatch workers, or subscription persistence changes were required. `WebhookDispatchService` already gates on `isExternallyDeliverable(event.type)` and skips events with `tenantId: null`.
+
+**Deferred:** `marketplace.*` (null tenant scope), `offer.*`, `channel.*`, and `price.*` remain outside the external allowlist until a follow-up explicitly approves them.
 
 ## Related
 

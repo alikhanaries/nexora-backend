@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
 import {
     fingerprintShipmentCommand,
+    fingerprintUpdateShipmentTrackingCommand,
     mapExternalShipmentLinesToOrderLines,
     mapExternalShipmentRequest,
+    mapExternalShipmentTrackingRequest,
     mapShipmentResultToExternalResponse,
+    mapShipmentTrackingResultToExternalResponse,
 } from '../../../src/modules/compatibility/application/mappers/compatibility-shipment.mapper.js';
 
 describe('compatibility shipment mapper', () => {
@@ -96,5 +99,33 @@ describe('compatibility shipment mapper', () => {
         expect(fingerprint).toContain('ORD-1');
         expect(fingerprint).toContain('SHIP-1');
         expect(fingerprint).not.toContain('999001');
+    });
+
+    it('maps shipment tracking request fields', () => {
+        expect(mapExternalShipmentTrackingRequest({
+            Method: ' DHL ',
+            TrackTraceNo: ' TT-123 ',
+        })).toEqual({
+            carrier: 'DHL',
+            trackingNumber: 'TT-123',
+        });
+    });
+
+    it('builds external tracking success response', () => {
+        expect(mapShipmentTrackingResultToExternalResponse({})).toEqual({
+            Success: true,
+            StatusCode: 200,
+            Message: null,
+        });
+    });
+
+    it('fingerprints shipment tracking command input', () => {
+        const fingerprint = fingerprintUpdateShipmentTrackingCommand({
+            merchantShipmentNo: 'SHIP-1',
+            carrier: 'DHL',
+            trackingNumber: 'TT-1',
+        });
+        expect(fingerprint).toContain('SHIP-1');
+        expect(fingerprint).toContain('TT-1');
     });
 });

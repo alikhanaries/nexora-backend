@@ -130,6 +130,11 @@ export async function createApplication(infra) {
         idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
     });
+    orders.wireChannelFulfilledOrder({
+        createShipment: shipments.useCases.createShipment,
+        shipShipment: shipments.useCases.shipShipment,
+        listShipmentsForOrder: shipments.listShipmentsForOrder,
+    });
     const returns = createReturnsModule({
         database: infra.database,
         orderReturnGateway: orders.orderReturnGateway,

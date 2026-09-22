@@ -197,6 +197,24 @@ export function returnHeaders(baseHeaders, idempotencyKey) {
     };
 }
 
+export function acknowledgeReturnPayload(merchantReturnNo, returnId = 12345) {
+    return {
+        MerchantReturnNo: merchantReturnNo,
+        ReturnId: returnId,
+    };
+}
+
+export function receiveReturnPayload(merchantSku, quantity, acceptedQuantity = quantity, rejectedQuantity = 0, returnId = 12345) {
+    return {
+        ReturnId: returnId,
+        Lines: [{
+            MerchantProductNo: merchantSku,
+            AcceptedQuantity: acceptedQuantity,
+            RejectedQuantity: rejectedQuantity,
+        }],
+    };
+}
+
 export async function configureChannelForIngest(server, headers, channelId, stockLocationId, externalReference = 'channel-ref-ingest') {
     const response = await server.inject({
         method: 'PATCH',

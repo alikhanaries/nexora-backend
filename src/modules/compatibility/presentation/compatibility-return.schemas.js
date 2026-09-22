@@ -66,6 +66,33 @@ export const externalReturnSuccessSchema = z.object({
     Message: z.null(),
 });
 
+export const externalReturnMutationSuccessSchema = z.object({
+    Success: z.literal(true),
+    StatusCode: z.literal(200),
+    Message: z.string().nullable().optional(),
+});
+
+const externalIntegerSchema = z.union([
+    z.string().regex(/^-?(?:0|[1-9]\d*)$/),
+    z.number().int(),
+]);
+
+export const acknowledgeReturnBodySchema = z.object({
+    MerchantReturnNo: z.string().min(1).max(50),
+    ReturnId: externalIntegerSchema.optional().nullable(),
+});
+
+const returnReceiveLineBodySchema = z.object({
+    MerchantProductNo: z.string().min(1).max(64),
+    AcceptedQuantity: externalIntegerSchema,
+    RejectedQuantity: externalIntegerSchema,
+});
+
+export const receiveReturnBodySchema = z.object({
+    ReturnId: externalIntegerSchema,
+    Lines: z.array(returnReceiveLineBodySchema).min(1),
+});
+
 const externalReturnLineResponseSchema = z.object({
     MerchantProductNo: z.string().nullable().optional(),
     Quantity: z.number().int(),

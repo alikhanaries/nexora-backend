@@ -1,12 +1,16 @@
 import { NotFoundError } from '../../../shared/errors/index.js';
 import {
     fingerprintShipmentCommand,
+    fingerprintUpdateShipmentTrackingCommand,
     mapExternalShipmentLinesToOrderLines,
     mapExternalShipmentRequest,
+    mapExternalShipmentTrackingRequest,
     mapShipmentResultToExternalResponse,
+    mapShipmentTrackingResultToExternalResponse,
 } from './mappers/compatibility-shipment.mapper.js';
 
 const CREATE_SHIPMENT_ROUTE_ID = 'POST /api/v2/shipments';
+const UPDATE_SHIPMENT_TRACKING_ROUTE_ID = 'PUT /api/v2/shipments/:merchantShipmentNo';
 
 export class ShipmentCompatibilityCommand {
     deps;
@@ -64,5 +68,40 @@ export class ShipmentCompatibilityCommand {
             routeId: CREATE_SHIPMENT_ROUTE_ID,
         });
         return mapShipmentResultToExternalResponse({ shipment });
+    }
+
+    /**
+     * @param {object} input
+     * @param {string} input.tenantId
+     * @param {string} input.actorId
+     * @param {'user'|'api-key'} input.actorKind
+     * @param {readonly string[]} input.actorPermissions
+     * @param {string} input.merchantShipmentNo
+     * @param {object} input.body
+     * @param {string} input.idempotencyKey
+     * @param {string} input.principalFingerprint
+     */
+    async updateShipmentTracking(input) {
+        const merchantShipmentNo = input.merchantShipmentNo.trim();
+        const tracking = mapExternalShipmentTrackingRequest(input.body);
+        const commandInput = {
+            merchantShipmentNo,
+            carrier: tracking.carrier,
+            trackingNumber: tracking.trackingNumber,
+        };
+        const { shipment } = await this.deps.shipmentCommandService.updateShipmentTracking({
+            tenantId: input.tenantId,
+            actorId: input.actorId,
+            actorKind: input.actorKind,
+            actorPermissions: input.actorPermissions,
+            externalReference: merchantShipmentNo,
+            carrier: tracking.carrier,
+            trackingNumber: tracking.trackingNumber,
+            idempotencyKey: input.idempotencyKey,
+            principalFingerprint: input.principalFingerprint,
+            requestFingerprint: fingerprintUpdateShipmentTrackingCommand(commandInput),
+            routeId: UPDATE_SHIPMENT_TRACKING_ROUTE_ID,
+        });
+        return mapShipmentTrackingResultToExternalResponse({ shipment });
     }
 }
