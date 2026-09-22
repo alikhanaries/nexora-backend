@@ -12,6 +12,7 @@ export function requireActorContext() {
         ...(principal.kind === 'user' ? { userId: principal.id } : {}),
         ...(principal.sessionId === undefined ? {} : { sessionId: principal.sessionId }),
         ...(principal.apiKeyId === undefined ? {} : { apiKeyId: principal.apiKeyId }),
+        ...(principal.apiKeyChannelId === undefined ? {} : { apiKeyChannelId: principal.apiKeyChannelId }),
         ...(principal.email === undefined ? {} : { email: principal.email }),
     };
 }

@@ -36,6 +36,7 @@ export class VerifyApiKeyUseCase {
             tenantId: key.tenantId,
             scopes: key.scopes,
             permissions,
+            ...(key.channelId === null ? {} : { channelId: key.channelId }),
         };
     }
 }

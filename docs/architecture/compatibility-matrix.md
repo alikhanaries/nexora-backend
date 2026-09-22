@@ -42,8 +42,8 @@ Nexora routes are prefixed `/api/v2/...` (e.g. external `GET /v2/orders/new` →
 | Merchant | GET /v2/returns/merchant/{merchantOrderNo} | GET /api/v2/returns/merchant/:merchantOrderNo | Initial Phase 5 | ReturnQueryService.listReturns | **Implemented** — see return read notes below |
 | Merchant | GET /v2/returns/{merchantReturnNo} | — | **N/A** | — | **Not in Merchant OpenAPI — verified path is by merchant order number** |
 | Merchant | POST /v2/orders | — | **N/A** | — | **Not in Merchant contract — do not implement** |
-| Channel | POST /v2/orders | Separate future scope | Separate Channel scope | OrderCommandService.createOrder | Separate future scope |
-| Channel | POST /v2/orders/channel-fulfilled | Separate future scope | Separate Channel scope | OrderCommandService + shipment — **TBD** | Separate future scope |
+| Channel | POST /v2/orders | POST /api/v2/orders | Phase 7.2 | OrderCommandService.createChannelOrder | **Implemented** — see channel create notes below |
+| Channel | POST /v2/orders/channel-fulfilled | Separate future scope | Phase 7.3 | OrderCommandService + shipment — **TBD** | Separate future scope |
 
 ## Public contract gap analysis
 
@@ -268,6 +268,57 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 **Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
 
 **Response:** `{ Success: true, StatusCode: 201, Message: null }` — no fabricated integer IDs or cancellation payload.
+
+## `POST /api/v2/orders` — implemented notes (2026-09-22)
+
+**External operation:** `POST /v2/orders` — Channel API order ingestion (not Merchant create).
+
+**Channel context (not in Channel request body):**
+
+| Source | Nexora mapping |
+| ------ | -------------- |
+| Channel-scoped API key | `api_keys.channel_id` → `ChannelQueryService.verifyChannelUsable` |
+| Bearer JWT (Nexora extension) | `X-Channel-Reference` header → `ChannelQueryService.getChannelByExternalReference` |
+
+**Stock location (OQ-7-07):**
+
+| Source | Nexora mapping |
+| ------ | -------------- |
+| `channels.configurationReference` | Must contain the Nexora stock location UUID applied to every ingested line |
+
+When `configurationReference` is missing or not a UUID, ingest returns `422`. No default stock location is inferred.
+
+**Request mapping (verified Channel OpenAPI):**
+
+| External field | Nexora mapping |
+| -------------- | -------------- |
+| `ChannelOrderNo` | `orders.external_order_reference` |
+| `CurrencyCode` | order currency |
+| `ShippingCostsInclVat` | `shippingMinor` (decimal → minor units) |
+| `Email`, `Phone` | customer snapshot |
+| `BillingAddress`, `ShippingAddress` | customer billing/shipping addresses |
+| `Lines[].MerchantProductNo` | SKU-first product resolution (`merchantSku`) |
+| `Lines[].ChannelProductNo` | offer external reference when SKU lookup fails |
+| `Lines[].Quantity` | line quantity |
+| `Lines[].UnitPriceInclVat` | accepted for contract compliance; pricing comes from Nexora `PricingService` |
+
+**Intentionally unsupported / ignored:**
+
+| External field | Reason |
+| -------------- | ------ |
+| Integer `ChannelId` in body | Not present on Channel create request; channel comes from auth/context |
+| Per-line stock location | Not in Channel create contract; resolved from channel configuration |
+| `OrderDate`, `CommercialOrderNo`, service lines, fees | No persisted Nexora fields in Phase 7.2 scope |
+
+**Behavior:** Maps to `OrderCommandService.createChannelOrder` — creates `NEW` orders, reserves inventory in the same transaction, emits `order.created` only (no `order.confirmed`).
+
+**Authorization:** `orders.ingest`. Authentication via Bearer JWT or API key.
+
+**Idempotency:** Required `Idempotency-Key` header; transactional ledger via `PostgresIdempotencyService` (`useTransaction: true`, `routeId=POST /api/v2/orders`). Business deduplication on `(tenant_id, channel_id, external_order_reference)`.
+
+**Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
+
+**Response:** `{ Success: true, StatusCode: 201, Content: <mapped order summary> }` with external status `NEW`, `MerchantOrderNo`, and `ChannelOrderNo`. Integer `Id` / `ChannelId` omitted per identifier policy.
 
 ## `POST /api/v2/orders/acknowledge` — implemented notes (2026-09-21)
 

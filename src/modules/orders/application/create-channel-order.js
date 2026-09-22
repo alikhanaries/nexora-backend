@@ -9,7 +9,7 @@ import { OrderStatus } from '../domain/order-status.js';
 import { isEquivalentChannelOrderRequest } from './channel-order-request-equivalence.js';
 import { toCustomerSnapshotDto, toOrderDto, toOrderLineDto, } from './order-dto.js';
 import { orderCreatedEvent } from './order-events.js';
-import { requireOrdersCreate } from './order-permissions.js';
+import { requireOrdersIngest } from './order-permissions.js';
 import { resolveOrderLines } from './resolve-order-lines.js';
 
 const ORDER_REFERENCE_TYPE = 'ORDER';
@@ -23,7 +23,7 @@ export class CreateChannelOrder {
     }
 
     async execute(input) {
-        requireOrdersCreate(this.deps.authorization, input.actorPermissions);
+        requireOrdersIngest(this.deps.authorization, input.actorPermissions);
         if (input.lines.length === 0) {
             throw new ValidationError('Order must contain at least one line');
         }

@@ -197,6 +197,78 @@ export function returnHeaders(baseHeaders, idempotencyKey) {
     };
 }
 
+export async function configureChannelForIngest(server, headers, channelId, stockLocationId, externalReference = 'channel-ref-ingest') {
+    const response = await server.inject({
+        method: 'PATCH',
+        url: `/api/v1/channels/${channelId}`,
+        headers,
+        payload: {
+            externalReference,
+            configurationReference: stockLocationId,
+        },
+    });
+    expect(response.statusCode).toBe(200);
+    return { channelId, stockLocationId, channelExternalReference: externalReference };
+}
+
+export function channelOrderPayload(fixture, channelOrderNo, quantity = 1) {
+    return {
+        ChannelOrderNo: channelOrderNo,
+        CurrencyCode: 'USD',
+        Email: 'channel-buyer@example.com',
+        OrderDate: '2026-01-15T10:00:00.000Z',
+        ShippingCostsInclVat: 0,
+        BillingAddress: {
+            FirstName: 'Channel',
+            LastName: 'Buyer',
+            Line1: '1 Market Street',
+            City: 'Amsterdam',
+            ZipCode: '1011AB',
+            CountryIso: 'NL',
+        },
+        ShippingAddress: {
+            FirstName: 'Channel',
+            LastName: 'Buyer',
+            Line1: '1 Market Street',
+            City: 'Amsterdam',
+            ZipCode: '1011AB',
+            CountryIso: 'NL',
+        },
+        Lines: [{
+            MerchantProductNo: fixture.merchantSku,
+            ChannelProductNo: fixture.merchantSku,
+            Quantity: quantity,
+            UnitPriceInclVat: 25,
+        }],
+    };
+}
+
+export function channelOrderHeaders(baseHeaders, idempotencyKey, channelExternalReference) {
+    return {
+        ...baseHeaders,
+        'idempotency-key': idempotencyKey,
+        ...(channelExternalReference === undefined
+            ? {}
+            : { 'x-channel-reference': channelExternalReference }),
+    };
+}
+
+export async function createChannelScopedApiKey(app, tenantId, actorId, permissions, channelId, scopes) {
+    const apiKey = await app.apiKeys.useCases.createApiKey.execute({
+        tenantId,
+        actorId,
+        actorPermissions: permissions,
+        name: 'Channel ingest key',
+        scopes,
+    });
+    await app.infra.database.query(
+        'UPDATE api_keys SET channel_id = $2 WHERE id = $1',
+        [apiKey.id, channelId],
+        { operation: 'test.bind_api_key_channel' },
+    );
+    return apiKey;
+}
+
 /**
  * @param {import('../../src/infrastructure/postgres/postgres-database.js').PostgresDatabase} database
  * @param {string} tenantId

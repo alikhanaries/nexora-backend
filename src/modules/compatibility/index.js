@@ -20,6 +20,7 @@ export function createCompatibilityModule(deps) {
     });
     const orderCompatibilityCommand = new OrderCompatibilityCommand({
         orderCommandService: deps.coreContracts.orderCommandService,
+        channelQueryService: deps.coreContracts.channelQueryService,
     });
     const shipmentCompatibilityCommand = new ShipmentCompatibilityCommand({
         orderQueryService: deps.coreContracts.orderQueryService,

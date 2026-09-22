@@ -28,6 +28,10 @@ import {
     externalShipmentSuccessSchema,
     listMerchantShipmentsQuerySchema,
 } from './compatibility-shipment.schemas.js';
+import {
+    createChannelOrderBodySchema,
+    externalChannelOrderCreateSuccessSchema,
+} from './compatibility-channel-order.schemas.js';
 import { externalErrorResponseSchema, externalOrderCollectionSchema, listNewOrdersQuerySchema, listOrdersQuerySchema, } from './compatibility-order.schemas.js';
 
 async function enforceReadRateLimit(deps) {
@@ -148,6 +152,49 @@ const compatibilityRoutes = async (app, deps) => {
                 page: request.query.Page,
                 pageSize: request.query.ItemsPerPage,
             });
+        });
+        typed.post('/api/v2/orders', {
+            schema: {
+                tags: ['Compatibility (v2) — Channel'],
+                summary: 'Create a channel order',
+                description: 'Ingests a channel order into Nexora as status NEW with inventory reservation. '
+                    + 'Requires channel context from a channel-scoped API key (`api_keys.channel_id`) or the '
+                    + 'Nexora Bearer-auth extension header `X-Channel-Reference` (maps to `channels.external_reference`). '
+                    + 'Stock location is resolved from `channels.configurationReference`, which must contain the Nexora stock location UUID. '
+                    + 'Requires `orders.ingest` permission and `Idempotency-Key`.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                body: createChannelOrderBodySchema,
+                response: {
+                    201: externalChannelOrderCreateSuccessSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    404: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const channelReferenceHeader = request.headers['x-channel-reference'];
+            const body = await deps.orderCompatibilityCommand.createChannelOrder({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                apiKeyChannelId: actor.apiKeyChannelId,
+                channelExternalReference: typeof channelReferenceHeader === 'string' ? channelReferenceHeader : undefined,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(201).send(body);
         });
         typed.post('/api/v2/orders/acknowledge', {
             schema: {

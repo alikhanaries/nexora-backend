@@ -49,8 +49,20 @@ function mapExternalOrderLine(line) {
     };
 }
 
-function mapExternalOrder(order, channel) {
+function toDate(value) {
+    if (value instanceof Date) {
+        return value;
+    }
+    if (typeof value === 'string') {
+        return new Date(value);
+    }
+    throw new TypeError('Expected a Date or ISO date string');
+}
+
+export function mapExternalOrder(order, channel) {
     const customer = order.customer;
+    const createdAt = toDate(order.createdAt);
+    const updatedAt = toDate(order.updatedAt);
     return {
         MerchantOrderNo: order.orderNumber,
         ChannelOrderNo: order.externalOrderReference,
@@ -60,9 +72,9 @@ function mapExternalOrder(order, channel) {
         Email: customer?.email ?? '',
         Phone: customer?.phone ?? null,
         CurrencyCode: order.currency,
-        OrderDate: order.createdAt.toISOString(),
-        CreatedAt: order.createdAt.toISOString(),
-        UpdatedAt: order.updatedAt.toISOString(),
+        OrderDate: createdAt.toISOString(),
+        CreatedAt: createdAt.toISOString(),
+        UpdatedAt: updatedAt.toISOString(),
         BillingAddress: mapExternalAddress(customer?.billingAddress ?? null),
         ShippingAddress: mapExternalAddress(customer?.shippingAddress ?? null),
         SubTotalInclVat: minorUnitsToDecimal(order.currency, order.subtotalMinor),
