@@ -45,6 +45,18 @@ Unresolved design items tracked across phases. Move to an ADR when decided.
 | OQ-7-06  | Channel create response shape? | **Resolved** — mapped external order summary, not Merchant `{Success}` envelope ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
 | OQ-7-07  | Default stock location for channel ingest lines? | **Open** — resolve in 7.2 via configurationReference convention or migration |
 
+## Phase 8 — External integer ID mapping
+
+| ID       | Question | Resolution |
+| -------- | -------- | ---------- |
+| OQ-8-01  | Integer allocation algorithm? | **Resolved** — PostgreSQL counter table with atomic upsert per `(tenant_id, provider, resource_type)` ([ADR-021](../decisions/ADR-021-external-id-mapping.md), migration `0042`) |
+| OQ-8-02  | Is `OrderId` alone sufficient for acknowledge lookup? | **Open** — persistence supports lookup; Phase 8.3 |
+| OQ-8-03  | Retain mapping rows after resource deletion? | **Resolved** — insert-only, no cascade delete ([ADR-021](../decisions/ADR-021-external-id-mapping.md)) |
+| OQ-8-04  | Are compatibility integer IDs channel-scoped within a tenant? | **Resolved** — tenant-scoped per provider/resource type; channel column deferred ([ADR-021](../decisions/ADR-021-external-id-mapping.md)) |
+| OQ-8-05  | `ChannelId` — mapping table vs `channels.external_reference`? | **Open** — Phase 8.2/8.3 |
+| OQ-8-06  | Backfill mappings for entities created before Phase 8? | **Open** — product decision before 8.4 |
+| OQ-8-07  | Shared vs separate integer ID space for Merchant vs Channel API? | **Resolved** — shared `provider = compat_v2` ([ADR-021](../decisions/ADR-021-external-id-mapping.md)) |
+
 ## Audit and compliance
 
 | ID     | Question                                          | Impact        | Owner | Target phase |
