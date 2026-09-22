@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+    fingerprintChannelFulfilledOrderCommand,
     fingerprintChannelOrderCommand,
+    mapExternalChannelFulfilledOrderRequest,
     mapExternalChannelOrderRequest,
     resolveChannelStockLocationId,
 } from '../../../src/modules/compatibility/application/mappers/compatibility-channel-order.mapper.js';
@@ -105,6 +107,65 @@ describe('compatibility-channel-order.mapper', () => {
                 merchantSku: 'SKU-001',
             }],
             customer: mapped.customer,
+        }));
+    });
+
+    it('maps a verified Channel channel-fulfilled request with derived shipment metadata', () => {
+        const mapped = mapExternalChannelFulfilledOrderRequest({
+            ChannelOrderNo: 'CH-FUL-1001',
+            CurrencyCode: 'USD',
+            Email: 'buyer@example.com',
+            OrderDate: '2026-01-15T10:00:00.000Z',
+            ShippingCostsInclVat: 0,
+            ShippingMethod: 'DHL',
+            ShippingServiceLevel: 'Express',
+            BillingAddress: { Line1: 'Line 1' },
+            ShippingAddress: { Line1: 'Line 1' },
+            Lines: [{
+                MerchantProductNo: 'SKU-001',
+                Quantity: 1,
+                UnitPriceInclVat: 10,
+            }],
+        }, { channelId, stockLocationId });
+
+        expect(mapped.externalOrderReference).toBe('CH-FUL-1001');
+        expect(mapped.shipment).toEqual({
+            externalReference: 'CH-FUL-1001-fulfillment',
+            carrier: 'DHL',
+            service: 'Express',
+            trackingNumber: null,
+        });
+    });
+
+    it('fingerprints channel-fulfilled mapped input including shipment metadata', () => {
+        const mapped = mapExternalChannelFulfilledOrderRequest({
+            ChannelOrderNo: 'CH-FUL-1001',
+            CurrencyCode: 'USD',
+            Email: 'buyer@example.com',
+            OrderDate: '2026-01-15T10:00:00.000Z',
+            ShippingCostsInclVat: 0,
+            ShippingMethod: 'DHL',
+            BillingAddress: { Line1: 'Line 1' },
+            ShippingAddress: { Line1: 'Line 1' },
+            Lines: [{
+                MerchantProductNo: 'SKU-001',
+                Quantity: 1,
+                UnitPriceInclVat: 10,
+            }],
+        }, { channelId, stockLocationId });
+
+        expect(fingerprintChannelFulfilledOrderCommand(mapped)).toBe(JSON.stringify({
+            channelId,
+            externalOrderReference: 'CH-FUL-1001',
+            currency: 'USD',
+            shippingMinor: 0,
+            lines: [{
+                stockLocationId,
+                quantity: 1,
+                merchantSku: 'SKU-001',
+            }],
+            customer: mapped.customer,
+            shipment: mapped.shipment,
         }));
     });
 

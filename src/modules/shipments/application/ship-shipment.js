@@ -9,8 +9,10 @@ export class ShipShipment {
         this.deps = deps;
     }
     async execute(input) {
-        requireShipmentsUpdate(this.deps.authorization, input.actorPermissions);
-        const shipment = await this.deps.database.execute(async (tx) => {
+        if (input.skipAuthorization !== true) {
+            requireShipmentsUpdate(this.deps.authorization, input.actorPermissions);
+        }
+        const work = async (tx) => {
             const existing = await this.deps.shipments.lockShipmentForUpdate(tx, input.tenantId, input.shipmentId);
             if (existing === null) {
                 throw new NotFoundError('Shipment was not found', {
@@ -59,7 +61,10 @@ export class ShipShipment {
                 ...auditRequestFields(),
             });
             return detail;
-        }, { tenantId: input.tenantId });
+        };
+        const shipment = input.transaction !== undefined
+            ? await work(input.transaction)
+            : await this.deps.database.execute(work, { tenantId: input.tenantId });
         return { shipment };
     }
 }

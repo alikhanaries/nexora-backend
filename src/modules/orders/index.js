@@ -1,6 +1,7 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
 import { AcknowledgeOrder } from './application/acknowledge-order.js';
 import { ConfirmOrder } from './application/confirm-order.js';
+import { CreateChannelFulfilledOrder } from './application/create-channel-fulfilled-order.js';
 import { CreateChannelOrder } from './application/create-channel-order.js';
 import { CreateOrder } from './application/create-order.js';
 import { GetOrder } from './application/get-order.js';
@@ -46,12 +47,31 @@ export function createOrdersModule(deps) {
         ...sharedDeps,
         confirmOrder,
     });
+    /** @type {import('./application/create-channel-fulfilled-order.js').CreateChannelFulfilledOrder|null} */
+    let createChannelFulfilledOrder = null;
     const orderCommandService = new DefaultOrderCommandService({
         createOrder,
         createChannelOrder,
+        get createChannelFulfilledOrder() {
+            return createChannelFulfilledOrder;
+        },
         acknowledgeOrder,
         idempotency: deps.idempotency,
     });
+    /**
+     * @param {object} shipmentDeps
+     * @param {import('./application/create-shipment.js').CreateShipment} shipmentDeps.createShipment
+     * @param {import('../shipments/application/ship-shipment.js').ShipShipment} shipmentDeps.shipShipment
+     * @param {(tx: object, tenantId: string, orderId: string) => Promise<object[]>} shipmentDeps.listShipmentsForOrder
+     */
+    function wireChannelFulfilledOrder(shipmentDeps) {
+        createChannelFulfilledOrder = new CreateChannelFulfilledOrder({
+            ...orderCreationDeps,
+            createShipment: shipmentDeps.createShipment,
+            shipShipment: shipmentDeps.shipShipment,
+            listShipmentsForOrder: shipmentDeps.listShipmentsForOrder,
+        });
+    }
     const useCases = {
         createOrder,
         confirmOrder,
@@ -75,6 +95,7 @@ export function createOrdersModule(deps) {
         orderReturnGateway,
         createOrder,
         createChannelOrder,
+        wireChannelFulfilledOrder,
         useCases,
         routes: orderRoutes,
     };

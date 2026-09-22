@@ -43,7 +43,7 @@ Nexora routes are prefixed `/api/v2/...` (e.g. external `GET /v2/orders/new` →
 | Merchant | GET /v2/returns/{merchantReturnNo} | — | **N/A** | — | **Not in Merchant OpenAPI — verified path is by merchant order number** |
 | Merchant | POST /v2/orders | — | **N/A** | — | **Not in Merchant contract — do not implement** |
 | Channel | POST /v2/orders | POST /api/v2/orders | Phase 7.2 | OrderCommandService.createChannelOrder | **Implemented** — see channel create notes below |
-| Channel | POST /v2/orders/channel-fulfilled | Separate future scope | Phase 7.3 | OrderCommandService + shipment — **TBD** | Separate future scope |
+| Channel | POST /v2/orders/channel-fulfilled | POST /api/v2/orders/channel-fulfilled | Phase 7.3 | OrderCommandService.createChannelFulfilledOrder | **Implemented** — see channel-fulfilled notes below |
 
 ## Public contract gap analysis
 
@@ -319,6 +319,37 @@ When `configurationReference` is missing or not a UUID, ingest returns `422`. No
 **Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
 
 **Response:** `{ Success: true, StatusCode: 201, Content: <mapped order summary> }` with external status `NEW`, `MerchantOrderNo`, and `ChannelOrderNo`. Integer `Id` / `ChannelId` omitted per identifier policy.
+
+## `POST /api/v2/orders/channel-fulfilled` — implemented notes (2026-09-22)
+
+**External operation:** `POST /v2/orders/channel-fulfilled` — Channel API channel-fulfilled order ingestion.
+
+**Channel context:** Same as `POST /api/v2/orders` — channel-scoped API key or Bearer `X-Channel-Reference`.
+
+**Stock location:** Same as `POST /api/v2/orders` — `channels.configurationReference` must contain the Nexora stock location UUID.
+
+**Request mapping:** Reuses the verified Channel create request schema (`ChannelOrderRequestModel`). Shipment metadata is derived from the order request:
+
+| External field | Nexora mapping |
+| -------------- | -------------- |
+| `ChannelOrderNo` | `orders.external_order_reference` |
+| `ShippingMethod` | shipment `carrier` |
+| `ShippingServiceLevel` | shipment `service` |
+| (derived) | shipment `externalReference` = `{ChannelOrderNo}-fulfillment` |
+
+Line, customer, currency, and product resolution match `POST /api/v2/orders`.
+
+**Behavior:** Maps to `OrderCommandService.createChannelFulfilledOrder` — creates `CONFIRMED` orders (no inventory reservation), auto-creates a shipment with full line quantities, ships via `ShipShipment`, and evaluates order shipment state. Final order status `SHIPPED`.
+
+**Events (successful full fulfillment):** `order.created`, `order.confirmed`, `shipment.created`, `shipment.shipped`, `shipment.status_changed`, `order.status_changed` — each once via existing domain/application emission.
+
+**Authorization:** `orders.ingest_channel_fulfilled` (distinct from `orders.ingest`). Authentication via Bearer JWT or API key.
+
+**Idempotency:** Required `Idempotency-Key` header; transactional ledger via `PostgresIdempotencyService` (`useTransaction: true`, `routeId=POST /api/v2/orders/channel-fulfilled`). Business deduplication on `(tenant_id, channel_id, external_order_reference)` shared with standard channel ingest.
+
+**Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
+
+**Response:** `{ Success: true, StatusCode: 201, Content: <mapped order summary> }` with external status `SHIPPED`, `MerchantOrderNo`, and `ChannelOrderNo`.
 
 ## `POST /api/v2/orders/acknowledge` — implemented notes (2026-09-21)
 

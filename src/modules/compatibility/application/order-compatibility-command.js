@@ -5,14 +5,18 @@ import {
     mapExternalAcknowledgeRequest,
 } from './mappers/compatibility-acknowledge.mapper.js';
 import {
+    fingerprintChannelFulfilledOrderCommand,
     fingerprintChannelOrderCommand,
+    mapChannelFulfilledOrderResultToExternalResponse,
     mapChannelOrderResultToExternalResponse,
+    mapExternalChannelFulfilledOrderRequest,
     mapExternalChannelOrderRequest,
     resolveChannelStockLocationId,
 } from './mappers/compatibility-channel-order.mapper.js';
 
 const ACKNOWLEDGE_ROUTE_ID = 'POST /api/v2/orders/acknowledge';
 const CREATE_CHANNEL_ORDER_ROUTE_ID = 'POST /api/v2/orders';
+const CREATE_CHANNEL_FULFILLED_ORDER_ROUTE_ID = 'POST /api/v2/orders/channel-fulfilled';
 
 export class OrderCompatibilityCommand {
     deps;
@@ -62,6 +66,45 @@ export class OrderCompatibilityCommand {
             routeId: CREATE_CHANNEL_ORDER_ROUTE_ID,
         });
         return mapChannelOrderResultToExternalResponse({ order, channel });
+    }
+
+    /**
+     * @param {object} input
+     * @param {string} input.tenantId
+     * @param {string} input.actorId
+     * @param {'user'|'api-key'} input.actorKind
+     * @param {readonly string[]} input.actorPermissions
+     * @param {string|null|undefined} input.apiKeyChannelId
+     * @param {string|null|undefined} input.channelExternalReference
+     * @param {object} input.body
+     * @param {string} input.idempotencyKey
+     * @param {string} input.principalFingerprint
+     */
+    async createChannelFulfilledOrder(input) {
+        const channel = await this.resolveChannelContext(input);
+        const stockLocationId = resolveChannelStockLocationId(channel);
+        const mapped = mapExternalChannelFulfilledOrderRequest(input.body, {
+            channelId: channel.id,
+            stockLocationId,
+        });
+        const result = await this.deps.orderCommandService.createChannelFulfilledOrder({
+            tenantId: input.tenantId,
+            actorId: input.actorId,
+            actorKind: input.actorKind,
+            actorPermissions: input.actorPermissions,
+            channelId: mapped.channelId,
+            externalOrderReference: mapped.externalOrderReference,
+            currency: mapped.currency,
+            lines: mapped.lines,
+            customer: mapped.customer,
+            shippingMinor: mapped.shippingMinor,
+            shipment: mapped.shipment,
+            idempotencyKey: input.idempotencyKey,
+            principalFingerprint: input.principalFingerprint,
+            requestFingerprint: fingerprintChannelFulfilledOrderCommand(mapped),
+            routeId: CREATE_CHANNEL_FULFILLED_ORDER_ROUTE_ID,
+        });
+        return mapChannelFulfilledOrderResultToExternalResponse({ ...result, channel });
     }
 
     /**

@@ -5,6 +5,7 @@ import { DeliverShipment } from './application/deliver-shipment.js';
 import { GetShipment } from './application/get-shipment.js';
 import { ListShipments } from './application/list-shipments.js';
 import { ShipShipment } from './application/ship-shipment.js';
+import { toShipmentDetailDto } from './application/shipment-dto.js';
 import { DefaultShipmentCommandService } from './public/shipment-command-service.js';
 import { DefaultShipmentQueryService } from './public/shipment-query-service.js';
 import { PostgresShipmentRepository } from './infrastructure/index.js';
@@ -49,9 +50,17 @@ export function createShipmentsModule(deps) {
         }),
         idempotency: deps.idempotency,
     };
+    async function listShipmentsForOrder(tx, tenantId, orderId) {
+        const result = await shipments.listPage(tx, tenantId, { orderId }, 100, null, null);
+        return Promise.all(result.items.map(async (shipment) => {
+            const lines = await shipments.listShipmentLines(tx, tenantId, shipment.id);
+            return toShipmentDetailDto(shipment, lines);
+        }));
+    }
     return {
         shipmentCommandService,
         shipmentQueryService,
+        listShipmentsForOrder,
         useCases,
         routes: shipmentRoutes,
     };

@@ -104,6 +104,36 @@
  * @typedef {object} CreateChannelOrderResult
  * @property {OrderDetailDto} order
  *
+ * @typedef {object} ChannelFulfilledShipmentCommand
+ * @property {string|null} [externalReference]
+ * @property {string|null} [carrier]
+ * @property {string|null} [service]
+ * @property {string|null} [trackingNumber]
+ *
+ * @typedef {object} CreateChannelFulfilledOrderCommand
+ * @property {string} tenantId
+ * @property {string} actorId
+ * @property {'user'|'api-key'} actorKind
+ * @property {readonly string[]} actorPermissions
+ * @property {string} channelId
+ * @property {string} externalOrderReference
+ * @property {string} currency
+ * @property {CreateChannelOrderLineCommand[]} lines
+ * @property {CreateOrderCustomerCommand} [customer]
+ * @property {number} [discountMinor]
+ * @property {number} [taxMinor]
+ * @property {number} [shippingMinor]
+ * @property {ChannelFulfilledShipmentCommand} [shipment]
+ * @property {string} [idempotencyKey]
+ * @property {string} [principalFingerprint]
+ * @property {string} [routeId]
+ * @property {string} [requestFingerprint]
+ * @property {object} [transaction]
+ *
+ * @typedef {object} CreateChannelFulfilledOrderResult
+ * @property {OrderDetailDto} order
+ * @property {object|null} shipment
+ *
  * @typedef {object} AcknowledgeOrderCommand
  * @property {string} tenantId
  * @property {string} actorId
@@ -124,6 +154,8 @@
  * Native order entry — creates `CONFIRMED` orders and emits `order.created` + `order.confirmed`.
  * @property {(command: CreateChannelOrderCommand) => Promise<CreateChannelOrderResult>} createChannelOrder
  * Channel ingestion — creates `NEW` orders, reserves inventory, emits `order.created` only.
+ * @property {(command: CreateChannelFulfilledOrderCommand) => Promise<CreateChannelFulfilledOrderResult>} createChannelFulfilledOrder
+ * Channel-fulfilled ingestion — creates `CONFIRMED` orders, auto-ships, no inventory reservation.
  * @property {(command: AcknowledgeOrderCommand) => Promise<AcknowledgeOrderResult>} acknowledgeOrder
  */
 
