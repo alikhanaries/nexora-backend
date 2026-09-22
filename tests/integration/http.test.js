@@ -25,6 +25,8 @@ describe('HTTP integration', () => {
         const ping = await app.httpServer.inject({ method: 'GET', url: '/api/v1/foundation/ping' });
         expect(ping.statusCode).toBe(200);
         expect(ping.json()).toEqual({ success: true, data: { message: 'pong' } });
+        const v2PingUnauthenticated = await app.httpServer.inject({ method: 'GET', url: '/api/v2/foundation/ping' });
+        expect(v2PingUnauthenticated.statusCode).toBe(401);
         await app.httpServer.close();
     });
 });

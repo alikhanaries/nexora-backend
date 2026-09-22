@@ -28,6 +28,9 @@ export class Return {
     get orderId() {
         return this.props.orderId;
     }
+    get externalReference() {
+        return this.props.externalReference ?? null;
+    }
     get shipmentId() {
         return this.props.shipmentId;
     }

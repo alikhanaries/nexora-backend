@@ -81,7 +81,7 @@ Migration `0001` creates `app.current_tenant_id()`, reading a transaction-local 
 | Prefix                         | Purpose                            | Phase                               |
 | ------------------------------ | ---------------------------------- | ----------------------------------- |
 | `/api/v1`                      | Native Nexora API                  | Phase 1 (foundation endpoints only) |
-| `/api/v2`                      | ChannelEngine compatibility facade | Deferred                            |
+| `/api/v2`                      | External Merchant-compatible facade | Phase 5 boundary (optional adapter) |
 | `/health`, `/metrics`, `/docs` | Operations                         | Phase 1                             |
 
 See [api-strategy.md](api-strategy.md) for versioning details.

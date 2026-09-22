@@ -3,6 +3,7 @@ export function toReturnDto(returnEntity) {
         id: returnEntity.id,
         tenantId: returnEntity.tenantId,
         orderId: returnEntity.orderId,
+        externalReference: returnEntity.externalReference,
         shipmentId: returnEntity.shipmentId,
         status: returnEntity.status,
         reason: returnEntity.reason,

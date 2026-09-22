@@ -23,6 +23,7 @@ export const configSchema = z.object({
     SERVER_TRUST_INCOMING_REQUEST_ID: envBoolean(false),
     SERVER_TRUST_PROXY: envBoolean(false),
     DATABASE_URL: envUrl(),
+    DATABASE_MIGRATION_URL: envOptionalString(),
     DATABASE_POOL_MAX: envInteger({ default: 10, min: 1, max: 1_000 }),
     DATABASE_POOL_MIN: envInteger({ default: 0, min: 0, max: 1_000 }),
     DATABASE_CONNECTION_TIMEOUT_MS: envInteger({ default: 5_000, min: 100, max: 120_000 }),

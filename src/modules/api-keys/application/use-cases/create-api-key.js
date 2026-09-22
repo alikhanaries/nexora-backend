@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../../audit/public/index.js';
-import { RateLimitError, ValidationError } from '../../../../shared/errors/index.js';
+import { AuthorizationError, RateLimitError, ValidationError } from '../../../../shared/errors/index.js';
 import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-policies.js';
 import { formatApiKey, generateApiKeyPrefix, generateApiKeySecret, hashApiKeySecret, } from '../../domain/api-key-secret.js';
 import { intersectScopesWithPermissions } from '../../domain/api-key.js';
@@ -10,6 +10,9 @@ export class CreateApiKeyUseCase {
         this.deps = deps;
     }
     async execute(input) {
+        if (!input.actorPermissions.includes('api_keys.manage')) {
+            throw new AuthorizationError('Missing required permission: api_keys.manage');
+        }
         const name = input.name.trim();
         if (name.length === 0) {
             throw new ValidationError('API key name is required');

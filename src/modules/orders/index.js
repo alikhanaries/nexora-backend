@@ -1,8 +1,10 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
+import { AcknowledgeOrder } from './application/acknowledge-order.js';
 import { ConfirmOrder } from './application/confirm-order.js';
 import { CreateOrder } from './application/create-order.js';
 import { GetOrder } from './application/get-order.js';
 import { ListOrders } from './application/list-orders.js';
+import { DefaultOrderCommandService } from './application/order-command-service.js';
 import { DefaultOrderFulfillmentService } from './application/order-fulfillment-service.js';
 import { DefaultOrderQueryService } from './application/order-query-service.js';
 import { DefaultOrderReturnGateway } from './application/order-return-gateway.js';
@@ -16,6 +18,7 @@ export function createOrdersModule(deps) {
         eventRecorder: deps.eventRecorder,
     });
     const orderQueryService = new DefaultOrderQueryService({
+        authorization,
         queryable: deps.database,
         orders,
     });
@@ -35,9 +38,20 @@ export function createOrdersModule(deps) {
         pricingService: deps.pricingService,
         inventoryService: deps.inventoryService,
     });
+    const confirmOrder = new ConfirmOrder(sharedDeps);
+    const acknowledgeOrder = new AcknowledgeOrder({
+        ...sharedDeps,
+        confirmOrder,
+    });
+    const orderCommandService = new DefaultOrderCommandService({
+        createOrder,
+        acknowledgeOrder,
+        idempotency: deps.idempotency,
+    });
     const useCases = {
         createOrder,
-        confirmOrder: new ConfirmOrder(sharedDeps),
+        confirmOrder,
+        acknowledgeOrder,
         getOrder: new GetOrder({
             authorization,
             queryable: deps.database,
@@ -51,6 +65,7 @@ export function createOrdersModule(deps) {
         idempotency: deps.idempotency,
     };
     return {
+        orderCommandService,
         orderFulfillmentService,
         orderQueryService,
         orderReturnGateway,

@@ -1,11 +1,13 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
 import { CreateCancellation, DefaultCancellationQueryService, GetCancellation, ListCancellations, } from './application/index.js';
+import { DefaultCancellationCommandService } from './public/cancellation-command-service.js';
 import { PostgresCancellationRepository } from './infrastructure/index.js';
 import cancellationRoutes, {} from './presentation/cancellation.routes.js';
 export function createCancellationsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const cancellations = new PostgresCancellationRepository();
     const cancellationQueryService = new DefaultCancellationQueryService({
+        authorization,
         queryable: deps.database,
         cancellations,
     });
@@ -20,8 +22,13 @@ export function createCancellationsModule(deps) {
         idempotency: deps.idempotency,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
+    const createCancellation = new CreateCancellation(lifecycleDeps);
+    const cancellationCommandService = new DefaultCancellationCommandService({
+        createCancellation,
+        idempotency: deps.idempotency,
+    });
     const useCases = {
-        createCancellation: new CreateCancellation(lifecycleDeps),
+        createCancellation,
         getCancellation: new GetCancellation({ authorization, cancellationQueryService }),
         listCancellations: new ListCancellations({
             authorization,
@@ -31,6 +38,7 @@ export function createCancellationsModule(deps) {
         idempotency: deps.idempotency,
     };
     return {
+        cancellationCommandService,
         cancellationQueryService,
         useCases,
         routes: cancellationRoutes,

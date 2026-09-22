@@ -5,6 +5,7 @@ import { DeliverShipment } from './application/deliver-shipment.js';
 import { GetShipment } from './application/get-shipment.js';
 import { ListShipments } from './application/list-shipments.js';
 import { ShipShipment } from './application/ship-shipment.js';
+import { DefaultShipmentCommandService } from './public/shipment-command-service.js';
 import { DefaultShipmentQueryService } from './public/shipment-query-service.js';
 import { PostgresShipmentRepository } from './infrastructure/index.js';
 import shipmentRoutes, {} from './presentation/shipment.routes.js';
@@ -12,6 +13,7 @@ export function createShipmentsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const shipments = new PostgresShipmentRepository();
     const shipmentQueryService = new DefaultShipmentQueryService({
+        authorization,
         queryable: deps.database,
         shipments,
     });
@@ -23,11 +25,16 @@ export function createShipmentsModule(deps) {
         idempotency: deps.idempotency,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
+    const createShipment = new CreateShipment({
+        ...lifecycleDeps,
+        orderFulfillmentService: deps.orderFulfillmentService,
+    });
+    const shipmentCommandService = new DefaultShipmentCommandService({
+        createShipment,
+        idempotency: deps.idempotency,
+    });
     const useCases = {
-        createShipment: new CreateShipment({
-            ...lifecycleDeps,
-            orderFulfillmentService: deps.orderFulfillmentService,
-        }),
+        createShipment,
         listShipments: new ListShipments({
             authorization,
             queryable: deps.database,
@@ -43,6 +50,7 @@ export function createShipmentsModule(deps) {
         idempotency: deps.idempotency,
     };
     return {
+        shipmentCommandService,
         shipmentQueryService,
         useCases,
         routes: shipmentRoutes,

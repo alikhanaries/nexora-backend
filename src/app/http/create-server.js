@@ -42,9 +42,23 @@ export async function createHttpServer(deps) {
             info: {
                 title: `${deps.config.appName} API`,
                 version: '0.1.0',
-                description: 'Nexora native API — tenants, identity, authorization, audit, API keys, MFA, commerce modules (marketplaces, channels, products, pricing, offers, inventory, orders, cancellations, shipments, returns).',
+                description: 'Nexora APIs — `/api/v1` native surface and `/api/v2` Merchant-compatible compatibility surface (adapter boundary; core modules remain provider-neutral).',
             },
             servers: [{ url: `http://localhost:${deps.config.server.port}` }],
+            components: {
+                securitySchemes: {
+                    bearerAuth: {
+                        type: 'http',
+                        scheme: 'bearer',
+                        bearerFormat: 'JWT',
+                    },
+                    apiKeyAuth: {
+                        type: 'apiKey',
+                        in: 'header',
+                        name: 'x-api-key',
+                    },
+                },
+            },
         },
         transform: jsonSchemaTransform,
     });
@@ -84,5 +98,6 @@ export async function createHttpServer(deps) {
     await app.register(deps.cancellations.routes, deps.cancellations.useCases);
     await app.register(deps.shipments.routes, deps.shipments.useCases);
     await app.register(deps.returns.routes, deps.returns.useCases);
+    await app.register(deps.compatibility.routes, deps.compatibility.routeDeps);
     return app;
 }

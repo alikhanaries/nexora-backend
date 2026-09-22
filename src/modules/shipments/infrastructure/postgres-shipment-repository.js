@@ -7,6 +7,7 @@ const shipmentRowSchema = z.object({
     id: z.string().uuid(),
     tenant_id: z.string().uuid(),
     order_id: z.string().uuid(),
+    external_reference: z.string().nullable(),
     carrier: z.string().nullable(),
     service: z.string().nullable(),
     tracking_number: z.string().nullable(),
@@ -32,14 +33,17 @@ const shipmentLineRowSchema = z.object({
     quantity: z.coerce.number(),
     created_at: z.date(),
 });
-const shipmentSelect = `id, tenant_id, order_id, carrier, service, tracking_number, status,
+const shipmentSelect = `id, tenant_id, order_id, external_reference, carrier, service, tracking_number, status,
   shipped_at, delivered_at, created_at, updated_at`;
+const shipmentSelectAliased = `s.id, s.tenant_id, s.order_id, s.external_reference, s.carrier, s.service, s.tracking_number, s.status,
+  s.shipped_at, s.delivered_at, s.created_at, s.updated_at`;
 const shipmentLineSelect = `id, tenant_id, shipment_id, order_line_id, quantity, created_at`;
 function toShipment(row) {
     return Shipment.reconstitute({
         id: row.id,
         tenantId: row.tenant_id,
         orderId: row.order_id,
+        externalReference: row.external_reference,
         carrier: row.carrier,
         service: row.service,
         trackingNumber: row.tracking_number,
@@ -67,6 +71,155 @@ export class PostgresShipmentRepository {
         if (row === undefined)
             return null;
         return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
+    }
+    async findByExternalReference(queryable, tenantId, externalReference) {
+        const result = await queryable.query(`SELECT ${shipmentSelect}
+       FROM shipments
+       WHERE tenant_id = $1 AND external_reference = $2`, [tenantId, externalReference], { operation: 'shipments.find_by_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
+    }
+    async lockByExternalReferenceForUpdate(transaction, tenantId, externalReference) {
+        const result = await transaction.query(`SELECT ${shipmentSelect}
+       FROM shipments
+       WHERE tenant_id = $1 AND external_reference = $2
+       FOR UPDATE`, [tenantId, externalReference], { operation: 'shipments.lock_by_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
+    }
+    buildListConditions(tenantId, filters) {
+        const conditions = ['s.tenant_id = $1'];
+        const params = [tenantId];
+        let paramIndex = 2;
+        let joinOrders = false;
+        if (filters.orderNumbers !== undefined || filters.externalOrderReferences !== undefined) {
+            joinOrders = true;
+        }
+        if (filters.externalReferences !== undefined) {
+            if (filters.externalReferences.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`s.external_reference = ANY($${paramIndex++}::text[])`);
+                params.push(filters.externalReferences);
+            }
+        }
+        if (filters.orderIds !== undefined) {
+            if (filters.orderIds.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`s.order_id = ANY($${paramIndex++}::uuid[])`);
+                params.push(filters.orderIds);
+            }
+        }
+        if (filters.orderId !== undefined) {
+            conditions.push(`s.order_id = $${paramIndex++}`);
+            params.push(filters.orderId);
+        }
+        if (filters.orderNumbers !== undefined) {
+            if (filters.orderNumbers.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`o.order_number = ANY($${paramIndex++}::text[])`);
+                params.push(filters.orderNumbers);
+            }
+        }
+        if (filters.externalOrderReferences !== undefined) {
+            if (filters.externalOrderReferences.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`o.external_order_reference = ANY($${paramIndex++}::text[])`);
+                params.push(filters.externalOrderReferences);
+            }
+        }
+        if (filters.status !== undefined) {
+            conditions.push(`s.status = $${paramIndex++}`);
+            params.push(filters.status);
+        }
+        if (filters.statuses !== undefined) {
+            if (filters.statuses.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`s.status = ANY($${paramIndex++}::text[])`);
+                params.push(filters.statuses);
+            }
+        }
+        if (filters.trackingNumber !== undefined) {
+            conditions.push(`s.tracking_number = $${paramIndex++}`);
+            params.push(filters.trackingNumber);
+        }
+        if (filters.carrier !== undefined) {
+            conditions.push(`s.carrier = $${paramIndex++}`);
+            params.push(filters.carrier);
+        }
+        if (filters.shippedAfter !== undefined) {
+            conditions.push(`s.shipped_at >= $${paramIndex++}`);
+            params.push(filters.shippedAfter);
+        }
+        if (filters.shippedBefore !== undefined) {
+            conditions.push(`s.shipped_at < $${paramIndex++}`);
+            params.push(filters.shippedBefore);
+        }
+        if (filters.createdAfter !== undefined) {
+            conditions.push(`s.created_at >= $${paramIndex++}`);
+            params.push(filters.createdAfter);
+        }
+        if (filters.createdBefore !== undefined) {
+            conditions.push(`s.created_at < $${paramIndex++}`);
+            params.push(filters.createdBefore);
+        }
+        if (filters.updatedAfter !== undefined) {
+            conditions.push(`s.updated_at >= $${paramIndex++}`);
+            params.push(filters.updatedAfter);
+        }
+        if (filters.updatedBefore !== undefined) {
+            conditions.push(`s.updated_at < $${paramIndex++}`);
+            params.push(filters.updatedBefore);
+        }
+        if (filters.deliveredAfter !== undefined) {
+            conditions.push(`s.delivered_at >= $${paramIndex++}`);
+            params.push(filters.deliveredAfter);
+        }
+        if (filters.deliveredBefore !== undefined) {
+            conditions.push(`s.delivered_at < $${paramIndex++}`);
+            params.push(filters.deliveredBefore);
+        }
+        const joinClause = joinOrders
+            ? 'INNER JOIN orders o ON o.tenant_id = s.tenant_id AND o.id = s.order_id'
+            : '';
+        return { conditions, params, nextParamIndex: paramIndex, joinClause };
+    }
+    async count(queryable, tenantId, filters) {
+        const { conditions, params, joinClause } = this.buildListConditions(tenantId, filters);
+        const result = await queryable.query(`SELECT COUNT(*)::int AS total
+       FROM shipments s
+       ${joinClause}
+       WHERE ${conditions.join(' AND ')}`, params, { operation: 'shipments.count' });
+        const row = result.rows[0];
+        return Number(row?.total ?? 0);
+    }
+    async listPageOffset(queryable, tenantId, filters, page, pageSize, sortDirection = 'desc') {
+        const { conditions, params, nextParamIndex, joinClause } = this.buildListConditions(tenantId, filters);
+        const offset = (page - 1) * pageSize;
+        const limitParam = nextParamIndex;
+        const offsetParam = nextParamIndex + 1;
+        const listParams = [...params, pageSize, offset];
+        const orderDirection = sortDirection === 'asc' ? 'ASC' : 'DESC';
+        const result = await queryable.query(`SELECT ${shipmentSelectAliased}
+       FROM shipments s
+       ${joinClause}
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY s.created_at ${orderDirection}, s.id ${orderDirection}
+       LIMIT $${limitParam} OFFSET $${offsetParam}`, listParams, { operation: 'shipments.list_page_offset' });
+        return result.rows.map((row) => toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row')));
     }
     async listPage(queryable, tenantId, filters, limit, cursorCreatedAt, cursorId) {
         const conditions = ['tenant_id = $1'];
@@ -100,12 +253,13 @@ export class PostgresShipmentRepository {
     async insertShipment(transaction, shipment) {
         const p = shipment.toProps();
         await transaction.query(`INSERT INTO shipments (
-         id, tenant_id, order_id, carrier, service, tracking_number, status,
+         id, tenant_id, order_id, external_reference, carrier, service, tracking_number, status,
          shipped_at, delivered_at, created_at, updated_at
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, [
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`, [
             p.id,
             p.tenantId,
             p.orderId,
+            p.externalReference,
             p.carrier,
             p.service,
             p.trackingNumber,

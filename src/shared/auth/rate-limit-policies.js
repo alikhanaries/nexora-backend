@@ -23,3 +23,17 @@ export const AUTH_RATE_LIMIT_POLICIES = {
         windowSeconds: 3600,
     },
 };
+
+/** Provider-neutral rate limits for the `/api/v2` compatibility surface. */
+export const COMPATIBILITY_RATE_LIMIT_POLICIES = {
+    read: {
+        name: 'compatibility.read',
+        limit: 120,
+        windowSeconds: 60,
+    },
+    mutation: {
+        name: 'compatibility.mutation',
+        limit: 60,
+        windowSeconds: 60,
+    },
+};

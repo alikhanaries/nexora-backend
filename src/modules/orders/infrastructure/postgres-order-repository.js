@@ -98,6 +98,9 @@ function normalizeAddress(value) {
 const orderSelect = `id, tenant_id, channel_id, external_order_reference, order_number, status,
   currency, subtotal_minor, discount_minor, tax_minor, shipping_minor, total_minor,
   created_at, updated_at, confirmed_at, cancelled_at, shipped_at, delivered_at`;
+const orderSelectAliased = `o.id, o.tenant_id, o.channel_id, o.external_order_reference, o.order_number, o.status,
+  o.currency, o.subtotal_minor, o.discount_minor, o.tax_minor, o.shipping_minor, o.total_minor,
+  o.created_at, o.updated_at, o.confirmed_at, o.cancelled_at, o.shipped_at, o.delivered_at`;
 const orderLineSelect = `id, tenant_id, order_id, product_id, offer_id, stock_location_id,
   merchant_sku, product_type_snapshot, quantity, cancelled_quantity, shipped_quantity,
   returned_quantity, unit_price_minor, discount_minor, tax_minor, line_total_minor, currency,
@@ -190,6 +193,80 @@ export class PostgresOrderRepository {
             return null;
         return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
     }
+    buildListConditions(tenantId, filters) {
+        const conditions = ['o.tenant_id = $1'];
+        const params = [tenantId];
+        let paramIndex = 2;
+        if (filters.status !== undefined) {
+            conditions.push(`o.status = $${paramIndex++}`);
+            params.push(filters.status);
+        }
+        if (filters.statuses !== undefined) {
+            if (filters.statuses.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`o.status = ANY($${paramIndex++}::text[])`);
+                params.push(filters.statuses);
+            }
+        }
+        if (filters.orderNumbers !== undefined) {
+            if (filters.orderNumbers.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`o.order_number = ANY($${paramIndex++}::text[])`);
+                params.push(filters.orderNumbers);
+            }
+        }
+        if (filters.externalOrderReferences !== undefined) {
+            if (filters.externalOrderReferences.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`o.external_order_reference = ANY($${paramIndex++}::text[])`);
+                params.push(filters.externalOrderReferences);
+            }
+        }
+        if (filters.channelId !== undefined) {
+            conditions.push(`o.channel_id = $${paramIndex++}`);
+            params.push(filters.channelId);
+        }
+        if (filters.externalOrderReference !== undefined) {
+            conditions.push(`o.external_order_reference = $${paramIndex++}`);
+            params.push(filters.externalOrderReference);
+        }
+        if (filters.orderNumber !== undefined) {
+            conditions.push(`o.order_number = $${paramIndex++}`);
+            params.push(filters.orderNumber);
+        }
+        if (filters.createdAfter !== undefined) {
+            conditions.push(`o.created_at >= $${paramIndex++}`);
+            params.push(filters.createdAfter);
+        }
+        if (filters.createdBefore !== undefined) {
+            conditions.push(`o.created_at < $${paramIndex++}`);
+            params.push(filters.createdBefore);
+        }
+        if (filters.updatedAfter !== undefined) {
+            conditions.push(`o.updated_at >= $${paramIndex++}`);
+            params.push(filters.updatedAfter);
+        }
+        if (filters.updatedBefore !== undefined) {
+            conditions.push(`o.updated_at < $${paramIndex++}`);
+            params.push(filters.updatedBefore);
+        }
+        if (filters.stockLocationId !== undefined) {
+            conditions.push(`EXISTS (
+         SELECT 1 FROM order_lines ol
+         WHERE ol.tenant_id = o.tenant_id
+           AND ol.order_id = o.id
+           AND ol.stock_location_id = $${paramIndex++}
+       )`);
+            params.push(filters.stockLocationId);
+        }
+        return { conditions, params, nextParamIndex: paramIndex };
+    }
     async list(queryable, tenantId, filters, limit, cursor) {
         const conditions = ['tenant_id = $1'];
         const params = [tenantId];
@@ -228,6 +305,27 @@ export class PostgresOrderRepository {
        WHERE ${conditions.join(' AND ')}
        ORDER BY created_at DESC, id DESC
        LIMIT $${paramIndex}`, params, { operation: 'orders.list' });
+        return result.rows.map((row) => toOrder(parseOrThrow(orderRowSchema, row, 'orders row')));
+    }
+    async count(queryable, tenantId, filters) {
+        const { conditions, params } = this.buildListConditions(tenantId, filters);
+        const result = await queryable.query(`SELECT COUNT(*)::int AS total
+       FROM orders o
+       WHERE ${conditions.join(' AND ')}`, params, { operation: 'orders.count' });
+        const row = result.rows[0];
+        return Number(row?.total ?? 0);
+    }
+    async listPage(queryable, tenantId, filters, page, pageSize) {
+        const { conditions, params, nextParamIndex } = this.buildListConditions(tenantId, filters);
+        const offset = (page - 1) * pageSize;
+        const limitParam = nextParamIndex;
+        const offsetParam = nextParamIndex + 1;
+        const listParams = [...params, pageSize, offset];
+        const result = await queryable.query(`SELECT ${orderSelectAliased}
+       FROM orders o
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY o.created_at DESC, o.id DESC
+       LIMIT $${limitParam} OFFSET $${offsetParam}`, listParams, { operation: 'orders.list_page' });
         return result.rows.map((row) => toOrder(parseOrThrow(orderRowSchema, row, 'orders row')));
     }
     async insertOrder(transaction, order) {

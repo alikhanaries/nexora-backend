@@ -7,6 +7,7 @@ const returnRowSchema = z.object({
     id: z.string().uuid(),
     tenant_id: z.string().uuid(),
     order_id: z.string().uuid(),
+    external_reference: z.string().nullable(),
     shipment_id: z.string().uuid().nullable(),
     status: z.enum([
         ReturnStatus.REQUESTED,
@@ -32,8 +33,10 @@ const returnLineRowSchema = z.object({
     created_at: z.date(),
     updated_at: z.date(),
 });
-const returnSelect = `id, tenant_id, order_id, shipment_id, status, reason,
+const returnSelect = `id, tenant_id, order_id, external_reference, shipment_id, status, reason,
   created_at, updated_at, received_at, completed_at`;
+const returnSelectAliased = `r.id, r.tenant_id, r.order_id, r.external_reference, r.shipment_id, r.status, r.reason,
+  r.created_at, r.updated_at, r.received_at, r.completed_at`;
 const returnLineSelect = `id, tenant_id, return_id, order_line_id, quantity, reason,
   created_at, updated_at`;
 function toReturn(row) {
@@ -41,6 +44,7 @@ function toReturn(row) {
         id: row.id,
         tenantId: row.tenant_id,
         orderId: row.order_id,
+        externalReference: row.external_reference,
         shipmentId: row.shipment_id,
         status: row.status,
         reason: row.reason,
@@ -70,6 +74,25 @@ export class PostgresReturnRepository {
             return null;
         return toReturn(parseOrThrow(returnRowSchema, row, 'returns row'));
     }
+    async findByExternalReference(queryable, tenantId, externalReference) {
+        const result = await queryable.query(`SELECT ${returnSelect}
+       FROM returns
+       WHERE tenant_id = $1 AND external_reference = $2`, [tenantId, externalReference], { operation: 'returns.find_by_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toReturn(parseOrThrow(returnRowSchema, row, 'returns row'));
+    }
+    async lockByExternalReferenceForUpdate(transaction, tenantId, externalReference) {
+        const result = await transaction.query(`SELECT ${returnSelect}
+       FROM returns
+       WHERE tenant_id = $1 AND external_reference = $2
+       FOR UPDATE`, [tenantId, externalReference], { operation: 'returns.lock_by_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toReturn(parseOrThrow(returnRowSchema, row, 'returns row'));
+    }
     async lockForUpdate(transaction, tenantId, returnId) {
         const result = await transaction.query(`SELECT ${returnSelect}
        FROM returns
@@ -79,6 +102,112 @@ export class PostgresReturnRepository {
         if (row === undefined)
             return null;
         return toReturn(parseOrThrow(returnRowSchema, row, 'returns row'));
+    }
+    buildListConditions(tenantId, filters) {
+        const conditions = ['r.tenant_id = $1'];
+        const params = [tenantId];
+        let paramIndex = 2;
+        let joinOrders = false;
+        if (filters.orderNumbers !== undefined || filters.externalOrderReferences !== undefined) {
+            joinOrders = true;
+        }
+        if (filters.externalReferences !== undefined) {
+            if (filters.externalReferences.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`r.external_reference = ANY($${paramIndex++}::text[])`);
+                params.push(filters.externalReferences);
+            }
+        }
+        if (filters.orderId !== undefined) {
+            conditions.push(`r.order_id = $${paramIndex++}`);
+            params.push(filters.orderId);
+        }
+        if (filters.orderNumbers !== undefined) {
+            if (filters.orderNumbers.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`o.order_number = ANY($${paramIndex++}::text[])`);
+                params.push(filters.orderNumbers);
+            }
+        }
+        if (filters.externalOrderReferences !== undefined) {
+            if (filters.externalOrderReferences.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`o.external_order_reference = ANY($${paramIndex++}::text[])`);
+                params.push(filters.externalOrderReferences);
+            }
+        }
+        if (filters.status !== undefined) {
+            conditions.push(`r.status = $${paramIndex++}`);
+            params.push(filters.status);
+        }
+        if (filters.statuses !== undefined) {
+            if (filters.statuses.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`r.status = ANY($${paramIndex++}::text[])`);
+                params.push(filters.statuses);
+            }
+        }
+        if (filters.reasons !== undefined) {
+            if (filters.reasons.length === 0) {
+                conditions.push('FALSE');
+            }
+            else {
+                conditions.push(`r.reason = ANY($${paramIndex++}::text[])`);
+                params.push(filters.reasons);
+            }
+        }
+        if (filters.createdAfter !== undefined) {
+            conditions.push(`r.created_at >= $${paramIndex++}`);
+            params.push(filters.createdAfter);
+        }
+        if (filters.createdBefore !== undefined) {
+            conditions.push(`r.created_at < $${paramIndex++}`);
+            params.push(filters.createdBefore);
+        }
+        if (filters.updatedAfter !== undefined) {
+            conditions.push(`r.updated_at >= $${paramIndex++}`);
+            params.push(filters.updatedAfter);
+        }
+        if (filters.updatedBefore !== undefined) {
+            conditions.push(`r.updated_at < $${paramIndex++}`);
+            params.push(filters.updatedBefore);
+        }
+        const joinClause = joinOrders
+            ? 'INNER JOIN orders o ON o.tenant_id = r.tenant_id AND o.id = r.order_id'
+            : '';
+        return { conditions, params, nextParamIndex: paramIndex, joinClause };
+    }
+    async count(queryable, tenantId, filters) {
+        const { conditions, params, joinClause } = this.buildListConditions(tenantId, filters);
+        const result = await queryable.query(`SELECT COUNT(*)::int AS total
+       FROM returns r
+       ${joinClause}
+       WHERE ${conditions.join(' AND ')}`, params, { operation: 'returns.count' });
+        const row = result.rows[0];
+        return Number(row?.total ?? 0);
+    }
+    async listPageOffset(queryable, tenantId, filters, page, pageSize, sortDirection = 'desc') {
+        const { conditions, params, nextParamIndex, joinClause } = this.buildListConditions(tenantId, filters);
+        const offset = (page - 1) * pageSize;
+        const limitParam = nextParamIndex;
+        const offsetParam = nextParamIndex + 1;
+        const listParams = [...params, pageSize, offset];
+        const orderDirection = sortDirection === 'asc' ? 'ASC' : 'DESC';
+        const result = await queryable.query(`SELECT ${returnSelectAliased}
+       FROM returns r
+       ${joinClause}
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY r.created_at ${orderDirection}, r.id ${orderDirection}
+       LIMIT $${limitParam} OFFSET $${offsetParam}`, listParams, { operation: 'returns.list_page_offset' });
+        return result.rows.map((row) => toReturn(parseOrThrow(returnRowSchema, row, 'returns row')));
     }
     async listPage(queryable, tenantId, filters, limit, cursorCreatedAt, cursorId) {
         const conditions = ['tenant_id = $1'];
@@ -109,12 +238,13 @@ export class PostgresReturnRepository {
     async insertReturn(transaction, returnEntity) {
         const p = returnEntity.toProps();
         await transaction.query(`INSERT INTO returns (
-         id, tenant_id, order_id, shipment_id, status, reason,
+         id, tenant_id, order_id, external_reference, shipment_id, status, reason,
          created_at, updated_at, received_at, completed_at
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, [
             p.id,
             p.tenantId,
             p.orderId,
+            p.externalReference ?? null,
             p.shipmentId,
             p.status,
             p.reason,

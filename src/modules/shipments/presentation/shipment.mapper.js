@@ -3,6 +3,7 @@ export function toShipmentResponse(shipment) {
         id: shipment.id,
         tenantId: shipment.tenantId,
         orderId: shipment.orderId,
+        externalReference: shipment.externalReference ?? null,
         carrier: shipment.carrier,
         service: shipment.service,
         trackingNumber: shipment.trackingNumber,

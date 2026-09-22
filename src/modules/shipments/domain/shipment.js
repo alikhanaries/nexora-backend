@@ -28,6 +28,9 @@ export class Shipment {
     get orderId() {
         return this.props.orderId;
     }
+    get externalReference() {
+        return this.props.externalReference ?? null;
+    }
     get carrier() {
         return this.props.carrier;
     }
