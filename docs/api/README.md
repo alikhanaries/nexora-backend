@@ -58,9 +58,9 @@ Error (shape from error handler):
 | `Idempotency-Key` | Request          | Mutation replay protection (wired in Phase 2) |
 | `Content-Type`    | Request          | Must be `application/json` for JSON bodies    |
 
-## Deferred: ChannelEngine API (`/api/v2`)
+## External compatibility API (`/api/v2`)
 
-Not registered in Phase 1. See [architecture/channelengine-compatibility.md](../architecture/channelengine-compatibility.md).
+Optional Merchant-compatible surface — not required for native Nexora operation. Foundation probe only until endpoints are implemented. See [platform-independence.md](../architecture/platform-independence.md), [compatibility.md](../architecture/compatibility.md), and [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md).
 
 ## Operations endpoints
 

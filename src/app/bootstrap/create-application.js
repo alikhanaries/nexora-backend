@@ -17,6 +17,7 @@ import { createPricingModule } from '../../modules/pricing/index.js';
 import { createProductsModule } from '../../modules/products/index.js';
 import { createReturnsModule } from '../../modules/returns/index.js';
 import { createTenantsModule } from '../../modules/tenants/index.js';
+import { createCompatibilityModule } from '../../modules/compatibility/index.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { createHttpServer } from '../http/create-server.js';
 import { createDefaultProbes, ReadinessService } from '../observability/readiness.js';
@@ -136,6 +137,25 @@ export async function createApplication(infra) {
         idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
     });
+    const compatibility = createCompatibilityModule({
+        rateLimiter: infra.rateLimiter,
+        coreContracts: {
+            productQueryService: products.productQueryService,
+            channelQueryService: channels.channelQueryService,
+            inventoryService: inventory.inventoryService,
+            pricingService: pricing.pricingService,
+            offerQueryService: offers.offerQueryService,
+            orderQueryService: orders.orderQueryService,
+            orderFulfillmentService: orders.orderFulfillmentService,
+            shipmentQueryService: shipments.shipmentQueryService,
+            shipmentCommandService: shipments.shipmentCommandService,
+            cancellationQueryService: cancellations.cancellationQueryService,
+            cancellationCommandService: cancellations.cancellationCommandService,
+            returnQueryService: returns.returnQueryService,
+            returnCommandService: returns.returnCommandService,
+            orderCommandService: orders.orderCommandService,
+        },
+    });
     const httpServer = await createHttpServer({
         config: infra.config,
         logger: infra.logger,
@@ -157,6 +177,7 @@ export async function createApplication(infra) {
         cancellations,
         shipments,
         returns,
+        compatibility,
         authenticateAccessToken,
         verifyApiKey: apiKeys.useCases.verifyApiKey,
     });
@@ -177,6 +198,7 @@ export async function createApplication(infra) {
         cancellations,
         shipments,
         returns,
+        compatibility,
         readiness,
         httpServer,
     };

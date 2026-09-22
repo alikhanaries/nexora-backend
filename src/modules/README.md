@@ -18,7 +18,7 @@ src/modules/<module-name>/
 
 ### Naming
 
-- Module folder: lowercase, hyphenated (`channelengine-compatibility`, `stock-reservations`)
+- Module folder: lowercase, hyphenated (`compatibility`, `stock-reservations`)
 - Use case files: verb-noun (`create-order.ts`, `list-products.ts`)
 - Domain types: PascalCase (`Order`, `ProductSku`)
 
@@ -55,7 +55,7 @@ Prefer integration events (outbox) for async cross-module reactions; synchronous
 - Register plugin in `src/app/http/create-server.ts`
 - Use Zod schemas for OpenAPI generation
 
-ChannelEngine compatibility routes belong in `channelengine-compatibility` module under `/api/v2` — not in domain modules.
+Merchant-compatible external API routes belong in the provider-neutral `compatibility` module under `/api/v2` — not in core domain modules. Native Nexora routes stay under `/api/v1`.
 
 ## Persistence
 
@@ -76,7 +76,7 @@ Order of implementation to be confirmed in Phase 2 planning:
 2. **Inventory** — stock levels
 3. **Orders** — order lifecycle
 4. **Channels** — marketplace connections
-5. **channelengine-compatibility** — CE facade (parallel with domain modules)
+5. **compatibility** — Merchant-compatible `/api/v2` adapter (parallel with domain modules; provider-neutral internally)
 
 ## Related
 

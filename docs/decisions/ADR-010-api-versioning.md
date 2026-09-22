@@ -19,12 +19,12 @@ Use **URL path versioning** with two prefixes:
 | Prefix    | Purpose                            | Phase 1                             |
 | --------- | ---------------------------------- | ----------------------------------- |
 | `/api/v1` | Native Nexora API                  | Foundation endpoints only           |
-| `/api/v2` | ChannelEngine compatibility facade | **Deferred** — no routes registered |
+| `/api/v2` | Merchant-compatible compatibility facade | **Phase 5** — boundary established; Merchant endpoints per [ADR-018](ADR-018-phase-5-merchant-compatible-scope.md) |
 
 Rules:
 
 - Native breaking changes increment the native major version (future `/api/v2` native is distinct from CE facade — naming TBD if collision occurs)
-- ChannelEngine compatibility lives exclusively in `channelengine-compatibility` module
+- Merchant-compatible external API lives exclusively in the `compatibility` module ([ADR-018](ADR-018-phase-5-merchant-compatible-scope.md))
 - Operations endpoints (`/health`, `/metrics`) are unversioned
 
 OpenAPI document describes native API only in Phase 1.
@@ -45,5 +45,6 @@ OpenAPI document describes native API only in Phase 1.
 ## Related
 
 - [api-strategy.md](../architecture/api-strategy.md)
-- [channelengine-compatibility.md](../architecture/channelengine-compatibility.md)
-- [channelengine-compatibility-matrix.md](../architecture/channelengine-compatibility-matrix.md)
+- [compatibility.md](../architecture/compatibility.md)
+- [compatibility-matrix.md](../architecture/compatibility-matrix.md)
+- [ADR-018](ADR-018-phase-5-merchant-compatible-scope.md)

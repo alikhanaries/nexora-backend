@@ -23,7 +23,10 @@ export async function createInfrastructure(config) {
         : noopMetricsRecorder;
     const tracing = startTracing(config, logger);
     const database = new PostgresDatabase({ config: config.database, logger, metrics });
-    await database.runMigrations();
+    await database.runMigrations({
+        migrationUrl: config.database.migrationUrl,
+        runtimeUrl: config.database.url,
+    });
     const redis = new RedisConnection({ config: config.redis, logger, metrics });
     await redis.connect();
     const redisKeys = new RedisKeyBuilder(config.redis.keyPrefix, config.instanceNamespace);

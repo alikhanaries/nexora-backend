@@ -19,6 +19,7 @@ function toAppConfig(raw) {
         },
         database: {
             url: raw.DATABASE_URL,
+            migrationUrl: raw.DATABASE_MIGRATION_URL,
             ssl: raw.DATABASE_SSL,
             pool: {
                 max: raw.DATABASE_POOL_MAX,
@@ -106,6 +107,9 @@ function assertConsistency(config) {
     }
     if (config.auth.mfaEncryptionKey.length !== 32) {
         problems.push('AUTH_MFA_ENCRYPTION_KEY must be exactly 32 bytes');
+    }
+    if (config.database.migrationUrl !== undefined && !URL.canParse(config.database.migrationUrl)) {
+        problems.push('DATABASE_MIGRATION_URL must be a valid URL when set');
     }
     if (problems.length > 0) {
         throw new ConfigurationError('Configuration is inconsistent', { problems });

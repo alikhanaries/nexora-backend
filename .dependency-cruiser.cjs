@@ -78,12 +78,45 @@ module.exports = {
       },
     },
     {
+      name: 'core-no-compatibility',
+      severity: 'error',
+      comment:
+        'Core business modules must remain provider-neutral and must not depend on the compatibility adapter.',
+      from: {
+        path: '^src/modules/',
+        pathNot: '^src/modules/compatibility/',
+      },
+      to: { path: '^src/modules/compatibility/' },
+    },
+    {
       name: 'compatibility-no-direct-persistence',
       severity: 'error',
       comment:
-        'The ChannelEngine compatibility facade translates to application interfaces; it must never touch repositories or the database directly.',
-      from: { path: '^src/modules/channelengine-compatibility/' },
+        'The compatibility adapter translates to core public contracts; it must never touch repositories or the database directly.',
+      from: { path: '^src/modules/compatibility/' },
       to: { path: '^(src/infrastructure/postgres/|src/modules/[^/]+/infrastructure/)' },
+    },
+    {
+      name: 'compatibility-no-module-index-imports',
+      severity: 'error',
+      comment:
+        'Compatibility must integrate through another module public/ contracts, not its root index or private layers.',
+      from: { path: '^src/modules/compatibility/' },
+      to: {
+        path: '^src/modules/([^/]+)/index\\.js$',
+        pathNot: '^src/modules/compatibility/',
+      },
+    },
+    {
+      name: 'compatibility-public-contracts-only',
+      severity: 'error',
+      comment:
+        'Compatibility must not import other modules private layers; public/ contracts are the only approved core entrypoint.',
+      from: { path: '^src/modules/compatibility/' },
+      to: {
+        path: '^src/modules/([^/]+)/(domain|application|infrastructure|presentation)/',
+        pathNot: '^src/modules/compatibility/',
+      },
     },
     {
       name: 'shared-stays-generic',

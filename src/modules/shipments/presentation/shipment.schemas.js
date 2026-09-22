@@ -50,6 +50,7 @@ export const shipmentResponseSchema = z.object({
     id: z.string().uuid(),
     tenantId: z.string().uuid(),
     orderId: z.string().uuid(),
+    externalReference: z.string().nullable(),
     carrier: z.string().nullable(),
     service: z.string().nullable(),
     trackingNumber: z.string().nullable(),

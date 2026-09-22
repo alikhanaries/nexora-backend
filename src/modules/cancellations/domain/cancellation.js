@@ -27,6 +27,9 @@ export class Cancellation {
     get orderId() {
         return this.props.orderId;
     }
+    get externalReference() {
+        return this.props.externalReference ?? null;
+    }
     get status() {
         return this.props.status;
     }

@@ -3,6 +3,7 @@ export function toCancellationDto(cancellation) {
         id: cancellation.id,
         tenantId: cancellation.tenantId,
         orderId: cancellation.orderId,
+        externalReference: cancellation.externalReference,
         status: cancellation.status,
         reason: cancellation.reason,
         createdAt: cancellation.createdAt,

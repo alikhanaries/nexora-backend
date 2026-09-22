@@ -41,9 +41,59 @@ Modules communicate through **public interfaces** exported from the module root 
     → modules/inventory/infrastructure/stock-repository.ts
 ```
 
-### ChannelEngine compatibility module
+### Compatibility module (`/api/v2`)
 
-When added, `src/modules/channelengine-compatibility/` is a **facade** that translates ChannelEngine request/response shapes to native application interfaces. It must **never** touch PostgreSQL repositories or `src/infrastructure/postgres/` directly.
+`src/modules/compatibility/` is a **provider-neutral adapter** that exposes external compatibility APIs at `/api/v2`. Nexora core modules remain provider-neutral; external platform terminology must not leak into domain or application layers.
+
+#### Three surfaces (do not conflate)
+
+| Surface | Contract | Phase 5 initial scope |
+| ------- | -------- | --------------------- |
+| `/api/v1` | Nexora native | Active — core module presentation |
+| `/api/v2` | **Merchant-compatible** | Order reads + acknowledgement (see [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md)) |
+| Channel ingestion | **Channel API** (separate) | **Not** in Phase 5 initial scope — `POST /v2/orders` create exists on Channel API only |
+
+The Merchant API does **not** define `POST /v2/orders` for order creation. Nexora must not invent hybrid semantics on `/api/v2/orders`.
+
+```
+external credential → authenticated principal → tenant context → core public contract
+```
+
+Dependency direction:
+
+```
+compatibility/presentation
+    ↓
+compatibility/application (mappers, error translation)
+    ↓
+core modules public/ contracts
+    ↓
+core modules (orders, products, inventory, …)
+```
+
+Rules:
+
+| Rule | Meaning |
+| ---- | ------- |
+| **Core → compatibility forbidden** | Business modules must not import the compatibility module |
+| **Compatibility → core public only** | Compatibility may call other modules only through `public/` contracts |
+| **No direct persistence** | Compatibility must not touch PostgreSQL repositories or `src/infrastructure/postgres/` |
+| **No duplicated business logic** | State machines and invariants stay in core modules |
+| **Outbound via outbox** | Core modules never synchronously call external providers; integration uses outbox → BullMQ → handler → adapter |
+
+Native Nexora API remains `/api/v1`. Do not mix v1 and v2 route registration.
+
+### Platform independence
+
+Nexora core must operate without any external commerce platform. See [platform-independence.md](platform-independence.md).
+
+| Rule | Meaning |
+| ---- | ------- |
+| **Nexora owns business truth** | PostgreSQL + core modules — not an external platform |
+| **No provider names in core** | No provider-specific types, services, or config in core modules |
+| **Compatibility is optional** | Removing `src/modules/compatibility/` must not prevent core modules from functioning |
+| **No external API for core paths** | Native `/api/v1` and compatibility adapters call Nexora public contracts only |
+| **Documentation ≠ dependency** | External OpenAPI specs are reference material for contract design |
 
 ## Shared and infrastructure rules
 
@@ -66,7 +116,10 @@ Rules of note (see config for full list):
 - `domain-no-infrastructure-layer`
 - `domain-no-infrastructure-packages`
 - `no-cross-module-internals`
+- `core-no-compatibility`
 - `compatibility-no-direct-persistence`
+- `compatibility-no-module-index-imports`
+- `compatibility-public-contracts-only`
 - `shared-stays-generic`
 - `infrastructure-no-modules`
 

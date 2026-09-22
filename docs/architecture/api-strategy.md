@@ -7,9 +7,9 @@ Nexora exposes two API surfaces over time. Phase 1 implements only the **native 
 | Prefix    | Audience                                                   | Status                            |
 | --------- | ---------------------------------------------------------- | --------------------------------- |
 | `/api/v1` | Nexora native clients, internal services, new integrations | **Active** (foundation endpoints) |
-| `/api/v2` | ChannelEngine-compatible clients (migration path)          | **Deferred**                      |
+| `/api/v2` | Merchant-compatible external clients (migration path)      | **Phase 5 — boundary established** |
 
-Version is in the URL path — not negotiable via headers alone. Breaking changes to `/api/v1` require a new major version (`/api/v2` native, not to be confused with ChannelEngine `/api/v2`).
+Version is in the URL path — not negotiable via headers alone. Breaking changes to `/api/v1` require a new native major version (distinct from the external compatibility prefix `/api/v2`).
 
 See [ADR-010](../decisions/ADR-010-api-versioning.md).
 
@@ -36,17 +36,19 @@ When `DOCS_ENABLED=true`:
 - OpenAPI JSON: `/openapi.json`
 - Scalar UI: `/docs`
 
-## ChannelEngine compatibility (`/api/v2`)
+## External compatibility (`/api/v2`)
 
-A separate **facade module** (`src/modules/channelengine-compatibility/`) will translate ChannelEngine request/response contracts to native use cases.
+A provider-neutral **compatibility module** (`src/modules/compatibility/`) translates verified external contracts to core public interfaces.
+
+Phase 5 initial scope is the **Merchant-compatible** surface only ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md)). The **Channel ingestion** contract (`POST /v2/orders` create) is a separate future scope — not a hybrid on `/api/v2`.
 
 Rules:
 
-- Facade contains **no business logic** — mapping and HTTP status translation only.
-- Facade must **not** access repositories directly (enforced by dependency-cruiser).
-- Parity tracked in [channelengine-compatibility-matrix.md](channelengine-compatibility-matrix.md).
+- Compatibility contains **no business logic** — mapping and HTTP status translation only.
+- Compatibility must **not** access repositories directly (enforced by dependency-cruiser).
+- Parity tracked in [compatibility-matrix.md](compatibility-matrix.md).
 
-See [channelengine-compatibility.md](channelengine-compatibility.md).
+See [compatibility.md](compatibility.md).
 
 ## Operations endpoints (unversioned)
 
@@ -73,5 +75,5 @@ List endpoints will use cursor-based pagination for large collections. Constants
 ## Client guidance
 
 - Target `/api/v1` for all new integrations.
-- Use `/api/v2` only when migrating from ChannelEngine and parity is confirmed in the compatibility matrix.
+- Use `/api/v2` only when migrating from a Merchant-compatible external integration and parity is confirmed in the compatibility matrix.
 - Always send `X-Request-Id` or accept the server-generated one for support correlation.

@@ -7,7 +7,7 @@ Documentation for the Nexora commerce platform backend. Phase 1 covers foundatio
 | Audience               | Document                                                                                                   |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------- |
 | New engineers          | [Architecture overview](architecture/overview.md)                                                          |
-| Implementing a feature | [Module boundaries](architecture/module-boundaries.md) + [src/modules/README.md](../src/modules/README.md) |
+| Implementing a feature | [Platform independence](architecture/platform-independence.md) + [module boundaries](architecture/module-boundaries.md) + [src/modules/README.md](../src/modules/README.md) |
 | API design             | [API strategy](architecture/api-strategy.md)                                                               |
 | Database work          | [Database architecture](architecture/database.md) + [database/README.md](database/README.md)               |
 | Security review        | [Security architecture](architecture/security.md)                                                          |
@@ -25,8 +25,8 @@ Documentation for the Nexora commerce platform backend. Phase 1 covers foundatio
 - [Scalability](architecture/scalability.md)
 - [Audit logging](architecture/audit-logging.md)
 - [API strategy](architecture/api-strategy.md)
-- [ChannelEngine compatibility](architecture/channelengine-compatibility.md)
-- [Compatibility matrix (placeholder)](architecture/channelengine-compatibility-matrix.md)
+- [External compatibility (`/api/v2`)](architecture/compatibility.md)
+- [Compatibility matrix](architecture/compatibility-matrix.md)
 - [Open questions](architecture/open-questions.md)
 - [Phase 0 discovery summary](architecture/phase-0-discovery.md)
 

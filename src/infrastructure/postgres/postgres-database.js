@@ -128,7 +128,26 @@ export class PostgresDatabase {
             waiting: this.pool.waitingCount,
         });
     }
-    async runMigrations() {
+    /**
+     * @param {{ migrationUrl?: string, runtimeUrl: string }} [options]
+     */
+    async runMigrations(options = {}) {
+        const migrationUrl = options.migrationUrl ?? options.runtimeUrl;
+        const runtimeUrl = options.runtimeUrl;
+        if (migrationUrl !== undefined && runtimeUrl !== undefined && migrationUrl !== runtimeUrl) {
+            const migrationPool = new Pool({
+                connectionString: migrationUrl,
+                max: 1,
+                application_name: 'nexora-backend-migrate',
+            });
+            try {
+                await migrateUp(migrationPool, this.logger);
+            }
+            finally {
+                await migrationPool.end();
+            }
+            return;
+        }
         await migrateUp(this.pool, this.logger);
     }
     async close() {
