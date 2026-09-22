@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../audit/public/index.js';
+import {
+    ExternalIdMappingProvider,
+    ExternalIdMappingResourceType,
+} from '../../external-id-mapping/public/index.js';
 import { AppError, BusinessRuleError, ConflictError, NotFoundError, ValidationError, } from '../../../shared/errors/index.js';
 import { Return } from '../domain/return.js';
 import { ReturnLine } from '../domain/return-line.js';
@@ -126,6 +130,12 @@ export class CreateReturn {
             for (const line of returnLines) {
                 await this.deps.returns.insertReturnLine(tx, line);
             }
+            await this.deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
+                tenantId: input.tenantId,
+                provider: ExternalIdMappingProvider.COMPAT_V2,
+                resourceType: ExternalIdMappingResourceType.RETURN,
+                resourceId: returnEntity.id,
+            });
             const detail = toReturnDetailDto(returnEntity, returnLines);
             await this.deps.eventRecorder.record(tx, returnCreatedEvent(detail));
             await this.deps.auditRecorder?.record(tx, {

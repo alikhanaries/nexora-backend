@@ -7,7 +7,7 @@ import { ConflictError } from '../../src/shared/errors/index.js';
 import {
     ExternalIdMappingProvider,
     ExternalIdMappingResourceType,
-} from '../../src/modules/external-id-mapping/domain/external-id-mapping-namespace.js';
+} from '../../src/modules/external-id-mapping/public/index.js';
 import { createExternalIdMappingModule } from '../../src/modules/external-id-mapping/index.js';
 import { createTestTenant } from './auth-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
@@ -65,105 +65,103 @@ describe('external integer ID mapping integration', () => {
         const app = await createApplication(infra);
         await app.httpServer.ready();
         const tenant = await createTestTenant(app.httpServer);
-        const { mappings, assignExternalIntegerIdMapping } = createExternalIdMappingModule();
+        const { externalIntegerIdMappingCommandService, externalIntegerIdMappingQueryService } =
+            createExternalIdMappingModule({ database: infra.database });
 
         const resourceA = randomUUID();
         const resourceB = randomUUID();
-        const mappingA = await infra.database.execute(async (tx) => assignExternalIntegerIdMapping.execute({
-            transaction: tx,
-            mapping: {
+        const mappingA = await infra.database.execute(async (tx) => {
+            const result = await externalIntegerIdMappingCommandService.assignMapping(tx, {
                 tenantId: tenant.tenantId,
                 provider: ExternalIdMappingProvider.COMPAT_V2,
                 resourceType: ExternalIdMappingResourceType.ORDER,
                 resourceId: resourceA,
-            },
-        }), { tenantId: tenant.tenantId });
+            });
+            return result.mapping;
+        }, { tenantId: tenant.tenantId });
 
-        const mappingB = await infra.database.execute(async (tx) => assignExternalIntegerIdMapping.execute({
-            transaction: tx,
-            mapping: {
+        const mappingB = await infra.database.execute(async (tx) => {
+            const result = await externalIntegerIdMappingCommandService.assignMapping(tx, {
                 tenantId: tenant.tenantId,
                 provider: ExternalIdMappingProvider.COMPAT_V2,
                 resourceType: ExternalIdMappingResourceType.ORDER,
                 resourceId: resourceB,
-            },
-        }), { tenantId: tenant.tenantId });
+            });
+            return result.mapping;
+        }, { tenantId: tenant.tenantId });
 
         expect(mappingA.externalId).toBe(1);
         expect(mappingB.externalId).toBe(2);
         expect(mappingA.externalId).not.toBe(mappingB.externalId);
 
-        const replay = await infra.database.execute(async (tx) => assignExternalIntegerIdMapping.execute({
-            transaction: tx,
-            mapping: {
+        const replay = await infra.database.execute(async (tx) => {
+            const result = await externalIntegerIdMappingCommandService.assignMapping(tx, {
                 tenantId: tenant.tenantId,
                 provider: ExternalIdMappingProvider.COMPAT_V2,
                 resourceType: ExternalIdMappingResourceType.ORDER,
                 resourceId: resourceA,
-            },
-        }), { tenantId: tenant.tenantId });
+            });
+            return result.mapping;
+        }, { tenantId: tenant.tenantId });
         expect(replay.externalId).toBe(mappingA.externalId);
 
-        const forward = await infra.database.execute(async (tx) => mappings.findResourceIdByExternalId(
-            tx,
+        const forward = await infra.database.execute(async (tx) => externalIntegerIdMappingQueryService.findResourceIdByExternalId(
             tenant.tenantId,
             ExternalIdMappingProvider.COMPAT_V2,
             ExternalIdMappingResourceType.ORDER,
             mappingA.externalId,
+            tx,
         ), { tenantId: tenant.tenantId });
         expect(forward).toBe(resourceA);
 
-        const reverse = await infra.database.execute(async (tx) => mappings.findExternalIdByResourceId(
-            tx,
+        const reverse = await infra.database.execute(async (tx) => externalIntegerIdMappingQueryService.findExternalIdByResourceId(
             tenant.tenantId,
             ExternalIdMappingProvider.COMPAT_V2,
             ExternalIdMappingResourceType.ORDER,
             resourceB,
+            tx,
         ), { tenantId: tenant.tenantId });
         expect(reverse).toBe(mappingB.externalId);
 
-        const batch = await infra.database.execute(async (tx) => mappings.findExternalIdsByResourceIds(
-            tx,
+        const batch = await infra.database.execute(async (tx) => externalIntegerIdMappingQueryService.findExternalIdsByResourceIds(
             tenant.tenantId,
             ExternalIdMappingProvider.COMPAT_V2,
             ExternalIdMappingResourceType.ORDER,
             [resourceA, resourceB],
+            tx,
         ), { tenantId: tenant.tenantId });
         expect(batch.get(resourceA)).toBe(mappingA.externalId);
         expect(batch.get(resourceB)).toBe(mappingB.externalId);
 
         const rolledBackResource = randomUUID();
         await expect(infra.database.execute(async (tx) => {
-            await assignExternalIntegerIdMapping.execute({
-                transaction: tx,
-                mapping: {
-                    tenantId: tenant.tenantId,
-                    provider: ExternalIdMappingProvider.COMPAT_V2,
-                    resourceType: ExternalIdMappingResourceType.ORDER,
-                    resourceId: rolledBackResource,
-                },
-            });
-            throw new Error('force rollback');
-        }, { tenantId: tenant.tenantId })).rejects.toThrow();
-
-        const afterRollback = await infra.database.execute(async (tx) => mappings.findExternalIdByResourceId(
-            tx,
-            tenant.tenantId,
-            ExternalIdMappingProvider.COMPAT_V2,
-            ExternalIdMappingResourceType.ORDER,
-            rolledBackResource,
-        ), { tenantId: tenant.tenantId });
-        expect(afterRollback).toBeNull();
-
-        const afterRollbackId = await infra.database.execute(async (tx) => assignExternalIntegerIdMapping.execute({
-            transaction: tx,
-            mapping: {
+            await externalIntegerIdMappingCommandService.assignMapping(tx, {
                 tenantId: tenant.tenantId,
                 provider: ExternalIdMappingProvider.COMPAT_V2,
                 resourceType: ExternalIdMappingResourceType.ORDER,
                 resourceId: rolledBackResource,
-            },
-        }), { tenantId: tenant.tenantId });
+            });
+            throw new Error('force rollback');
+        }, { tenantId: tenant.tenantId })).rejects.toThrow();
+
+        const afterRollback = await infra.database.execute(async (tx) => externalIntegerIdMappingQueryService.findExternalIdByResourceId(
+            tenant.tenantId,
+            ExternalIdMappingProvider.COMPAT_V2,
+            ExternalIdMappingResourceType.ORDER,
+            rolledBackResource,
+            tx,
+        ), { tenantId: tenant.tenantId });
+        expect(afterRollback).toBeNull();
+
+        const afterRollbackId = await infra.database.execute(async (tx) => {
+            const result = await externalIntegerIdMappingCommandService.assignMapping(tx, {
+                tenantId: tenant.tenantId,
+                provider: ExternalIdMappingProvider.COMPAT_V2,
+                resourceType: ExternalIdMappingResourceType.ORDER,
+                resourceId: rolledBackResource,
+            });
+            return result.mapping;
+        }, { tenantId: tenant.tenantId });
         expect(afterRollbackId.externalId).toBe(3);
 
         await app.httpServer.close();
@@ -174,22 +172,29 @@ describe('external integer ID mapping integration', () => {
         const app = await createApplication(infra);
         await app.httpServer.ready();
         const tenant = await createTestTenant(app.httpServer);
-        const { mappings } = createExternalIdMappingModule();
+        const { externalIntegerIdMappingCommandService } =
+            createExternalIdMappingModule({ database: infra.database });
 
         const orderId = randomUUID();
         const returnId = randomUUID();
-        const orderMapping = await infra.database.execute(async (tx) => mappings.assignMapping(tx, {
-            tenantId: tenant.tenantId,
-            provider: ExternalIdMappingProvider.COMPAT_V2,
-            resourceType: ExternalIdMappingResourceType.ORDER,
-            resourceId: orderId,
-        }), { tenantId: tenant.tenantId });
-        const returnMapping = await infra.database.execute(async (tx) => mappings.assignMapping(tx, {
-            tenantId: tenant.tenantId,
-            provider: ExternalIdMappingProvider.COMPAT_V2,
-            resourceType: ExternalIdMappingResourceType.RETURN,
-            resourceId: returnId,
-        }), { tenantId: tenant.tenantId });
+        const orderMapping = await infra.database.execute(async (tx) => {
+            const result = await externalIntegerIdMappingCommandService.assignMapping(tx, {
+                tenantId: tenant.tenantId,
+                provider: ExternalIdMappingProvider.COMPAT_V2,
+                resourceType: ExternalIdMappingResourceType.ORDER,
+                resourceId: orderId,
+            });
+            return result.mapping;
+        }, { tenantId: tenant.tenantId });
+        const returnMapping = await infra.database.execute(async (tx) => {
+            const result = await externalIntegerIdMappingCommandService.assignMapping(tx, {
+                tenantId: tenant.tenantId,
+                provider: ExternalIdMappingProvider.COMPAT_V2,
+                resourceType: ExternalIdMappingResourceType.RETURN,
+                resourceId: returnId,
+            });
+            return result.mapping;
+        }, { tenantId: tenant.tenantId });
 
         expect(orderMapping.externalId).toBe(returnMapping.externalId);
 
@@ -231,18 +236,19 @@ describe('external integer ID mapping integration', () => {
         const app = await createApplication(infra);
         await app.httpServer.ready();
         const tenant = await createTestTenant(app.httpServer);
-        const { assignExternalIntegerIdMapping } = createExternalIdMappingModule();
+        const { externalIntegerIdMappingCommandService } =
+            createExternalIdMappingModule({ database: infra.database });
 
         const resources = Array.from({ length: 8 }, () => randomUUID());
-        const mappings = await Promise.all(resources.map((resourceId) => infra.database.execute(async (tx) => assignExternalIntegerIdMapping.execute({
-            transaction: tx,
-            mapping: {
+        const mappings = await Promise.all(resources.map((resourceId) => infra.database.execute(async (tx) => {
+            const result = await externalIntegerIdMappingCommandService.assignMapping(tx, {
                 tenantId: tenant.tenantId,
                 provider: ExternalIdMappingProvider.COMPAT_V2,
                 resourceType: ExternalIdMappingResourceType.SHIPMENT,
                 resourceId,
-            },
-        }), { tenantId: tenant.tenantId })));
+            });
+            return result.mapping;
+        }, { tenantId: tenant.tenantId })));
 
         const externalIds = mappings.map((mapping) => mapping.externalId);
         expect(new Set(externalIds).size).toBe(externalIds.length);
@@ -256,15 +262,19 @@ describe('external integer ID mapping integration', () => {
         await app.httpServer.ready();
         const tenantA = await createTestTenant(app.httpServer);
         const tenantB = await createTestTenant(app.httpServer);
-        const { mappings } = createExternalIdMappingModule();
+        const { externalIntegerIdMappingCommandService } =
+            createExternalIdMappingModule({ database: infra.database });
         const resourceId = randomUUID();
 
-        const mapping = await infra.database.execute(async (tx) => mappings.assignMapping(tx, {
-            tenantId: tenantA.tenantId,
-            provider: ExternalIdMappingProvider.COMPAT_V2,
-            resourceType: ExternalIdMappingResourceType.CANCELLATION,
-            resourceId,
-        }), { tenantId: tenantA.tenantId });
+        const mapping = await infra.database.execute(async (tx) => {
+            const result = await externalIntegerIdMappingCommandService.assignMapping(tx, {
+                tenantId: tenantA.tenantId,
+                provider: ExternalIdMappingProvider.COMPAT_V2,
+                resourceType: ExternalIdMappingResourceType.CANCELLATION,
+                resourceId,
+            });
+            return result.mapping;
+        }, { tenantId: tenantA.tenantId });
 
         const ownTenant = await queryWithTenant(
             appRolePool,

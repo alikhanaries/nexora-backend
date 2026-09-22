@@ -39,6 +39,7 @@ export function createOrdersModule(deps) {
         offerQueryService: deps.offerQueryService,
         pricingService: deps.pricingService,
         inventoryService: deps.inventoryService,
+        externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
     };
     const createOrder = new CreateOrder(orderCreationDeps);
     const createChannelOrder = new CreateChannelOrder(orderCreationDeps);

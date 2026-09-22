@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../audit/public/index.js';
+import {
+    ExternalIdMappingProvider,
+    ExternalIdMappingResourceType,
+} from '../../external-id-mapping/public/index.js';
 import { AppError, BusinessRuleError, ConflictError, NotFoundError, ValidationError, } from '../../../shared/errors/index.js';
 import { ShipmentLine } from '../domain/shipment-line.js';
 import { Shipment } from '../domain/shipment.js';
@@ -112,6 +116,12 @@ export class CreateShipment {
             for (const shipmentLine of shipmentLines) {
                 await this.deps.shipments.insertShipmentLine(tx, shipmentLine);
             }
+            await this.deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
+                tenantId: input.tenantId,
+                provider: ExternalIdMappingProvider.COMPAT_V2,
+                resourceType: ExternalIdMappingResourceType.SHIPMENT,
+                resourceId: created.id,
+            });
             await this.deps.orderFulfillmentService.applyShipmentQuantities(input.tenantId, input.orderId, [...requestedByLine.entries()].map(([orderLineId, quantity]) => ({
                 orderLineId,
                 quantity,
