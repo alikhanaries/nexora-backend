@@ -32,6 +32,7 @@ export function createCompatibilityModule(deps) {
     });
     const returnCompatibilityCommand = new ReturnCompatibilityCommand({
         orderQueryService: deps.coreContracts.orderQueryService,
+        returnQueryService: deps.coreContracts.returnQueryService,
         returnCommandService: deps.coreContracts.returnCommandService,
     });
     const shipmentCompatibilityQuery = new ShipmentCompatibilityQuery({

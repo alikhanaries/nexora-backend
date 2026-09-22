@@ -138,6 +138,48 @@ export function mapShipmentResultToExternalResponse(_result) {
 }
 
 /**
+ * @param {object} _result
+ */
+export function mapShipmentTrackingResultToExternalResponse(_result) {
+    return {
+        Success: true,
+        StatusCode: 200,
+        Message: null,
+    };
+}
+
+/**
+ * Maps verified Merchant PUT /v2/shipments/{merchantShipmentNo} tracking payload.
+ *
+ * @param {object} body
+ */
+export function mapExternalShipmentTrackingRequest(body) {
+    const method = body.Method?.trim() ?? '';
+    const trackTraceNo = body.TrackTraceNo?.trim() ?? '';
+    if (method.length === 0) {
+        throw new ValidationError('Method is required');
+    }
+    if (trackTraceNo.length === 0) {
+        throw new ValidationError('TrackTraceNo is required');
+    }
+    return {
+        carrier: method,
+        trackingNumber: trackTraceNo,
+    };
+}
+
+/**
+ * @param {{ merchantShipmentNo: string, carrier: string, trackingNumber: string }} mapped
+ */
+export function fingerprintUpdateShipmentTrackingCommand(mapped) {
+    return JSON.stringify({
+        merchantShipmentNo: mapped.merchantShipmentNo,
+        carrier: mapped.carrier,
+        trackingNumber: mapped.trackingNumber,
+    });
+}
+
+/**
  * @param {{
  *   orderNumber: string,
  *   merchantShipmentNo: string,

@@ -47,6 +47,25 @@ export const externalShipmentSuccessSchema = z.object({
     Message: z.string().nullable().optional(),
 });
 
+export const externalShipmentMutationSuccessSchema = z.object({
+    Success: z.literal(true),
+    StatusCode: z.literal(200),
+    Message: z.string().nullable().optional(),
+});
+
+export const merchantShipmentNoParamsSchema = z.object({
+    merchantShipmentNo: z.string().min(1).max(250),
+});
+
+export const updateShipmentTrackingBodySchema = z.object({
+    Method: z.string().min(1).max(50),
+    TrackTraceNo: z.string().min(1).max(50),
+    ReturnTrackTraceNo: z.string().max(50).nullable().optional(),
+    TrackTraceUrl: z.string().max(250).nullable().optional(),
+    ShippedFromCountryCode: z.string().max(3).nullable().optional(),
+    ReturnMethod: z.string().max(50).nullable().optional(),
+});
+
 const externalShipmentLineResponseSchema = z.object({
     MerchantProductNo: z.string().nullable().optional(),
     ChannelProductNo: z.string().nullable().optional(),

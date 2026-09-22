@@ -38,8 +38,26 @@
  * @typedef {object} CreateShipmentResult
  * @property {ShipmentDetailDto} shipment
  *
+ * @typedef {object} UpdateShipmentTrackingCommand
+ * @property {string} tenantId
+ * @property {string} actorId
+ * @property {'user'|'api-key'} actorKind
+ * @property {readonly string[]} actorPermissions
+ * @property {string} externalReference
+ * @property {string|null} carrier
+ * @property {string|null} trackingNumber
+ * @property {string} [idempotencyKey]
+ * @property {string} [principalFingerprint]
+ * @property {string} [routeId]
+ * @property {string} [requestFingerprint]
+ * @property {object} [transaction]
+ *
+ * @typedef {object} UpdateShipmentTrackingResult
+ * @property {ShipmentDetailDto} shipment
+ *
  * @typedef {object} ShipmentCommandService
  * @property {(command: CreateShipmentCommand) => Promise<CreateShipmentResult>} createShipment
+ * @property {(command: UpdateShipmentTrackingCommand) => Promise<UpdateShipmentTrackingResult>} updateShipmentTracking
  */
 
 export { DefaultShipmentCommandService } from '../application/shipment-command-service.js';

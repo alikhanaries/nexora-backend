@@ -43,6 +43,19 @@ export class DefaultReturnQueryService {
         }
         return toReturnDto(returnEntity);
     }
+    async findReturnByExternalReference(tenantId, externalReference, tx) {
+        const queryable = tx ?? this.deps.queryable;
+        const trimmed = externalReference.trim();
+        const returnEntity = await this.deps.returns.findByExternalReference(queryable, tenantId, trimmed);
+        if (returnEntity === null) {
+            throw new NotFoundError('Return was not found', {
+                tenantId,
+                externalReference: trimmed,
+            });
+        }
+        const lines = await this.deps.returns.listReturnLines(queryable, tenantId, returnEntity.id);
+        return toReturnDetailDto(returnEntity, lines);
+    }
     async listReturns(input) {
         requireReturnsRead(this.deps.authorization, input.actorPermissions);
         const page = clampPage(input.page);

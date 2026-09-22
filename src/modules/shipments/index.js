@@ -6,6 +6,7 @@ import { GetShipment } from './application/get-shipment.js';
 import { ListShipments } from './application/list-shipments.js';
 import { ShipShipment } from './application/ship-shipment.js';
 import { toShipmentDetailDto } from './application/shipment-dto.js';
+import { UpdateShipmentTracking } from './application/update-shipment-tracking.js';
 import { DefaultShipmentCommandService } from './public/shipment-command-service.js';
 import { DefaultShipmentQueryService } from './public/shipment-query-service.js';
 import { PostgresShipmentRepository } from './infrastructure/index.js';
@@ -30,8 +31,10 @@ export function createShipmentsModule(deps) {
         ...lifecycleDeps,
         orderFulfillmentService: deps.orderFulfillmentService,
     });
+    const updateShipmentTracking = new UpdateShipmentTracking(lifecycleDeps);
     const shipmentCommandService = new DefaultShipmentCommandService({
         createShipment,
+        updateShipmentTracking,
         idempotency: deps.idempotency,
     });
     const useCases = {
@@ -43,6 +46,7 @@ export function createShipmentsModule(deps) {
         }),
         getShipment: new GetShipment({ authorization, shipmentQueryService }),
         shipShipment: new ShipShipment(lifecycleDeps),
+        updateShipmentTracking,
         deliverShipment: new DeliverShipment(lifecycleDeps),
         cancelShipment: new CancelShipment({
             ...lifecycleDeps,

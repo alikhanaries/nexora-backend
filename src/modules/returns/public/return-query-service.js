@@ -2,6 +2,8 @@
  * @typedef {object} ReturnQueryService
  * @property {(tenantId: string, returnId: string, tx?: object) => Promise<object>} getReturnById
  * Returns return detail with lines. Throws {@link NotFoundError} when missing.
+ * @property {(tenantId: string, externalReference: string, tx?: object) => Promise<object>} findReturnByExternalReference
+ * Returns return detail by tenant-scoped external reference. Throws {@link NotFoundError} when missing.
  * @property {(input: {
  *   tenantId: string,
  *   actorPermissions: string[],

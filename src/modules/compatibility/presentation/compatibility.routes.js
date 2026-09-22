@@ -14,19 +14,25 @@ import {
     listMerchantCancellationsQuerySchema,
 } from './compatibility-cancellation.schemas.js';
 import {
+    acknowledgeReturnBodySchema,
     createReturnBodySchema,
     externalReturnCollectionSchema,
+    externalReturnMutationSuccessSchema,
     externalReturnSuccessSchema,
     externalSingleOrderReturnCollectionSchema,
     listMerchantReturnsQuerySchema,
     listNewMerchantReturnsQuerySchema,
     merchantOrderNoParamsSchema,
+    receiveReturnBodySchema,
 } from './compatibility-return.schemas.js';
 import {
     createShipmentBodySchema,
     externalShipmentCollectionSchema,
+    externalShipmentMutationSuccessSchema,
     externalShipmentSuccessSchema,
     listMerchantShipmentsQuerySchema,
+    merchantShipmentNoParamsSchema,
+    updateShipmentTrackingBodySchema,
 } from './compatibility-shipment.schemas.js';
 import {
     createChannelOrderBodySchema,
@@ -353,6 +359,47 @@ const compatibilityRoutes = async (app, deps) => {
             });
             return reply.status(201).send(body);
         });
+        typed.put('/api/v2/shipments/:merchantShipmentNo', {
+            schema: {
+                tags: ['Compatibility (v2)'],
+                summary: 'Update merchant shipment tracking',
+                description: 'Implements external PUT /v2/shipments/{merchantShipmentNo}. Updates carrier and tracking on an existing shipment. '
+                    + 'Resolves the shipment by MerchantShipmentNo (Nexora shipment externalReference). '
+                    + 'Shipments in CREATED or READY_TO_SHIP transition to SHIPPED. '
+                    + 'ReturnTrackTraceNo, TrackTraceUrl, ShippedFromCountryCode, and ReturnMethod are accepted but not persisted.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                params: merchantShipmentNoParamsSchema,
+                body: updateShipmentTrackingBodySchema,
+                response: {
+                    200: externalShipmentMutationSuccessSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    404: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const body = await deps.shipmentCompatibilityCommand.updateShipmentTracking({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                merchantShipmentNo: request.params.merchantShipmentNo,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(200).send(body);
+        });
         typed.get('/api/v2/cancellations/merchant', {
             schema: {
                 tags: ['Compatibility (v2)'],
@@ -506,6 +553,82 @@ const compatibilityRoutes = async (app, deps) => {
                 fromUpdateDate: request.query.FromUpdateDate,
                 toUpdateDate: request.query.ToUpdateDate,
             });
+        });
+        typed.put('/api/v2/returns', {
+            schema: {
+                tags: ['Compatibility (v2)'],
+                summary: 'Receive a merchant return',
+                description: 'Implements external PUT /v2/returns. Marks a return as accepted or rejected based on line AcceptedQuantity/RejectedQuantity. '
+                    + 'External integer ReturnId is required by the contract but is not persisted; Nexora resolves the return by matching line SKUs and quantities among REQUESTED/APPROVED returns. '
+                    + 'Partial accept/reject across lines is not supported.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                body: receiveReturnBodySchema,
+                response: {
+                    200: externalReturnMutationSuccessSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    404: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const body = await deps.returnCompatibilityCommand.receiveReturn({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(200).send(body);
+        });
+        typed.post('/api/v2/returns/merchant/acknowledge', {
+            schema: {
+                tags: ['Compatibility (v2)'],
+                summary: 'Acknowledge a merchant return',
+                description: 'Implements external POST /v2/returns/merchant/acknowledge. Registers a return in the merchant system. '
+                    + 'Resolves the return by MerchantReturnNo (Nexora return externalReference). '
+                    + 'External integer ReturnId is accepted for contract compliance but is not persisted or used as a lookup key.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                body: acknowledgeReturnBodySchema,
+                response: {
+                    200: externalReturnMutationSuccessSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    404: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const body = await deps.returnCompatibilityCommand.acknowledgeReturn({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(200).send(body);
         });
         typed.post('/api/v2/returns', {
             schema: {

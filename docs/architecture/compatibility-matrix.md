@@ -33,8 +33,11 @@ Nexora routes are prefixed `/api/v2/...` (e.g. external `GET /v2/orders/new` →
 | Merchant | GET /v2/orders/new | GET /api/v2/orders/new | Initial Phase 5 | OrderQueryService.listOrders | **Implemented** — see audit notes below |
 | Merchant | POST /v2/orders/acknowledge | POST /api/v2/orders/acknowledge | Initial Phase 5 | OrderCommandService.acknowledgeOrder | **Implemented** — see acknowledge notes below |
 | Merchant | POST /v2/shipments | POST /api/v2/shipments | Initial Phase 5 | ShipmentCommandService.createShipment | **Implemented** — see shipment notes below |
+| Merchant | PUT /v2/shipments/{merchantShipmentNo} | PUT /api/v2/shipments/:merchantShipmentNo | Phase 7.4 | ShipmentCommandService.updateShipmentTracking | **Implemented** — see shipment tracking notes below |
 | Merchant | POST /v2/cancellations | POST /api/v2/cancellations | Initial Phase 5 | CancellationCommandService.createCancellation | **Implemented** — see cancellation notes below |
 | Merchant | POST /v2/returns/merchant | POST /api/v2/returns | Initial Phase 5 | ReturnCommandService.createReturn | **Implemented** — see return notes below |
+| Merchant | PUT /v2/returns | PUT /api/v2/returns | Phase 7.4 | ReturnCommandService.processReturnReceive | **Implemented** — see return receive notes below |
+| Merchant | POST /v2/returns/merchant/acknowledge | POST /api/v2/returns/merchant/acknowledge | Phase 7.4 | ReturnCommandService.acknowledgeReturn | **Implemented** — see return acknowledge notes below |
 | Merchant | GET /v2/shipments/merchant | GET /api/v2/shipments/merchant | Initial Phase 5 | ShipmentQueryService.listShipments | **Implemented** — see shipment read notes below |
 | Merchant | GET /v2/cancellations/merchant | GET /api/v2/cancellations/merchant | Initial Phase 5 | CancellationQueryService.listCancellations | **Implemented** — see cancellation read notes below |
 | Merchant | GET /v2/returns/merchant | GET /api/v2/returns/merchant | Initial Phase 5 | ReturnQueryService.listReturns | **Implemented** — see return read notes below |
@@ -166,11 +169,37 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 **Idempotency:** Required `Idempotency-Key` header; transactional ledger via `PostgresIdempotencyService` (`useTransaction: true`). Fingerprint includes `merchantShipmentNo`, mapped order/lines, carrier, and tracking number.
 
-**Tracking update readiness:** `PUT /api/v2/shipments/{merchantShipmentNo}` is **not implemented**, but durable `external_reference` persistence now enables future resolution by merchant shipment number within a tenant.
-
 **Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
 
 **Response:** `{ Success: true, StatusCode: 201, Message: null }` — no fabricated integer IDs or shipment payload.
+
+## `PUT /api/v2/shipments/:merchantShipmentNo` — implemented notes (2026-09-22)
+
+**External operation:** `PUT /v2/shipments/{merchantShipmentNo}` — update shipment tracking and carrier.
+
+**Request mapping:**
+
+| External field | Nexora mapping |
+| -------------- | -------------- |
+| Path `merchantShipmentNo` | `shipments.external_reference` (tenant-unique lookup key) |
+| `Method` | `shipments.carrier` |
+| `TrackTraceNo` | `shipments.tracking_number` |
+
+**Intentionally unsupported (documented gaps):**
+
+| External field | Reason |
+| -------------- | ------ |
+| `ReturnTrackTraceNo`, `TrackTraceUrl`, `ShippedFromCountryCode`, `ReturnMethod` | No compatible persisted fields on Nexora shipments |
+
+**Behavior:** Maps to `ShipmentCommandService.updateShipmentTracking` → `UpdateShipmentTracking`. Shipments in `CREATED` or `READY_TO_SHIP` transition to `SHIPPED` and emit `shipment.status_changed` + `shipment.shipped`. Already-shipped shipments update carrier/tracking only (no duplicate status events when unchanged).
+
+**Authorization:** `shipments.update`. Authentication via Bearer JWT or API key.
+
+**Idempotency:** Required `Idempotency-Key` header; transactional ledger via `PostgresIdempotencyService` (`useTransaction: true`, `routeId=PUT /api/v2/shipments/:merchantShipmentNo`).
+
+**Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
+
+**Response:** `{ Success: true, StatusCode: 200, Message: null }`.
 
 ## `POST /api/v2/returns` — implemented notes (2026-09-22)
 
@@ -197,9 +226,7 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 | `ReturnDate` | No separate source-created timestamp field |
 | `ExtraData` / line `ExtraData` | No generic return metadata store |
 | `Rma` | No RMA field on returns |
-| Return receive/acknowledge | Separate Merchant endpoints — not implemented |
-
-**Behavior:** Maps to existing `CreateReturn`. Creates a Nexora return in `REQUESTED` status. Does **not** receive inventory or increment `returnedQuantity` — that occurs on native `ReceiveReturn` / future receive compatibility.
+**Behavior (create):** Maps to existing `CreateReturn`. Creates a Nexora return in `REQUESTED` status. Does **not** receive inventory or increment `returnedQuantity` — use `PUT /api/v2/returns` receive compatibility or native `ReceiveReturn`.
 
 **Quantity semantics:** Eligible quantity = `shippedQuantity - returnedQuantity - pendingReturnQuantity`. Over-return rejected by core `BusinessRuleError` (422). Unshipped orders cannot be returned (422).
 
@@ -222,6 +249,62 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 **Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
 
 **Response:** `{ Success: true, StatusCode: 201, Message: null }` — no fabricated integer IDs or return payload.
+
+## `PUT /api/v2/returns` — implemented notes (2026-09-22)
+
+**External operation:** `PUT /v2/returns` — marks a marketplace return as accepted or rejected.
+
+**Request mapping:**
+
+| External field | Nexora mapping |
+| -------------- | -------------- |
+| `ReturnId` | Accepted for contract compliance; **not persisted or used as lookup key** (same integer-ID policy as order acknowledge) |
+| `Lines[].MerchantProductNo` | Order line `merchantSku` for return resolution and validation |
+| `Lines[].AcceptedQuantity` | Full accept path → `ProcessReturnReceive` → `ReceiveReturn` |
+| `Lines[].RejectedQuantity` | Full reject path → `ProcessReturnReceive` → `RejectReturn` |
+
+**Return resolution:** Because Nexora does not persist external integer return IDs, the compatibility layer resolves the target return by matching line SKUs and quantities against a **unique** tenant-scoped return in `REQUESTED` or `APPROVED` status. Ambiguous matches return `409`; no match returns `404`.
+
+**Limitations:**
+
+| Scenario | Behavior |
+| -------- | -------- |
+| Partial accept + reject on the same line | Rejected (`422`) |
+| Mixed accept/reject across lines on one return | Rejected (`422`) |
+| Lookup by external integer `ReturnId` alone | Not supported — line-based resolution required |
+
+**Behavior:** Maps to `ReturnCommandService.processReturnReceive`. Auto-approves `REQUESTED` returns before receive/reject. Receive restores inventory and increments `returnedQuantity`.
+
+**Authorization:** `returns.update`. Authentication via Bearer JWT or API key.
+
+**Idempotency:** Required `Idempotency-Key` header; transactional ledger (`routeId=PUT /api/v2/returns`).
+
+**Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
+
+**Response:** `{ Success: true, StatusCode: 200, Message: null }`.
+
+## `POST /api/v2/returns/merchant/acknowledge` — implemented notes (2026-09-22)
+
+**External operation:** `POST /v2/returns/merchant/acknowledge` — acknowledges a return registration.
+
+**Request mapping:**
+
+| External field | Nexora mapping |
+| -------------- | -------------- |
+| `MerchantReturnNo` | `returns.external_reference` (lookup key) |
+| `ReturnId` | Accepted for contract compliance; not persisted or used as lookup key |
+
+**Behavior:** Maps to `ReturnCommandService.acknowledgeReturn` → `AcknowledgeReturn`. Transitions `REQUESTED → APPROVED` (idempotent when already approved/received/completed). Emits `return.status_changed` on transition.
+
+**Authorization:** `returns.update`. Authentication via Bearer JWT or API key.
+
+**Idempotency:** Required `Idempotency-Key` header; transactional ledger (`routeId=POST /api/v2/returns/merchant/acknowledge`).
+
+**Rate limit:** `COMPATIBILITY_RATE_LIMIT_POLICIES.mutation`.
+
+**Response:** `{ Success: true, StatusCode: 200, Message: null }`.
+
+**Acknowledgement state:** Nexora has no separate `IsAcknowledged` persisted flag; acknowledgement is represented by `APPROVED` status (or later terminal receive states).
 
 ## `POST /api/v2/cancellations` — implemented notes (2026-09-22)
 

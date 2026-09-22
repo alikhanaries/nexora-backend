@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
 import {
+    fingerprintAcknowledgeReturnCommand,
+    fingerprintProcessReturnReceiveCommand,
     fingerprintReturnCommand,
+    mapExternalReturnAcknowledgeRequest,
     mapExternalReturnLinesToOrderLines,
+    mapExternalReturnReceiveRequest,
     mapExternalReturnRequest,
+    mapReturnMutationResultToExternalResponse,
     mapReturnResultToExternalResponse,
+    returnMatchesReceiveRequest,
 } from '../../../src/modules/compatibility/application/mappers/compatibility-return.mapper.js';
 
 describe('compatibility return mapper', () => {
@@ -68,5 +74,54 @@ describe('compatibility return mapper', () => {
         expect(fingerprint).toContain('ORD-1');
         expect(fingerprint).toContain('RET-1');
         expect(fingerprint).not.toContain('999001');
+    });
+
+    it('maps acknowledge request by MerchantReturnNo', () => {
+        expect(mapExternalReturnAcknowledgeRequest({
+            MerchantReturnNo: ' RET-ACK ',
+            ReturnId: 12345,
+        })).toEqual({ merchantReturnNo: 'RET-ACK' });
+    });
+
+    it('maps receive request line decisions', () => {
+        expect(mapExternalReturnReceiveRequest({
+            ReturnId: 12345,
+            Lines: [{
+                MerchantProductNo: 'SKU-A',
+                AcceptedQuantity: 2,
+                RejectedQuantity: 0,
+            }],
+        })).toEqual({
+            externalReturnId: 12345,
+            lineDecisions: [{
+                merchantProductNo: 'SKU-A',
+                acceptedQuantity: 2,
+                rejectedQuantity: 0,
+            }],
+        });
+    });
+
+    it('matches receive request to return lines by merchant SKU', () => {
+        const returnEntity = {
+            lines: [{ orderLineId: 'line-1', quantity: 2 }],
+        };
+        const orderLines = [{ id: 'line-1', merchantSku: 'SKU-A' }];
+        const lineDecisions = [{ merchantProductNo: 'SKU-A', acceptedQuantity: 2, rejectedQuantity: 0 }];
+        expect(returnMatchesReceiveRequest(returnEntity, orderLines, lineDecisions)).toBe(true);
+    });
+
+    it('builds external mutation success response', () => {
+        expect(mapReturnMutationResultToExternalResponse({})).toEqual({
+            Success: true,
+            StatusCode: 200,
+            Message: null,
+        });
+    });
+
+    it('fingerprints acknowledge and receive commands', () => {
+        expect(fingerprintAcknowledgeReturnCommand({ merchantReturnNo: 'RET-1' })).toContain('RET-1');
+        expect(fingerprintProcessReturnReceiveCommand({
+            lineDecisions: [{ merchantProductNo: 'SKU-A', acceptedQuantity: 1, rejectedQuantity: 0 }],
+        })).toContain('SKU-A');
     });
 });
