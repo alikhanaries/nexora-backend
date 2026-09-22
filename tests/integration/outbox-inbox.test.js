@@ -20,8 +20,13 @@ describe('outbox and inbox integration', () => {
                 aggregateType: 'foundation',
                 aggregateId: 'test',
                 payload: { hello: 'world' },
+                correlationId: 'req-correlation-123',
             });
         });
+        const stored = await infra.database.query(`SELECT correlation_id
+       FROM outbox_events
+       WHERE id = $1`, [eventId], { operation: 'test.outbox.correlation_lookup' });
+        expect(stored.rows[0]?.correlation_id).toBe('req-correlation-123');
         const publisher = new OutboxPublisher(infra.outbox, infra.queue, infra.config.outbox, infra.logger);
         const published = await publisher.tick();
         expect(published).toBeGreaterThanOrEqual(1);
@@ -36,7 +41,7 @@ describe('outbox and inbox integration', () => {
             tenantId: null,
             payload: { hello: 'world' },
             occurredAt: new Date(),
-            correlationId: null,
+            correlationId: 'req-correlation-123',
         };
         await consumer.handle(event);
         await consumer.handle(event);

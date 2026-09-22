@@ -18,7 +18,8 @@ Tenants need a provider-neutral way to receive asynchronous notifications when o
 Phase 6 implements **Integration Events & External Webhooks**:
 
 1. **Phase 6.0–6.1 (foundation)** — ADR, OQ-031 resolution, shared integration event contract, central event catalog.
-2. **Phase 6.2+ (later slices)** — webhook subscriptions, delivery worker, HMAC signing, admin API, retention jobs, permissions, migrations.
+2. **Phase 6.2 (persistence foundation)** — webhook subscription/delivery tables, encrypted secret storage, application repositories, correlation ID outbox persistence fix, permissions.
+3. **Phase 6.3+ (later slices)** — composite router, delivery worker, HMAC signing, admin HTTP API, retention jobs.
 
 Phase 6 does **not** include:
 

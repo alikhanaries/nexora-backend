@@ -117,6 +117,15 @@ External webhook delivery resolves **OQ-031**:
 
 Initial externally deliverable event types are listed in `PHASE_6_EXTERNAL_EVENT_ALLOWLIST` inside `event-catalog.js`.
 
+## Phase 6.2 webhook persistence
+
+Phase 6.2 adds tenant-scoped persistence only:
+
+- `webhook_subscriptions` — encrypted signing secret, event type allowlist, lifecycle status
+- `webhook_deliveries` — one row per `(subscription_id, event_id)` for future HTTP dispatch
+
+Outbound HTTP, HMAC signing, SSRF enforcement, and the `webhook-deliveries` worker belong to later slices. SSRF validation will live in the future delivery worker before any outbound HTTP request is made.
+
 ## Not yet implemented
 
 - Webhook subscriptions, signing, delivery worker (Phase 6.2+)

@@ -17,4 +17,5 @@ export {
     listCatalogEntries,
     listExternallyDeliverableEventTypes,
     matchesCatalogVersion,
+    findUndeliverableEventTypes,
 } from './event-catalog.js';

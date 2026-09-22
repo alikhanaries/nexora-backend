@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    findUndeliverableEventTypes,
     getCatalogEntry,
     INTEGRATION_EVENT_CATALOG,
     isExternallyDeliverable,
@@ -67,5 +68,10 @@ describe('integration event catalog', () => {
 
     it('lists externally deliverable types in allowlist order', () => {
         expect(listExternallyDeliverableEventTypes()).toEqual(expectedAllowlist);
+    });
+
+    it('finds undeliverable event types for subscription validation', () => {
+        expect(findUndeliverableEventTypes(['order.created', 'product.created', 'unknown.event']))
+            .toEqual(['product.created', 'unknown.event']);
     });
 });

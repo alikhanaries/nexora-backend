@@ -226,3 +226,14 @@ export function matchesCatalogVersion(eventType, version) {
     const entry = getCatalogEntry(eventType);
     return entry !== null && entry.version === version;
 }
+
+/**
+ * Returns event types that are not externally deliverable according to the catalog.
+ *
+ * @param {readonly string[]} eventTypes
+ * @returns {string[]}
+ */
+export function findUndeliverableEventTypes(eventTypes) {
+    const unique = [...new Set(eventTypes)];
+    return unique.filter((eventType) => !isExternallyDeliverable(eventType));
+}
