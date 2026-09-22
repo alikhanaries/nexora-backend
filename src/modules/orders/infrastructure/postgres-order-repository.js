@@ -193,6 +193,25 @@ export class PostgresOrderRepository {
             return null;
         return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
     }
+    async findByChannelAndExternalReference(queryable, tenantId, channelId, externalOrderReference) {
+        const result = await queryable.query(`SELECT ${orderSelect}
+       FROM orders
+       WHERE tenant_id = $1 AND channel_id = $2 AND external_order_reference = $3`, [tenantId, channelId, externalOrderReference], { operation: 'orders.find_by_channel_and_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
+    }
+    async lockByChannelAndExternalReferenceForUpdate(transaction, tenantId, channelId, externalOrderReference) {
+        const result = await transaction.query(`SELECT ${orderSelect}
+       FROM orders
+       WHERE tenant_id = $1 AND channel_id = $2 AND external_order_reference = $3
+       FOR UPDATE`, [tenantId, channelId, externalOrderReference], { operation: 'orders.lock_by_channel_and_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
+    }
     buildListConditions(tenantId, filters) {
         const conditions = ['o.tenant_id = $1'];
         const params = [tenantId];

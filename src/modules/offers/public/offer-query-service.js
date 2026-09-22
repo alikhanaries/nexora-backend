@@ -4,5 +4,6 @@
  * @property {(tenantId: string, productId: string, channelId: string, tx?: object) => Promise<object|null>} getOfferForProductAndChannel
  * @property {(tenantId: string, productId: string, tx?: object) => Promise<object[]>} getOffersByProduct
  * @property {(tenantId: string, offerId: string, tx?: object) => Promise<object>} verifyOfferUsable
+ * @property {(tenantId: string, channelId: string, externalReference: string, tx?: object) => Promise<object|null>} getOfferByExternalReference
  */
 export { DefaultOfferQueryService } from '../application/offer-query-service.js';

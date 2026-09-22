@@ -33,6 +33,18 @@ Unresolved design items tracked across phases. Move to an ADR when decided.
 | OQ-031 | External webhook delivery — outbox consumer or separate dispatcher? | Architecture       | **Resolved** | Phase 6 ([ADR-019](../decisions/ADR-019-phase-6-webhooks-events.md)) |
 | OQ-032 | Event schema registry (JSON Schema / Avro)?                         | Consumer contracts | TBD   | Phase 3      |
 
+## Phase 7 — Channel inbound integration
+
+| ID       | Question | Resolution |
+| -------- | -------- | ---------- |
+| OQ-7-01  | Channel API namespace — `/api/v2/orders` vs `/api/v2/channel/orders`? | **Resolved** — verified Channel paths on `/api/v2` ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
+| OQ-7-02  | Native create `CONFIRMED` vs channel ingest `NEW`? | **Resolved** — dual semantics; native unchanged ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
+| OQ-7-03  | Channel-fulfilled order/shipment/inventory semantics? | **Resolved** — auto-confirmed, no reserve, create+ship shipment ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
+| OQ-7-04  | Product/line resolution hierarchy? | **Resolved** — SKU-first; public port gaps documented for 7.1 ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
+| OQ-7-05  | Inventory reserve at ingest vs acknowledge? | **Resolved** — reserve at ingest for standard channel; skip for channel-fulfilled ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
+| OQ-7-06  | Channel create response shape? | **Resolved** — mapped external order summary, not Merchant `{Success}` envelope ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
+| OQ-7-07  | Default stock location for channel ingest lines? | **Open** — resolve in 7.2 via configurationReference convention or migration |
+
 ## Audit and compliance
 
 | ID     | Question                                          | Impact        | Owner | Target phase |

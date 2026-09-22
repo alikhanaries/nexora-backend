@@ -55,6 +55,17 @@ export class PostgresOfferRepository {
             return null;
         return toOffer(parseOrThrow(offerRowSchema, row, 'offers row'));
     }
+    async findByExternalReference(queryable, tenantId, channelId, externalReference) {
+        const result = await queryable.query(`SELECT ${offerSelectColumns}
+       FROM offers
+       WHERE tenant_id = $1 AND channel_id = $2 AND external_reference = $3
+       ORDER BY created_at ASC
+       LIMIT 1`, [tenantId, channelId, externalReference], { operation: 'offers.find_by_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toOffer(parseOrThrow(offerRowSchema, row, 'offers row'));
+    }
     async listByProduct(queryable, tenantId, productId, filters = {}) {
         const conditions = ['tenant_id = $1', 'product_id = $2'];
         const parameters = [tenantId, productId];

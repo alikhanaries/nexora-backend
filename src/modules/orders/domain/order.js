@@ -6,10 +6,11 @@ export class Order {
     }
     static create(props) {
         const now = props.createdAt ?? new Date();
+        const status = props.status ?? OrderStatus.CONFIRMED;
         return new Order({
             ...props,
-            status: props.status ?? OrderStatus.CONFIRMED,
-            confirmedAt: props.confirmedAt ?? now,
+            status,
+            confirmedAt: props.confirmedAt ?? (status === OrderStatus.CONFIRMED ? now : null),
             cancelledAt: props.cancelledAt ?? null,
             shippedAt: props.shippedAt ?? null,
             deliveredAt: props.deliveredAt ?? null,

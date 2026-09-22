@@ -44,7 +44,11 @@ describe('DefaultOrderCommandService', () => {
         const createOrder = {
             execute: vi.fn().mockResolvedValue({ order: orderDetail }),
         };
-        const service = new DefaultOrderCommandService({ createOrder, acknowledgeOrder: { execute: vi.fn() } });
+        const service = new DefaultOrderCommandService({
+            createOrder,
+            createChannelOrder: { execute: vi.fn() },
+            acknowledgeOrder: { execute: vi.fn() },
+        });
 
         const result = await service.createOrder(baseCommand);
 
@@ -68,7 +72,11 @@ describe('DefaultOrderCommandService', () => {
         const createOrder = {
             execute: vi.fn().mockRejectedValue(new AuthorizationError('Missing required permission: orders.create')),
         };
-        const service = new DefaultOrderCommandService({ createOrder, acknowledgeOrder: { execute: vi.fn() } });
+        const service = new DefaultOrderCommandService({
+            createOrder,
+            createChannelOrder: { execute: vi.fn() },
+            acknowledgeOrder: { execute: vi.fn() },
+        });
 
         await expect(service.createOrder({
             ...baseCommand,
@@ -88,7 +96,11 @@ describe('DefaultOrderCommandService', () => {
                 return { kind: 'executed', value };
             }),
         };
-        const service = new DefaultOrderCommandService({ createOrder, idempotency });
+        const service = new DefaultOrderCommandService({
+            createOrder,
+            createChannelOrder: { execute: vi.fn() },
+            idempotency,
+        });
 
         const result = await service.createOrder({
             ...baseCommand,
@@ -113,7 +125,11 @@ describe('DefaultOrderCommandService', () => {
         const createOrder = {
             execute: vi.fn().mockResolvedValue({ order: orderDetail }),
         };
-        const service = new DefaultOrderCommandService({ createOrder, acknowledgeOrder: { execute: vi.fn() } });
+        const service = new DefaultOrderCommandService({
+            createOrder,
+            createChannelOrder: { execute: vi.fn() },
+            acknowledgeOrder: { execute: vi.fn() },
+        });
 
         const result = await service.createOrder(baseCommand);
 
@@ -132,6 +148,7 @@ describe('DefaultOrderCommandService', () => {
         };
         const service = new DefaultOrderCommandService({
             createOrder: { execute: vi.fn() },
+            createChannelOrder: { execute: vi.fn() },
             acknowledgeOrder,
         });
 
@@ -148,6 +165,79 @@ describe('DefaultOrderCommandService', () => {
             orderNumber: 'ORD-001',
         }));
         expect(result.order.status).toBe('CONFIRMED');
+    });
+
+    it('delegates createChannelOrder to the CreateChannelOrder use case', async () => {
+        const createChannelOrder = {
+            execute: vi.fn().mockResolvedValue({ order: { ...orderDetail, status: 'NEW', confirmedAt: null } }),
+        };
+        const service = new DefaultOrderCommandService({
+            createOrder: { execute: vi.fn() },
+            createChannelOrder,
+            acknowledgeOrder: { execute: vi.fn() },
+        });
+
+        const result = await service.createChannelOrder({
+            ...baseCommand,
+            externalOrderReference: 'EXT-001',
+            lines: [{
+                stockLocationId: 'location-1',
+                quantity: 2,
+                merchantSku: 'SKU-001',
+            }],
+        });
+
+        expect(createChannelOrder.execute).toHaveBeenCalledWith(expect.objectContaining({
+            tenantId: 'tenant-1',
+            channelId: 'channel-1',
+            externalOrderReference: 'EXT-001',
+            lines: [{
+                stockLocationId: 'location-1',
+                quantity: 2,
+                merchantSku: 'SKU-001',
+            }],
+        }));
+        expect(result.order.status).toBe('NEW');
+    });
+
+    it('wraps createChannelOrder in idempotency when an idempotency key is provided', async () => {
+        const createChannelOrder = {
+            execute: vi.fn().mockImplementation(async ({ transaction }) => ({
+                order: { ...orderDetail, status: 'NEW', transactionProvided: transaction !== undefined },
+            })),
+        };
+        const idempotency = {
+            execute: vi.fn().mockImplementation(async (_key, _fingerprint, operation) => {
+                const value = await operation({ tx: true });
+                return { kind: 'executed', value };
+            }),
+        };
+        const service = new DefaultOrderCommandService({
+            createOrder: { execute: vi.fn() },
+            createChannelOrder,
+            idempotency,
+        });
+
+        const result = await service.createChannelOrder({
+            ...baseCommand,
+            externalOrderReference: 'EXT-001',
+            lines: [{
+                stockLocationId: 'location-1',
+                quantity: 2,
+                merchantSku: 'SKU-001',
+            }],
+            idempotencyKey: 'idem-channel-1',
+            principalFingerprint: 'principal-1',
+            requestFingerprint: 'body-1',
+        });
+
+        expect(idempotency.execute).toHaveBeenCalledWith({
+            tenantId: 'tenant-1',
+            principalFingerprint: 'principal-1',
+            routeId: 'orders.create_channel',
+            idempotencyKey: 'idem-channel-1',
+        }, 'body-1', expect.any(Function), expect.any(Function), { useTransaction: true });
+        expect(result.order).toMatchObject({ transactionProvided: true, status: 'NEW' });
     });
 
     it('wraps acknowledgeOrder in idempotency when an idempotency key is provided', async () => {
