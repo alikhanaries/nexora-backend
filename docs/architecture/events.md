@@ -110,25 +110,83 @@ Integration tests in `tests/integration/outbox-inbox.test.ts` exercise the full 
 
 External webhook delivery resolves **OQ-031**:
 
-1. Outbox → `integration-events` queue remains the first async stage (unchanged).
-2. A **composite integration-event router** consumes those jobs with inbox deduplication.
-3. Webhook dispatch enqueues work to a separate **`webhook-deliveries`** queue.
-4. **HTTP delivery never runs inline** in the `integration-events` consumer.
+```
+outbox_events
+    ↓ OutboxPublisher
+integration-events (BullMQ)
+    ↓ worker: publish-integration-event job
+CompositeIntegrationEventRouter
+    ├── LoggingIntegrationEventHandler (consumer: foundation.logging)
+    └── WebhookDispatchEnqueueHandler (consumer: webhooks.dispatch-enqueue)
+            ↓
+    webhook-deliveries (BullMQ)
+            ↓
+    WebhookDeliveryService (Phase 6.4)
+            ↓
+    SSRF validation → HMAC signing → HTTPS POST
+```
+
+Rules:
+
+1. Outbox → `integration-events` remains the first async stage (unchanged).
+2. Each router handler uses a distinct inbox `consumer_name` for idempotent at-least-once processing.
+3. Webhook dispatch creates `webhook_deliveries` rows and enqueues identifier-only jobs — **no HTTP in this stage**.
+4. Delivery rows are unique on `(subscription_id, event_id)`; duplicate event processing is idempotent.
+5. Queue jobs contain only `tenantId`, `deliveryId`, `subscriptionId`, `eventId`, and `eventType` — never webhook secrets.
 
 Initial externally deliverable event types are listed in `PHASE_6_EXTERNAL_EVENT_ALLOWLIST` inside `event-catalog.js`.
 
 ## Phase 6.2 webhook persistence
 
-Phase 6.2 adds tenant-scoped persistence only:
+Phase 6.2 adds tenant-scoped persistence:
 
 - `webhook_subscriptions` — encrypted signing secret, event type allowlist, lifecycle status
-- `webhook_deliveries` — one row per `(subscription_id, event_id)` for future HTTP dispatch
+- `webhook_deliveries` — one row per `(subscription_id, event_id)` ledger for HTTP dispatch
 
-Outbound HTTP, HMAC signing, SSRF enforcement, and the `webhook-deliveries` worker belong to later slices. SSRF validation will live in the future delivery worker before any outbound HTTP request is made.
+## Phase 6.3 webhook dispatch enqueue
+
+Phase 6.3 wires the composite router and dispatch handler:
+
+- `CompositeIntegrationEventRouter` in `src/workers/handlers/composite-integration-event-router.js`
+- `WebhookDispatchService` selects ACTIVE tenant subscriptions whose allowlist includes the event type
+- After the delivery row is persisted, a `webhook-deliveries` / `deliver-webhook` job is enqueued
+- Delivery creation runs in a tenant-scoped database transaction; queue enqueue runs afterward (same pattern as the outbox publisher). Enqueue failures surface as handler errors so BullMQ/inbox retry can recover; duplicate job IDs are treated as idempotent.
+
+## Phase 6.4 webhook HTTP delivery worker
+
+Phase 6.4 implements `WebhookDeliveryService`, registered on the `webhook-deliveries` queue as `deliver-webhook`:
+
+1. Load and validate the delivery row, subscription, and outbox event payload under tenant context.
+2. Skip or dead-letter inactive subscriptions (`DISABLED`, `DELETED`) without HTTP.
+3. Atomically claim the delivery attempt (`PENDING`/`FAILED` → `DELIVERING`, increment `attempt_count`).
+4. Validate the subscription URL with SSRF checks (HTTPS-only, no private/loopback/metadata destinations).
+5. Decrypt the signing secret immediately before signing; never log or persist plaintext secrets.
+6. POST the integration-event envelope JSON with headers:
+   - `Content-Type: application/json; charset=utf-8`
+   - `X-Nexora-Event`, `X-Nexora-Event-Id`, `X-Nexora-Delivery-Id`
+   - `X-Nexora-Signature: v1=<hex-hmac-sha256>` over the exact request body bytes
+7. Classify HTTP responses:
+   - `2xx` → `DELIVERED`
+   - retryable (`408`, `425`, `429`, `5xx`, network/timeout) → `FAILED` and BullMQ retry until attempts exhausted
+   - permanent `4xx` and redirects (`redirect: manual`) → `DEAD_LETTERED`
+8. After BullMQ attempts are exhausted, mark `DEAD_LETTERED` with bounded `last_error` metadata.
+
+Configuration:
+
+- `WEBHOOK_DELIVERY_TIMEOUT_MS` — hard outbound HTTP timeout (default 10s)
+- `WEBHOOK_DELIVERY_LEASE_SECONDS` — stale `DELIVERING` reclaim lease (default 300s)
+- BullMQ retry/backoff uses existing `QUEUE_DEFAULT_ATTEMPTS` and `QUEUE_BACKOFF_BASE_MS`
+
+Concurrency notes:
+
+- Duplicate BullMQ jobs for the same delivery are serialized by `claimAttempt`: only one worker owns `DELIVERING` until the lease expires.
+- Terminal updates require the row to still be `DELIVERING`, so a late HTTP response cannot overwrite `DELIVERED` or `DEAD_LETTERED`.
+- `WEBHOOK_DELIVERY_TIMEOUT_MS` must not exceed the lease; with defaults (10s timeout, 300s lease) a slow HTTP call cannot overlap a lease reclaim. Misconfigured timeouts that exceed the lease could allow a second worker to reclaim and send a duplicate webhook.
 
 ## Not yet implemented
 
-- Webhook subscriptions, signing, delivery worker (Phase 6.2+)
+- Webhook admin HTTP API (`/api/v1/webhooks`)
+- Secret rotation
 - Full JSON Schema / Avro event registry (OQ-032)
 - Kafka / NATS alternative transports
 - Saga orchestration

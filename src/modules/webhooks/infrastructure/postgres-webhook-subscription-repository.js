@@ -76,6 +76,35 @@ export class PostgresWebhookSubscriptionRepository {
         const result = await queryable.query(sql, params, { operation: 'webhooks.subscriptions.list' });
         return result.rows.map((row) => toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row')));
     }
+    async listPage(queryable, tenantId, filter, limit, cursorCreatedAt, cursorId) {
+        const conditions = ['tenant_id = $1'];
+        const params = [tenantId];
+        if (filter.statuses !== undefined && filter.statuses.length > 0) {
+            params.push(filter.statuses);
+            conditions.push(`status = ANY($${params.length}::text[])`);
+        }
+        if (cursorCreatedAt !== null && cursorId !== null) {
+            params.push(cursorCreatedAt, cursorId);
+            conditions.push(`(created_at, id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`);
+        }
+        params.push(limit);
+        const limitParam = `$${params.length}`;
+        const result = await queryable.query(`SELECT ${subscriptionSelect}
+       FROM webhook_subscriptions
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY created_at DESC, id DESC
+       LIMIT ${limitParam}`, params, { operation: 'webhooks.subscriptions.list_page' });
+        return result.rows.map((row) => toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row')));
+    }
+    async listActiveForEventType(queryable, tenantId, eventType) {
+        const result = await queryable.query(`SELECT ${subscriptionSelect}
+       FROM webhook_subscriptions
+       WHERE tenant_id = $1
+         AND status = $2
+         AND $3 = ANY(event_types)
+       ORDER BY created_at ASC, id ASC`, [tenantId, WebhookSubscriptionStatus.ACTIVE, eventType], { operation: 'webhooks.subscriptions.list_active_for_event_type' });
+        return result.rows.map((row) => toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row')));
+    }
     async update(queryable, subscription) {
         await queryable.query(`UPDATE webhook_subscriptions
        SET url = $3,
@@ -92,5 +121,16 @@ export class PostgresWebhookSubscriptionRepository {
             subscription.status,
             subscription.updatedAt,
         ], { operation: 'webhooks.subscriptions.update' });
+    }
+    async updateSecret(queryable, subscription) {
+        await queryable.query(`UPDATE webhook_subscriptions
+       SET secret_ciphertext = $3,
+           updated_at = $4
+       WHERE tenant_id = $1 AND id = $2`, [
+            subscription.tenantId,
+            subscription.id,
+            subscription.secretCiphertext,
+            subscription.updatedAt,
+        ], { operation: 'webhooks.subscriptions.update_secret' });
     }
 }

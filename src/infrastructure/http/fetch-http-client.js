@@ -68,6 +68,7 @@ export class FetchHttpClient {
                 headers,
                 ...(body === undefined ? {} : { body }),
                 signal: controller.signal,
+                ...(request.redirect === undefined ? {} : { redirect: request.redirect }),
             });
             const durationMs = Date.now() - startedAt;
             const responseHeaders = headersToRecord(response.headers);
@@ -78,7 +79,7 @@ export class FetchHttpClient {
                 durationMs,
                 body: redactDeep(parsedBody),
             }, 'Outbound HTTP response');
-            if (!response.ok) {
+            if (!response.ok && request.returnErrorResponses !== true) {
                 throw new ExternalServiceError(request.operation, 'Upstream returned an error response');
             }
             return {
@@ -86,6 +87,7 @@ export class FetchHttpClient {
                 headers: responseHeaders,
                 body: parsedBody,
                 durationMs,
+                ok: response.ok,
             };
         }
         catch (error) {

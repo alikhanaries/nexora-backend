@@ -141,6 +141,8 @@ export async function createApplication(infra) {
     const webhooks = createWebhooksModule({
         database: infra.database,
         secretEncryptor: identity.auth.secretEncryptor,
+        rateLimiter: infra.rateLimiter,
+        stepUpVerifier: mfa.stepUpService,
         auditRecorder: audit.auditRecorder,
     });
     const compatibility = createCompatibilityModule({
@@ -183,6 +185,7 @@ export async function createApplication(infra) {
         cancellations,
         shipments,
         returns,
+        webhooks,
         compatibility,
         authenticateAccessToken,
         verifyApiKey: apiKeys.useCases.verifyApiKey,

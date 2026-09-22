@@ -80,15 +80,8 @@ export class PostgresWebhookDeliveryRepository {
             return null;
         return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
     }
-    async update(queryable, delivery) {
-        await queryable.query(`UPDATE webhook_deliveries
-       SET status = $3,
-           attempt_count = $4,
-           next_attempt_at = $5,
-           last_http_status = $6,
-           last_error = $7,
-           delivered_at = $8
-       WHERE tenant_id = $1 AND id = $2`, [
+    async update(queryable, delivery, options = {}) {
+        const params = [
             delivery.tenantId,
             delivery.id,
             delivery.status,
@@ -97,7 +90,50 @@ export class PostgresWebhookDeliveryRepository {
             delivery.lastHttpStatus,
             delivery.lastError,
             delivery.deliveredAt,
-        ], { operation: 'webhooks.deliveries.update' });
+        ];
+        let sql = `UPDATE webhook_deliveries
+       SET status = $3,
+           attempt_count = $4,
+           next_attempt_at = $5,
+           last_http_status = $6,
+           last_error = $7,
+           delivered_at = $8
+       WHERE tenant_id = $1 AND id = $2`;
+        if (options.expectedStatuses !== undefined && options.expectedStatuses.length > 0) {
+            params.push(options.expectedStatuses);
+            sql += ` AND status = ANY($${params.length}::text[])`;
+        }
+        const result = await queryable.query(sql, params, { operation: 'webhooks.deliveries.update' });
+        return result.rowCount > 0;
+    }
+    /**
+     * Atomically claims a delivery attempt and increments attempt_count.
+     *
+     * Reclaims stale DELIVERING rows once their lease expires.
+     */
+    async claimAttempt(queryable, tenantId, deliveryId, leaseSeconds) {
+        const result = await queryable.query(`UPDATE webhook_deliveries
+       SET status = $4,
+           attempt_count = attempt_count + 1,
+           next_attempt_at = now() + make_interval(secs => $5)
+       WHERE tenant_id = $1
+         AND id = $2
+         AND (
+           status = ANY($3::text[])
+           OR (status = $4 AND next_attempt_at IS NOT NULL AND next_attempt_at <= now())
+         )
+       RETURNING ${deliverySelect}`, [
+            tenantId,
+            deliveryId,
+            [WebhookDeliveryStatus.PENDING, WebhookDeliveryStatus.FAILED],
+            WebhookDeliveryStatus.DELIVERING,
+            leaseSeconds,
+        ], { operation: 'webhooks.deliveries.claim_attempt' });
+        const row = result.rows[0];
+        if (row === undefined) {
+            return null;
+        }
+        return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
     }
     async listBySubscription(queryable, tenantId, subscriptionId, input = {}) {
         const limit = input.limit ?? 100;
@@ -106,6 +142,30 @@ export class PostgresWebhookDeliveryRepository {
        WHERE tenant_id = $1 AND subscription_id = $2
        ORDER BY created_at DESC, id DESC
        LIMIT $3`, [tenantId, subscriptionId, limit], { operation: 'webhooks.deliveries.list_by_subscription' });
+        return result.rows.map((row) => toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row')));
+    }
+    async listPage(queryable, tenantId, subscriptionId, filter, limit, cursorCreatedAt, cursorId) {
+        const conditions = ['tenant_id = $1', 'subscription_id = $2'];
+        const params = [tenantId, subscriptionId];
+        if (filter.status !== undefined) {
+            params.push(filter.status);
+            conditions.push(`status = $${params.length}`);
+        }
+        if (filter.eventType !== undefined) {
+            params.push(filter.eventType);
+            conditions.push(`event_type = $${params.length}`);
+        }
+        if (cursorCreatedAt !== null && cursorId !== null) {
+            params.push(cursorCreatedAt, cursorId);
+            conditions.push(`(created_at, id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`);
+        }
+        params.push(limit);
+        const limitParam = `$${params.length}`;
+        const result = await queryable.query(`SELECT ${deliverySelect}
+       FROM webhook_deliveries
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY created_at DESC, id DESC
+       LIMIT ${limitParam}`, params, { operation: 'webhooks.deliveries.list_page' });
         return result.rows.map((row) => toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row')));
     }
 }

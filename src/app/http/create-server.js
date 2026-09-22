@@ -98,6 +98,7 @@ export async function createHttpServer(deps) {
     await app.register(deps.cancellations.routes, deps.cancellations.useCases);
     await app.register(deps.shipments.routes, deps.shipments.useCases);
     await app.register(deps.returns.routes, deps.returns.useCases);
+    await app.register(deps.webhooks.routes.plugin, deps.webhooks.routes.options);
     await app.register(deps.compatibility.routes, deps.compatibility.routeDeps);
     return app;
 }

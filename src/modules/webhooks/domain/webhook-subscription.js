@@ -83,4 +83,15 @@ export class WebhookSubscription {
             updatedAt: at,
         });
     }
+    rotateSecret(secretCiphertext, at) {
+        if (this.status === WebhookSubscriptionStatus.DELETED) {
+            throw new BusinessRuleError('Deleted webhook subscriptions cannot rotate secrets');
+        }
+        return new WebhookSubscription({
+            ...this,
+            eventTypes: [...this.eventTypes],
+            secretCiphertext,
+            updatedAt: at,
+        });
+    }
 }

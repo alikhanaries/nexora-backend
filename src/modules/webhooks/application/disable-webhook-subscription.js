@@ -1,4 +1,6 @@
-import { NotFoundError } from '../../../shared/errors/index.js';
+import { auditRequestFields } from '../../audit/public/index.js';
+import { NotFoundError, RateLimitError } from '../../../shared/errors/index.js';
+import { AUTH_RATE_LIMIT_POLICIES } from '../../../shared/auth/rate-limit-policies.js';
 import { WebhookSubscriptionStatus } from '../domain/webhook-subscription-status.js';
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
 import { requireWebhooksManage } from './webhook-permissions.js';
@@ -10,6 +12,13 @@ export class DisableWebhookSubscription {
     }
     async execute(input) {
         requireWebhooksManage(this.deps.authorization, input.actorPermissions);
+        const rateLimit = await this.deps.rateLimiter.consume({
+            policy: AUTH_RATE_LIMIT_POLICIES.webhookManage,
+            subject: `${input.tenantId}:${input.actorId}`,
+        });
+        if (!rateLimit.allowed) {
+            throw new RateLimitError(rateLimit.retryAfterSeconds);
+        }
         const now = new Date();
         const updated = await this.deps.database.execute(async (tx) => {
             const existing = await this.deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId);
@@ -27,6 +36,7 @@ export class DisableWebhookSubscription {
                     resourceType: 'webhook_subscription',
                     resourceId: next.id,
                     metadata: {},
+                    ...auditRequestFields(),
                 });
             }
             return next;
