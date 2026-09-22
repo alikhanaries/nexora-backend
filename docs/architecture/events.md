@@ -110,25 +110,52 @@ Integration tests in `tests/integration/outbox-inbox.test.ts` exercise the full 
 
 External webhook delivery resolves **OQ-031**:
 
-1. Outbox → `integration-events` queue remains the first async stage (unchanged).
-2. A **composite integration-event router** consumes those jobs with inbox deduplication.
-3. Webhook dispatch enqueues work to a separate **`webhook-deliveries`** queue.
-4. **HTTP delivery never runs inline** in the `integration-events` consumer.
+```
+outbox_events
+    ↓ OutboxPublisher
+integration-events (BullMQ)
+    ↓ worker: publish-integration-event job
+CompositeIntegrationEventRouter
+    ├── LoggingIntegrationEventHandler (consumer: foundation.logging)
+    └── WebhookDispatchEnqueueHandler (consumer: webhooks.dispatch-enqueue)
+            ↓
+    webhook-deliveries (BullMQ)
+            ↓
+    HTTP delivery worker (Phase 6.4)
+```
+
+Rules:
+
+1. Outbox → `integration-events` remains the first async stage (unchanged).
+2. Each router handler uses a distinct inbox `consumer_name` for idempotent at-least-once processing.
+3. Webhook dispatch creates `webhook_deliveries` rows and enqueues identifier-only jobs — **no HTTP in this stage**.
+4. Delivery rows are unique on `(subscription_id, event_id)`; duplicate event processing is idempotent.
+5. Queue jobs contain only `tenantId`, `deliveryId`, `subscriptionId`, `eventId`, and `eventType` — never webhook secrets.
 
 Initial externally deliverable event types are listed in `PHASE_6_EXTERNAL_EVENT_ALLOWLIST` inside `event-catalog.js`.
 
 ## Phase 6.2 webhook persistence
 
-Phase 6.2 adds tenant-scoped persistence only:
+Phase 6.2 adds tenant-scoped persistence:
 
 - `webhook_subscriptions` — encrypted signing secret, event type allowlist, lifecycle status
-- `webhook_deliveries` — one row per `(subscription_id, event_id)` for future HTTP dispatch
+- `webhook_deliveries` — one row per `(subscription_id, event_id)` ledger for HTTP dispatch
 
-Outbound HTTP, HMAC signing, SSRF enforcement, and the `webhook-deliveries` worker belong to later slices. SSRF validation will live in the future delivery worker before any outbound HTTP request is made.
+## Phase 6.3 webhook dispatch enqueue
+
+Phase 6.3 wires the composite router and dispatch handler:
+
+- `CompositeIntegrationEventRouter` in `src/workers/handlers/composite-integration-event-router.js`
+- `WebhookDispatchService` selects ACTIVE tenant subscriptions whose allowlist includes the event type
+- After the delivery row is persisted, a `webhook-deliveries` / `deliver-webhook` job is enqueued
+- Delivery creation runs in a tenant-scoped database transaction; queue enqueue runs afterward (same pattern as the outbox publisher). Enqueue failures surface as handler errors so BullMQ/inbox retry can recover; duplicate job IDs are treated as idempotent.
+
+Outbound HTTP, HMAC signing, SSRF enforcement, retry/backoff, and dead-letter processing belong to **Phase 6.4+**. SSRF validation will live in the future delivery worker before any outbound HTTP request is made.
 
 ## Not yet implemented
 
-- Webhook subscriptions, signing, delivery worker (Phase 6.2+)
+- Webhook HTTP delivery worker (Phase 6.4)
+- Webhook admin HTTP API (`/api/v1/webhooks`)
 - Full JSON Schema / Avro event registry (OQ-032)
 - Kafka / NATS alternative transports
 - Saga orchestration

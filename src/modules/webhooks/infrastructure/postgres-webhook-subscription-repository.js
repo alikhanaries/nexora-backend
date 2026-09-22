@@ -76,6 +76,15 @@ export class PostgresWebhookSubscriptionRepository {
         const result = await queryable.query(sql, params, { operation: 'webhooks.subscriptions.list' });
         return result.rows.map((row) => toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row')));
     }
+    async listActiveForEventType(queryable, tenantId, eventType) {
+        const result = await queryable.query(`SELECT ${subscriptionSelect}
+       FROM webhook_subscriptions
+       WHERE tenant_id = $1
+         AND status = $2
+         AND $3 = ANY(event_types)
+       ORDER BY created_at ASC, id ASC`, [tenantId, WebhookSubscriptionStatus.ACTIVE, eventType], { operation: 'webhooks.subscriptions.list_active_for_event_type' });
+        return result.rows.map((row) => toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row')));
+    }
     async update(queryable, subscription) {
         await queryable.query(`UPDATE webhook_subscriptions
        SET url = $3,
