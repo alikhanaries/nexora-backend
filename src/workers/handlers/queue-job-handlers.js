@@ -18,7 +18,7 @@ export function registerWorkerHandlers(deps) {
             return;
         }
         const parsed = parseOrThrow(integrationEventPayloadSchema, payload, 'integration event job');
-        await deps.inboxConsumer.handle({
+        await deps.integrationEventRouter.route({
             id: parsed.eventId,
             type: parsed.eventType,
             version: parsed.eventVersion,
