@@ -1,4 +1,6 @@
-import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
+import { auditRequestFields } from '../../audit/public/index.js';
+import { NotFoundError, RateLimitError, ValidationError } from '../../../shared/errors/index.js';
+import { AUTH_RATE_LIMIT_POLICIES } from '../../../shared/auth/rate-limit-policies.js';
 import { WebhookSubscriptionStatus } from '../domain/webhook-subscription-status.js';
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
 import { requireWebhooksManage } from './webhook-permissions.js';
@@ -12,11 +14,22 @@ export class UpdateWebhookSubscription {
     }
     async execute(input) {
         requireWebhooksManage(this.deps.authorization, input.actorPermissions);
+        const rateLimit = await this.deps.rateLimiter.consume({
+            policy: AUTH_RATE_LIMIT_POLICIES.webhookManage,
+            subject: `${input.tenantId}:${input.actorId}`,
+        });
+        if (!rateLimit.allowed) {
+            throw new RateLimitError(rateLimit.retryAfterSeconds);
+        }
         if (input.status !== undefined
             && input.status !== WebhookSubscriptionStatus.ACTIVE
             && input.status !== WebhookSubscriptionStatus.DISABLED) {
             throw new ValidationError('Webhook subscription status must be ACTIVE or DISABLED');
         }
+        const validatedUrl = input.url === undefined ? undefined : await validateWebhookUrl(input.url);
+        const validatedEventTypes = input.eventTypes === undefined
+            ? undefined
+            : validateWebhookEventTypes(input.eventTypes);
         const now = new Date();
         const updated = await this.deps.database.execute(async (tx) => {
             const existing = await this.deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId);
@@ -24,9 +37,9 @@ export class UpdateWebhookSubscription {
                 throw new NotFoundError('Webhook subscription was not found', { subscriptionId: input.subscriptionId });
             }
             const next = existing.updateDetails({
-                ...(input.url === undefined ? {} : { url: validateWebhookUrl(input.url) }),
+                ...(validatedUrl === undefined ? {} : { url: validatedUrl }),
                 ...(input.description === undefined ? {} : { description: input.description?.trim() || null }),
-                ...(input.eventTypes === undefined ? {} : { eventTypes: validateWebhookEventTypes(input.eventTypes) }),
+                ...(validatedEventTypes === undefined ? {} : { eventTypes: validatedEventTypes }),
                 ...(input.status === undefined ? {} : { status: input.status }),
             }, now);
             await this.deps.subscriptions.update(tx, next);
@@ -42,6 +55,7 @@ export class UpdateWebhookSubscription {
                         status: next.status,
                         eventTypes: next.eventTypes,
                     },
+                    ...auditRequestFields(),
                 });
             }
             return next;

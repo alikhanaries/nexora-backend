@@ -42,12 +42,21 @@
  *
  * @property {(input: {
  *   tenantId: string,
+ *   actorId: string,
+ *   actorKind: 'user'|'api-key',
+ *   actorPermissions: readonly string[],
+ *   sessionId: string,
+ *   subscriptionId: string,
+ * }) => Promise<{ subscription: object, secret: string }>} rotateWebhookSecret
+ *
+ * @property {(input: {
+ *   tenantId: string,
  *   subscriptionId: string,
  *   eventId: string,
  *   eventType: string,
  *   nextAttemptAt?: Date|null,
  * }) => Promise<{ delivery: object }>} createWebhookDelivery
- * Internal delivery persistence for future dispatch workers.
+ * Internal delivery persistence for worker dispatch.
  */
 
 export { DefaultWebhookCommandService } from '../application/webhook-command-service.js';

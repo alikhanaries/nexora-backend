@@ -1,24 +1,12 @@
-import { ValidationError } from '../../../shared/errors/index.js';
+import { validateOutboundWebhookUrl } from '../../../shared/security/ssrf-validator.js';
 
 /**
- * Validates subscription URL shape for persistence.
+ * Validates subscription URL shape and SSRF safety for persistence.
  *
- * SSRF protections for outbound HTTP delivery belong in the future delivery worker.
+ * @param {string} rawUrl
+ * @returns {Promise<string>}
  */
-export function validateWebhookUrl(rawUrl) {
-    const url = rawUrl.trim();
-    if (url.length === 0) {
-        throw new ValidationError('Webhook URL is required');
-    }
-    let parsed;
-    try {
-        parsed = new URL(url);
-    }
-    catch {
-        throw new ValidationError('Webhook URL must be a valid URL');
-    }
-    if (parsed.protocol !== 'https:') {
-        throw new ValidationError('Webhook URL must use HTTPS');
-    }
-    return url;
+export async function validateWebhookUrl(rawUrl) {
+    const url = await validateOutboundWebhookUrl(rawUrl);
+    return url.toString();
 }

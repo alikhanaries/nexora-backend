@@ -6,6 +6,7 @@ import { WebhookDeliveryService } from './application/webhook-delivery-service.j
 import { WebhookDispatchService } from './application/webhook-dispatch-service.js';
 import { PostgresWebhookDeliveryRepository } from './infrastructure/postgres-webhook-delivery-repository.js';
 import { PostgresWebhookSubscriptionRepository } from './infrastructure/postgres-webhook-subscription-repository.js';
+import webhookRoutes from './presentation/webhook.routes.js';
 
 export function createWebhooksModule(deps) {
     const subscriptions = new PostgresWebhookSubscriptionRepository();
@@ -17,7 +18,9 @@ export function createWebhooksModule(deps) {
         deliveries,
         secretEncryptor: deps.secretEncryptor,
         authorization,
+        rateLimiter: deps.rateLimiter,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.stepUpVerifier === undefined ? {} : { stepUpVerifier: deps.stepUpVerifier }),
     };
     const webhookCommandService = new DefaultWebhookCommandService(sharedDeps);
     const webhookQueryService = new DefaultWebhookQueryService(sharedDeps);
@@ -27,6 +30,13 @@ export function createWebhooksModule(deps) {
         repositories: {
             subscriptions,
             deliveries,
+        },
+        routes: {
+            plugin: webhookRoutes,
+            options: {
+                webhookCommandService,
+                webhookQueryService,
+            },
         },
     };
 }

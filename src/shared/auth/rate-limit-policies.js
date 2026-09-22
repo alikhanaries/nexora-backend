@@ -22,6 +22,26 @@ export const AUTH_RATE_LIMIT_POLICIES = {
         limit: 10,
         windowSeconds: 3600,
     },
+    webhookCreate: {
+        name: 'webhook.create',
+        limit: 20,
+        windowSeconds: 3600,
+    },
+    webhookManage: {
+        name: 'webhook.manage',
+        limit: 60,
+        windowSeconds: 3600,
+    },
+    webhookRead: {
+        name: 'webhook.read',
+        limit: 120,
+        windowSeconds: 60,
+    },
+    webhookSecretRotate: {
+        name: 'webhook.secret-rotate',
+        limit: 5,
+        windowSeconds: 3600,
+    },
 };
 
 /** Provider-neutral rate limits for the `/api/v2` compatibility surface. */

@@ -54,7 +54,7 @@ describe('webhook delivery worker integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://hooks.example.com/nexora',
+            url: 'https://example.com/webhooks/nexora',
             eventTypes: ['order.created'],
         });
         const eventId = randomUUID();
@@ -124,7 +124,7 @@ describe('webhook delivery worker integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://hooks.example.com/nexora',
+            url: 'https://example.com/webhooks/nexora',
             eventTypes: ['order.created'],
         });
         await app.webhooks.webhookCommandService.updateWebhookSubscription({
@@ -178,7 +178,7 @@ describe('webhook delivery worker integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://hooks.example.com/nexora',
+            url: 'https://example.com/webhooks/nexora',
             eventTypes: ['order.created'],
         });
         const eventId = randomUUID();
