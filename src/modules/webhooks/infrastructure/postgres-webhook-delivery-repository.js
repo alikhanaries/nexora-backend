@@ -144,4 +144,28 @@ export class PostgresWebhookDeliveryRepository {
        LIMIT $3`, [tenantId, subscriptionId, limit], { operation: 'webhooks.deliveries.list_by_subscription' });
         return result.rows.map((row) => toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row')));
     }
+    async listPage(queryable, tenantId, subscriptionId, filter, limit, cursorCreatedAt, cursorId) {
+        const conditions = ['tenant_id = $1', 'subscription_id = $2'];
+        const params = [tenantId, subscriptionId];
+        if (filter.status !== undefined) {
+            params.push(filter.status);
+            conditions.push(`status = $${params.length}`);
+        }
+        if (filter.eventType !== undefined) {
+            params.push(filter.eventType);
+            conditions.push(`event_type = $${params.length}`);
+        }
+        if (cursorCreatedAt !== null && cursorId !== null) {
+            params.push(cursorCreatedAt, cursorId);
+            conditions.push(`(created_at, id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`);
+        }
+        params.push(limit);
+        const limitParam = `$${params.length}`;
+        const result = await queryable.query(`SELECT ${deliverySelect}
+       FROM webhook_deliveries
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY created_at DESC, id DESC
+       LIMIT ${limitParam}`, params, { operation: 'webhooks.deliveries.list_page' });
+        return result.rows.map((row) => toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row')));
+    }
 }

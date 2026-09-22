@@ -1,4 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { auditRequestFields } from '../../audit/public/index.js';
+import { RateLimitError } from '../../../shared/errors/index.js';
+import { AUTH_RATE_LIMIT_POLICIES } from '../../../shared/auth/rate-limit-policies.js';
 import { WebhookSubscription } from '../domain/webhook-subscription.js';
 import { generateWebhookSecret } from '../domain/webhook-secret.js';
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
@@ -13,7 +16,14 @@ export class CreateWebhookSubscription {
     }
     async execute(input) {
         requireWebhooksManage(this.deps.authorization, input.actorPermissions);
-        const url = validateWebhookUrl(input.url);
+        const rateLimit = await this.deps.rateLimiter.consume({
+            policy: AUTH_RATE_LIMIT_POLICIES.webhookCreate,
+            subject: `${input.tenantId}:${input.actorId}`,
+        });
+        if (!rateLimit.allowed) {
+            throw new RateLimitError(rateLimit.retryAfterSeconds);
+        }
+        const url = await validateWebhookUrl(input.url);
         const eventTypes = validateWebhookEventTypes(input.eventTypes);
         const plaintextSecret = generateWebhookSecret();
         const secretCiphertext = this.deps.secretEncryptor.encrypt(plaintextSecret);
@@ -42,6 +52,7 @@ export class CreateWebhookSubscription {
                         url,
                         eventTypes,
                     },
+                    ...auditRequestFields(),
                 });
             }
         }, { tenantId: input.tenantId });
