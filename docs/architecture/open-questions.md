@@ -29,7 +29,7 @@ Unresolved design items tracked across phases. Move to an ADR when decided.
 
 | ID     | Question                                                            | Impact             | Owner | Target phase |
 | ------ | ------------------------------------------------------------------- | ------------------ | ----- | ------------ |
-| OQ-030 | Outbox published-event retention period?                            | Table growth       | Ops   | Phase 2      |
+| OQ-030 | Outbox published-event retention period?                            | Table growth       | **Resolved** | Phase 6.6 (`OUTBOX_RETENTION_DAYS`, see [events.md](events.md)) |
 | OQ-031 | External webhook delivery — outbox consumer or separate dispatcher? | Architecture       | **Resolved** | Phase 6 ([ADR-019](../decisions/ADR-019-phase-6-webhooks-events.md)) |
 | OQ-032 | Event schema registry (JSON Schema / Avro)?                         | Consumer contracts | TBD   | Phase 3      |
 

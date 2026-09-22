@@ -183,10 +183,38 @@ Concurrency notes:
 - Terminal updates require the row to still be `DELIVERING`, so a late HTTP response cannot overwrite `DELIVERED` or `DEAD_LETTERED`.
 - `WEBHOOK_DELIVERY_TIMEOUT_MS` must not exceed the lease; with defaults (10s timeout, 300s lease) a slow HTTP call cannot overlap a lease reclaim. Misconfigured timeouts that exceed the lease could allow a second worker to reclaim and send a duplicate webhook.
 
+## Phase 6.6 retention cleanup
+
+Phase 6.6 adds bounded retention sweeps for infrastructure tables that accumulate after successful processing. The worker process runs `RetentionCleanupScheduler` on `RETENTION_CLEANUP_INTERVAL_MS` (default 1 hour) and coordinates replicas with a Redis distributed lock.
+
+| Resource    | Eligible rows                                              | Never deleted                                      |
+| ----------- | ---------------------------------------------------------- | -------------------------------------------------- |
+| Outbox      | `published_at IS NOT NULL` and older than retention window | Unpublished, claimed, retryable, dead-lettered     |
+| Inbox       | `status = 'processed'` with old `processed_at`             | `processing`, `failed` (retryable)                 |
+| Idempotency | `expires_at` older than retention window                   | Non-expired and in-progress (`processing`) records |
+
+Each resource is purged in batches of `RETENTION_CLEANUP_BATCH_SIZE` (default 100) until a partial batch completes, so sweeps never hold a long-running transaction over the full table.
+
+Configuration:
+
+- `OUTBOX_RETENTION_DAYS` (default 30)
+- `INBOX_RETENTION_DAYS` (default 30)
+- `IDEMPOTENCY_RETENTION_DAYS` (default 7) — grace period after `expires_at` before physical deletion; replay semantics remain governed by `IDEMPOTENCY_TTL_SECONDS`
+- `RETENTION_CLEANUP_BATCH_SIZE` (default 100)
+- `RETENTION_CLEANUP_INTERVAL_MS` (default 3600000)
+
+Observability:
+
+- Structured Pino logs for start, per-resource counts, duration, and failures (no payloads or PII)
+- Prometheus: `nexora_retention_cleanup_deleted_total`, `nexora_retention_cleanup_runs_total`, `nexora_retention_cleanup_failures_total`, `nexora_retention_cleanup_duration_seconds`
+
+Failure behaviour: each resource is cleaned independently; partial success is preserved, but the sweep fails overall when any category errors so the next scheduled run retries.
+
+These tables are global infrastructure maintenance tables and are purged through the standard application database connection (not tenant-scoped RLS contexts).
+
 ## Not yet implemented
 
-- Webhook admin HTTP API (`/api/v1/webhooks`)
-- Secret rotation
 - Full JSON Schema / Avro event registry (OQ-032)
 - Kafka / NATS alternative transports
 - Saga orchestration
+- Webhook delivery history retention

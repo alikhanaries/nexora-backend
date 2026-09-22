@@ -128,6 +128,30 @@ export class PrometheusMetrics {
             buckets: DURATION_BUCKETS,
             registers: [this.registry],
         });
+        this.retentionCleanupDeletedTotal = new Counter({
+            name: 'nexora_retention_cleanup_deleted_total',
+            help: 'Rows deleted by retention cleanup sweeps.',
+            labelNames: ['resource'],
+            registers: [this.registry],
+        });
+        this.retentionCleanupRunsTotal = new Counter({
+            name: 'nexora_retention_cleanup_runs_total',
+            help: 'Retention cleanup runs by outcome.',
+            labelNames: ['outcome'],
+            registers: [this.registry],
+        });
+        this.retentionCleanupFailuresTotal = new Counter({
+            name: 'nexora_retention_cleanup_failures_total',
+            help: 'Retention cleanup failures by resource.',
+            labelNames: ['resource'],
+            registers: [this.registry],
+        });
+        this.retentionCleanupDuration = new Histogram({
+            name: 'nexora_retention_cleanup_duration_seconds',
+            help: 'Retention cleanup run duration in seconds.',
+            buckets: DURATION_BUCKETS,
+            registers: [this.registry],
+        });
     }
     recordHttpRequest(sample) {
         const statusClass = classifyStatus(sample.statusCode);
@@ -183,6 +207,26 @@ export class PrometheusMetrics {
         if (sample.durationMs !== undefined) {
             this.webhookDeliveryDuration.observe({ outcome: sample.outcome }, sample.durationMs / 1_000);
         }
+    }
+    recordRetentionCleanup(sample) {
+        if (sample.outcome === 'success') {
+            this.retentionCleanupRunsTotal.inc({ outcome: 'success' });
+            if (sample.outboxDeleted > 0) {
+                this.retentionCleanupDeletedTotal.inc({ resource: 'outbox' }, sample.outboxDeleted);
+            }
+            if (sample.inboxDeleted > 0) {
+                this.retentionCleanupDeletedTotal.inc({ resource: 'inbox' }, sample.inboxDeleted);
+            }
+            if (sample.idempotencyDeleted > 0) {
+                this.retentionCleanupDeletedTotal.inc({ resource: 'idempotency' }, sample.idempotencyDeleted);
+            }
+            if (sample.durationSeconds !== undefined) {
+                this.retentionCleanupDuration.observe(sample.durationSeconds);
+            }
+            return;
+        }
+        this.retentionCleanupRunsTotal.inc({ outcome: 'failure' });
+        this.retentionCleanupFailuresTotal.inc({ resource: sample.resource ?? 'run' });
     }
     setDbPoolConnections(snapshot) {
         this.dbPoolConnections.set({ state: 'total' }, snapshot.total);

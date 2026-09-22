@@ -46,7 +46,7 @@ Phase 1 optimises for **correctness and clear boundaries** over maximum throughp
 
 The outbox uses row claiming (`claimed_at`) so multiple publisher instances can run safely. Unpublished rows are indexed partially — backlog size drives poll cost, not total table size.
 
-Retention sweeps for published events should run as scheduled jobs (Phase 2 operations).
+Retention sweeps for published outbox events, processed inbox rows, and expired idempotency records run on the worker process (Phase 6.6; see [events.md](events.md)).
 
 ## Caching strategy
 

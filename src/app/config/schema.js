@@ -51,6 +51,11 @@ export const configSchema = z.object({
     OUTBOX_POLL_INTERVAL_MS: envInteger({ default: 1_000, min: 50, max: 60_000 }),
     OUTBOX_MAX_ATTEMPTS: envInteger({ default: 10, min: 1, max: 100 }),
     IDEMPOTENCY_TTL_SECONDS: envInteger({ default: 86_400, min: 60, max: 2_592_000 }),
+    OUTBOX_RETENTION_DAYS: envInteger({ default: 30, min: 1, max: 3_650 }),
+    INBOX_RETENTION_DAYS: envInteger({ default: 30, min: 1, max: 3_650 }),
+    IDEMPOTENCY_RETENTION_DAYS: envInteger({ default: 7, min: 1, max: 3_650 }),
+    RETENTION_CLEANUP_BATCH_SIZE: envInteger({ default: 100, min: 1, max: 1_000 }),
+    RETENTION_CLEANUP_INTERVAL_MS: envInteger({ default: 3_600_000, min: 60_000, max: 86_400_000 }),
     LOG_LEVEL: z
         .string()
         .optional()

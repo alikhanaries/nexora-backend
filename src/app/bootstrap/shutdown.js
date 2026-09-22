@@ -20,6 +20,9 @@ export async function gracefulShutdown(targets) {
     if (targets.outboxPublisher !== undefined) {
         await runStep('outbox.stop', () => targets.outboxPublisher.stop());
     }
+    if (targets.retentionCleanupScheduler !== undefined) {
+        await runStep('retention.stop', () => targets.retentionCleanupScheduler.stop());
+    }
     if (targets.workerRuntime !== undefined) {
         await runStep('workers.close', () => targets.workerRuntime.close());
     }
