@@ -73,6 +73,7 @@ const authenticationPlugin = async (app, options) => {
                     authenticationMethod: 'api-key',
                     apiKeyId: verified.apiKeyId,
                     scopes: verified.scopes,
+                    ...(verified.channelId === undefined ? {} : { apiKeyChannelId: verified.channelId }),
                 };
                 enrichRequestContext({
                     tenantId: principal.tenantId,
