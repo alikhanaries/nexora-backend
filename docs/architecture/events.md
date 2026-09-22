@@ -15,18 +15,20 @@ Business TX ──► outbox_events ──► BullMQ ──► Worker ──► 
 
 ## Integration event shape
 
-Defined in `src/shared/events/integration-event.ts`:
+Defined in `src/shared/events/integration-event.js`:
 
 | Field                           | Purpose                                        |
 | ------------------------------- | ---------------------------------------------- |
 | `id`                            | Stable UUID for deduplication                  |
-| `type`                          | Namespaced string, e.g. `orders.order_created` |
+| `type`                          | Namespaced string, e.g. `order.created`        |
 | `version`                       | Payload schema version                         |
 | `aggregateType` / `aggregateId` | Entity reference                               |
 | `tenantId`                      | Tenant scope (null for platform events)        |
 | `payload`                       | JSON object                                    |
 | `correlationId`                 | Links to originating request                   |
 | `occurredAt`                    | Event timestamp                                |
+
+Domain producers emit an input shape without `id`/`occurredAt`; the outbox assigns those at persistence time. The central catalog lives in `src/shared/events/event-catalog.js` (Phase 6).
 
 ## Transactional outbox
 
@@ -104,9 +106,20 @@ Dead-lettered events require operator intervention — they are not silently dro
 
 Integration tests in `tests/integration/outbox-inbox.test.ts` exercise the full publish → consume → dedup path against real PostgreSQL and Redis.
 
-## Not in Phase 1
+## Phase 6 event consumption (ADR-019)
 
-- External webhook dispatch
-- Event schema registry
+External webhook delivery resolves **OQ-031**:
+
+1. Outbox → `integration-events` queue remains the first async stage (unchanged).
+2. A **composite integration-event router** consumes those jobs with inbox deduplication.
+3. Webhook dispatch enqueues work to a separate **`webhook-deliveries`** queue.
+4. **HTTP delivery never runs inline** in the `integration-events` consumer.
+
+Initial externally deliverable event types are listed in `PHASE_6_EXTERNAL_EVENT_ALLOWLIST` inside `event-catalog.js`.
+
+## Not yet implemented
+
+- Webhook subscriptions, signing, delivery worker (Phase 6.2+)
+- Full JSON Schema / Avro event registry (OQ-032)
 - Kafka / NATS alternative transports
 - Saga orchestration

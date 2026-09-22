@@ -30,7 +30,7 @@ Unresolved design items tracked across phases. Move to an ADR when decided.
 | ID     | Question                                                            | Impact             | Owner | Target phase |
 | ------ | ------------------------------------------------------------------- | ------------------ | ----- | ------------ |
 | OQ-030 | Outbox published-event retention period?                            | Table growth       | Ops   | Phase 2      |
-| OQ-031 | External webhook delivery — outbox consumer or separate dispatcher? | Architecture       | TBD   | Phase 3      |
+| OQ-031 | External webhook delivery — outbox consumer or separate dispatcher? | Architecture       | **Resolved** | Phase 6 ([ADR-019](../decisions/ADR-019-phase-6-webhooks-events.md)) |
 | OQ-032 | Event schema registry (JSON Schema / Avro)?                         | Consumer contracts | TBD   | Phase 3      |
 
 ## Audit and compliance
@@ -56,3 +56,4 @@ Unresolved design items tracked across phases. Move to an ADR when decided.
 | —   | PostgreSQL source of truth              | [ADR-003](../decisions/ADR-003-postgresql-source-of-truth.md) |
 | —   | Raw SQL via `pg`                        | [ADR-011](../decisions/ADR-011-database-access.md)            |
 | —   | Native `/api/v1`, CE `/api/v2` deferred | [ADR-010](../decisions/ADR-010-api-versioning.md)             |
+| OQ-031 | Webhook delivery uses composite router on `integration-events`, with HTTP on separate `webhook-deliveries` queue | [ADR-019](../decisions/ADR-019-phase-6-webhooks-events.md) |

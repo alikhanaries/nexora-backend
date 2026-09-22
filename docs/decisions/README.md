@@ -14,5 +14,6 @@
 | [ADR-010](ADR-010-api-versioning.md)                    | API Versioning                    | Accepted              |
 | [ADR-011](ADR-011-database-access.md)                   | Database Access (`pg`)            | Accepted / Phase 1    |
 | [ADR-018](ADR-018-phase-5-merchant-compatible-scope.md) | Phase 5 Merchant-Compatible Scope | Accepted              |
+| [ADR-019](ADR-019-phase-6-webhooks-events.md)         | Phase 6 Webhooks & Event Consumption | Accepted           |
 
 Add a new ADR only when a genuine architectural fork exists. Implementation details belong in module READMEs, not ADRs.
