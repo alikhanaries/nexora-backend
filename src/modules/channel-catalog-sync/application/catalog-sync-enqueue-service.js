@@ -28,6 +28,13 @@ export class CatalogSyncEnqueueService {
                 ? {}
                 : { pricingService: this.deps.pricingService }),
         });
+        return this.enqueuePlannedJobs(planned);
+    }
+
+    /**
+     * @param {import('./plan-catalog-sync-jobs.js').PlannedCatalogSyncJob[]} planned
+     */
+    async enqueuePlannedJobs(planned) {
         for (const job of planned) {
             const jobId = buildCatalogSyncJobId({
                 tenantId: job.tenantId,

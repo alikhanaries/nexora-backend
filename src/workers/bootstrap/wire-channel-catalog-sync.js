@@ -20,6 +20,7 @@ import { PostgresPriceRepository } from '../../modules/pricing/infrastructure/in
  * @param {import('../../infrastructure/redis/redis-rate-limiter.js').RedisRateLimiter} deps.rateLimiter
  * @param {import('../../shared/metrics/metrics-recorder.js').MetricsRecorder} deps.metrics
  * @param {import('../../shared/logging/logger.port.js').Logger} deps.logger
+ * @param {{ enabled: boolean, offerBatchSize: number, maxJobsPerTick: number }} [deps.catalogSyncReconciliation]
  */
 export function wireChannelCatalogSync(deps) {
     const channelRepository = new PostgresChannelRepository();
@@ -89,5 +90,8 @@ export function wireChannelCatalogSync(deps) {
         inventoryService,
         pricingService,
         productQueryService,
+        ...(deps.catalogSyncReconciliation === undefined
+            ? {}
+            : { catalogSyncReconciliation: deps.catalogSyncReconciliation }),
     });
 }

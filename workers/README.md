@@ -63,6 +63,7 @@ Worker shares queue-related environment with API:
 - `QUEUE_REDIS_URL`, `QUEUE_PREFIX`, `QUEUE_WORKER_CONCURRENCY`
 - `QUEUE_DEFAULT_ATTEMPTS`, `QUEUE_BACKOFF_BASE_MS`, `QUEUE_JOB_TIMEOUT_MS`
 - `SERVER_SHUTDOWN_TIMEOUT_MS` for drain period
+- `CATALOG_SYNC_RECONCILIATION_*` — optional scheduled catalog resync (Phase 20; off by default)
 
 ## Scaling
 

@@ -1,4 +1,5 @@
 import { CatalogSyncEnqueueService } from './application/catalog-sync-enqueue-service.js';
+import { CatalogSyncReconciliationService } from './application/catalog-sync-reconciliation-service.js';
 import { ChannelCatalogSyncService } from './application/channel-catalog-sync-service.js';
 import { ChannelCatalogSyncRateLimiter } from './application/channel-catalog-sync-rate-limiter.js';
 import { ExecuteCatalogSyncJob } from './application/execute-catalog-sync-job.js';
@@ -22,6 +23,7 @@ import { MarketplaceCatalogAdapterRegistry } from './infrastructure/marketplace-
  * @param {import('../inventory/public/inventory-service.js').DefaultInventoryService} deps.inventoryService
  * @param {import('../pricing/public/pricing-service.js').DefaultPricingService} deps.pricingService
  * @param {import('../products/public/product-query-service.js').DefaultProductQueryService} deps.productQueryService
+ * @param {{ enabled: boolean, offerBatchSize: number, maxJobsPerTick: number }} [deps.catalogSyncReconciliation]
  */
 export function createChannelCatalogSyncModule(deps) {
     const adapterRegistry = new MarketplaceCatalogAdapterRegistry();
@@ -71,8 +73,24 @@ export function createChannelCatalogSyncModule(deps) {
         enqueueService,
         executeJob,
     });
+    const catalogSyncReconciliationConfig = deps.catalogSyncReconciliation ?? {
+        enabled: false,
+        offerBatchSize: 50,
+        maxJobsPerTick: 500,
+    };
+    const catalogSyncReconciliationService = new CatalogSyncReconciliationService({
+        database: deps.database,
+        channelQueryService: deps.channelQueryService,
+        offerQueryService: deps.offerQueryService,
+        enqueueService,
+        pricingService: deps.pricingService,
+        config: catalogSyncReconciliationConfig,
+        logger: deps.logger,
+        metrics: deps.metrics,
+    });
     return {
         channelCatalogSyncService,
+        catalogSyncReconciliationService,
         adapterRegistry,
     };
 }
