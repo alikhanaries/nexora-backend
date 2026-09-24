@@ -38,5 +38,7 @@
 | 22 | Connection test metadata + entity mappings | ADR-030 | **Done** |
 | 23 | Shopify production adapter | ADR-029 | **Done** (branch) |
 | 24 | Amazon SP-API adapter | ADR-029 | **Done** (branch) |
+| 27 | Adapter hardening | ADR-029 §8 | **Done** |
+| 28 | Marketplace order ingestion framework | ADR-029 §11 | **Done** (branch) |
 
 Add a new ADR only when a genuine architectural fork exists. Implementation details belong in module READMEs, not ADRs.

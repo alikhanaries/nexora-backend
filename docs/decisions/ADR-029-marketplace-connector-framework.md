@@ -91,7 +91,15 @@ Marketplace layer errors (`MarketplaceAuthenticationError`, `MarketplaceRateLimi
 
 Extend catalog sync metrics with bounded `marketplace` label (provider key only). Never label by product/tenant/token.
 
-## 11. Related
+## 11. Phase 28 inbound orders (summary)
+
+- Generic module `marketplace-order-ingestion`: normalized order schema, `MarketplaceOrderIngestionService`, optional `MarketplaceOrderAdapter` registry.
+- Persists via existing `CreateChannelOrder` and `(tenant, channel, external_order_reference)` uniqueness — no new order tables.
+- Provider adapters (Shopify, Amazon, Noon, Namshi) do not implement order fetch in Phase 28; catalog adapters unchanged.
+
+See [order-ingestion.md](../marketplaces/order-ingestion.md).
+
+## 12. Related
 
 - [ADR-028](ADR-028-phase-15-catalog-sync-architecture.md)
 - [platform-independence.md](../architecture/platform-independence.md)
