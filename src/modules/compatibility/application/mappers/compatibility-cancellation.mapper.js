@@ -39,14 +39,31 @@ function cancellableQuantity(orderLine) {
  * Maps external cancellation lines to Nexora order line allocations.
  *
  * `MerchantProductNo` maps to the order line's snapshotted `merchantSku`.
- * External integer `OrderLineId` is accepted for contract compliance but is not used.
+ * When `resolvedOrderLineId` is present, the line is allocated directly to that order line.
  *
- * @param {Array<{ MerchantProductNo: string, Quantity: string|number, OrderLineId?: string|number|null }>} externalLines
+ * @param {Array<{ MerchantProductNo: string, Quantity: string|number, OrderLineId?: string|number|null, resolvedOrderLineId?: string }>} externalLines
  * @param {Array<{ id: string, merchantSku: string, quantity: number, cancelledQuantity: number, shippedQuantity: number }>} orderLines
  * @returns {Array<{ orderLineId: string, quantity: number }>}
  */
 export function mapExternalCancellationLinesToOrderLines(externalLines, orderLines) {
-    const aggregated = aggregateExternalLines(externalLines);
+    /** @type {Map<string, number>} */
+    const allocations = new Map();
+    const skuLines = [];
+    for (const line of externalLines) {
+        if (line.resolvedOrderLineId !== undefined) {
+            const quantity = parsePositiveInteger(line.Quantity);
+            allocations.set(
+                line.resolvedOrderLineId,
+                (allocations.get(line.resolvedOrderLineId) ?? 0) + quantity,
+            );
+            continue;
+        }
+        skuLines.push(line);
+    }
+    if (skuLines.length === 0) {
+        return [...allocations.entries()].map(([orderLineId, quantity]) => ({ orderLineId, quantity }));
+    }
+    const aggregated = aggregateExternalLines(skuLines);
     /** @type {Map<string, Array<{ id: string, merchantSku: string, quantity: number, cancelledQuantity: number, shippedQuantity: number }>>} */
     const linesBySku = new Map();
     for (const line of orderLines) {
@@ -57,8 +74,6 @@ export function mapExternalCancellationLinesToOrderLines(externalLines, orderLin
         linesBySku.get(sku).push(line);
     }
 
-    /** @type {Map<string, number>} */
-    const allocations = new Map();
     for (const [sku, requestedQuantity] of aggregated) {
         const candidates = linesBySku.get(sku);
         if (candidates === undefined || candidates.length === 0) {

@@ -9,6 +9,7 @@ import {
 import {
     acknowledgeReturnPayload,
     createOrder,
+    findReturnExternalIdByMerchantNo,
     receiveReturnPayload,
     returnHeaders,
     returnPayload,
@@ -51,12 +52,13 @@ describe('Merchant return acknowledge/receive integration', () => {
         await shipOrderQuantity(server, headers, order.id, order.lines[0].id, 2, 'ship-ack');
         const merchantReturnNo = 'MRN-ACK-1';
         await createMerchantReturn(headers, fixture, order.orderNumber, merchantReturnNo, 2);
+        const returnExternalId = await findReturnExternalIdByMerchantNo(app, tenantId, merchantReturnNo);
 
         const response = await server.inject({
             method: 'POST',
             url: '/api/v2/returns/merchant/acknowledge',
             headers: returnHeaders(headers, 'ack-return-1'),
-            payload: acknowledgeReturnPayload(merchantReturnNo),
+            payload: acknowledgeReturnPayload(merchantReturnNo, returnExternalId),
         });
         expect(response.statusCode).toBe(200);
         expect(response.json()).toEqual({ Success: true, StatusCode: 200, Message: null });
@@ -78,12 +80,13 @@ describe('Merchant return acknowledge/receive integration', () => {
         await shipOrderQuantity(server, headers, order.id, order.lines[0].id, 2, 'ship-receive');
         const merchantReturnNo = 'MRN-RECEIVE-1';
         await createMerchantReturn(headers, fixture, order.orderNumber, merchantReturnNo, 2);
+        const returnExternalId = await findReturnExternalIdByMerchantNo(app, tenantId, merchantReturnNo);
 
         const response = await server.inject({
             method: 'PUT',
             url: '/api/v2/returns',
             headers: returnHeaders(headers, 'receive-return-1'),
-            payload: receiveReturnPayload(fixture.merchantSku, 2),
+            payload: receiveReturnPayload(fixture.merchantSku, 2, returnExternalId),
         });
         expect(response.statusCode).toBe(200);
         expect(response.json()).toEqual({ Success: true, StatusCode: 200, Message: null });
@@ -105,12 +108,13 @@ describe('Merchant return acknowledge/receive integration', () => {
         const order = await createOrder(server, headers, fixture, 'receive-forbidden', 1);
         await shipOrderQuantity(server, headers, order.id, order.lines[0].id, 1, 'ship-receive-forbidden');
         await createMerchantReturn(headers, fixture, order.orderNumber, 'MRN-RECEIVE-FORBIDDEN');
+        const returnExternalId = await findReturnExternalIdByMerchantNo(app, tenantId, 'MRN-RECEIVE-FORBIDDEN');
 
         const response = await server.inject({
             method: 'PUT',
             url: '/api/v2/returns',
             headers: returnHeaders(authHeaders(viewer.accessToken), 'receive-forbidden'),
-            payload: receiveReturnPayload(fixture.merchantSku, 1),
+            payload: receiveReturnPayload(fixture.merchantSku, 1, returnExternalId),
         });
         expect(response.statusCode).toBe(403);
         expect(response.json().Message).toContain('returns.update');
@@ -124,12 +128,13 @@ describe('Merchant return acknowledge/receive integration', () => {
         const order = await createOrder(server, headers, fixture, 'reject-return', 1);
         await shipOrderQuantity(server, headers, order.id, order.lines[0].id, 1, 'ship-reject');
         await createMerchantReturn(headers, fixture, order.orderNumber, 'MRN-REJECT-1');
+        const returnExternalId = await findReturnExternalIdByMerchantNo(app, tenantId, 'MRN-REJECT-1');
 
         const response = await server.inject({
             method: 'PUT',
             url: '/api/v2/returns',
             headers: returnHeaders(headers, 'reject-return-1'),
-            payload: receiveReturnPayload(fixture.merchantSku, 1, 0, 1),
+            payload: receiveReturnPayload(fixture.merchantSku, 1, returnExternalId, 0, 1),
         });
         expect(response.statusCode).toBe(200);
 
@@ -150,8 +155,9 @@ describe('Merchant return acknowledge/receive integration', () => {
         await shipOrderQuantity(server, headers, order.id, order.lines[0].id, 1, 'ship-ack-idem');
         const merchantReturnNo = 'MRN-ACK-IDEM';
         await createMerchantReturn(headers, fixture, order.orderNumber, merchantReturnNo);
+        const returnExternalId = await findReturnExternalIdByMerchantNo(app, tenantId, merchantReturnNo);
         const requestHeaders = returnHeaders(headers, 'ack-idem');
-        const payload = acknowledgeReturnPayload(merchantReturnNo);
+        const payload = acknowledgeReturnPayload(merchantReturnNo, returnExternalId);
 
         const first = await server.inject({
             method: 'POST',

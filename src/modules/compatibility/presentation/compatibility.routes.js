@@ -250,8 +250,8 @@ const compatibilityRoutes = async (app, deps) => {
             schema: {
                 tags: ['Compatibility (v2)'],
                 summary: 'Acknowledge an order',
-                description: 'Acknowledges a merchant order import. Resolves the order by MerchantOrderNo (Nexora order number). '
-                    + 'External integer OrderId is required by the contract but is not persisted or validated by Nexora.',
+                description: 'Acknowledges a merchant order import. Resolves the order by MerchantOrderNo (Nexora order number) '
+                    + 'and validates external integer OrderId through the compat_v2 mapping table when supplied.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: acknowledgeOrderBodySchema,
                 response: {
@@ -327,7 +327,7 @@ const compatibilityRoutes = async (app, deps) => {
                 summary: 'Create a merchant shipment',
                 description: 'Marks an order as fully or partially shipped. Resolves the order by MerchantOrderNo (Nexora order number) '
                     + 'and lines by MerchantProductNo (order line merchantSku). MerchantShipmentNo is persisted as the shipment external reference (tenant-unique). '
-                    + 'External integer OrderLineId and ShippedFromStockLocationId are accepted but not used.',
+                    + 'External integer OrderLineId resolves to the order line when supplied. ShippedFromStockLocationId is accepted but not used.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: createShipmentBodySchema,
                 response: {
@@ -439,7 +439,7 @@ const compatibilityRoutes = async (app, deps) => {
                 summary: 'Create a merchant cancellation',
                 description: 'Marks an order as fully or partially cancelled. Resolves the order by MerchantOrderNo (Nexora order number) '
                     + 'and lines by MerchantProductNo (order line merchantSku). MerchantCancellationNo is persisted as the cancellation external reference (tenant-unique). '
-                    + 'External integer OrderLineId, ReasonCode, and IsMerchantCreator are accepted but not used.',
+                    + 'External integer OrderLineId resolves to the order line when supplied. ReasonCode and IsMerchantCreator are accepted but not used.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: createCancellationBodySchema,
                 response: {
@@ -559,7 +559,7 @@ const compatibilityRoutes = async (app, deps) => {
                 tags: ['Compatibility (v2)'],
                 summary: 'Receive a merchant return',
                 description: 'Implements external PUT /v2/returns. Marks a return as accepted or rejected based on line AcceptedQuantity/RejectedQuantity. '
-                    + 'External integer ReturnId is required by the contract but is not persisted; Nexora resolves the return by matching line SKUs and quantities among REQUESTED/APPROVED returns. '
+                    + 'External integer ReturnId resolves the return through the compat_v2 mapping table. '
                     + 'Partial accept/reject across lines is not supported.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: receiveReturnBodySchema,
@@ -598,7 +598,7 @@ const compatibilityRoutes = async (app, deps) => {
                 summary: 'Acknowledge a merchant return',
                 description: 'Implements external POST /v2/returns/merchant/acknowledge. Registers a return in the merchant system. '
                     + 'Resolves the return by MerchantReturnNo (Nexora return externalReference). '
-                    + 'External integer ReturnId is accepted for contract compliance but is not persisted or used as a lookup key.',
+                    + 'External integer ReturnId resolves the return through the compat_v2 mapping table when supplied.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: acknowledgeReturnBodySchema,
                 response: {
@@ -637,7 +637,7 @@ const compatibilityRoutes = async (app, deps) => {
                 description: 'Marks an order as fully or partially returned. Implements external POST /v2/returns/merchant. '
                     + 'Resolves the order by MerchantOrderNo (Nexora order number) and lines by MerchantProductNo (order line merchantSku). '
                     + 'MerchantReturnNo is persisted as the return external reference (tenant-unique). '
-                    + 'External integer OrderLineId, Id, refund amounts, ReturnDate, ExtraData, Rma, and TrackTraceNo are accepted but not used.',
+                    + 'External integer OrderLineId resolves to the order line when supplied. Id, refund amounts, ReturnDate, ExtraData, Rma, and TrackTraceNo are accepted but not used.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: createReturnBodySchema,
                 response: {

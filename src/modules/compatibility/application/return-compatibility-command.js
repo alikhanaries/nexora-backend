@@ -1,4 +1,12 @@
-import { ConflictError, NotFoundError } from '../../../shared/errors/index.js';
+import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
+import {
+    ExternalIdMappingResourceType,
+} from '../../external-id-mapping/public/index.js';
+import {
+    resolveExternalIntegerId,
+    resolveExternalOrderLines,
+    resolveReturnForCompatibility,
+} from './compatibility-external-id-resolution.js';
 import {
     fingerprintAcknowledgeReturnCommand,
     fingerprintProcessReturnReceiveCommand,
@@ -24,6 +32,7 @@ export class ReturnCompatibilityCommand {
      * @param {import('../../orders/public/order-query-service.js').DefaultOrderQueryService} deps.orderQueryService
      * @param {import('../../returns/public/return-query-service.js').DefaultReturnQueryService} deps.returnQueryService
      * @param {import('../../returns/public/return-command-service.js').DefaultReturnCommandService} deps.returnCommandService
+     * @param {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} deps.externalIntegerIdMappingQueryService
      */
     constructor(deps) {
         this.deps = deps;
@@ -49,7 +58,13 @@ export class ReturnCompatibilityCommand {
             });
         }
         const orderLines = await this.deps.orderQueryService.getOrderLines(input.tenantId, order.id);
-        const lines = mapExternalReturnLinesToOrderLines(mapped.externalLines, orderLines);
+        const resolvedExternalLines = await resolveExternalOrderLines(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            mapped.externalLines,
+            orderLines,
+        );
+        const lines = mapExternalReturnLinesToOrderLines(resolvedExternalLines, orderLines);
         const commandInput = {
             orderNumber: mapped.orderNumber,
             merchantReturnNo: mapped.merchantReturnNo,
@@ -85,9 +100,12 @@ export class ReturnCompatibilityCommand {
      */
     async acknowledgeReturn(input) {
         const mapped = mapExternalReturnAcknowledgeRequest(input.body);
-        const returnDetail = await this.deps.returnQueryService.findReturnByExternalReference(
+        const returnDetail = await resolveReturnForCompatibility(
+            this.deps.externalIntegerIdMappingQueryService,
             input.tenantId,
+            mapped.externalReturnId,
             mapped.merchantReturnNo,
+            this.deps.returnQueryService,
         );
         await this.deps.returnCommandService.acknowledgeReturn({
             tenantId: input.tenantId,
@@ -115,7 +133,20 @@ export class ReturnCompatibilityCommand {
      */
     async receiveReturn(input) {
         const mapped = mapExternalReturnReceiveRequest(input.body);
-        const returnId = await this.resolveReturnForReceive(input.tenantId, input.actorPermissions, mapped.lineDecisions);
+        const returnId = await resolveExternalIntegerId(
+            this.deps.externalIntegerIdMappingQueryService,
+            {
+                tenantId: input.tenantId,
+                resourceType: ExternalIdMappingResourceType.RETURN,
+                externalId: mapped.externalReturnId,
+                fieldName: 'ReturnId',
+            },
+        );
+        const returnDetail = await this.deps.returnQueryService.getReturnById(input.tenantId, returnId);
+        const orderLines = await this.deps.orderQueryService.getOrderLines(input.tenantId, returnDetail.orderId);
+        if (!returnMatchesReceiveRequest(returnDetail, orderLines, mapped.lineDecisions)) {
+            throw new ValidationError('Return line decisions do not match the resolved return');
+        }
         await this.deps.returnCommandService.processReturnReceive({
             tenantId: input.tenantId,
             actorId: input.actorId,
@@ -129,34 +160,5 @@ export class ReturnCompatibilityCommand {
             routeId: RECEIVE_RETURN_ROUTE_ID,
         });
         return mapReturnMutationResultToExternalResponse({});
-    }
-
-    /**
-     * @param {string} tenantId
-     * @param {readonly string[]} actorPermissions
-     * @param {Array<{ merchantProductNo: string, acceptedQuantity: number, rejectedQuantity: number }>} lineDecisions
-     */
-    async resolveReturnForReceive(tenantId, actorPermissions, lineDecisions) {
-        const page = await this.deps.returnQueryService.listReturns({
-            tenantId,
-            actorPermissions,
-            statuses: ['REQUESTED', 'APPROVED'],
-            page: 1,
-            pageSize: 100,
-        });
-        const candidates = [];
-        for (const returnEntity of page.items) {
-            const orderLines = await this.deps.orderQueryService.getOrderLines(tenantId, returnEntity.orderId);
-            if (returnMatchesReceiveRequest(returnEntity, orderLines, lineDecisions)) {
-                candidates.push(returnEntity);
-            }
-        }
-        if (candidates.length === 0) {
-            throw new NotFoundError('Return was not found', { tenantId });
-        }
-        if (candidates.length > 1) {
-            throw new ConflictError('Return request matches multiple returns', { tenantId });
-        }
-        return candidates[0].id;
     }
 }

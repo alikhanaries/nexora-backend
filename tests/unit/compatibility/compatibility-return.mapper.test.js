@@ -80,7 +80,7 @@ describe('compatibility return mapper', () => {
         expect(mapExternalReturnAcknowledgeRequest({
             MerchantReturnNo: ' RET-ACK ',
             ReturnId: 12345,
-        })).toEqual({ merchantReturnNo: 'RET-ACK' });
+        })).toEqual({ merchantReturnNo: 'RET-ACK', externalReturnId: 12345 });
     });
 
     it('maps receive request line decisions', () => {
@@ -121,7 +121,12 @@ describe('compatibility return mapper', () => {
     it('fingerprints acknowledge and receive commands', () => {
         expect(fingerprintAcknowledgeReturnCommand({ merchantReturnNo: 'RET-1' })).toContain('RET-1');
         expect(fingerprintProcessReturnReceiveCommand({
+            externalReturnId: 99,
             lineDecisions: [{ merchantProductNo: 'SKU-A', acceptedQuantity: 1, rejectedQuantity: 0 }],
         })).toContain('SKU-A');
+        expect(fingerprintProcessReturnReceiveCommand({
+            externalReturnId: 99,
+            lineDecisions: [{ merchantProductNo: 'SKU-A', acceptedQuantity: 1, rejectedQuantity: 0 }],
+        })).toContain('99');
     });
 });

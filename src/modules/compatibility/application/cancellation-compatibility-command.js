@@ -1,4 +1,5 @@
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { resolveExternalOrderLines } from './compatibility-external-id-resolution.js';
 import {
     fingerprintCancellationCommand,
     mapExternalCancellationLinesToOrderLines,
@@ -15,6 +16,7 @@ export class CancellationCompatibilityCommand {
      * @param {object} deps
      * @param {import('../../orders/public/order-query-service.js').DefaultOrderQueryService} deps.orderQueryService
      * @param {import('../../cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} deps.cancellationCommandService
+     * @param {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} deps.externalIntegerIdMappingQueryService
      */
     constructor(deps) {
         this.deps = deps;
@@ -40,7 +42,13 @@ export class CancellationCompatibilityCommand {
             });
         }
         const orderLines = await this.deps.orderQueryService.getOrderLines(input.tenantId, order.id);
-        const lines = mapExternalCancellationLinesToOrderLines(mapped.externalLines, orderLines);
+        const resolvedExternalLines = await resolveExternalOrderLines(
+            this.deps.externalIntegerIdMappingQueryService,
+            input.tenantId,
+            mapped.externalLines,
+            orderLines,
+        );
+        const lines = mapExternalCancellationLinesToOrderLines(resolvedExternalLines, orderLines);
         const commandInput = {
             orderNumber: mapped.orderNumber,
             merchantCancellationNo: mapped.merchantCancellationNo,

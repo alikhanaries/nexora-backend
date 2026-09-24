@@ -10,7 +10,7 @@ describe('compatibility acknowledge mapper', () => {
         expect(mapExternalAcknowledgeRequest({
             MerchantOrderNo: ' ORD-1001 ',
             OrderId: 12345,
-        })).toEqual({ orderNumber: 'ORD-1001' });
+        })).toEqual({ orderNumber: 'ORD-1001', externalOrderId: 12345 });
     });
 
     it('builds external success response', () => {

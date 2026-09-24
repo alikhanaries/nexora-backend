@@ -21,21 +21,25 @@ export function createCompatibilityModule(deps) {
     });
     const orderCompatibilityCommand = new OrderCompatibilityCommand({
         orderCommandService: deps.coreContracts.orderCommandService,
+        orderQueryService: deps.coreContracts.orderQueryService,
         channelQueryService: deps.coreContracts.channelQueryService,
         externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const shipmentCompatibilityCommand = new ShipmentCompatibilityCommand({
         orderQueryService: deps.coreContracts.orderQueryService,
         shipmentCommandService: deps.coreContracts.shipmentCommandService,
+        externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const cancellationCompatibilityCommand = new CancellationCompatibilityCommand({
         orderQueryService: deps.coreContracts.orderQueryService,
         cancellationCommandService: deps.coreContracts.cancellationCommandService,
+        externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const returnCompatibilityCommand = new ReturnCompatibilityCommand({
         orderQueryService: deps.coreContracts.orderQueryService,
         returnQueryService: deps.coreContracts.returnQueryService,
         returnCommandService: deps.coreContracts.returnCommandService,
+        externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const shipmentCompatibilityQuery = new ShipmentCompatibilityQuery({
         shipmentQueryService: deps.coreContracts.shipmentQueryService,
