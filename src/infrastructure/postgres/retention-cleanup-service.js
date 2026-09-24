@@ -17,13 +17,15 @@ export class RetentionCleanupService {
     outbox;
     inbox;
     idempotency;
+    webhookDeliveries;
     config;
     logger;
     metrics;
-    constructor(outbox, inbox, idempotency, config, logger, metrics) {
+    constructor(outbox, inbox, idempotency, webhookDeliveries, config, logger, metrics) {
         this.outbox = outbox;
         this.inbox = inbox;
         this.idempotency = idempotency;
+        this.webhookDeliveries = webhookDeliveries;
         this.config = config;
         this.logger = logger;
         this.metrics = metrics;
@@ -34,12 +36,14 @@ export class RetentionCleanupService {
             outboxDeleted: 0,
             inboxDeleted: 0,
             idempotencyDeleted: 0,
+            webhookDeliveriesDeleted: 0,
         };
         const failures = [];
         this.logger.info({
             outboxRetentionDays: this.config.outboxDays,
             inboxRetentionDays: this.config.inboxDays,
             idempotencyRetentionDays: this.config.idempotencyDays,
+            webhookDeliveryRetentionDays: this.config.webhookDeliveryDays,
             batchSize: this.config.batchSize,
         }, 'Retention cleanup started');
         try {
@@ -66,6 +70,14 @@ export class RetentionCleanupService {
             recordRetentionCleanupFailure(this.metrics, 'idempotency');
             this.logger.error({ resource: 'idempotency', reason: toErrorMessage(error) }, 'Idempotency retention cleanup failed');
         }
+        try {
+            stats.webhookDeliveriesDeleted = await this.purgeWebhookDeliveries(computeRetentionCutoff(this.config.webhookDeliveryDays, now));
+        }
+        catch (error) {
+            failures.push({ resource: 'webhook_deliveries', reason: toErrorMessage(error) });
+            recordRetentionCleanupFailure(this.metrics, 'webhook_deliveries');
+            this.logger.error({ resource: 'webhook_deliveries', reason: toErrorMessage(error) }, 'Webhook delivery retention cleanup failed');
+        }
         const durationSeconds = (Date.now() - startedAt) / 1_000;
         if (failures.length === 0) {
             recordRetentionCleanupOutcome(this.metrics, stats, durationSeconds);
@@ -73,6 +85,7 @@ export class RetentionCleanupService {
                 outboxDeleted: stats.outboxDeleted,
                 inboxDeleted: stats.inboxDeleted,
                 idempotencyDeleted: stats.idempotencyDeleted,
+                webhookDeliveriesDeleted: stats.webhookDeliveriesDeleted,
                 durationSeconds,
             }, 'Retention cleanup completed');
             return stats;
@@ -82,6 +95,7 @@ export class RetentionCleanupService {
             outboxDeleted: stats.outboxDeleted,
             inboxDeleted: stats.inboxDeleted,
             idempotencyDeleted: stats.idempotencyDeleted,
+            webhookDeliveriesDeleted: stats.webhookDeliveriesDeleted,
             durationSeconds,
             failures,
         }, 'Retention cleanup finished with failures');
@@ -95,6 +109,9 @@ export class RetentionCleanupService {
     }
     async purgeIdempotency(cutoff) {
         return this.purgeInBatches((batchSize) => this.idempotency.purgeExpiredBefore(cutoff, batchSize));
+    }
+    async purgeWebhookDeliveries(cutoff) {
+        return this.purgeInBatches((batchSize) => this.webhookDeliveries.purgeTerminalBefore(cutoff, batchSize));
     }
     async purgeInBatches(purgeBatch) {
         let total = 0;

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/app/config/config.js';
 import { RetentionCleanupError, RetentionCleanupService, } from '../../src/infrastructure/postgres/retention-cleanup-service.js';
+import { WebhookDeliveryRetention } from '../../src/infrastructure/postgres/webhook-delivery-retention.js';
 import { RetentionCleanupScheduler } from '../../src/infrastructure/postgres/retention-cleanup-scheduler.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 function daysAgo(days) {
@@ -9,7 +10,7 @@ function daysAgo(days) {
 }
 function createService(infra, overrides = {}) {
     const config = loadConfig(process.env);
-    return new RetentionCleanupService(infra.outbox, infra.inbox, infra.idempotency, {
+    return new RetentionCleanupService(infra.outbox, infra.inbox, infra.idempotency, new WebhookDeliveryRetention(infra.database), {
         ...config.retention,
         batchSize: 2,
         ...overrides,
@@ -136,10 +137,11 @@ describe('retention cleanup integration', () => {
                 throw new Error('simulated outbox failure');
             },
         };
-        const service = new RetentionCleanupService(failingOutbox, infra.inbox, infra.idempotency, {
+        const service = new RetentionCleanupService(failingOutbox, infra.inbox, infra.idempotency, new WebhookDeliveryRetention(infra.database), {
             outboxDays: 30,
             inboxDays: 30,
             idempotencyDays: 7,
+            webhookDeliveryDays: 30,
             batchSize: 100,
             intervalMs: 60_000,
         }, infra.logger, infra.metrics);
@@ -147,6 +149,7 @@ describe('retention cleanup integration', () => {
             outboxDays: 30,
             inboxDays: 30,
             idempotencyDays: 7,
+            webhookDeliveryDays: 30,
             batchSize: 100,
             intervalMs: 60_000,
         }, infra.logger, 300);
@@ -154,5 +157,54 @@ describe('retention cleanup integration', () => {
         const healthyScheduler = infra.retentionCleanupScheduler;
         expect(healthyScheduler).toBeDefined();
         expect(typeof healthyScheduler.start).toBe('function');
+    });
+    it('deletes old terminal webhook delivery rows and preserves retryable rows', async () => {
+        const infra = await getTestInfrastructure();
+        const service = createService(infra, { webhookDeliveryDays: 30, batchSize: 10 });
+        const tenantId = randomUUID();
+        const slug = `wh-ret-${tenantId.slice(0, 8)}`;
+        await infra.database.query(`INSERT INTO tenants (id, slug, name) VALUES ($1, $2, 'Webhook retention test')`, [tenantId, slug], { operation: 'test.retention.webhook_tenant' });
+        const subscriptionId = randomUUID();
+        await infra.database.query(`INSERT INTO webhook_subscriptions
+       (id, tenant_id, url, secret_ciphertext, event_types, status)
+       VALUES ($1, $2, 'https://example.com/hook', 'cipher', ARRAY['order.created'], 'ACTIVE')`, [subscriptionId, tenantId], { operation: 'test.retention.webhook_subscription' });
+        const oldDeliveredId = randomUUID();
+        const recentDeliveredId = randomUUID();
+        const deadLetterId = randomUUID();
+        const pendingId = randomUUID();
+        const failedId = randomUUID();
+        await infra.database.query(`INSERT INTO webhook_deliveries
+       (id, tenant_id, subscription_id, event_id, event_type, status, attempt_count, delivered_at, created_at)
+       VALUES
+       ($1, $2, $3, $4, 'order.created', 'DELIVERED', 1, $5, $5),
+       ($6, $2, $3, $7, 'order.created', 'DELIVERED', 1, now(), now()),
+       ($8, $2, $3, $9, 'order.created', 'DEAD_LETTERED', 3, NULL, $10),
+       ($11, $2, $3, $12, 'order.created', 'PENDING', 0, NULL, now()),
+       ($13, $2, $3, $14, 'order.created', 'FAILED', 1, NULL, now())`, [
+            oldDeliveredId,
+            tenantId,
+            subscriptionId,
+            randomUUID(),
+            daysAgo(45),
+            recentDeliveredId,
+            randomUUID(),
+            deadLetterId,
+            randomUUID(),
+            daysAgo(45),
+            pendingId,
+            randomUUID(),
+            failedId,
+            randomUUID(),
+        ], { operation: 'test.retention.webhook_deliveries_seed' });
+        const stats = await service.run();
+        expect(stats.webhookDeliveriesDeleted).toBeGreaterThanOrEqual(2);
+        const remaining = await infra.database.query(`SELECT id, status FROM webhook_deliveries
+       WHERE tenant_id = $1 AND id = ANY($2::uuid[])`, [tenantId, [oldDeliveredId, recentDeliveredId, deadLetterId, pendingId, failedId]], { operation: 'test.retention.webhook_deliveries_verify' });
+        const byId = new Map(remaining.rows.map((row) => [String(row['id']), String(row['status'])]));
+        expect(byId.has(oldDeliveredId)).toBe(false);
+        expect(byId.has(deadLetterId)).toBe(false);
+        expect(byId.get(recentDeliveredId)).toBe('DELIVERED');
+        expect(byId.get(pendingId)).toBe('PENDING');
+        expect(byId.get(failedId)).toBe('FAILED');
     });
 });

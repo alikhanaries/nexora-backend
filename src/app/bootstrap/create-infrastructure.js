@@ -5,6 +5,7 @@ import { PostgresOutboxRepository } from '../../infrastructure/postgres/outbox-r
 import { OutboxPublisher } from '../../infrastructure/postgres/outbox-publisher.js';
 import { RetentionCleanupScheduler } from '../../infrastructure/postgres/retention-cleanup-scheduler.js';
 import { RetentionCleanupService } from '../../infrastructure/postgres/retention-cleanup-service.js';
+import { WebhookDeliveryRetention } from '../../infrastructure/postgres/webhook-delivery-retention.js';
 import { PostgresDatabase } from '../../infrastructure/postgres/postgres-database.js';
 import { BullMqJobQueue, createQueueRedisConnection, } from '../../infrastructure/queue/bullmq-job-queue.js';
 import { BullMqWorkerRuntime } from '../../infrastructure/queue/bullmq-worker-runtime.js';
@@ -44,7 +45,8 @@ export async function createInfrastructure(config) {
     const outboxPublisher = new OutboxPublisher(outbox, queue, config.outbox, logger);
     const inbox = new PostgresInboxRepository(database);
     const idempotency = new PostgresIdempotencyService(database, config.idempotency);
-    const retentionCleanupService = new RetentionCleanupService(outbox, inbox, idempotency, config.retention, logger, metrics);
+    const webhookDeliveryRetention = new WebhookDeliveryRetention(database);
+    const retentionCleanupService = new RetentionCleanupService(outbox, inbox, idempotency, webhookDeliveryRetention, config.retention, logger, metrics);
     const retentionCleanupLockTtlSeconds = Math.max(300, Math.ceil(config.retention.intervalMs / 1_000));
     const retentionCleanupScheduler = new RetentionCleanupScheduler(retentionCleanupService, lock, config.retention, logger, retentionCleanupLockTtlSeconds);
     return {

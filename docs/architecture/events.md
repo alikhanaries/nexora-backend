@@ -169,7 +169,7 @@ Rules (unchanged from Phase 6):
 | ------------ | ------ |
 | `marketplace.*` | Producers emit `tenantId: null` (platform-scoped). Dispatch skips null-tenant events. |
 | `offer.*`, `channel.*`, `price.*` | Already tenant-scoped and low PII, but deferred to keep Phase 7.5 focused on catalog/inventory minimum scope. |
-| `webhook_deliveries` retention | Remains deferred from Phase 6.6. |
+| `webhook_deliveries` retention | Implemented in Phase 10 — see Phase 6.6 table above. |
 
 ## Phase 6.2 webhook persistence
 
@@ -222,11 +222,12 @@ Concurrency notes:
 
 Phase 6.6 adds bounded retention sweeps for infrastructure tables that accumulate after successful processing. The worker process runs `RetentionCleanupScheduler` on `RETENTION_CLEANUP_INTERVAL_MS` (default 1 hour) and coordinates replicas with a Redis distributed lock.
 
-| Resource    | Eligible rows                                              | Never deleted                                      |
-| ----------- | ---------------------------------------------------------- | -------------------------------------------------- |
-| Outbox      | `published_at IS NOT NULL` and older than retention window | Unpublished, claimed, retryable, dead-lettered     |
-| Inbox       | `status = 'processed'` with old `processed_at`             | `processing`, `failed` (retryable)                 |
-| Idempotency | `expires_at` older than retention window                   | Non-expired and in-progress (`processing`) records |
+| Resource            | Eligible rows                                                                 | Never deleted                                      |
+| ------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------- |
+| Outbox              | `published_at IS NOT NULL` and older than retention window                    | Unpublished, claimed, retryable, dead-lettered     |
+| Inbox               | `status = 'processed'` with old `processed_at`                                | `processing`, `failed` (retryable)                 |
+| Idempotency         | `expires_at` older than retention window                                      | Non-expired and in-progress (`processing`) records |
+| Webhook deliveries  | Terminal `DELIVERED` / `DEAD_LETTERED` rows older than retention window     | `PENDING`, `DELIVERING`, `FAILED` (retryable)      |
 
 Each resource is purged in batches of `RETENTION_CLEANUP_BATCH_SIZE` (default 100) until a partial batch completes, so sweeps never hold a long-running transaction over the full table.
 
@@ -235,6 +236,7 @@ Configuration:
 - `OUTBOX_RETENTION_DAYS` (default 30)
 - `INBOX_RETENTION_DAYS` (default 30)
 - `IDEMPOTENCY_RETENTION_DAYS` (default 7) — grace period after `expires_at` before physical deletion; replay semantics remain governed by `IDEMPOTENCY_TTL_SECONDS`
+- `WEBHOOK_DELIVERY_RETENTION_DAYS` (default 30) — terminal webhook delivery ledger rows only ([ADR-023](../decisions/ADR-023-phase-10-webhook-delivery-retention.md))
 - `RETENTION_CLEANUP_BATCH_SIZE` (default 100)
 - `RETENTION_CLEANUP_INTERVAL_MS` (default 3600000)
 
@@ -252,4 +254,3 @@ These tables are global infrastructure maintenance tables and are purged through
 - Full JSON Schema / Avro event registry (OQ-032)
 - Kafka / NATS alternative transports
 - Saga orchestration
-- Webhook delivery history retention

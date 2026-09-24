@@ -15,6 +15,7 @@ describe('retention configuration', () => {
         expect(config.retention.outboxDays).toBe(30);
         expect(config.retention.inboxDays).toBe(30);
         expect(config.retention.idempotencyDays).toBe(7);
+        expect(config.retention.webhookDeliveryDays).toBe(30);
         expect(config.retention.batchSize).toBe(100);
         expect(config.retention.intervalMs).toBe(3_600_000);
     });
@@ -25,12 +26,14 @@ describe('retention configuration', () => {
             OUTBOX_RETENTION_DAYS: '14',
             INBOX_RETENTION_DAYS: '21',
             IDEMPOTENCY_RETENTION_DAYS: '3',
+            WEBHOOK_DELIVERY_RETENTION_DAYS: '14',
             RETENTION_CLEANUP_BATCH_SIZE: '50',
             RETENTION_CLEANUP_INTERVAL_MS: '120000',
         });
         expect(config.retention.outboxDays).toBe(14);
         expect(config.retention.inboxDays).toBe(21);
         expect(config.retention.idempotencyDays).toBe(3);
+        expect(config.retention.webhookDeliveryDays).toBe(14);
         expect(config.retention.batchSize).toBe(50);
         expect(config.retention.intervalMs).toBe(120_000);
     });

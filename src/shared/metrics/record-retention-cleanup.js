@@ -1,10 +1,10 @@
 /**
- * @typedef {'outbox' | 'inbox' | 'idempotency' | 'run'} RetentionCleanupResource
+ * @typedef {'outbox' | 'inbox' | 'idempotency' | 'webhook_deliveries' | 'run'} RetentionCleanupResource
  */
 
 /**
  * @param {import('./metrics-recorder.js').MetricsRecorder | undefined} metrics
- * @param {{ outboxDeleted: number, inboxDeleted: number, idempotencyDeleted: number }} stats
+ * @param {{ outboxDeleted: number, inboxDeleted: number, idempotencyDeleted: number, webhookDeliveriesDeleted: number }} stats
  * @param {number} durationSeconds
  */
 export function recordRetentionCleanupOutcome(metrics, stats, durationSeconds) {
@@ -13,6 +13,7 @@ export function recordRetentionCleanupOutcome(metrics, stats, durationSeconds) {
         outboxDeleted: stats.outboxDeleted,
         inboxDeleted: stats.inboxDeleted,
         idempotencyDeleted: stats.idempotencyDeleted,
+        webhookDeliveriesDeleted: stats.webhookDeliveriesDeleted,
         durationSeconds,
     });
 }

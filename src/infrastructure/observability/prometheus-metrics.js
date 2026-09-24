@@ -220,6 +220,9 @@ export class PrometheusMetrics {
             if (sample.idempotencyDeleted > 0) {
                 this.retentionCleanupDeletedTotal.inc({ resource: 'idempotency' }, sample.idempotencyDeleted);
             }
+            if (sample.webhookDeliveriesDeleted > 0) {
+                this.retentionCleanupDeletedTotal.inc({ resource: 'webhook_deliveries' }, sample.webhookDeliveriesDeleted);
+            }
             if (sample.durationSeconds !== undefined) {
                 this.retentionCleanupDuration.observe(sample.durationSeconds);
             }
