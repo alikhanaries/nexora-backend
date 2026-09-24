@@ -1,0 +1,114 @@
+import { createHash } from 'node:crypto';
+import { MarketplaceAuthenticationError } from '../../../domain/marketplace-errors.js';
+import { MarketplaceHttpClient } from '../../http/marketplace-http-client.js';
+import {
+    readNamshiServiceAccount,
+    resolveNamshiApiBaseUrl,
+    resolveNamshiUserAgent,
+} from './namshi-config.js';
+import { createNamshiLoginJwt } from './namshi-jwt.js';
+
+const NAMSHI_SESSION_TTL_MS = 29 * 24 * 60 * 60 * 1_000;
+
+export class NamshiAuthSessionProvider {
+    http;
+    /** @type {string | null | undefined} */
+    deploymentApiBaseUrl;
+    /** @type {string | null | undefined} */
+    deploymentUserAgent;
+    /** @type {Map<string, { cookieHeader: string, expiresAtMs: number }>} */
+    sessionCache;
+
+    /**
+     * @param {{ http?: MarketplaceHttpClient, deploymentApiBaseUrl?: string | null, deploymentUserAgent?: string | null }} [deps]
+     */
+    constructor(deps = {}) {
+        this.http = deps.http ?? new MarketplaceHttpClient();
+        this.deploymentApiBaseUrl = deps.deploymentApiBaseUrl;
+        this.deploymentUserAgent = deps.deploymentUserAgent;
+        this.sessionCache = new Map();
+    }
+
+    /**
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     */
+    async getCookieHeader(runtime) {
+        const cacheKey = buildSessionCacheKey(runtime);
+        const cached = this.sessionCache.get(cacheKey);
+        if (cached !== undefined && cached.expiresAtMs > Date.now() + 60_000) {
+            return cached.cookieHeader;
+        }
+        const cookieHeader = await this.login(runtime);
+        this.sessionCache.set(cacheKey, {
+            cookieHeader,
+            expiresAtMs: Date.now() + NAMSHI_SESSION_TTL_MS,
+        });
+        return cookieHeader;
+    }
+
+    /**
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     */
+    async login(runtime) {
+        const baseUrl = resolveNamshiApiBaseUrl(runtime.configuration ?? {}, this.deploymentApiBaseUrl);
+        const userAgent = resolveNamshiUserAgent(runtime.configuration ?? {}, this.deploymentUserAgent);
+        const { keyId, privateKeyPem, projectCode } = readNamshiServiceAccount(
+            runtime.credentials,
+            runtime.configuration ?? {},
+        );
+        const token = createNamshiLoginJwt(keyId, privateKeyPem);
+        const response = await this.http.request({
+            url: `${baseUrl}/identity/public/v1/api/login`,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': userAgent,
+            },
+            body: JSON.stringify({
+                token,
+                default_project_code: projectCode,
+            }),
+        });
+        const cookieHeader = buildCookieHeaderFromResponse(response.headers ?? {});
+        if (cookieHeader.length === 0) {
+            throw new MarketplaceAuthenticationError('Namshi login did not return session cookies');
+        }
+        return cookieHeader;
+    }
+}
+
+/**
+ * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+ */
+function buildSessionCacheKey(runtime) {
+    const { keyId, projectCode } = readNamshiServiceAccount(runtime.credentials, runtime.configuration ?? {});
+    const privateKey = stringField(runtime.credentials, 'privateKey')
+        ?? stringField(runtime.credentials, 'private_key')
+        ?? '';
+    const digest = createHash('sha256')
+        .update(`${keyId}\0${projectCode}\0${privateKey}`, 'utf8')
+        .digest('hex');
+    return digest;
+}
+
+/**
+ * @param {Record<string, string>} headers
+ */
+function buildCookieHeaderFromResponse(headers) {
+    const setCookieRaw = headers['set-cookie'];
+    if (setCookieRaw === undefined || setCookieRaw.length === 0) {
+        return '';
+    }
+    const parts = setCookieRaw.split(/,(?=[^;]+?=)/);
+    const pairs = parts.map((segment) => segment.split(';')[0]?.trim()).filter(Boolean);
+    return pairs.join('; ');
+}
+
+/**
+ * @param {Record<string, unknown>} record
+ * @param {string} key
+ */
+function stringField(record, key) {
+    const value = record[key];
+    return typeof value === 'string' ? value : '';
+}

@@ -17,5 +17,8 @@ export function registerMarketplaceCatalogAdapters(registry, deps = {}) {
         deploymentApiBaseUrl: deps.noonApiBaseUrl,
         deploymentUserAgent: deps.noonUserAgent,
     }));
-    registry.register(new NamshiCatalogAdapter());
+    registry.register(new NamshiCatalogAdapter({
+        deploymentApiBaseUrl: deps.noonApiBaseUrl,
+        deploymentUserAgent: deps.noonUserAgent,
+    }));
 }
