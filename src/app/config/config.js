@@ -113,6 +113,9 @@ function toAppConfig(raw) {
             passwordMaxLength: raw.AUTH_PASSWORD_MAX_LENGTH,
         },
         docsEnabled: raw.DOCS_ENABLED,
+        marketplace: {
+            shopifyAdminApiVersion: raw.SHOPIFY_ADMIN_API_VERSION,
+        },
     };
 }
 function assertConsistency(config) {

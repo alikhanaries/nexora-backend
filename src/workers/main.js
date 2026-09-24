@@ -36,6 +36,7 @@ async function main() {
         logger: infra.logger,
         catalogSyncReconciliation: config.catalogSyncReconciliation,
         secretEncryptor,
+        shopifyAdminApiVersion: config.marketplace.shopifyAdminApiVersion,
     });
     const catalogSyncReconciliationLockTtlSeconds = Math.max(300, Math.ceil(config.catalogSyncReconciliation.intervalMs / 1_000));
     const catalogSyncReconciliationScheduler = new CatalogSyncReconciliationScheduler(catalogSyncReconciliationService, infra.lock, config.catalogSyncReconciliation, infra.logger, catalogSyncReconciliationLockTtlSeconds);

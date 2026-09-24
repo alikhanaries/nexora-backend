@@ -74,6 +74,8 @@ Generic channel-scoped routes (never provider-specific paths). Credentials are a
 | `DELETE` | `/api/v1/channels/:channelId/marketplace-connection`      |
 | `POST`   | `/api/v1/channels/:channelId/marketplace-connection/test` |
 
+Shopify connections use `credentials.shopDomain`, `credentials.accessToken`, and `configuration.shopifyLocationId` (see marketplaces adapter README). Connection test exercises the registered Shopify adapter over Admin GraphQL.
+
 Requires `channels.read` / `channels.update`. See [ADR-029](../decisions/ADR-029-marketplace-connector-framework.md).
 
 ## Operations endpoints

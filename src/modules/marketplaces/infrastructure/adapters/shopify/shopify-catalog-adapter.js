@@ -1,45 +1,61 @@
 import { createEmptyMarketplaceCapabilities } from '../../../domain/marketplace-capabilities.js';
-import { MarketplaceConfigurationError, MarketplaceValidationError } from '../../../domain/marketplace-errors.js';
+import {
+    MarketplaceConfigurationError,
+    MarketplaceNotFoundError,
+    MarketplaceValidationError,
+} from '../../../domain/marketplace-errors.js';
 import { BaseMarketplaceCatalogAdapter } from '../base-marketplace-catalog-adapter.js';
-import { MarketplaceHttpClient } from '../../http/marketplace-http-client.js';
+import {
+    readShopifyLocationId,
+    toShopifyVariantGid,
+} from './shopify-config.js';
+import { ShopifyExternalEntityType } from './shopify-external-entity-types.js';
+import { ShopifyGraphqlClient } from './shopify-graphql-client.js';
 
 export const SHOPIFY_MARKETPLACE_KEY = 'shopify';
 
 export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
-    http;
+    graphql;
 
-    /** @param {{ http?: MarketplaceHttpClient }} [deps] */
+    /**
+     * @param {{ graphql?: ShopifyGraphqlClient, deploymentDefaultApiVersion?: string | null }} [deps]
+     */
     constructor(deps = {}) {
         super(SHOPIFY_MARKETPLACE_KEY);
-        this.http = deps.http ?? new MarketplaceHttpClient();
+        this.graphql = deps.graphql ?? new ShopifyGraphqlClient({
+            deploymentDefaultApiVersion: deps.deploymentDefaultApiVersion,
+        });
     }
 
     getCapabilities() {
         return {
             ...createEmptyMarketplaceCapabilities(),
+            supportsProductSync: true,
+            supportsOfferSync: true,
             supportsInventorySync: true,
             supportsPriceSync: true,
+            supportsActivation: true,
+            supportsDeactivation: true,
             supportsConnectionTest: true,
         };
     }
 
-    /** @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime */
+    /** @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime */
     async testConnection(runtime) {
         return this.run(async () => {
             this.assertRuntime(runtime, 'testConnection');
-            await this.graphql(runtime, `query { shop { name } }`, {});
+            await this.graphql.execute(runtime, `query { shop { name } }`, {});
         });
     }
 
-    /** @param {import('../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceInventorySyncInput} input @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceInventorySyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncInventory(input, runtime) {
-        return this.run(async () => {
+        return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncInventory');
-            const caps = this.getCapabilities();
-            this.assertCapability(caps, 'supportsInventorySync', 'inventory sync');
+            this.assertCapability(this.getCapabilities(), 'supportsInventorySync', 'inventory sync');
             const locationId = readShopifyLocationId(runtime.configuration);
             const inventoryItemId = await this.resolveInventoryItemId(runtime, input.externalCatalogIdentifier);
-            await this.graphql(runtime, `
+            await this.graphql.execute(runtime, `
                 mutation InventorySet($input: InventorySetQuantitiesInput!) {
                   inventorySetQuantities(input: $input) {
                     userErrors { field message }
@@ -56,19 +72,26 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
                     }],
                 },
             });
+            return [{
+                nexoraEntityType: 'product',
+                nexoraEntityId: input.productId,
+                externalEntityType: ShopifyExternalEntityType.INVENTORY_ITEM,
+                externalEntityId: inventoryItemId,
+            }];
         });
     }
 
-    /** @param {import('../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplacePriceSyncInput} input @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplacePriceSyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncPrice(input, runtime) {
-        return this.run(async () => {
+        return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncPrice');
             this.assertCapability(this.getCapabilities(), 'supportsPriceSync', 'price sync');
-            const variantGid = toVariantGid(input.externalCatalogIdentifier);
+            const variantGid = toShopifyVariantGid(input.externalCatalogIdentifier);
             const amount = (input.amountMinor / 100).toFixed(2);
-            await this.graphql(runtime, `
+            await this.graphql.execute(runtime, `
                 mutation VariantPrice($input: ProductVariantInput!) {
                   productVariantUpdate(input: $input) {
+                    productVariant { id }
                     userErrors { field message }
                   }
                 }`, {
@@ -77,13 +100,98 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
                     price: amount,
                 },
             });
+            return undefined;
         });
     }
 
-    /** @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime @param {string} externalCatalogIdentifier */
+    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceProductSyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    async syncProduct(input, runtime) {
+        return this.runWithResult(async () => {
+            this.assertRuntime(runtime, 'syncProduct');
+            this.assertCapability(this.getCapabilities(), 'supportsProductSync', 'product sync');
+            if (input.operation === 'deactivate' || !shouldPublishCatalogListing(input)) {
+                await this.setVariantListingPublished(runtime, input.externalCatalogIdentifier, false);
+                return undefined;
+            }
+            if (input.externalCatalogIdentifier.trim().length === 0) {
+                throw new MarketplaceConfigurationError('Shopify product sync requires offer.externalReference as the Shopify variant id');
+            }
+            const variantContext = await this.loadVariantContext(runtime, input.externalCatalogIdentifier);
+            await this.graphql.execute(runtime, `
+                mutation VariantSku($input: ProductVariantInput!) {
+                  productVariantUpdate(input: $input) {
+                    productVariant { id sku }
+                    userErrors { field message }
+                  }
+                }`, {
+                input: {
+                    id: variantContext.variantGid,
+                    sku: input.merchantSku,
+                },
+            });
+            await this.setProductStatus(runtime, variantContext.productGid, 'ACTIVE');
+            return [{
+                nexoraEntityType: 'product',
+                nexoraEntityId: input.productId,
+                externalEntityType: ShopifyExternalEntityType.PRODUCT,
+                externalEntityId: variantContext.productGid,
+            }];
+        });
+    }
+
+    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceOfferSyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    async syncOffer(input, runtime) {
+        return this.runWithResult(async () => {
+            this.assertRuntime(runtime, 'syncOffer');
+            this.assertCapability(this.getCapabilities(), 'supportsOfferSync', 'offer sync');
+            if (input.operation === 'deactivate' || !shouldPublishCatalogListing(input)) {
+                if (input.externalCatalogIdentifier.trim().length === 0) {
+                    return undefined;
+                }
+                await this.setVariantListingPublished(runtime, input.externalCatalogIdentifier, false);
+                return undefined;
+            }
+            if (input.externalCatalogIdentifier.trim().length === 0) {
+                throw new MarketplaceConfigurationError('Shopify offer sync requires offer.externalReference as the Shopify variant id');
+            }
+            const variantContext = await this.loadVariantContext(runtime, input.externalCatalogIdentifier);
+            await this.graphql.execute(runtime, `
+                mutation OfferVariant($input: ProductVariantInput!) {
+                  productVariantUpdate(input: $input) {
+                    productVariant { id sku }
+                    userErrors { field message }
+                  }
+                }`, {
+                input: {
+                    id: variantContext.variantGid,
+                    sku: input.merchantSku,
+                },
+            });
+            if (input.operation === 'activate' ||
+                input.offerStatus === 'ACTIVE') {
+                await this.setProductStatus(runtime, variantContext.productGid, 'ACTIVE');
+            }
+            return [{
+                nexoraEntityType: 'offer',
+                nexoraEntityId: input.offerId,
+                externalEntityType: ShopifyExternalEntityType.PRODUCT_VARIANT,
+                externalEntityId: variantContext.variantGid,
+            }, {
+                nexoraEntityType: 'product',
+                nexoraEntityId: input.productId,
+                externalEntityType: ShopifyExternalEntityType.PRODUCT,
+                externalEntityId: variantContext.productGid,
+            }];
+        });
+    }
+
+    /**
+     * @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} externalCatalogIdentifier
+     */
     async resolveInventoryItemId(runtime, externalCatalogIdentifier) {
-        const variantGid = toVariantGid(externalCatalogIdentifier);
-        const data = await this.graphql(runtime, `
+        const variantGid = toShopifyVariantGid(externalCatalogIdentifier);
+        const data = await this.graphql.execute(runtime, `
             query VariantInventory($id: ID!) {
               productVariant(id: $id) { inventoryItem { id } }
             }`, { id: variantGid });
@@ -95,87 +203,77 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
     }
 
     /**
+     * Deactivate sets the parent product to DRAFT (not deleted).
+     *
      * @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} externalCatalogIdentifier
+     * @param {boolean} published
      */
-    async graphql(runtime, query, variables) {
-        const { shopDomain, accessToken } = readShopifyCredentials(runtime.credentials);
-        const apiVersion = typeof runtime.configuration.apiVersion === 'string'
-            ? runtime.configuration.apiVersion
-            : '2024-10';
-        const url = `https://${shopDomain}/admin/api/${apiVersion}/graphql.json`;
-        const response = await this.http.request({
-            url,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Shopify-Access-Token': accessToken,
+    async setVariantListingPublished(runtime, externalCatalogIdentifier, published) {
+        if (externalCatalogIdentifier.trim().length === 0) {
+            return;
+        }
+        const variantContext = await this.loadVariantContext(runtime, externalCatalogIdentifier);
+        await this.setProductStatus(runtime, variantContext.productGid, published ? 'ACTIVE' : 'DRAFT');
+    }
+
+    /**
+     * @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} externalCatalogIdentifier
+     */
+    async loadVariantContext(runtime, externalCatalogIdentifier) {
+        const variantGid = toShopifyVariantGid(externalCatalogIdentifier);
+        const data = await this.graphql.execute(runtime, `
+            query VariantContext($id: ID!) {
+              productVariant(id: $id) {
+                id
+                product { id status }
+              }
+            }`, { id: variantGid });
+        const variant = data?.productVariant;
+        const productGid = variant?.product?.id;
+        if (typeof variant?.id !== 'string' || typeof productGid !== 'string') {
+            throw new MarketplaceNotFoundError('Shopify product variant was not found');
+        }
+        return { variantGid: variant.id, productGid };
+    }
+
+    /**
+     * @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} productGid
+     * @param {'ACTIVE'|'DRAFT'} status
+     */
+    async setProductStatus(runtime, productGid, status) {
+        await this.graphql.execute(runtime, `
+            mutation ProductStatus($input: ProductInput!) {
+              productUpdate(input: $input) {
+                product { id status }
+                userErrors { field message }
+              }
+            }`, {
+            input: {
+                id: productGid,
+                status,
             },
-            body: JSON.stringify({ query, variables }),
         });
-        const json = response.json;
-        if (json === undefined || typeof json !== 'object') {
-            throw new MarketplaceValidationError('Shopify returned a non-JSON GraphQL response');
-        }
-        const errors = json.errors;
-        if (Array.isArray(errors) && errors.length > 0) {
-            throw new MarketplaceValidationError(errors[0]?.message ?? 'Shopify GraphQL error');
-        }
-        const userErrors = collectUserErrors(json.data);
-        if (userErrors.length > 0) {
-            throw new MarketplaceValidationError(userErrors[0]?.message ?? 'Shopify user error');
-        }
-        return json.data;
     }
 }
 
 /**
- * @param {Record<string, unknown>} credentials
+ * @param {{ operation: string, offerStatus: string, productStatus?: string }} input
  */
-function readShopifyCredentials(credentials) {
-    const shopDomain = typeof credentials.shopDomain === 'string' ? credentials.shopDomain.trim() : '';
-    const accessToken = typeof credentials.accessToken === 'string' ? credentials.accessToken.trim() : '';
-    if (shopDomain.length === 0 || accessToken.length === 0) {
-        throw new MarketplaceConfigurationError('Shopify connection requires shopDomain and accessToken');
+function shouldPublishCatalogListing(input) {
+    if (input.operation === 'deactivate') {
+        return false;
     }
-    return { shopDomain, accessToken };
-}
-
-/**
- * @param {Record<string, unknown>} configuration
- */
-function readShopifyLocationId(configuration) {
-    const locationId = typeof configuration.shopifyLocationId === 'string'
-        ? configuration.shopifyLocationId.trim()
-        : '';
-    if (locationId.length === 0) {
-        throw new MarketplaceConfigurationError('Shopify inventory sync requires configuration.shopifyLocationId');
+    if (input.offerStatus === 'INACTIVE' || input.offerStatus === 'SUSPENDED') {
+        return false;
     }
-    return locationId.startsWith('gid://') ? locationId : `gid://shopify/Location/${locationId}`;
-}
-
-/**
- * @param {string} externalCatalogIdentifier
- */
-function toVariantGid(externalCatalogIdentifier) {
-    if (externalCatalogIdentifier.startsWith('gid://')) {
-        return externalCatalogIdentifier;
+    if (typeof input.productStatus === 'string' && input.productStatus !== 'ACTIVE') {
+        return false;
     }
-    return `gid://shopify/ProductVariant/${externalCatalogIdentifier}`;
-}
-
-/**
- * @param {unknown} data
- */
-function collectUserErrors(data) {
-    if (data === null || typeof data !== 'object') {
-        return [];
+    if (input.operation === 'activate') {
+        return true;
     }
-    /** @type {Array<{ message?: string }>} */
-    const collected = [];
-    for (const value of Object.values(data)) {
-        if (value !== null && typeof value === 'object' && Array.isArray(value.userErrors)) {
-            collected.push(...value.userErrors);
-        }
-    }
-    return collected;
+    return input.offerStatus === 'ACTIVE';
 }

@@ -89,4 +89,5 @@ export const configSchema = z.object({
     AUTH_STEP_UP_TTL_SECONDS: envInteger({ default: 900, min: 60, max: 3_600 }),
     AUTH_PASSWORD_MIN_LENGTH: envInteger({ default: 12, min: 8, max: 128 }),
     AUTH_PASSWORD_MAX_LENGTH: envInteger({ default: 128, min: 12, max: 256 }),
+    SHOPIFY_ADMIN_API_VERSION: envOptionalString(),
 });

@@ -9,6 +9,7 @@ export class MarketplaceAdapterRuntimeFactory {
      * @param {import('../infrastructure/postgres-marketplace-connection-repository.js').PostgresMarketplaceConnectionRepository} deps.connections
      * @param {import('../../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
      * @param {object} deps.queryable
+     * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
      */
     constructor(deps) {
         this.deps = deps;
@@ -49,11 +50,34 @@ export class MarketplaceAdapterRuntimeFactory {
         }
         const credentialsJson = this.deps.secretEncryptor.decrypt(row.credentials_ciphertext);
         const credentials = JSON.parse(credentialsJson);
+        const configuration = applyDeploymentMarketplaceDefaults(
+            row.marketplace_key,
+            row.configuration ?? {},
+            this.deps.shopifyAdminApiVersion,
+        );
         return {
             marketplaceKey: row.marketplace_key,
-            configuration: row.configuration ?? {},
+            configuration,
             credentials,
             connectionRequired: true,
         };
     }
+}
+
+/**
+ * @param {string} marketplaceKey
+ * @param {Record<string, unknown>} configuration
+ * @param {string | null | undefined} shopifyAdminApiVersion
+ */
+function applyDeploymentMarketplaceDefaults(marketplaceKey, configuration, shopifyAdminApiVersion) {
+    if (marketplaceKey !== 'shopify') {
+        return configuration;
+    }
+    if (typeof configuration.apiVersion === 'string' && configuration.apiVersion.trim().length > 0) {
+        return configuration;
+    }
+    if (typeof shopifyAdminApiVersion !== 'string' || shopifyAdminApiVersion.trim().length === 0) {
+        return configuration;
+    }
+    return { ...configuration, apiVersion: shopifyAdminApiVersion.trim() };
 }
