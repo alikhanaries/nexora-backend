@@ -8,6 +8,7 @@ export class Channel {
     externalReference;
     status;
     configurationReference;
+    defaultStockLocationId;
     createdAt;
     updatedAt;
     constructor(props) {
@@ -18,6 +19,7 @@ export class Channel {
         this.externalReference = props.externalReference;
         this.status = props.status;
         this.configurationReference = props.configurationReference;
+        this.defaultStockLocationId = props.defaultStockLocationId;
         this.createdAt = props.createdAt;
         this.updatedAt = props.updatedAt;
     }
@@ -30,6 +32,7 @@ export class Channel {
             externalReference: props.externalReference ?? null,
             status: ChannelStatus.ACTIVE,
             configurationReference: props.configurationReference ?? null,
+            defaultStockLocationId: props.defaultStockLocationId ?? null,
             createdAt: props.createdAt,
             updatedAt: props.createdAt,
         });
@@ -51,6 +54,9 @@ export class Channel {
             configurationReference: input.configurationReference === undefined
                 ? this.configurationReference
                 : input.configurationReference,
+            defaultStockLocationId: input.defaultStockLocationId === undefined
+                ? this.defaultStockLocationId
+                : input.defaultStockLocationId,
             createdAt: this.createdAt,
             updatedAt: at,
         });
@@ -82,6 +88,7 @@ export class Channel {
             externalReference: this.externalReference,
             status,
             configurationReference: this.configurationReference,
+            defaultStockLocationId: this.defaultStockLocationId,
             createdAt: this.createdAt,
             updatedAt,
         });

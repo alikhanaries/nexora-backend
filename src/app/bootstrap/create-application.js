@@ -70,17 +70,25 @@ export async function createApplication(infra) {
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
     });
-    const channels = createChannelsModule({
-        database: infra.database,
-        eventRecorder: infra.eventRecorder,
-        verifyMarketplaceExists: marketplaces.verifyMarketplaceExists,
-        auditRecorder: audit.auditRecorder,
-    });
     const products = createProductsModule({
         database: infra.database,
         authorization: new DefaultAuthorizationService(),
         auditRecorder: audit.auditRecorder,
         eventRecorder: infra.eventRecorder,
+    });
+    const inventory = createInventoryModule({
+        queryable: infra.database,
+        transactionManager: infra.database,
+        productQueryService: products.productQueryService,
+        eventRecorder: infra.eventRecorder,
+        auditRecorder: audit.auditRecorder,
+    });
+    const channels = createChannelsModule({
+        database: infra.database,
+        eventRecorder: infra.eventRecorder,
+        verifyMarketplaceExists: marketplaces.verifyMarketplaceExists,
+        inventoryService: inventory.inventoryService,
+        auditRecorder: audit.auditRecorder,
     });
     const pricing = createPricingModule({
         database: infra.database,
@@ -94,13 +102,6 @@ export async function createApplication(infra) {
         productQueryService: products.productQueryService,
         channelQueryService: channels.channelQueryService,
         pricingService: pricing.pricingService,
-        eventRecorder: infra.eventRecorder,
-        auditRecorder: audit.auditRecorder,
-    });
-    const inventory = createInventoryModule({
-        queryable: infra.database,
-        transactionManager: infra.database,
-        productQueryService: products.productQueryService,
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
     });

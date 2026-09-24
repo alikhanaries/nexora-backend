@@ -10,6 +10,7 @@ const channelRowSchema = z.object({
     external_reference: z.string().nullable(),
     status: z.enum([ChannelStatus.ACTIVE, ChannelStatus.INACTIVE, ChannelStatus.SUSPENDED]),
     configuration_reference: z.string().nullable(),
+    default_stock_location_id: z.string().uuid().nullable(),
     created_at: z.date(),
     updated_at: z.date(),
 });
@@ -22,6 +23,7 @@ function toChannel(row) {
         externalReference: row.external_reference,
         status: row.status,
         configurationReference: row.configuration_reference,
+        defaultStockLocationId: row.default_stock_location_id,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     });
@@ -29,7 +31,7 @@ function toChannel(row) {
 export class PostgresChannelRepository {
     async findById(queryable, tenantId, channelId) {
         const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
-              configuration_reference, created_at, updated_at
+              configuration_reference, default_stock_location_id, created_at, updated_at
        FROM channels
        WHERE tenant_id = $1 AND id = $2`, [tenantId, channelId], { operation: 'channels.find_by_id' });
         const row = result.rows[0];
@@ -39,7 +41,7 @@ export class PostgresChannelRepository {
     }
     async findByExternalReference(queryable, tenantId, externalReference) {
         const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
-              configuration_reference, created_at, updated_at
+              configuration_reference, default_stock_location_id, created_at, updated_at
        FROM channels
        WHERE tenant_id = $1 AND external_reference = $2
        ORDER BY created_at ASC
@@ -61,7 +63,7 @@ export class PostgresChannelRepository {
             conditions.push(`marketplace_id = $${parameters.length}`);
         }
         const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
-              configuration_reference, created_at, updated_at
+              configuration_reference, default_stock_location_id, created_at, updated_at
        FROM channels
        WHERE ${conditions.join(' AND ')}
        ORDER BY created_at DESC`, parameters, { operation: 'channels.list' });
@@ -70,8 +72,8 @@ export class PostgresChannelRepository {
     async insert(transaction, channel) {
         await transaction.query(`INSERT INTO channels (
          id, tenant_id, marketplace_id, name, external_reference, status,
-         configuration_reference, created_at, updated_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, [
+         configuration_reference, default_stock_location_id, created_at, updated_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, [
             channel.id,
             channel.tenantId,
             channel.marketplaceId,
@@ -79,6 +81,7 @@ export class PostgresChannelRepository {
             channel.externalReference,
             channel.status,
             channel.configurationReference,
+            channel.defaultStockLocationId,
             channel.createdAt,
             channel.updatedAt,
         ], { operation: 'channels.insert' });
@@ -89,7 +92,8 @@ export class PostgresChannelRepository {
            external_reference = $4,
            status = $5,
            configuration_reference = $6,
-           updated_at = $7
+           default_stock_location_id = $7,
+           updated_at = $8
        WHERE tenant_id = $1 AND id = $2`, [
             channel.tenantId,
             channel.id,
@@ -97,6 +101,7 @@ export class PostgresChannelRepository {
             channel.externalReference,
             channel.status,
             channel.configurationReference,
+            channel.defaultStockLocationId,
             channel.updatedAt,
         ], { operation: 'channels.update' });
     }

@@ -50,6 +50,9 @@ const channelRoutes = async (app, deps) => {
             ...(request.body.configurationReference === undefined
                 ? {}
                 : { configurationReference: request.body.configurationReference }),
+            ...(request.body.defaultStockLocationId === undefined
+                ? {}
+                : { defaultStockLocationId: request.body.defaultStockLocationId }),
         });
         void reply.status(201);
         return {
@@ -94,7 +97,8 @@ const channelRoutes = async (app, deps) => {
         let channel;
         if (request.body.name !== undefined ||
             request.body.externalReference !== undefined ||
-            request.body.configurationReference !== undefined) {
+            request.body.configurationReference !== undefined ||
+            request.body.defaultStockLocationId !== undefined) {
             ({ channel } = await deps.updateChannel.execute({
                 tenantId: actor.tenantId,
                 actorPermissions: actor.permissions,
@@ -106,6 +110,9 @@ const channelRoutes = async (app, deps) => {
                 ...(request.body.configurationReference === undefined
                     ? {}
                     : { configurationReference: request.body.configurationReference }),
+                ...(request.body.defaultStockLocationId === undefined
+                    ? {}
+                    : { defaultStockLocationId: request.body.defaultStockLocationId }),
             }));
         }
         else {

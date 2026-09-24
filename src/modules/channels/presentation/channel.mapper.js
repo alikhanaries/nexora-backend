@@ -7,6 +7,7 @@ export function toChannelResponse(channel) {
         externalReference: channel.externalReference,
         status: channel.status,
         configurationReference: channel.configurationReference,
+        defaultStockLocationId: channel.defaultStockLocationId,
         createdAt: channel.createdAt.toISOString(),
         updatedAt: channel.updatedAt.toISOString(),
     };

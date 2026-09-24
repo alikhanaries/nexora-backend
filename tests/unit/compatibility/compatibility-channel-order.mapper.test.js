@@ -185,4 +185,13 @@ describe('compatibility-channel-order.mapper', () => {
             configurationReference: stockLocationId,
         })).toBe(stockLocationId);
     });
+
+    it('prefers defaultStockLocationId over configurationReference', () => {
+        const preferredLocationId = '11111111-1111-4111-8111-111111111111';
+        expect(resolveChannelStockLocationId({
+            id: channelId,
+            defaultStockLocationId: preferredLocationId,
+            configurationReference: stockLocationId,
+        })).toBe(preferredLocationId);
+    });
 });

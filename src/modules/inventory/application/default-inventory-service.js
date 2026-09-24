@@ -9,6 +9,13 @@ export class DefaultInventoryService {
     constructor(deps) {
         this.deps = deps;
     }
+    async verifyUsableStockLocation(tenantId, stockLocationId, tx) {
+        if (tx !== undefined) {
+            await this.assertActiveStockLocation(tx, tenantId, stockLocationId);
+            return;
+        }
+        await this.runInTransaction(tenantId, undefined, (transaction) => this.assertActiveStockLocation(transaction, tenantId, stockLocationId));
+    }
     async getAvailability(tenantId, productId, stockLocationId, tx) {
         await this.assertProductExists(tenantId, productId, tx);
         const queryable = tx ?? this.deps.queryable;

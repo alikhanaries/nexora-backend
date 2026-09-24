@@ -22,10 +22,14 @@ export function createChannelsModule(deps) {
         createChannel: new CreateChannel({
             ...sharedDeps,
             verifyMarketplaceExists: deps.verifyMarketplaceExists,
+            inventoryService: deps.inventoryService,
+        }),
+        updateChannel: new UpdateChannel({
+            ...sharedDeps,
+            inventoryService: deps.inventoryService,
         }),
         getChannel: new GetChannel(sharedDeps),
         listChannels: new ListChannels(sharedDeps),
-        updateChannel: new UpdateChannel(sharedDeps),
         activateChannel: new ActivateChannel(sharedDeps),
         deactivateChannel: new DeactivateChannel(sharedDeps),
         suspendChannel: new SuspendChannel(sharedDeps),

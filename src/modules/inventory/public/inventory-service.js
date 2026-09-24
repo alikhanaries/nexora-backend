@@ -16,5 +16,8 @@
  * @property {(input: object, tx?: object) => Promise<object>} recordSale
  * @property {(input: object, tx?: object) => Promise<object>} recordReturn
  * Mutate on-hand inventory with audit/outbox side effects inside the caller transaction when tx is supplied.
+ *
+ * @property {(tenantId: string, stockLocationId: string, tx?: object) => Promise<void>} verifyUsableStockLocation
+ * Ensures the stock location exists for the tenant and is active.
  */
 export { DefaultInventoryService } from '../application/default-inventory-service.js';

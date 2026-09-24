@@ -60,6 +60,10 @@ Available methods:
 
 Channel creation verifies marketplace existence via `VerifyMarketplaceExists` from the marketplaces public API.
 
+### Channel ingest stock location (OQ-7-07)
+
+`defaultStockLocationId` (optional UUID FK to `stock_locations`) is the preferred configuration for channel order ingest stock allocation. When unset, compatibility falls back to storing the stock location UUID in `configurationReference` (Phase 7 convention). Updates validate the location via public `InventoryService.verifyUsableStockLocation`.
+
 ## Integration events
 
 | Event type               | When                   |
@@ -72,4 +76,4 @@ Lifecycle changes also emit audit events (`CHANNEL_STATUS_CHANGED`).
 
 ## Persistence
 
-Migration `0013_channels.sql` defines the `channels` table with RLS. The PostgreSQL adapter lives in `infrastructure/postgres-channel-repository.ts`.
+Migration `0013_channels.sql` defines the `channels` table with RLS; `0043_channels_default_stock_location.sql` adds `default_stock_location_id`. The PostgreSQL adapter lives in `infrastructure/postgres-channel-repository.js`.
