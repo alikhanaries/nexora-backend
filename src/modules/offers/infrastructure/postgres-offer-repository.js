@@ -66,6 +66,19 @@ export class PostgresOfferRepository {
             return null;
         return toOffer(parseOrThrow(offerRowSchema, row, 'offers row'));
     }
+    async listByChannel(queryable, tenantId, channelId, filters = {}) {
+        const conditions = ['tenant_id = $1', 'channel_id = $2'];
+        const parameters = [tenantId, channelId];
+        if (filters.status !== undefined) {
+            parameters.push(filters.status);
+            conditions.push(`status = $${parameters.length}`);
+        }
+        const result = await queryable.query(`SELECT ${offerSelectColumns}
+       FROM offers
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY created_at DESC`, parameters, { operation: 'offers.list_by_channel' });
+        return result.rows.map((row) => toOffer(parseOrThrow(offerRowSchema, row, 'offers row')));
+    }
     async listByProduct(queryable, tenantId, productId, filters = {}) {
         const conditions = ['tenant_id = $1', 'product_id = $2'];
         const parameters = [tenantId, productId];

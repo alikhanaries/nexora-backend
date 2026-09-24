@@ -1,4 +1,4 @@
-import { ChannelStatus } from '../../channels/public/index.js';
+import { ChannelStatus, resolveChannelStockLocationId } from '../../channels/public/index.js';
 import { CatalogSyncOperation } from '../domain/sync-operation.js';
 import { CatalogSyncTarget } from '../domain/sync-target.js';
 import { isCatalogSyncIntegrationEventType } from './catalog-sync-event-types.js';
@@ -124,7 +124,14 @@ export async function planCatalogSyncJobsFromEvent(event, deps) {
  */
 async function listActiveChannelsForStockLocation(channelQueryService, tenantId, stockLocationId) {
     const channels = await channelQueryService.listChannels(tenantId, { status: ChannelStatus.ACTIVE });
-    return channels.filter((channel) => channel.defaultStockLocationId === stockLocationId);
+    return channels.filter((channel) => {
+        try {
+            return resolveChannelStockLocationId(channel) === stockLocationId;
+        }
+        catch {
+            return false;
+        }
+    });
 }
 
 /**

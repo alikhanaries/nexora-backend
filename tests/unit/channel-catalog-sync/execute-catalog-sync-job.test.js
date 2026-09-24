@@ -58,12 +58,17 @@ function createExecutor(overrides = {}) {
     const database = {
         execute: vi.fn(async (work) => work({})),
     };
+    const syncChannelInventory = {
+        execute: vi.fn().mockResolvedValue(undefined),
+        ...(overrides.syncChannelInventory ?? {}),
+    };
     const executor = new ExecuteCatalogSyncJob({
         database,
         channelQueryService,
         marketplaceLookup,
         adapterRegistry: registry,
         rateLimiter,
+        syncChannelInventory,
         metrics: { recordCatalogSync: vi.fn() },
         logger: { info: vi.fn(), warn: vi.fn() },
     });
@@ -75,6 +80,19 @@ describe('ExecuteCatalogSyncJob', () => {
         const { executor, adapterExecute } = createExecutor();
         await executor.execute(validPayload());
         expect(adapterExecute).toHaveBeenCalledTimes(1);
+    });
+
+    it('routes inventory jobs to SyncChannelInventory', async () => {
+        const syncExecute = vi.fn().mockResolvedValue(undefined);
+        const { executor, adapterExecute } = createExecutor({
+            syncChannelInventory: { execute: syncExecute },
+        });
+        await executor.execute(validPayload({
+            target: CatalogSyncTarget.INVENTORY,
+            stockLocationId: '77777777-7777-4777-8777-777777777777',
+        }));
+        expect(syncExecute).toHaveBeenCalledTimes(1);
+        expect(adapterExecute).not.toHaveBeenCalled();
     });
 
     it('rejects malformed payloads without throwing', async () => {

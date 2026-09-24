@@ -24,6 +24,13 @@ export class DefaultOfferQueryService {
         const offers = await this.deps.offers.listByProduct(queryable, tenantId, productId);
         return offers.map(toOfferDto);
     }
+    async listActiveOffersByChannel(tenantId, channelId, tx) {
+        const queryable = tx ?? this.deps.queryable;
+        const offers = await this.deps.offers.listByChannel(queryable, tenantId, channelId, {
+            status: OfferStatus.ACTIVE,
+        });
+        return offers.map(toOfferDto);
+    }
     async verifyOfferUsable(tenantId, offerId, tx) {
         const offer = await this.getOfferById(tenantId, offerId, tx);
         if (offer.status !== OfferStatus.ACTIVE) {

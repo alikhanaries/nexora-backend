@@ -11,8 +11,10 @@ import { CatalogSyncTarget } from '../domain/sync-target.js';
  * @param {string} [input.stockLocationId]
  */
 export function buildCatalogSyncJobId(input) {
-    if (input.target === CatalogSyncTarget.INVENTORY && input.stockLocationId !== undefined) {
-        return `${input.tenantId}:${input.channelId}:${input.target}:${input.entityId}:${input.stockLocationId}`;
+    // Inventory coalesces per channel + product so rapid changes publish the latest
+    // authoritative quantity read at job execution time (ADR-028 §12.2).
+    if (input.target === CatalogSyncTarget.INVENTORY) {
+        return `${input.tenantId}:${input.channelId}:${input.target}:${input.entityId}`;
     }
     return `${input.tenantId}:${input.channelId}:${input.target}:${input.entityId}`;
 }

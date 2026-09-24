@@ -57,6 +57,28 @@ describe('planCatalogSyncJobsFromEvent', () => {
         })]);
     });
 
+    it('plans inventory events for channels using legacy configurationReference stock location', async () => {
+        const legacyLocationId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        const channelQueryService = {
+            listChannels: vi.fn().mockResolvedValue([
+                {
+                    id: channelA,
+                    defaultStockLocationId: null,
+                    configurationReference: legacyLocationId,
+                },
+            ]),
+        };
+        const jobs = await planCatalogSyncJobsFromEvent(
+            baseEvent('inventory.inventory_changed', { productId, stockLocationId: legacyLocationId }),
+            {
+                offerQueryService: { getOffersByProduct: vi.fn() },
+                channelQueryService,
+            },
+        );
+        expect(jobs).toHaveLength(1);
+        expect(jobs[0].channelId).toBe(channelA);
+    });
+
     it('plans inventory events only for channels at the stock location', async () => {
         const channelQueryService = {
             listChannels: vi.fn().mockResolvedValue([

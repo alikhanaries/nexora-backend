@@ -9,6 +9,7 @@ import {
     UnsupportedMarketplaceAdapterError,
 } from './catalog-sync-errors.js';
 import { catalogSyncJobPayloadSchema } from './catalog-sync-job.schema.js';
+import { CatalogSyncTarget } from '../domain/sync-target.js';
 
 export class ExecuteCatalogSyncJob {
     deps;
@@ -20,6 +21,7 @@ export class ExecuteCatalogSyncJob {
      * @param {import('./marketplace-lookup.port.js').MarketplaceLookup} deps.marketplaceLookup
      * @param {import('../infrastructure/marketplace-catalog-adapter-registry.js').MarketplaceCatalogAdapterRegistry} deps.adapterRegistry
      * @param {import('./channel-catalog-sync-rate-limiter.js').ChannelCatalogSyncRateLimiter} deps.rateLimiter
+     * @param {import('./sync-channel-inventory.js').SyncChannelInventory} deps.syncChannelInventory
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
      */
@@ -44,7 +46,7 @@ export class ExecuteCatalogSyncJob {
         }
         recordCatalogSyncOutcome(this.deps.metrics, 'received');
         try {
-            await this.deps.database.execute(async () => {
+            await this.deps.database.execute(async (tx) => {
                 const channel = await this.deps.channelQueryService.getChannelById(job.tenantId, job.channelId);
                 if (channel.tenantId !== job.tenantId) {
                     throw new CatalogSyncPermanentError('Channel tenant mismatch', {
@@ -78,17 +80,29 @@ export class ExecuteCatalogSyncJob {
                     });
                 }
                 const adapter = this.deps.adapterRegistry.resolve(marketplace.key);
-                await adapter.execute({
-                    tenantId: job.tenantId,
-                    channelId: job.channelId,
-                    marketplaceKey: marketplace.key,
-                    target: job.target,
-                    entityId: job.entityId,
-                    operation: job.operation,
-                    sourceEventId: job.sourceEventId,
-                    correlationId: job.correlationId,
-                    ...(job.stockLocationId === undefined ? {} : { stockLocationId: job.stockLocationId }),
-                });
+                if (job.target === CatalogSyncTarget.INVENTORY ||
+                    job.target === CatalogSyncTarget.CHANNEL_INVENTORY_RESYNC) {
+                    await this.deps.syncChannelInventory.execute({
+                        job,
+                        channel,
+                        marketplace,
+                        adapter,
+                        tx,
+                    });
+                }
+                else {
+                    await adapter.execute?.({
+                        tenantId: job.tenantId,
+                        channelId: job.channelId,
+                        marketplaceKey: marketplace.key,
+                        target: job.target,
+                        entityId: job.entityId,
+                        operation: job.operation,
+                        sourceEventId: job.sourceEventId,
+                        correlationId: job.correlationId,
+                        ...(job.stockLocationId === undefined ? {} : { stockLocationId: job.stockLocationId }),
+                    });
+                }
             }, { tenantId: job.tenantId });
             recordCatalogSyncOutcome(this.deps.metrics, 'success');
         }

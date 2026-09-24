@@ -4,6 +4,10 @@ import { DefaultOfferQueryService } from '../../modules/offers/public/offer-quer
 import { PostgresOfferRepository } from '../../modules/offers/infrastructure/postgres-offer-repository.js';
 import { PostgresMarketplaceRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
 import { createChannelCatalogSyncModule } from '../../modules/channel-catalog-sync/index.js';
+import { DefaultInventoryService } from '../../modules/inventory/public/index.js';
+import { PostgresInventoryRepository, PostgresStockLocationRepository, } from '../../modules/inventory/infrastructure/index.js';
+import { DefaultProductQueryService } from '../../modules/products/public/index.js';
+import { PostgresProductRepository } from '../../modules/products/infrastructure/postgres-product-repository.js';
 
 /**
  * Worker-only wiring for channel catalog sync query ports (composition root).
@@ -42,6 +46,22 @@ export function wireChannelCatalogSync(deps) {
             };
         },
     };
+    const productRepository = new PostgresProductRepository();
+    const productQueryService = new DefaultProductQueryService({
+        database: deps.database,
+        products: productRepository,
+    });
+    const inventoryService = new DefaultInventoryService({
+        transactionManager: deps.database,
+        queryable: deps.database,
+        inventoryRepository: new PostgresInventoryRepository(),
+        stockLocationRepository: new PostgresStockLocationRepository(),
+        productQueryService,
+        eventRecorder: {
+            recordIntegrationEvent: async () => {},
+            recordDomainEvent: async () => {},
+        },
+    });
     return createChannelCatalogSyncModule({
         database: deps.database,
         queue: deps.queue,
@@ -51,5 +71,6 @@ export function wireChannelCatalogSync(deps) {
         channelQueryService,
         offerQueryService,
         marketplaceLookup,
+        inventoryService,
     });
 }

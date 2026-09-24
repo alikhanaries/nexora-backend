@@ -21,13 +21,17 @@ describe('buildCatalogSyncJobId', () => {
         expect(first).toBe(second);
     });
 
-    it('includes stock location for inventory targets', () => {
-        const id = buildCatalogSyncJobId({
+    it('coalesces inventory jobs per tenant, channel, and product', () => {
+        const withLocation = buildCatalogSyncJobId({
             ...base,
             target: CatalogSyncTarget.INVENTORY,
             stockLocationId: '44444444-4444-4444-8444-444444444444',
         });
-        expect(id).toContain('inventory');
-        expect(id).toContain('44444444-4444-4444-8444-444444444444');
+        const withoutLocation = buildCatalogSyncJobId({
+            ...base,
+            target: CatalogSyncTarget.INVENTORY,
+        });
+        expect(withLocation).toBe(withoutLocation);
+        expect(withLocation).toContain('inventory');
     });
 });

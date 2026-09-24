@@ -12,4 +12,11 @@ export class FoundationStubMarketplaceCatalogAdapter {
     async execute(_context) {
         return;
     }
+
+    /**
+     * @param {import('../public/marketplace-catalog-adapter.port.js').MarketplaceInventorySyncInput} _input
+     */
+    async syncInventory(_input) {
+        return;
+    }
 }
