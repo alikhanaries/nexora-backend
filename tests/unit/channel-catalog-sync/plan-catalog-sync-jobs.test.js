@@ -108,7 +108,34 @@ describe('planCatalogSyncJobsFromEvent', () => {
             },
         );
         expect(jobs[0].target).toBe(CatalogSyncTarget.PRICE);
-        expect(jobs[0].entityId).toBe(priceId);
+        expect(jobs[0].entityId).toBe(productId);
+        expect(jobs[0].currency).toBe('USD');
+    });
+
+    it('plans price sync jobs when an offer becomes active', async () => {
+        const pricingService = {
+            listPrices: vi.fn().mockResolvedValue({
+                items: [
+                    { currency: 'USD' },
+                    { currency: 'EUR' },
+                ],
+            }),
+        };
+        const jobs = await planCatalogSyncJobsFromEvent(
+            baseEvent('offer.status_changed', {
+                id: offerId,
+                channelId: channelA,
+                productId,
+                status: 'ACTIVE',
+            }),
+            {
+                offerQueryService: { getOffersByProduct: vi.fn() },
+                channelQueryService: { listChannels: vi.fn() },
+                pricingService,
+            },
+        );
+        expect(jobs).toHaveLength(2);
+        expect(jobs.every((job) => job.target === CatalogSyncTarget.PRICE)).toBe(true);
     });
 
     it('ignores unrelated integration events', async () => {

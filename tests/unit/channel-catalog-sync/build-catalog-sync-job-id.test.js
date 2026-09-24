@@ -21,6 +21,21 @@ describe('buildCatalogSyncJobId', () => {
         expect(first).toBe(second);
     });
 
+    it('coalesces price jobs per tenant, channel, product, and currency', () => {
+        const usd = buildCatalogSyncJobId({
+            ...base,
+            target: CatalogSyncTarget.PRICE,
+            currency: 'USD',
+        });
+        const eur = buildCatalogSyncJobId({
+            ...base,
+            target: CatalogSyncTarget.PRICE,
+            currency: 'EUR',
+        });
+        expect(usd).not.toBe(eur);
+        expect(usd).toContain('USD');
+    });
+
     it('coalesces inventory jobs per tenant, channel, and product', () => {
         const withLocation = buildCatalogSyncJobId({
             ...base,

@@ -16,5 +16,8 @@ export function buildCatalogSyncJobId(input) {
     if (input.target === CatalogSyncTarget.INVENTORY) {
         return `${input.tenantId}:${input.channelId}:${input.target}:${input.entityId}`;
     }
+    if (input.target === CatalogSyncTarget.PRICE && input.currency !== undefined) {
+        return `${input.tenantId}:${input.channelId}:${input.target}:${input.entityId}:${input.currency}`;
+    }
     return `${input.tenantId}:${input.channelId}:${input.target}:${input.entityId}`;
 }

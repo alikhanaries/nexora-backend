@@ -3,6 +3,7 @@ import { ChannelCatalogSyncService } from './application/channel-catalog-sync-se
 import { ChannelCatalogSyncRateLimiter } from './application/channel-catalog-sync-rate-limiter.js';
 import { ExecuteCatalogSyncJob } from './application/execute-catalog-sync-job.js';
 import { SyncChannelInventory } from './application/sync-channel-inventory.js';
+import { SyncChannelPrice } from './application/sync-channel-price.js';
 import { FoundationStubMarketplaceCatalogAdapter } from './infrastructure/foundation-stub-marketplace-catalog-adapter.js';
 import { MarketplaceCatalogAdapterRegistry } from './infrastructure/marketplace-catalog-adapter-registry.js';
 
@@ -17,6 +18,7 @@ import { MarketplaceCatalogAdapterRegistry } from './infrastructure/marketplace-
  * @param {import('../offers/public/offer-query-service.js').DefaultOfferQueryService} deps.offerQueryService
  * @param {import('./application/marketplace-lookup.port.js').MarketplaceLookup} deps.marketplaceLookup
  * @param {import('../inventory/public/inventory-service.js').DefaultInventoryService} deps.inventoryService
+ * @param {import('../pricing/public/pricing-service.js').DefaultPricingService} deps.pricingService
  */
 export function createChannelCatalogSyncModule(deps) {
     const adapterRegistry = new MarketplaceCatalogAdapterRegistry();
@@ -29,6 +31,11 @@ export function createChannelCatalogSyncModule(deps) {
         offerQueryService: deps.offerQueryService,
         logger: deps.logger,
     });
+    const syncChannelPrice = new SyncChannelPrice({
+        pricingService: deps.pricingService,
+        offerQueryService: deps.offerQueryService,
+        logger: deps.logger,
+    });
     const executeJob = new ExecuteCatalogSyncJob({
         database: deps.database,
         channelQueryService: deps.channelQueryService,
@@ -36,6 +43,7 @@ export function createChannelCatalogSyncModule(deps) {
         adapterRegistry,
         rateLimiter: catalogSyncRateLimiter,
         syncChannelInventory,
+        syncChannelPrice,
         metrics: deps.metrics,
         logger: deps.logger,
     });
@@ -43,6 +51,7 @@ export function createChannelCatalogSyncModule(deps) {
         queue: deps.queue,
         offerQueryService: deps.offerQueryService,
         channelQueryService: deps.channelQueryService,
+        pricingService: deps.pricingService,
         metrics: deps.metrics,
     });
     const channelCatalogSyncService = new ChannelCatalogSyncService({

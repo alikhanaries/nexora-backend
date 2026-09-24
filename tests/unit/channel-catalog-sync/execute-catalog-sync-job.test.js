@@ -62,6 +62,10 @@ function createExecutor(overrides = {}) {
         execute: vi.fn().mockResolvedValue(undefined),
         ...(overrides.syncChannelInventory ?? {}),
     };
+    const syncChannelPrice = {
+        execute: vi.fn().mockResolvedValue(undefined),
+        ...(overrides.syncChannelPrice ?? {}),
+    };
     const executor = new ExecuteCatalogSyncJob({
         database,
         channelQueryService,
@@ -69,6 +73,7 @@ function createExecutor(overrides = {}) {
         adapterRegistry: registry,
         rateLimiter,
         syncChannelInventory,
+        syncChannelPrice,
         metrics: { recordCatalogSync: vi.fn() },
         logger: { info: vi.fn(), warn: vi.fn() },
     });
@@ -80,6 +85,19 @@ describe('ExecuteCatalogSyncJob', () => {
         const { executor, adapterExecute } = createExecutor();
         await executor.execute(validPayload());
         expect(adapterExecute).toHaveBeenCalledTimes(1);
+    });
+
+    it('routes price jobs to SyncChannelPrice', async () => {
+        const syncExecute = vi.fn().mockResolvedValue(undefined);
+        const { executor, adapterExecute } = createExecutor({
+            syncChannelPrice: { execute: syncExecute },
+        });
+        await executor.execute(validPayload({
+            target: CatalogSyncTarget.PRICE,
+            currency: 'USD',
+        }));
+        expect(syncExecute).toHaveBeenCalledTimes(1);
+        expect(adapterExecute).not.toHaveBeenCalled();
     });
 
     it('routes inventory jobs to SyncChannelInventory', async () => {

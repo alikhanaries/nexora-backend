@@ -19,4 +19,11 @@ export class FoundationStubMarketplaceCatalogAdapter {
     async syncInventory(_input) {
         return;
     }
+
+    /**
+     * @param {import('../public/marketplace-catalog-adapter.port.js').MarketplacePriceSyncInput} _input
+     */
+    async syncPrice(_input) {
+        return;
+    }
 }

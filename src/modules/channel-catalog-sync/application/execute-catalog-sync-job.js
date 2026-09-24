@@ -22,6 +22,7 @@ export class ExecuteCatalogSyncJob {
      * @param {import('../infrastructure/marketplace-catalog-adapter-registry.js').MarketplaceCatalogAdapterRegistry} deps.adapterRegistry
      * @param {import('./channel-catalog-sync-rate-limiter.js').ChannelCatalogSyncRateLimiter} deps.rateLimiter
      * @param {import('./sync-channel-inventory.js').SyncChannelInventory} deps.syncChannelInventory
+     * @param {import('./sync-channel-price.js').SyncChannelPrice} deps.syncChannelPrice
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
      */
@@ -83,6 +84,15 @@ export class ExecuteCatalogSyncJob {
                 if (job.target === CatalogSyncTarget.INVENTORY ||
                     job.target === CatalogSyncTarget.CHANNEL_INVENTORY_RESYNC) {
                     await this.deps.syncChannelInventory.execute({
+                        job,
+                        channel,
+                        marketplace,
+                        adapter,
+                        tx,
+                    });
+                }
+                else if (job.target === CatalogSyncTarget.PRICE) {
+                    await this.deps.syncChannelPrice.execute({
                         job,
                         channel,
                         marketplace,

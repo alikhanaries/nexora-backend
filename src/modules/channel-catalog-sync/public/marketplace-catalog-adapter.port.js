@@ -23,10 +23,25 @@
  * @property {string} sourceEventId
  * @property {string|null} correlationId
  *
+ * @typedef {object} MarketplacePriceSyncInput
+ * @property {string} tenantId
+ * @property {string} channelId
+ * @property {string} marketplaceKey
+ * @property {string} productId
+ * @property {string} externalCatalogIdentifier
+ * @property {string} currency
+ * @property {number} amountMinor
+ * @property {string} validFrom
+ * @property {string|null} validTo
+ * @property {string} priceId
+ * @property {string} sourceEventId
+ * @property {string|null} correlationId
+ *
  * @typedef {object} MarketplaceCatalogAdapter
  * @property {string} marketplaceKey
  * @property {(context: MarketplaceCatalogSyncContext) => Promise<void>} [execute]
  * @property {(input: MarketplaceInventorySyncInput) => Promise<void>} [syncInventory]
+ * @property {(input: MarketplacePriceSyncInput) => Promise<void>} [syncPrice]
  */
 
 export const FOUNDATION_STUB_MARKETPLACE_KEY = 'nexora-foundation-stub';
