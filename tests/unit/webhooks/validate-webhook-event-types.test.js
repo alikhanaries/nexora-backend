@@ -16,6 +16,15 @@ describe('validateWebhookEventTypes', () => {
         expect(eventTypes).toEqual(['product.created', 'inventory.inventory_changed']);
     });
 
+    it('accepts Phase 11 offer, channel, and price event types', () => {
+        const eventTypes = validateWebhookEventTypes([
+            'offer.created',
+            'channel.status_changed',
+            'price.updated',
+        ]);
+        expect(eventTypes).toEqual(['offer.created', 'channel.status_changed', 'price.updated']);
+    });
+
     it('deduplicates event types', () => {
         const eventTypes = validateWebhookEventTypes(['order.created', 'order.created']);
         expect(eventTypes).toEqual(['order.created']);

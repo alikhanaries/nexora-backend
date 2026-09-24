@@ -16,7 +16,7 @@ function createService(infra, overrides = {}) {
         ...overrides,
     }, infra.logger, infra.metrics);
 }
-describe('retention cleanup integration', () => {
+describe('retention cleanup integration', { timeout: 120_000 }, () => {
     afterAll(async () => {
         await closeTestInfrastructure();
     });

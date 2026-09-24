@@ -19,5 +19,6 @@
 | [ADR-021](ADR-021-external-id-mapping.md)                 | External Integer ID Mapping (Phase 8) | Accepted        |
 | [ADR-022](ADR-022-phase-9-channel-default-stock-location.md) | Phase 9 Channel Default Stock Location | Accepted     |
 | [ADR-023](ADR-023-phase-10-webhook-delivery-retention.md) | Phase 10 Webhook Delivery Retention | Accepted        |
+| [ADR-024](ADR-024-phase-11-commerce-webhook-catalog.md) | Phase 11 Commerce Webhook Catalog | Accepted        |
 
 Add a new ADR only when a genuine architectural fork exists. Implementation details belong in module READMEs, not ADRs.
