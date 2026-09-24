@@ -8,6 +8,12 @@ describe('sanitizeMarketplaceConnectionTestError', () => {
         expect(message).toContain('[REDACTED]');
     });
 
+    it('redacts PEM private key fragments', () => {
+        const message = sanitizeMarketplaceConnectionTestError(new Error('bad key -----BEGIN RSA PRIVATE KEY-----abc'));
+        expect(message).not.toContain('BEGIN RSA PRIVATE KEY');
+        expect(message).toContain('[REDACTED]');
+    });
+
     it('truncates long messages', () => {
         const message = sanitizeMarketplaceConnectionTestError(new Error('x'.repeat(600)));
         expect(message.length).toBeLessThanOrEqual(501);

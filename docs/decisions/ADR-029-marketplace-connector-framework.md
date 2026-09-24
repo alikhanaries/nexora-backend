@@ -74,15 +74,24 @@ Table `marketplace_entity_mappings` stores provider string IDs (e.g. Shopify GID
 | **Noon** | — | Public seller API contract not verified in-repo; adapter returns `MarketplaceUnsupportedError` / configuration guidance |
 | **Namshi** | — | Public partner API contract not verified in-repo; same as Noon |
 
-## 8. Error normalization
+## 8. Phase 27 hardening (summary)
+
+- Connection `configuration.apiBaseUrl` / `lwaTokenUrl` validated with shared outbound HTTPS SSRF checks before persistence.
+- Connection test failures return sanitized messages to API callers; secrets redacted in stored test metadata.
+- Catalog sync job boundary maps adapter permanent/retry errors and mapping conflicts to non-retrying outcomes.
+- Auth token/session caches include endpoint/base URL in cache keys where applicable.
+
+Full capability matrix: [capability-matrix.md](../marketplaces/capability-matrix.md).
+
+## 9. Error normalization
 
 Marketplace layer errors (`MarketplaceAuthenticationError`, `MarketplaceRateLimitError`, `MarketplaceTransientError`, …) map to `MarketplaceCatalogAdapterRetryError` / `MarketplaceCatalogAdapterPermanentError` at the adapter boundary.
 
-## 9. Observability
+## 10. Observability
 
 Extend catalog sync metrics with bounded `marketplace` label (provider key only). Never label by product/tenant/token.
 
-## 10. Related
+## 11. Related
 
 - [ADR-028](ADR-028-phase-15-catalog-sync-architecture.md)
 - [platform-independence.md](../architecture/platform-independence.md)
