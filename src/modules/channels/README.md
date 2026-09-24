@@ -62,7 +62,7 @@ Channel creation verifies marketplace existence via `VerifyMarketplaceExists` fr
 
 ### Channel ingest stock location (OQ-7-07)
 
-`defaultStockLocationId` (optional UUID FK to `stock_locations`) is the preferred configuration for channel order ingest stock allocation. When unset, compatibility falls back to storing the stock location UUID in `configurationReference` (Phase 7 convention). Updates validate the location via public `InventoryService.verifyUsableStockLocation`.
+`defaultStockLocationId` (optional UUID FK to `stock_locations`) is the preferred configuration for channel order ingest stock allocation and outbound inventory sync. When unset, compatibility and catalog sync fall back to storing the stock location UUID in `configurationReference` (Phase 7 convention). Resolution is shared via `resolveChannelStockLocationId` / `requireChannelStockLocationId` on the channels public surface. Updates validate the location via public `InventoryService.verifyUsableStockLocation`.
 
 ## Integration events
 

@@ -2,6 +2,7 @@ import { CatalogSyncEnqueueService } from './application/catalog-sync-enqueue-se
 import { ChannelCatalogSyncService } from './application/channel-catalog-sync-service.js';
 import { ChannelCatalogSyncRateLimiter } from './application/channel-catalog-sync-rate-limiter.js';
 import { ExecuteCatalogSyncJob } from './application/execute-catalog-sync-job.js';
+import { SyncChannelInventory } from './application/sync-channel-inventory.js';
 import { FoundationStubMarketplaceCatalogAdapter } from './infrastructure/foundation-stub-marketplace-catalog-adapter.js';
 import { MarketplaceCatalogAdapterRegistry } from './infrastructure/marketplace-catalog-adapter-registry.js';
 
@@ -15,6 +16,7 @@ import { MarketplaceCatalogAdapterRegistry } from './infrastructure/marketplace-
  * @param {import('../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
  * @param {import('../offers/public/offer-query-service.js').DefaultOfferQueryService} deps.offerQueryService
  * @param {import('./application/marketplace-lookup.port.js').MarketplaceLookup} deps.marketplaceLookup
+ * @param {import('../inventory/public/inventory-service.js').DefaultInventoryService} deps.inventoryService
  */
 export function createChannelCatalogSyncModule(deps) {
     const adapterRegistry = new MarketplaceCatalogAdapterRegistry();
@@ -22,12 +24,18 @@ export function createChannelCatalogSyncModule(deps) {
     const catalogSyncRateLimiter = new ChannelCatalogSyncRateLimiter({
         rateLimiter: deps.rateLimiter,
     });
+    const syncChannelInventory = new SyncChannelInventory({
+        inventoryService: deps.inventoryService,
+        offerQueryService: deps.offerQueryService,
+        logger: deps.logger,
+    });
     const executeJob = new ExecuteCatalogSyncJob({
         database: deps.database,
         channelQueryService: deps.channelQueryService,
         marketplaceLookup: deps.marketplaceLookup,
         adapterRegistry,
         rateLimiter: catalogSyncRateLimiter,
+        syncChannelInventory,
         metrics: deps.metrics,
         logger: deps.logger,
     });
