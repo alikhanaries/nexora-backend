@@ -2,9 +2,17 @@
  * Signals that BullMQ should retry the webhook delivery job.
  */
 export class WebhookDeliveryRetryError extends Error {
-    constructor(message = 'Webhook delivery should be retried') {
+    /** @type {number | null} */
+    retryDelayMs;
+
+    /**
+     * @param {string} [message]
+     * @param {{ retryDelayMs?: number | null }} [options]
+     */
+    constructor(message = 'Webhook delivery should be retried', options = {}) {
         super(message);
         this.name = 'WebhookDeliveryRetryError';
+        this.retryDelayMs = options.retryDelayMs ?? null;
     }
 }
 

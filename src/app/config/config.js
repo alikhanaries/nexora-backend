@@ -82,6 +82,7 @@ function toAppConfig(raw) {
         webhooks: {
             deliveryTimeoutMs: raw.WEBHOOK_DELIVERY_TIMEOUT_MS,
             deliveryLeaseSeconds: raw.WEBHOOK_DELIVERY_LEASE_SECONDS,
+            deliveryMaxRetryAfterSeconds: raw.WEBHOOK_DELIVERY_MAX_RETRY_AFTER_SECONDS,
         },
         security: {
             corsEnabled: raw.SERVER_CORS_ORIGINS.length > 0,

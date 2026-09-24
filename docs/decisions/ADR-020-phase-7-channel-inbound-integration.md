@@ -302,7 +302,7 @@ Explicitly **out of Phase 7** unless promoted during implementation:
 | Item                                            | Phase                                                         |
 | ----------------------------------------------- | ------------------------------------------------------------- |
 | Webhook delivery history retention              | Post-7.5 ops                                                  |
-| Retry-After-aware webhook scheduling            | Post-6.6 ops                                                  |
+| Retry-After-aware webhook scheduling            | Implemented — [ADR-025](ADR-025-phase-12-webhook-retry-after-scheduling.md) |
 | Worker metrics HTTP endpoint                    | Ops                                                           |
 | External integer ID mapping (`Id`, `ChannelId`) | Future — continue omitting from responses                     |
 | Merchant product `/api/v2/products*`            | Future Merchant wave                                          |

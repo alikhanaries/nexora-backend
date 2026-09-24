@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { JobName, QueueName } from '../../infrastructure/queue/queue-names.js';
+import { WebhookDeliveryRetryError } from '../../modules/webhooks/application/webhook-delivery-errors.js';
 import { parseOrThrow } from '../../shared/validation/index.js';
 const integrationEventPayloadSchema = z.object({
     eventId: z.string().uuid(),
@@ -42,7 +43,19 @@ export function registerWorkerHandlers(deps) {
             return;
         }
         const parsed = parseOrThrow(webhookDeliveryPayloadSchema, payload, 'webhook delivery job');
-        await deps.webhookDeliveryService.deliver(parsed, context);
+        try {
+            await deps.webhookDeliveryService.deliver(parsed, context);
+        }
+        catch (error) {
+            if (error instanceof WebhookDeliveryRetryError
+                && error.retryDelayMs !== null
+                && error.retryDelayMs > 0
+                && typeof context.moveToDelayed === 'function') {
+                await context.moveToDelayed(error.retryDelayMs);
+                return;
+            }
+            throw error;
+        }
     };
     deps.workerRuntime.register(QueueName.INTEGRATION_EVENTS, publishHandler);
     deps.workerRuntime.register(QueueName.WEBHOOK_DELIVERIES, webhookDeliveryHandler);
