@@ -25,6 +25,8 @@ export function createShipmentsModule(deps) {
         shipments,
         eventRecorder: deps.eventRecorder,
         idempotency: deps.idempotency,
+        inventoryService: deps.inventoryService,
+        orderQueryService: deps.orderQueryService,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
     const createShipment = new CreateShipment({

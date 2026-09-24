@@ -3,6 +3,7 @@ import { BusinessRuleError, NotFoundError } from '../../../shared/errors/index.j
 import { ShipmentStatus } from '../domain/shipment-status.js';
 import { toShipmentDetailDto } from './shipment-dto.js';
 import { shipmentShippedEvent, shipmentStatusChangedEvent } from './shipment-events.js';
+import { fulfillInventoryWhenShipmentShipped } from './fulfill-inventory-when-shipment-shipped.js';
 import { requireShipmentsUpdate } from './shipment-permissions.js';
 
 export class UpdateShipmentTracking {
@@ -60,6 +61,24 @@ export class UpdateShipmentTracking {
 
             await this.deps.shipments.updateShipment(tx, updated);
             const lines = await this.deps.shipments.listShipmentLines(tx, input.tenantId, updated.id);
+            if (previousStatus !== ShipmentStatus.SHIPPED && updated.status === ShipmentStatus.SHIPPED) {
+                await fulfillInventoryWhenShipmentShipped({
+                    inventoryService: this.deps.inventoryService,
+                    orderQueryService: this.deps.orderQueryService,
+                }, tx, {
+                    tenantId: input.tenantId,
+                    orderId: updated.orderId,
+                    shipmentId: updated.id,
+                    shipmentLines: lines.map((line) => ({
+                        id: line.id,
+                        orderLineId: line.orderLineId,
+                        quantity: line.quantity,
+                    })),
+                    ...(input.inventoryConsumptionMode === undefined
+                        ? {}
+                        : { inventoryConsumptionMode: input.inventoryConsumptionMode }),
+                });
+            }
             const detail = toShipmentDetailDto(updated, lines);
             if (previousStatus !== updated.status) {
                 await this.deps.eventRecorder.record(tx, shipmentStatusChangedEvent(detail, previousStatus));

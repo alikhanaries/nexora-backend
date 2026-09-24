@@ -34,11 +34,30 @@ Example: available = 5. Request A reserves 4 and request B reserves 3 concurrent
 ## Reservation semantics
 
 - `reserve` increases `reserved` and decreases `available`; `on_hand` is unchanged.
-- `release` decreases `reserved` and increases `available`.
+- `release` decreases `reserved` and increases `available`; `on_hand` is unchanged. A full release marks the reservation `RELEASED`.
 - A reservation is keyed by `(tenant_id, reference_type, reference_id, stock_location_id, product_id)`.
 - **Idempotent reserve** — `INSERT … ON CONFLICT DO NOTHING` on `inventory_reservations`. If an `ACTIVE` row already exists with the same quantity, the call returns success without double-reserving. A conflicting quantity returns `409 CONFLICT`.
 - **Idempotent release** — if the reservation is already `RELEASED`, the call returns success without mutating balances again.
 - **Cannot over-release** — release quantity must not exceed the reservation quantity or current `reserved` balance.
+
+## Shipment fulfillment lifecycle (ADR-027)
+
+Normal commerce orders **reserve on order creation** (`reference_type = ORDER`, `reference_id = order id`). Physical stock is **not** consumed at reservation time.
+
+When a shipment first becomes **`SHIPPED`**, reserved stock for that shipment line is fulfilled:
+
+| Operation | `on_hand` | `reserved` | `available` | Reservation row |
+| --------- | --------- | ---------- | ----------- | ----------------- |
+| `reserve` (order create) | unchanged | ↑ | ↓ (= on_hand − reserved) | `ACTIVE`, full line qty |
+| **`fulfillReservedForShipment`** (ship) | ↓ | ↓ (same qty) | unchanged | qty decremented; `RELEASED` only when qty → 0 |
+| `release` (cancellation before ship) | unchanged | ↓ | ↑ | partial or full release per existing rules |
+
+- **Partial shipments** — each ship call fulfills only the shipment line quantity. The ORDER reservation stays **`ACTIVE`** until its remaining quantity reaches zero.
+- **Do not** use `release()` + `recordSale()` for shipped normal orders; partial fulfillment requires `fulfillReservedForShipment`.
+- Fulfillment records a **`SALE`** movement with `reference_type = SHIPMENT`, `reference_id = shipment id`, and `idempotency_key = shipment line id` (retries are safe).
+- Stock location is always the **order line’s `stock_location_id`**, which must match the ORDER reservation location.
+
+**Channel-fulfilled orders (ADR-020)** do **not** reserve inventory. When their shipment is marked `SHIPPED`, the shipments layer calls **`recordSale`** only (`on_hand` ↓, `reserved` unchanged).
 
 ## Idempotency
 
@@ -51,15 +70,16 @@ Two layers:
 
 Exported from `public/index.ts` for cross-module use (Orders, Offers, etc.).
 
-| Method            | Purpose                                                          |
-| ----------------- | ---------------------------------------------------------------- |
-| `getAvailability` | Read balances for a product (optionally scoped to one location). |
-| `reserve`         | Hold stock for a business reference.                             |
-| `release`         | Undo an active reservation.                                      |
-| `adjust`          | Signed delta adjustment (`ADJUSTMENT` movement).                 |
-| `receive`         | Increase on-hand (`RECEIPT`).                                    |
-| `recordSale`      | Decrease on-hand (`SALE`).                                       |
-| `recordReturn`    | Increase on-hand (`RETURN`).                                     |
+| Method                         | Purpose                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| `getAvailability`              | Read balances for a product (optionally scoped to one location).       |
+| `reserve`                      | Hold stock for a business reference (orders at creation).               |
+| `release`                      | Undo an active reservation (e.g. cancellation before ship).            |
+| **`fulfillReservedForShipment`** | Consume reserved + on-hand for a shipped order line (partial OK).   |
+| `adjust`                       | Signed delta adjustment (`ADJUSTMENT` movement).                        |
+| `receive`                      | Increase on-hand (`RECEIPT`).                                           |
+| `recordSale`                   | Decrease on-hand only (`SALE`) — channel-fulfilled ship, no reservation. |
+| `recordReturn`                 | Increase on-hand (`RETURN`) — returns receive path.                     |
 
 All mutating methods accept an optional `Transaction` so callers can participate in a larger unit of work. When omitted, the service opens its own tenant-scoped transaction (`app.tenant_id` set for RLS).
 

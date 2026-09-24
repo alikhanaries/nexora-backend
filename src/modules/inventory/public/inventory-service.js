@@ -11,6 +11,9 @@
  * @property {(input: object, tx?: object) => Promise<object>} release
  * Releases a prior reservation. Idempotent per reference.
  *
+ * @property {(input: object, tx?: object) => Promise<object>} fulfillReservedForShipment
+ * Consumes reserved and on-hand stock when a shipment is marked SHIPPED (ADR-027).
+ *
  * @property {(input: object, tx?: object) => Promise<object>} adjust
  * @property {(input: object, tx?: object) => Promise<object>} receive
  * @property {(input: object, tx?: object) => Promise<object>} recordSale
