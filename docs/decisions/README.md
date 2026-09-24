@@ -22,6 +22,15 @@
 | [ADR-024](ADR-024-phase-11-commerce-webhook-catalog.md) | Phase 11 Commerce Webhook Catalog | Accepted        |
 | [ADR-025](ADR-025-phase-12-webhook-retry-after-scheduling.md) | Phase 12 Webhook Retry-After Scheduling | Accepted |
 | [ADR-026](ADR-026-phase-13-worker-observability-http.md) | Phase 13 Worker Observability HTTP | Accepted |
-| [ADR-027](ADR-027-phase-14-shipment-fulfillment-inventory.md) | Phase 14 Shipment Fulfillment Inventory (spec) | Accepted / implementation pending |
+| [ADR-027](ADR-027-phase-14-shipment-fulfillment-inventory.md) | Phase 14 Shipment Fulfillment Inventory | Accepted |
+| [ADR-028](ADR-028-phase-15-catalog-sync-architecture.md) | Phase 15 Product, Inventory & Pricing Sync (architecture) | Accepted / specification only |
+
+## Phase roadmap (architecture)
+
+| Phase | Focus | ADR | Implementation |
+| ----- | ----- | --- | -------------- |
+| 14 | Shipment fulfillment inventory | ADR-027 | **Done** (merged to `dev`) |
+| 15 | Catalog sync architecture | ADR-028 | **Spec only** (this document) |
+| 16+ | Sync foundation, then inventory → pricing → product → reconciliation | ADR-028 §23 | Not started |
 
 Add a new ADR only when a genuine architectural fork exists. Implementation details belong in module READMEs, not ADRs.
