@@ -42,9 +42,10 @@ Specification: [ADR-026](../docs/decisions/ADR-026-phase-13-worker-observability
 
 ## Queues (Phase 1)
 
-| Queue                | Job                         | Handler                                         |
-| -------------------- | --------------------------- | ----------------------------------------------- |
-| `integration-events` | `publish-integration-event` | Routes to registered integration event handlers |
+| Queue                   | Job                         | Handler                                         |
+| ----------------------- | --------------------------- | ----------------------------------------------- |
+| `integration-events`    | `publish-integration-event` | Routes to registered integration event handlers |
+| `channel-catalog-sync`  | `run-catalog-sync`          | Channel catalog sync foundation (Phase 16)    |
 
 Queue names: `src/infrastructure/queue/queue-names.ts`.
 

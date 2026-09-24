@@ -7,6 +7,8 @@ import { createWebhookDeliveryService, createWebhookDispatchService } from '../m
 import { describeErrorForLog } from '../shared/errors/index.js';
 import { createIntegrationEventConsumers } from './create-integration-event-consumers.js';
 import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
+import { CatalogSyncEnqueueHandler } from './handlers/catalog-sync-enqueue.handler.js';
+import { wireChannelCatalogSync } from './bootstrap/wire-channel-catalog-sync.js';
 import { createWorkerObservabilityHttpServer } from './observability/create-worker-observability-http-server.js';
 async function main() {
     const config = loadConfigFromEnvironment();
@@ -24,16 +26,26 @@ async function main() {
         metrics: infra.metrics,
         config,
     });
+    const { channelCatalogSyncService } = wireChannelCatalogSync({
+        database: infra.database,
+        queue: infra.queue,
+        rateLimiter: infra.rateLimiter,
+        metrics: infra.metrics,
+        logger: infra.logger,
+    });
+    const catalogSyncEnqueueHandler = new CatalogSyncEnqueueHandler(channelCatalogSyncService);
     const { integrationEventRouter } = createIntegrationEventConsumers({
         database: infra.database,
         inbox: infra.inbox,
         logger: infra.logger,
         webhookDispatchService,
+        catalogSyncEnqueueHandler,
     });
     registerWorkerHandlers({
         workerRuntime: infra.workerRuntime,
         integrationEventRouter,
         webhookDeliveryService,
+        channelCatalogSyncService,
     });
     const readiness = new ReadinessService(createWorkerReadinessProbes({
         database: infra.database,

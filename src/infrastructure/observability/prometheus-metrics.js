@@ -32,6 +32,7 @@ export class PrometheusMetrics {
     rateLimitHitsTotal;
     authEventsTotal;
     commerceOperationsTotal;
+    catalogSyncJobsTotal;
     constructor(serviceName) {
         this.registry = new Registry();
         this.registry.setDefaultLabels({ service: serviceName });
@@ -152,6 +153,12 @@ export class PrometheusMetrics {
             buckets: DURATION_BUCKETS,
             registers: [this.registry],
         });
+        this.catalogSyncJobsTotal = new Counter({
+            name: 'channel_catalog_sync_jobs_total',
+            help: 'Channel catalog sync worker outcomes.',
+            labelNames: ['outcome'],
+            registers: [this.registry],
+        });
     }
     recordHttpRequest(sample) {
         const statusClass = classifyStatus(sample.statusCode);
@@ -207,6 +214,9 @@ export class PrometheusMetrics {
         if (sample.durationMs !== undefined) {
             this.webhookDeliveryDuration.observe({ outcome: sample.outcome }, sample.durationMs / 1_000);
         }
+    }
+    recordCatalogSync(sample) {
+        this.catalogSyncJobsTotal.inc({ outcome: sample.outcome });
     }
     recordRetentionCleanup(sample) {
         if (sample.outcome === 'success') {

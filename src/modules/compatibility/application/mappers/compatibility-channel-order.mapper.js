@@ -1,8 +1,7 @@
-import { BusinessRuleError, ValidationError } from '../../../../shared/errors/index.js';
+import { ValidationError } from '../../../../shared/errors/index.js';
 import { getCurrencyMinorUnitExponent, parseCurrency } from '../../../../shared/money/index.js';
+import { requireChannelStockLocationId } from '../../../channels/public/index.js';
 import { mapExternalOrder } from './compatibility-order.mapper.js';
-
-const STOCK_LOCATION_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * @param {string|number} value
@@ -58,38 +57,10 @@ function mapExternalAddressToCore(address) {
 /**
  * Resolves the stock location UUID for channel ingest lines from the channel configuration.
  *
- * Prefers `channels.defaultStockLocationId` when set; otherwise falls back to
- * `configurationReference` storing the Nexora stock location UUID (legacy convention).
- *
  * @param {object} channel
  */
 export function resolveChannelStockLocationId(channel) {
-    const defaultStockLocationId = channel.defaultStockLocationId?.trim?.() ?? channel.defaultStockLocationId;
-    if (defaultStockLocationId !== undefined &&
-        defaultStockLocationId !== null &&
-        String(defaultStockLocationId).length > 0) {
-        const normalized = String(defaultStockLocationId).trim();
-        if (!STOCK_LOCATION_UUID_PATTERN.test(normalized)) {
-            throw new BusinessRuleError('Channel default stock location must be a stock location UUID', {
-                channelId: channel.id,
-                defaultStockLocationId: normalized,
-            });
-        }
-        return normalized;
-    }
-    const configurationReference = channel.configurationReference?.trim();
-    if (configurationReference === undefined || configurationReference.length === 0) {
-        throw new BusinessRuleError('Channel stock location is not configured', {
-            channelId: channel.id,
-        });
-    }
-    if (!STOCK_LOCATION_UUID_PATTERN.test(configurationReference)) {
-        throw new BusinessRuleError('Channel stock location configuration must be a stock location UUID', {
-            channelId: channel.id,
-            configurationReference,
-        });
-    }
-    return configurationReference;
+    return requireChannelStockLocationId(channel);
 }
 
 /**
