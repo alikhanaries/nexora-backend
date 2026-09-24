@@ -1,14 +1,16 @@
 import { loadConfigFromEnvironment } from '../app/config/index.js';
 import { createInfrastructure } from '../app/bootstrap/create-infrastructure.js';
 import { gracefulShutdown } from '../app/bootstrap/shutdown.js';
+import { createWorkerReadinessProbes, ReadinessService, } from '../app/observability/readiness.js';
 import { AesSecretEncryptor } from '../infrastructure/auth/aes-secret-encryptor.js';
 import { createWebhookDeliveryService, createWebhookDispatchService } from '../modules/webhooks/index.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
 import { createIntegrationEventConsumers } from './create-integration-event-consumers.js';
 import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
+import { createWorkerObservabilityHttpServer } from './observability/create-worker-observability-http-server.js';
 async function main() {
     const config = loadConfigFromEnvironment();
-    const infra = await createInfrastructure(config);
+    const infra = await createInfrastructure(config, { processKind: 'worker' });
     const webhookDispatchService = createWebhookDispatchService({
         database: infra.database,
         queue: infra.queue,
@@ -33,7 +35,32 @@ async function main() {
         integrationEventRouter,
         webhookDeliveryService,
     });
+    const readiness = new ReadinessService(createWorkerReadinessProbes({
+        database: infra.database,
+        redis: infra.redis,
+        queue: infra.queue,
+        workerRuntime: infra.workerRuntime,
+    }));
+    let workerObservabilityHttp;
+    if (config.workerObservability.httpEnabled) {
+        workerObservabilityHttp = await createWorkerObservabilityHttpServer({
+            readiness,
+            metrics: infra.metrics,
+            metricsEnabled: config.observability.metricsEnabled,
+        });
+        await workerObservabilityHttp.listen({
+            host: config.workerObservability.host,
+            port: config.workerObservability.port,
+        });
+        infra.logger.info({
+            host: config.workerObservability.host,
+            port: config.workerObservability.port,
+        }, 'Worker observability HTTP started');
+    }
     infra.retentionCleanupScheduler.start();
+    const poolMetricsTimer = setInterval(() => {
+        infra.database.reportPoolMetrics();
+    }, 5_000);
     infra.logger.info({}, 'Worker started');
     let shuttingDown = false;
     const shutdown = async (signal) => {
@@ -41,7 +68,10 @@ async function main() {
             return;
         shuttingDown = true;
         infra.logger.info({ signal }, 'Worker shutdown signal received');
+        clearInterval(poolMetricsTimer);
         await gracefulShutdown({
+            readiness,
+            workerObservabilityHttp,
             workerRuntime: infra.workerRuntime,
             retentionCleanupScheduler: infra.retentionCleanupScheduler,
             queue: infra.queue,

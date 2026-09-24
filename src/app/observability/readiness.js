@@ -7,6 +7,9 @@ export class ReadinessService {
     markNotReady() {
         this.acceptingTraffic = false;
     }
+    isAcceptingTraffic() {
+        return this.acceptingTraffic;
+    }
     async evaluate() {
         if (!this.acceptingTraffic) {
             return { ready: false, checks: { process: 'failed' } };
@@ -32,5 +35,20 @@ export function createDefaultProbes(deps) {
         { name: 'redis', check: () => deps.redis.healthCheck() },
         { name: 'queue', check: () => deps.queue.healthCheck() },
         { name: 'storage', check: () => deps.storage.healthCheck() },
+    ];
+}
+export function createWorkerReadinessProbes(deps) {
+    return [
+        { name: 'postgres', check: () => deps.database.healthCheck() },
+        { name: 'redis', check: () => deps.redis.healthCheck() },
+        { name: 'queue', check: () => deps.queue.healthCheck() },
+        {
+            name: 'workers_registered',
+            check: async () => {
+                if (!deps.workerRuntime.hasRegisteredWorkers()) {
+                    throw new Error('no workers registered');
+                }
+            },
+        },
     ];
 }
