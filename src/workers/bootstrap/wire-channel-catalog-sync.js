@@ -88,5 +88,6 @@ export function wireChannelCatalogSync(deps) {
         marketplaceLookup,
         inventoryService,
         pricingService,
+        productQueryService,
     });
 }

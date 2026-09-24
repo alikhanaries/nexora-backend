@@ -2,6 +2,7 @@ import { ChannelStatus, resolveChannelStockLocationId } from '../../channels/pub
 import { CatalogSyncOperation } from '../domain/sync-operation.js';
 import { CatalogSyncTarget } from '../domain/sync-target.js';
 import { isCatalogSyncIntegrationEventType } from './catalog-sync-event-types.js';
+import { resolveProductSyncOperation } from './resolve-product-sync-operation.js';
 
 /**
  * @typedef {object} PlannedCatalogSyncJob
@@ -47,6 +48,7 @@ export async function planCatalogSyncJobsFromEvent(event, deps) {
         if (productId === null) {
             return [];
         }
+        const operation = resolveProductSyncOperation(type, payload);
         const offers = await deps.offerQueryService.getOffersByProduct(tenantId, productId);
         for (const offer of offers) {
             jobs.push({
@@ -54,6 +56,7 @@ export async function planCatalogSyncJobsFromEvent(event, deps) {
                 channelId: offer.channelId,
                 target: CatalogSyncTarget.PRODUCT,
                 entityId: productId,
+                operation,
             });
         }
         return jobs;
@@ -61,11 +64,41 @@ export async function planCatalogSyncJobsFromEvent(event, deps) {
     if (type === 'offer.status_changed') {
         const channelId = readUuid(payload, 'channelId');
         const productId = readUuid(payload, 'productId');
+        const offerId = readUuid(payload, 'id') ?? event.aggregateId;
         const status = typeof payload.status === 'string' ? payload.status : null;
-        if (channelId === null || productId === null || status !== 'ACTIVE') {
+        if (channelId === null || offerId === null) {
             return [];
         }
-        return planPriceJobsForOfferActivation(tenantId, productId, channelId, base, deps.pricingService);
+        if (status === 'ACTIVE') {
+            /** @type {PlannedCatalogSyncJob[]} */
+            const activationJobs = [{
+                ...base,
+                channelId,
+                target: CatalogSyncTarget.OFFER,
+                entityId: offerId,
+                operation: CatalogSyncOperation.ACTIVATE,
+            }];
+            if (productId !== null) {
+                activationJobs.push(...await planPriceJobsForOfferActivation(
+                    tenantId,
+                    productId,
+                    channelId,
+                    base,
+                    deps.pricingService,
+                ));
+            }
+            return activationJobs;
+        }
+        if (status === 'INACTIVE' || status === 'SUSPENDED') {
+            return [{
+                ...base,
+                channelId,
+                target: CatalogSyncTarget.OFFER,
+                entityId: offerId,
+                operation: CatalogSyncOperation.DEACTIVATE,
+            }];
+        }
+        return [];
     }
     if (type.startsWith('offer.')) {
         const channelId = readUuid(payload, 'channelId');

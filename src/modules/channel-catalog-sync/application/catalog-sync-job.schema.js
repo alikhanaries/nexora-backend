@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { CatalogSyncTarget } from '../domain/sync-target.js';
-import { CatalogSyncOperation } from '../domain/sync-operation.js';
+import { CATALOG_SYNC_OPERATIONS } from '../domain/sync-operation.js';
 
 export const catalogSyncJobPayloadSchema = z.object({
     tenantId: z.string().uuid(),
@@ -13,7 +13,7 @@ export const catalogSyncJobPayloadSchema = z.object({
         CatalogSyncTarget.CHANNEL_INVENTORY_RESYNC,
     ]),
     entityId: z.string().uuid(),
-    operation: z.enum([CatalogSyncOperation.SYNC]),
+    operation: z.enum(CATALOG_SYNC_OPERATIONS),
     sourceEventId: z.string().uuid(),
     correlationId: z.string().nullable(),
     stockLocationId: z.string().uuid().optional(),

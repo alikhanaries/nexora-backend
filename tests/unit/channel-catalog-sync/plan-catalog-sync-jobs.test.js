@@ -134,8 +134,29 @@ describe('planCatalogSyncJobsFromEvent', () => {
                 pricingService,
             },
         );
-        expect(jobs).toHaveLength(2);
-        expect(jobs.every((job) => job.target === CatalogSyncTarget.PRICE)).toBe(true);
+        expect(jobs.length).toBeGreaterThanOrEqual(2);
+        expect(jobs.some((job) => job.target === CatalogSyncTarget.OFFER && job.operation === 'activate')).toBe(true);
+        expect(jobs.some((job) => job.target === CatalogSyncTarget.PRICE)).toBe(true);
+    });
+
+    it('plans offer deactivate job when offer becomes inactive', async () => {
+        const jobs = await planCatalogSyncJobsFromEvent(
+            baseEvent('offer.status_changed', {
+                id: offerId,
+                channelId: channelA,
+                productId,
+                status: 'INACTIVE',
+            }),
+            {
+                offerQueryService: { getOffersByProduct: vi.fn() },
+                channelQueryService: { listChannels: vi.fn() },
+            },
+        );
+        expect(jobs).toEqual([expect.objectContaining({
+            target: CatalogSyncTarget.OFFER,
+            operation: 'deactivate',
+            entityId: offerId,
+        })]);
     });
 
     it('ignores unrelated integration events', async () => {
