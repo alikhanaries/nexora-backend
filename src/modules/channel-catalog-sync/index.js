@@ -23,7 +23,6 @@ import { MarketplaceCatalogAdapterRegistry } from './infrastructure/marketplace-
  * @param {import('../inventory/public/inventory-service.js').DefaultInventoryService} deps.inventoryService
  * @param {import('../pricing/public/pricing-service.js').DefaultPricingService} deps.pricingService
  * @param {import('../products/public/product-query-service.js').DefaultProductQueryService} deps.productQueryService
- * @param {{ enabled: boolean, offerBatchSize: number, maxJobsPerTick: number }} [deps.catalogSyncReconciliation]
  */
 export function createChannelCatalogSyncModule(deps) {
     const adapterRegistry = new MarketplaceCatalogAdapterRegistry();

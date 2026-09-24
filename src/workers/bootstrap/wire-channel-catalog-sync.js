@@ -90,8 +90,5 @@ export function wireChannelCatalogSync(deps) {
         inventoryService,
         pricingService,
         productQueryService,
-        ...(deps.catalogSyncReconciliation === undefined
-            ? {}
-            : { catalogSyncReconciliation: deps.catalogSyncReconciliation }),
     });
 }
