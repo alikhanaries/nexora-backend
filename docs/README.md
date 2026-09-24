@@ -54,8 +54,9 @@ Architecture Decision Records capture significant choices and their rationale.
 
 ## Phase status
 
-| Phase                       | Status                      |
-| --------------------------- | --------------------------- |
-| Phase 0 — Discovery         | **Approved** (gate READY)   |
-| Phase 1 — Foundation        | **In progress** (this repo) |
-| Phase 2+ — Business modules | Not started                 |
+See [ADR index](decisions/README.md) for the full decision log. Recent architecture phases:
+
+| Phase | Status |
+| ----- | ------ |
+| 14 — Shipment fulfillment inventory | **Implemented** ([ADR-027](decisions/ADR-027-phase-14-shipment-fulfillment-inventory.md)) |
+| 15 — Catalog sync architecture | **Specification** ([ADR-028](decisions/ADR-028-phase-15-catalog-sync-architecture.md)); implementation phases 16+ |
