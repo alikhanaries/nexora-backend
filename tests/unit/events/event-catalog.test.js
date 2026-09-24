@@ -35,10 +35,22 @@ const phase75Allowlist = [
     'inventory.inventory_released',
 ];
 
-const expectedAllowlist = [...phase6Allowlist, ...phase75Allowlist];
+const phase11Allowlist = [
+    'offer.created',
+    'offer.updated',
+    'offer.status_changed',
+    'channel.created',
+    'channel.updated',
+    'channel.status_changed',
+    'price.created',
+    'price.updated',
+    'price.changed',
+];
+
+const expectedAllowlist = [...phase6Allowlist, ...phase75Allowlist, ...phase11Allowlist];
 
 describe('integration event catalog', () => {
-    it('contains the cumulative external allowlist through Phase 7.5', () => {
+    it('contains the cumulative external allowlist through Phase 11', () => {
         expect(PHASE_6_EXTERNAL_EVENT_ALLOWLIST).toEqual(expectedAllowlist);
         expect(Object.keys(INTEGRATION_EVENT_CATALOG)).toEqual(expectedAllowlist);
     });
@@ -111,6 +123,23 @@ describe('integration event catalog', () => {
         it('rejects malformed event types', () => {
             expect(isExternallyDeliverable('')).toBe(false);
             expect(isExternallyDeliverable('not-a-valid-event')).toBe(false);
+        });
+    });
+
+    describe('Phase 11 commerce webhook catalog events', () => {
+        it('registers offer, channel, and price events as externally deliverable', () => {
+            expect(isExternallyDeliverable('offer.created')).toBe(true);
+            expect(getCatalogEntry('offer.created')?.producerModule).toBe('offers');
+            expect(isExternallyDeliverable('channel.updated')).toBe(true);
+            expect(getCatalogEntry('channel.updated')?.producerModule).toBe('channels');
+            expect(isExternallyDeliverable('price.changed')).toBe(true);
+            expect(getCatalogEntry('price.changed')?.producerModule).toBe('pricing');
+        });
+
+        it('includes Phase 11 types in the cumulative allowlist', () => {
+            for (const eventType of phase11Allowlist) {
+                expect(PHASE_6_EXTERNAL_EVENT_ALLOWLIST).toContain(eventType);
+            }
         });
     });
 });

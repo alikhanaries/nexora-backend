@@ -92,7 +92,7 @@ Phase 7.5 extends the existing `INTEGRATION_EVENT_CATALOG` and cumulative `PHASE
 
 No new queues, dispatch workers, or subscription persistence changes were required. `WebhookDispatchService` already gates on `isExternallyDeliverable(event.type)` and skips events with `tenantId: null`.
 
-**Deferred:** `marketplace.*` (null tenant scope), `offer.*`, `channel.*`, and `price.*` remain outside the external allowlist until a follow-up explicitly approves them.
+**Deferred (resolved Phase 11):** `offer.*`, `channel.*`, and `price.*` — see [ADR-024](ADR-024-phase-11-commerce-webhook-catalog.md). **`marketplace.*` remains excluded** (null tenant scope).
 
 ## Related
 

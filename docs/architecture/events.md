@@ -168,8 +168,28 @@ Rules (unchanged from Phase 6):
 | Event family | Reason |
 | ------------ | ------ |
 | `marketplace.*` | Producers emit `tenantId: null` (platform-scoped). Dispatch skips null-tenant events. |
-| `offer.*`, `channel.*`, `price.*` | Already tenant-scoped and low PII, but deferred to keep Phase 7.5 focused on catalog/inventory minimum scope. |
+| `offer.*`, `channel.*`, `price.*` | Implemented in Phase 11 — see below. |
 | `webhook_deliveries` retention | Implemented in Phase 10 — see Phase 6.6 table above. |
+
+## Phase 11 commerce webhook catalog expansion
+
+Phase 11 extends the cumulative external allowlist with offer, channel, and price integration events already produced by commerce modules ([ADR-024](../decisions/ADR-024-phase-11-commerce-webhook-catalog.md)).
+
+| Event type | Producer | Aggregate | PII |
+| ---------- | -------- | --------- | --- |
+| `offer.created` | offers | offer | low |
+| `offer.updated` | offers | offer | low |
+| `offer.status_changed` | offers | offer | low |
+| `channel.created` | channels | channel | low |
+| `channel.updated` | channels | channel | low |
+| `channel.status_changed` | channels | channel | low |
+| `price.created` | pricing | price | low |
+| `price.updated` | pricing | price | low |
+| `price.changed` | pricing | price | low |
+
+Rules unchanged from Phase 6 / 7.5: subscription validation uses `INTEGRATION_EVENT_CATALOG`; dispatch requires non-null `tenantId` on the envelope.
+
+**Still excluded:** `marketplace.*` (null tenant scope).
 
 ## Phase 6.2 webhook persistence
 

@@ -84,6 +84,19 @@ describe('WebhookDispatchService', () => {
         expect(deps.subscriptions.listActiveForEventType).toHaveBeenCalledWith({}, event.tenantId, 'product.created');
     });
 
+    it('dispatches Phase 11 offer events through the existing pipeline', async () => {
+        const event = buildEvent({ type: 'offer.created' });
+        const subscription = buildSubscription({
+            tenantId: event.tenantId,
+            eventTypes: ['offer.created'],
+        });
+        const { service, deps } = createService();
+        deps.subscriptions.listActiveForEventType.mockResolvedValue([subscription]);
+        const result = await service.dispatch(event);
+        expect(result).toEqual({ deliveriesEnsured: 1, jobsEnqueued: 1 });
+        expect(deps.subscriptions.listActiveForEventType).toHaveBeenCalledWith({}, event.tenantId, 'offer.created');
+    });
+
     it('ignores events without tenant scope', async () => {
         const { service, deps } = createService();
         const result = await service.dispatch(buildEvent({ tenantId: null }));
