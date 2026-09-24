@@ -104,7 +104,11 @@ export function wireChannelCatalogSync(deps) {
         pricingService,
         productQueryService,
         marketplaceAdapterRuntimeFactory,
-        registerMarketplaceAdapters: registerMarketplaceCatalogAdapters,
+        registerMarketplaceAdapters: (registry) => registerMarketplaceCatalogAdapters(registry, {
+            amazonLwaTokenUrl: deps.amazonLwaTokenUrl,
+            noonApiBaseUrl: deps.noonApiBaseUrl,
+            noonUserAgent: deps.noonUserAgent,
+        }),
         marketplaceEntityMappingRecorder: createMarketplaceEntityMappingRecorder(),
     });
 }

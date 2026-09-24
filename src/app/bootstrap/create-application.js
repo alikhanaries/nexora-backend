@@ -95,6 +95,9 @@ export async function createApplication(infra) {
         secretEncryptor: identity.auth.secretEncryptor,
         channelQueryService: channels.channelQueryService,
         auditRecorder: audit.auditRecorder,
+        amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
+        noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
+        noonUserAgent: infra.config.marketplace.noonUserAgent,
     });
     const channelRouteDeps = {
         ...channels.useCases,
