@@ -223,6 +223,7 @@ Phase 6.4 implements `WebhookDeliveryService`, registered on the `webhook-delive
 7. Classify HTTP responses:
    - `2xx` → `DELIVERED`
    - retryable (`408`, `425`, `429`, `5xx`, network/timeout) → `FAILED` and BullMQ retry until attempts exhausted
+   - when `Retry-After` is present on a retryable response, the delivery row stores `next_attempt_at` and the job is moved to BullMQ delayed state for that interval (capped by `WEBHOOK_DELIVERY_MAX_RETRY_AFTER_SECONDS`; see [ADR-025](../decisions/ADR-025-phase-12-webhook-retry-after-scheduling.md))
    - permanent `4xx` and redirects (`redirect: manual`) → `DEAD_LETTERED`
 8. After BullMQ attempts are exhausted, mark `DEAD_LETTERED` with bounded `last_error` metadata.
 
@@ -230,6 +231,7 @@ Configuration:
 
 - `WEBHOOK_DELIVERY_TIMEOUT_MS` — hard outbound HTTP timeout (default 10s)
 - `WEBHOOK_DELIVERY_LEASE_SECONDS` — stale `DELIVERING` reclaim lease (default 300s)
+- `WEBHOOK_DELIVERY_MAX_RETRY_AFTER_SECONDS` — upper bound for honouring HTTP `Retry-After` (default 3600s)
 - BullMQ retry/backoff uses existing `QUEUE_DEFAULT_ATTEMPTS` and `QUEUE_BACKOFF_BASE_MS`
 
 Concurrency notes:

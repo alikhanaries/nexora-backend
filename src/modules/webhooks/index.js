@@ -84,6 +84,7 @@ export function createWebhookDeliveryService(deps) {
         config: {
             timeoutMs: deps.config.webhooks.deliveryTimeoutMs,
             leaseSeconds: deps.config.webhooks.deliveryLeaseSeconds,
+            maxRetryAfterSeconds: deps.config.webhooks.deliveryMaxRetryAfterSeconds,
         },
     });
 }

@@ -67,6 +67,12 @@ export class BullMqWorkerRuntime {
                     queue: queueName,
                     attempt: job.attemptsMade + 1,
                     maxAttempts: job.opts.attempts ?? this.config.defaultAttempts,
+                    moveToDelayed: async (delayMs) => {
+                        if (delayMs <= 0) {
+                            return;
+                        }
+                        await job.moveToDelayed(Date.now() + delayMs);
+                    },
                 });
             });
             this.record(queueName, job.name, 'completed', startedAt);

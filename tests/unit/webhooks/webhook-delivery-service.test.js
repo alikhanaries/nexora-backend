@@ -65,7 +65,7 @@ function createService(overrides = {}) {
         logger,
         metrics: undefined,
         ssrfValidator: vi.fn(async (url) => new URL(url)),
-        config: { timeoutMs: 5_000, leaseSeconds: 300 },
+        config: { timeoutMs: 5_000, leaseSeconds: 300, maxRetryAfterSeconds: 3_600 },
         ...overrides,
     };
     return {
@@ -176,6 +176,60 @@ describe('WebhookDeliveryService', () => {
             status: 'DEAD_LETTERED',
             lastError: 'Webhook subscription is not active',
         }), { expectedStatuses: ['PENDING', 'FAILED'] });
+    });
+
+    it('schedules Retry-After on retryable HTTP failures when the header is present', async () => {
+        const job = buildJob();
+        const { service, deps } = createService();
+        const delivery = {
+            id: job.deliveryId,
+            tenantId: job.tenantId,
+            subscriptionId: job.subscriptionId,
+            eventId: job.eventId,
+            eventType: job.eventType,
+            status: 'PENDING',
+            attemptCount: 0,
+            nextAttemptAt: null,
+            lastHttpStatus: null,
+            lastError: null,
+            deliveredAt: null,
+            createdAt: new Date(),
+        };
+        deps.deliveries.findById.mockResolvedValue(delivery);
+        deps.deliveries.claimAttempt.mockResolvedValue({ ...delivery, status: 'DELIVERING', attemptCount: 1 });
+        deps.subscriptions.findById.mockResolvedValue({
+            id: job.subscriptionId,
+            tenantId: job.tenantId,
+            url: 'https://hooks.example.com/nexora',
+            secretCiphertext: 'cipher',
+            status: 'ACTIVE',
+        });
+        deps.outbox.findByIdForTenant.mockResolvedValue({
+            id: job.eventId,
+            type: job.eventType,
+            version: 1,
+            aggregateType: 'order',
+            aggregateId: randomUUID(),
+            tenantId: job.tenantId,
+            payload: {},
+            occurredAt: new Date(),
+            correlationId: null,
+        });
+        deps.httpClient.send.mockResolvedValue({
+            status: 429,
+            headers: { 'retry-after': '120' },
+            body: null,
+            durationMs: 10,
+            ok: false,
+        });
+        await expect(service.deliver(job, buildContext({ attempt: 1, maxAttempts: 5 }))).rejects.toMatchObject({
+            retryDelayMs: 120_000,
+        });
+        expect(deps.deliveries.update).toHaveBeenCalledWith({}, expect.objectContaining({
+            status: 'FAILED',
+            lastHttpStatus: 429,
+            nextAttemptAt: expect.any(Date),
+        }), { expectedStatuses: ['DELIVERING'] });
     });
 
     it('throws a retry error for retryable HTTP failures before max attempts', async () => {

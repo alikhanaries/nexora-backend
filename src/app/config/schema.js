@@ -70,6 +70,7 @@ export const configSchema = z.object({
     HTTP_CLIENT_TIMEOUT_MS: envInteger({ default: 10_000, min: 100, max: 300_000 }),
     WEBHOOK_DELIVERY_TIMEOUT_MS: envInteger({ default: 10_000, min: 100, max: 300_000 }),
     WEBHOOK_DELIVERY_LEASE_SECONDS: envInteger({ default: 300, min: 30, max: 3_600 }),
+    WEBHOOK_DELIVERY_MAX_RETRY_AFTER_SECONDS: envInteger({ default: 3_600, min: 0, max: 86_400 }),
     DOCS_ENABLED: envBoolean(true),
     AUTH_JWT_SECRET: envOptionalString(),
     AUTH_JWT_PRIVATE_KEY: envOptionalString(),

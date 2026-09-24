@@ -4,6 +4,7 @@ import { WebhookSubscriptionStatus } from '../domain/webhook-subscription-status
 import { buildWebhookEventEnvelope } from './build-webhook-event-envelope.js';
 import { classifyWebhookHttpResponse, parseRetryAfterSeconds } from './classify-webhook-http-response.js';
 import { sanitizeWebhookDeliveryError, WebhookDeliveryRetryError } from './webhook-delivery-errors.js';
+import { resolveWebhookRetryDelayMs } from './webhook-delivery-retry-delay.js';
 import {
     signWebhookRequestBody,
     WEBHOOK_DELIVERY_ID_HEADER,
@@ -141,6 +142,7 @@ export class WebhookDeliveryService {
                 await this.handleRetryableFailure(job, delivery, context, {
                     lastHttpStatus: response.status,
                     lastError,
+                    retryAfterSeconds,
                 });
                 return;
             }
@@ -205,11 +207,14 @@ export class WebhookDeliveryService {
     }
     async handleRetryableFailure(job, delivery, context, failure) {
         const exhausted = context.attempt >= context.maxAttempts;
+        const retryDelayMs = resolveWebhookRetryDelayMs(failure.retryAfterSeconds ?? null, this.deps.config.maxRetryAfterSeconds);
+        const nextAttemptAt = retryDelayMs === null ? null : new Date(Date.now() + retryDelayMs);
         await this.deps.database.execute(async (tx) => {
             await this.persistTerminalFailureInTx(tx, delivery, {
                 status: exhausted ? WebhookDeliveryStatus.DEAD_LETTERED : WebhookDeliveryStatus.FAILED,
                 lastError: failure.lastError,
                 lastHttpStatus: failure.lastHttpStatus,
+                nextAttemptAt: exhausted ? null : nextAttemptAt,
             }, [WebhookDeliveryStatus.DELIVERING]);
         }, { tenantId: job.tenantId });
         if (exhausted) {
@@ -235,7 +240,9 @@ export class WebhookDeliveryService {
             attempt: context.attempt,
             maxAttempts: context.maxAttempts,
         }, 'Webhook delivery failed and will be retried');
-        throw new WebhookDeliveryRetryError(failure.lastError);
+        throw new WebhookDeliveryRetryError(failure.lastError, {
+            retryDelayMs: retryDelayMs ?? undefined,
+        });
     }
     async persistSuccess(tenantId, delivery, httpStatus) {
         const applied = await this.deps.database.execute(async (tx) => this.deps.deliveries.update(tx, {
@@ -267,7 +274,7 @@ export class WebhookDeliveryService {
         await this.deps.deliveries.update(tx, {
             ...delivery,
             status: outcome.status,
-            nextAttemptAt: null,
+            nextAttemptAt: outcome.nextAttemptAt ?? null,
             lastHttpStatus: outcome.lastHttpStatus,
             lastError: outcome.lastError,
             deliveredAt: null,
