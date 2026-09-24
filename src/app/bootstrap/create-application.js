@@ -94,6 +94,7 @@ export async function createApplication(infra) {
         queryable: infra.database,
         secretEncryptor: identity.auth.secretEncryptor,
         channelQueryService: channels.channelQueryService,
+        auditRecorder: audit.auditRecorder,
     });
     const channelRouteDeps = {
         ...channels.useCases,

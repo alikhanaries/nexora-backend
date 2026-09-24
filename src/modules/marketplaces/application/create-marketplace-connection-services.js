@@ -10,6 +10,7 @@ import { PostgresMarketplaceRepository } from '../infrastructure/postgres-market
  * @param {object} deps.queryable
  * @param {import('../../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
  * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+ * @param {import('../../audit/public/index.js').AuditRecorderPort} [deps.auditRecorder]
  */
 export function createMarketplaceConnectionServices(deps) {
     const authorization = new DefaultAuthorizationService();
@@ -24,6 +25,7 @@ export function createMarketplaceConnectionServices(deps) {
         adapterRegistry,
         queryable: deps.queryable,
         channelQueryService: deps.channelQueryService,
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
     const commandService = new MarketplaceConnectionCommandService(shared);
     const queryService = new MarketplaceConnectionQueryService({

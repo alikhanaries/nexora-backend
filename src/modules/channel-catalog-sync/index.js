@@ -25,6 +25,7 @@ import { MarketplaceCatalogAdapterRegistry } from './public/marketplace-catalog-
  * @param {import('../products/public/product-query-service.js').DefaultProductQueryService} deps.productQueryService
  * @param {import('../marketplaces/application/marketplace-adapter-runtime-factory.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
  * @param {(registry: MarketplaceCatalogAdapterRegistry) => void} [deps.registerMarketplaceAdapters]
+ * @param {import('./public/marketplace-entity-mapping-recorder.port.js').MarketplaceEntityMappingRecorder} [deps.marketplaceEntityMappingRecorder]
  */
 export function createChannelCatalogSyncModule(deps) {
     const adapterRegistry = new MarketplaceCatalogAdapterRegistry();
@@ -66,6 +67,9 @@ export function createChannelCatalogSyncModule(deps) {
         ...(deps.marketplaceAdapterRuntimeFactory === undefined
             ? {}
             : { marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory }),
+        ...(deps.marketplaceEntityMappingRecorder === undefined
+            ? {}
+            : { marketplaceEntityMappingRecorder: deps.marketplaceEntityMappingRecorder }),
     });
     const enqueueService = new CatalogSyncEnqueueService({
         queue: deps.queue,

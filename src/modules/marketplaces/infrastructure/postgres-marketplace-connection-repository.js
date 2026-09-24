@@ -10,6 +10,9 @@ const rowSchema = z.object({
     credentials_ciphertext: z.string(),
     configuration: z.record(z.unknown()),
     status: z.enum([MarketplaceConnectionStatus.ACTIVE, MarketplaceConnectionStatus.DISABLED]),
+    last_test_at: z.date().nullable(),
+    last_test_outcome: z.enum(['SUCCESS', 'FAILURE']).nullable(),
+    last_test_error: z.string().nullable(),
     created_at: z.date(),
     updated_at: z.date(),
 });
@@ -22,7 +25,7 @@ export class PostgresMarketplaceConnectionRepository {
      */
     async findActiveByChannel(queryable, tenantId, channelId) {
         const result = await queryable.query(`SELECT id, tenant_id, channel_id, marketplace_key, credentials_ciphertext,
-              configuration, status, created_at, updated_at
+              configuration, status, last_test_at, last_test_outcome, last_test_error, created_at, updated_at
        FROM marketplace_connections
        WHERE tenant_id = $1 AND channel_id = $2 AND status = 'ACTIVE'
        ORDER BY updated_at DESC
@@ -65,7 +68,7 @@ export class PostgresMarketplaceConnectionRepository {
      */
     async findByChannel(queryable, tenantId, channelId) {
         const result = await queryable.query(`SELECT id, tenant_id, channel_id, marketplace_key, credentials_ciphertext,
-              configuration, status, created_at, updated_at
+              configuration, status, last_test_at, last_test_outcome, last_test_error, created_at, updated_at
        FROM marketplace_connections
        WHERE tenant_id = $1 AND channel_id = $2
        ORDER BY created_at DESC
@@ -90,4 +93,22 @@ export class PostgresMarketplaceConnectionRepository {
         });
     }
 
+    /**
+     * @param {object} transaction
+     * @param {object} input
+     */
+    async recordConnectionTest(transaction, input) {
+        await transaction.query(`UPDATE marketplace_connections
+       SET last_test_at = now(),
+           last_test_outcome = $4,
+           last_test_error = $5,
+           updated_at = now()
+       WHERE tenant_id = $1 AND channel_id = $2 AND id = $3 AND status = 'ACTIVE'`, [
+            input.tenantId,
+            input.channelId,
+            input.connectionId,
+            input.outcome,
+            input.errorMessage,
+        ], { operation: 'marketplace_connections.record_test' });
+    }
 }

@@ -25,6 +25,7 @@
 | [ADR-027](ADR-027-phase-14-shipment-fulfillment-inventory.md) | Phase 14 Shipment Fulfillment Inventory | Accepted |
 | [ADR-028](ADR-028-phase-15-catalog-sync-architecture.md) | Phase 15 Product, Inventory & Pricing Sync (architecture) | Accepted |
 | [ADR-029](ADR-029-marketplace-connector-framework.md) | Phase 21 Marketplace Connector Framework | Accepted |
+| [ADR-030](ADR-030-marketplace-connection-entity-mapping.md) | Phase 22 Connection & Entity Mapping Foundation | Accepted |
 
 ## Phase roadmap (architecture)
 
@@ -33,6 +34,7 @@
 | 14 | Shipment fulfillment inventory | ADR-027 | **Done** |
 | 15 | Catalog sync architecture | ADR-028 | **Done** (spec) |
 | 16–20 | Outbound catalog sync + reconciliation | ADR-028 §23 | **Done** (Nexora-side; stub adapter) |
-| 21 | Marketplace connectors | ADR-029 | In progress |
+| 21 | Marketplace connectors | ADR-029 | **Done** (branch) |
+| 22 | Connection test metadata + entity mappings | ADR-030 | **Done** (branch) |
 
 Add a new ADR only when a genuine architectural fork exists. Implementation details belong in module READMEs, not ADRs.

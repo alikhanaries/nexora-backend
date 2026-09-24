@@ -17,6 +17,9 @@ export const marketplaceConnectionResponseSchema = z.object({
     marketplaceKey: z.string(),
     configuration: z.record(z.unknown()),
     status: z.enum(['ACTIVE', 'DISABLED']),
+    lastTestAt: z.string().nullable(),
+    lastTestOutcome: z.enum(['SUCCESS', 'FAILURE']).nullable(),
+    lastTestError: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });

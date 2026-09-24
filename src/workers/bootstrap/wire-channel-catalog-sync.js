@@ -7,6 +7,7 @@ import { createChannelCatalogSyncModule } from '../../modules/channel-catalog-sy
 import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
 import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
 import { registerMarketplaceCatalogAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-catalog-adapters.js';
+import { createMarketplaceEntityMappingRecorder } from '../../modules/marketplaces/application/create-marketplace-entity-mapping-recorder.js';
 import { DefaultInventoryService } from '../../modules/inventory/public/index.js';
 import { PostgresInventoryRepository, PostgresStockLocationRepository, } from '../../modules/inventory/infrastructure/index.js';
 import { DefaultProductQueryService } from '../../modules/products/public/index.js';
@@ -102,5 +103,6 @@ export function wireChannelCatalogSync(deps) {
         productQueryService,
         marketplaceAdapterRuntimeFactory,
         registerMarketplaceAdapters: registerMarketplaceCatalogAdapters,
+        marketplaceEntityMappingRecorder: createMarketplaceEntityMappingRecorder(),
     });
 }

@@ -11,6 +11,7 @@ import {
     MarketplaceCatalogAdapterRetryError,
 } from './catalog-sync-adapter-errors.js';
 import { readAvailableQuantityAtLocation } from './read-available-quantity.js';
+import { applyMarketplaceSyncMappings } from './apply-marketplace-sync-mappings.js';
 
 export class SyncChannelInventory {
     deps;
@@ -33,7 +34,7 @@ export class SyncChannelInventory {
      * @param {import('../public/marketplace-catalog-adapter.port.js').MarketplaceCatalogAdapter} input.adapter
      * @param {object} input.tx
      */
-    async execute({ job, channel, marketplace, adapter, adapterRuntime, tx }) {
+    async execute({ job, channel, marketplace, adapter, adapterRuntime, mappingRecorder, tx }) {
         if (channel.tenantId !== job.tenantId) {
             throw new CatalogSyncPermanentError('Channel tenant mismatch', {
                 tenantId: job.tenantId,
@@ -76,6 +77,7 @@ export class SyncChannelInventory {
                 correlationId: job.correlationId,
                 adapter,
                 adapterRuntime,
+                mappingRecorder,
                 tx,
             });
             return;
@@ -93,6 +95,7 @@ export class SyncChannelInventory {
                     correlationId: job.correlationId,
                     adapter,
                     adapterRuntime,
+                    mappingRecorder,
                     tx,
                 });
             }
@@ -137,7 +140,7 @@ export class SyncChannelInventory {
             });
         }
         try {
-            await input.adapter.syncInventory({
+            const syncResult = await input.adapter.syncInventory({
                 tenantId: input.tenantId,
                 channelId: input.channelId,
                 marketplaceKey: input.marketplaceKey,
@@ -148,6 +151,12 @@ export class SyncChannelInventory {
                 sourceEventId: input.sourceEventId,
                 correlationId: input.correlationId,
             }, input.adapterRuntime ?? undefined);
+            await applyMarketplaceSyncMappings(input.mappingRecorder, syncResult, {
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                marketplaceKey: input.marketplaceKey,
+                tx: input.tx,
+            });
         }
         catch (error) {
             if (error instanceof MarketplaceCatalogAdapterRetryError) {
