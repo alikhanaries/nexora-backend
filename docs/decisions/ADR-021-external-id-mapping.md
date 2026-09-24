@@ -177,11 +177,21 @@ Unknown IDs return the existing compatibility not-found/conflict envelope. Compa
 
 ---
 
-## Deferred (Phase 8.5+)
+## Phase 8.5 implementation (completed)
 
-| Phase | Scope |
-| ----- | ----- |
-| **8.5** | Historical backfill for pre-Phase-8.2 resources; full integration verification |
+Historical resources created before Phase 8.2 automatic assignment may lack `compat_v2` mappings. Phase 8.5 adds an **operational backfill** (not an HTTP API) that:
+
+- Iterates **active tenants**, then resource types in order: `order`, `order_line`, `shipment`, `cancellation`, `return`.
+- Discovers unmapped rows with bounded batches (`NOT EXISTS` against `external_integer_id_mappings`) and stable `ORDER BY id` cursors.
+- Assigns IDs through the existing **`ExternalIntegerIdMappingCommandService.assignMapping`** inside per-batch transactions with tenant context (`app.tenant_id` / RLS).
+- Is **idempotent**: reruns create zero new mappings; existing rows and sequence values are not rewritten.
+- Relies on repository **unique constraints** and conflict handling for safe concurrent runs.
+
+**Execution:** `npm run backfill:external-ids` (optional `--tenant-id=<uuid>`). Implementation lives in `src/modules/external-id-mapping/` (`BackfillExternalIntegerIdMappings`, `PostgresExternalIdBackfillQueries`) and `src/app/bootstrap/external-id-backfill-cli.js`.
+
+**Semantics:** Nexora-assigned integers only (same PostgreSQL sequence mechanism as Phase 8.1). No import of legacy ChannelEngine IDs.
+
+After backfill, Phase 8.3 enrichment and Phase 8.4 inbound resolution behave unchanged — historical resources simply gain mappings.
 
 ---
 

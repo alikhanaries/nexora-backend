@@ -90,7 +90,7 @@ Only documented gaps — no speculative contracts.
 
 **Money:** Amounts convert from Nexora integer minor units using ISO 4217 exponents (`shared/money/minorUnitsToDecimal`). Fields labelled `*InclVat` in the external contract are populated from Nexora totals that may not include line-level VAT breakdown — treat as a representation gap until tax modelling matures.
 
-**Identifiers:** External integer `Id` and line `Id` are populated from `external_integer_id_mappings` (`provider = compat_v2`) when mappings exist; omitted for historical resources without mappings. Integer `ChannelId` is not exposed — `ChannelReference` (string) is used. Inbound integer ID resolution (e.g. acknowledge by `OrderId`) remains Phase 8.4.
+**Identifiers:** External integer `Id` and line `Id` are populated from `external_integer_id_mappings` (`provider = compat_v2`) when mappings exist; omitted when no mapping row exists. Historical gaps can be closed with the Phase 8.5 operational backfill (`npm run backfill:external-ids`). Integer `ChannelId` is not exposed — `ChannelReference` (string) is used. Inbound integer ID resolution (e.g. acknowledge by `OrderId`) is implemented in Phase 8.4.
 
 **Product identifiers:** Both `MerchantProductNo` and `ChannelProductNo` map to the order line's snapshotted `merchantSku`. Nexora does not store a separate channel-specific SKU on the line; `product.externalReference` and `offer.externalReference` exist but are not channel-listing SKUs.
 

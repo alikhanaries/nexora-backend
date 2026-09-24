@@ -104,7 +104,10 @@ export async function createApplication(infra) {
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
     });
-    const externalIdMapping = createExternalIdMappingModule({ database: infra.database });
+    const externalIdMapping = createExternalIdMappingModule({
+        database: infra.database,
+        logger: infra.logger,
+    });
     const orders = createOrdersModule({
         database: infra.database,
         productQueryService: products.productQueryService,
