@@ -10,6 +10,7 @@ import {
     MarketplaceCatalogAdapterRetryError,
 } from './catalog-sync-adapter-errors.js';
 import { normalizeExternalCatalogReference } from './catalog-sync-external-reference.js';
+import { applyMarketplaceSyncMappings } from './apply-marketplace-sync-mappings.js';
 export class SyncChannelProduct {
     deps;
 
@@ -25,7 +26,7 @@ export class SyncChannelProduct {
     /**
      * @param {object} input
      */
-    async execute({ job, channel, marketplace, adapter, adapterRuntime, tx }) {
+    async execute({ job, channel, marketplace, adapter, adapterRuntime, mappingRecorder, tx }) {
         if (job.target !== CatalogSyncTarget.PRODUCT) {
             return;
         }
@@ -84,7 +85,7 @@ export class SyncChannelProduct {
                 operation: CatalogSyncOperation.DEACTIVATE,
                 sourceEventId: job.sourceEventId,
                 correlationId: job.correlationId,
-            }, adapterRuntime);
+            }, adapterRuntime, mappingRecorder, tx);
             return;
         }
         await this.invokeAdapter(adapter, {
@@ -102,22 +103,30 @@ export class SyncChannelProduct {
             operation: job.operation,
             sourceEventId: job.sourceEventId,
             correlationId: job.correlationId,
-        }, adapterRuntime);
+        }, adapterRuntime, mappingRecorder, tx);
     }
 
     /**
      * @param {import('../public/marketplace-catalog-adapter.port.js').MarketplaceCatalogAdapter} adapter
      * @param {import('../public/marketplace-catalog-adapter.port.js').MarketplaceProductSyncInput} input
      * @param {import('../public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} adapterRuntime
+     * @param {import('../public/marketplace-entity-mapping-recorder.port.js').MarketplaceEntityMappingRecorder | undefined} mappingRecorder
+     * @param {object} tx
      */
-    async invokeAdapter(adapter, input, adapterRuntime) {
+    async invokeAdapter(adapter, input, adapterRuntime, mappingRecorder, tx) {
         if (typeof adapter.syncProduct !== 'function') {
             throw new CatalogSyncSkippedError('Marketplace adapter does not implement product sync', {
                 marketplaceKey: input.marketplaceKey,
             });
         }
         try {
-            await adapter.syncProduct(input, adapterRuntime ?? undefined);
+            const syncResult = await adapter.syncProduct(input, adapterRuntime ?? undefined);
+            await applyMarketplaceSyncMappings(mappingRecorder, syncResult, {
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                marketplaceKey: input.marketplaceKey,
+                tx,
+            });
         }
         catch (error) {
             if (error instanceof MarketplaceCatalogAdapterRetryError) {

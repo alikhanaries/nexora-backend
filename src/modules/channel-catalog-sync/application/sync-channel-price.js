@@ -8,6 +8,7 @@ import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
 } from './catalog-sync-adapter-errors.js';
+import { applyMarketplaceSyncMappings } from './apply-marketplace-sync-mappings.js';
 export class SyncChannelPrice {
     deps;
 
@@ -29,7 +30,7 @@ export class SyncChannelPrice {
      * @param {import('../public/marketplace-catalog-adapter.port.js').MarketplaceCatalogAdapter} input.adapter
      * @param {object} input.tx
      */
-    async execute({ job, channel, marketplace, adapter, adapterRuntime, tx }) {
+    async execute({ job, channel, marketplace, adapter, adapterRuntime, mappingRecorder, tx }) {
         if (job.target !== CatalogSyncTarget.PRICE) {
             return;
         }
@@ -56,6 +57,7 @@ export class SyncChannelPrice {
             correlationId: job.correlationId,
             adapter,
             adapterRuntime,
+            mappingRecorder,
             tx,
         });
     }
@@ -107,7 +109,7 @@ export class SyncChannelPrice {
             });
         }
         try {
-            await input.adapter.syncPrice({
+            const syncResult = await input.adapter.syncPrice({
                 tenantId: input.tenantId,
                 channelId: input.channelId,
                 marketplaceKey: input.marketplaceKey,
@@ -121,6 +123,12 @@ export class SyncChannelPrice {
                 sourceEventId: input.sourceEventId,
                 correlationId: input.correlationId,
             }, input.adapterRuntime ?? undefined);
+            await applyMarketplaceSyncMappings(input.mappingRecorder, syncResult, {
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                marketplaceKey: input.marketplaceKey,
+                tx: input.tx,
+            });
         }
         catch (error) {
             if (error instanceof MarketplaceCatalogAdapterRetryError) {

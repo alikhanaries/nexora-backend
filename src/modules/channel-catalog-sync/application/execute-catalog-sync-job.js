@@ -28,6 +28,7 @@ export class ExecuteCatalogSyncJob {
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
      * @param {import('../public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
+     * @param {import('../public/marketplace-entity-mapping-recorder.port.js').MarketplaceEntityMappingRecorder} [deps.marketplaceEntityMappingRecorder]
      */
     constructor(deps) {
         this.deps = deps;
@@ -105,6 +106,7 @@ export class ExecuteCatalogSyncJob {
                         marketplace,
                         adapter,
                         adapterRuntime,
+                        mappingRecorder: this.deps.marketplaceEntityMappingRecorder,
                         tx,
                     });
                 }
@@ -115,6 +117,7 @@ export class ExecuteCatalogSyncJob {
                         marketplace,
                         adapter,
                         adapterRuntime,
+                        mappingRecorder: this.deps.marketplaceEntityMappingRecorder,
                         tx,
                     });
                 }
@@ -125,6 +128,7 @@ export class ExecuteCatalogSyncJob {
                         marketplace,
                         adapter,
                         adapterRuntime,
+                        mappingRecorder: this.deps.marketplaceEntityMappingRecorder,
                         tx,
                     });
                 }
@@ -135,6 +139,7 @@ export class ExecuteCatalogSyncJob {
                         marketplace,
                         adapter,
                         adapterRuntime,
+                        mappingRecorder: this.deps.marketplaceEntityMappingRecorder,
                         tx,
                     });
                 }

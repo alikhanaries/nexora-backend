@@ -86,10 +86,10 @@
  * @property {() => MarketplaceCatalogCapabilities} [getCapabilities]
  * @property {(runtime: MarketplaceAdapterRuntime) => Promise<void>} [testConnection]
  * @property {(context: MarketplaceCatalogSyncContext) => Promise<void>} [execute]
- * @property {(input: MarketplaceInventorySyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<void>} [syncInventory]
- * @property {(input: MarketplacePriceSyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<void>} [syncPrice]
- * @property {(input: MarketplaceProductSyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<void>} [syncProduct]
- * @property {(input: MarketplaceOfferSyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<void>} [syncOffer]
+ * @property {(input: MarketplaceInventorySyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<import('./marketplace-entity-mapping-recorder.port.js').MarketplaceCatalogSyncResult>} [syncInventory]
+ * @property {(input: MarketplacePriceSyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<import('./marketplace-entity-mapping-recorder.port.js').MarketplaceCatalogSyncResult>} [syncPrice]
+ * @property {(input: MarketplaceProductSyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<import('./marketplace-entity-mapping-recorder.port.js').MarketplaceCatalogSyncResult>} [syncProduct]
+ * @property {(input: MarketplaceOfferSyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<import('./marketplace-entity-mapping-recorder.port.js').MarketplaceCatalogSyncResult>} [syncOffer]
  */
 
 export const FOUNDATION_STUB_MARKETPLACE_KEY = 'nexora-foundation-stub';

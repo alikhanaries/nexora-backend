@@ -11,6 +11,7 @@ import {
     MarketplaceCatalogAdapterRetryError,
 } from './catalog-sync-adapter-errors.js';
 import { normalizeExternalCatalogReference } from './catalog-sync-external-reference.js';
+import { applyMarketplaceSyncMappings } from './apply-marketplace-sync-mappings.js';
 export class SyncChannelOffer {
     deps;
 
@@ -26,7 +27,7 @@ export class SyncChannelOffer {
     /**
      * @param {object} input
      */
-    async execute({ job, channel, marketplace, adapter, adapterRuntime, tx }) {
+    async execute({ job, channel, marketplace, adapter, adapterRuntime, mappingRecorder, tx }) {
         if (job.target !== CatalogSyncTarget.OFFER) {
             return;
         }
@@ -73,7 +74,7 @@ export class SyncChannelOffer {
             });
         }
         try {
-            await adapter.syncOffer({
+            const syncResult = await adapter.syncOffer({
                 tenantId: job.tenantId,
                 channelId: job.channelId,
                 marketplaceKey: marketplace.key,
@@ -88,6 +89,12 @@ export class SyncChannelOffer {
                 sourceEventId: job.sourceEventId,
                 correlationId: job.correlationId,
             }, adapterRuntime ?? undefined);
+            await applyMarketplaceSyncMappings(mappingRecorder, syncResult, {
+                tenantId: job.tenantId,
+                channelId: job.channelId,
+                marketplaceKey: marketplace.key,
+                tx,
+            });
         }
         catch (error) {
             if (error instanceof MarketplaceCatalogAdapterRetryError) {
