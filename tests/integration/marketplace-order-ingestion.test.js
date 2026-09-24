@@ -222,6 +222,25 @@ describe('marketplace order ingestion integration', () => {
         ]);
         const orderIds = new Set(results.map((r) => r.order.id));
         expect(orderIds.size).toBe(1);
-        expect(results.some((r) => r.outcome === 'created' || r.outcome === 'duplicate')).toBe(true);
+        expect(results.filter((r) => r.outcome === 'created').length).toBe(1);
+        expect(results.filter((r) => r.outcome === 'duplicate').length).toBe(1);
+    });
+
+    it('handles five concurrent deliveries of the same marketplace order', async () => {
+        const { tenantId, slug } = await createTestTenant(server);
+        const user = await createAuthenticatedUser(app, tenantId, slug);
+        const headers = authHeaders(user.accessToken);
+        const fixture = await seedMarketplaceOrderFixture(server, headers);
+        const externalOrderId = `conc5-${Date.now()}`;
+        const order = buildNormalizedOrder(fixture, externalOrderId);
+        const results = await Promise.all(Array.from({ length: 5 }, () => ingestionModule.ingestionService.ingest({
+            tenantId,
+            channelId: fixture.channelId,
+            order,
+        })));
+        const orderIds = new Set(results.map((r) => r.order.id));
+        expect(orderIds.size).toBe(1);
+        expect(results.filter((r) => r.outcome === 'created').length).toBe(1);
+        expect(results.filter((r) => r.outcome === 'duplicate').length).toBe(4);
     });
 });

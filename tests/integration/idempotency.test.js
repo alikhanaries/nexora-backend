@@ -150,6 +150,34 @@ describe('idempotency integration', () => {
         const fulfilled = results.filter((result) => result.status === 'fulfilled');
         const rejected = results.filter((result) => result.status === 'rejected');
         expect(fulfilled.length + rejected.length).toBe(2);
-        expect(rejected.some((result) => result.reason instanceof IdempotentRequestInProgressError)).toBe(true);
+        expect(fulfilled.length).toBe(2);
+        const kinds = fulfilled.map((result) => result.value.kind);
+        expect(kinds.filter((kind) => kind === 'executed').length).toBe(1);
+        expect(kinds.filter((kind) => kind === 'replayed').length).toBe(1);
+    });
+
+    it('rejects duplicate execution while the idempotency record is processing', async () => {
+        const infra = await getTestInfrastructure();
+        const key = {
+            tenantId: null,
+            principalFingerprint: 'anonymous',
+            routeId: 'POST /processing',
+            idempotencyKey: `processing-${Date.now()}`,
+        };
+        const fingerprint = fingerprintRequest({ n: 1 });
+        const expiresAt = new Date(Date.now() + 60_000);
+        await infra.database.query(`INSERT INTO idempotency_records (
+         tenant_id, principal_fingerprint, route_id, idempotency_key,
+         request_fingerprint, status, expires_at
+       ) VALUES ($1, $2, $3, $4, $5, 'processing', $6)`, [
+            key.tenantId,
+            key.principalFingerprint,
+            key.routeId,
+            key.idempotencyKey,
+            fingerprint,
+            expiresAt,
+        ], { operation: 'test.idempotency_seed_processing' });
+        await expect(infra.idempotency.execute(key, fingerprint, async () => 'done', () => ({ statusCode: 200, body: 'done' })))
+            .rejects.toBeInstanceOf(IdempotentRequestInProgressError);
     });
 });
