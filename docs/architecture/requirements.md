@@ -61,7 +61,8 @@ Functional and non-functional requirements for the Nexora Backend **foundation p
 ### FR-10 Observability foundations
 
 - Structured JSON logging (Pino) with field redaction.
-- Prometheus metrics endpoint (when enabled).
+- Prometheus metrics endpoint on the API (`GET /internal/metrics` when enabled).
+- Worker observability HTTP (health + metrics on a dedicated port) — specified in [ADR-026](../decisions/ADR-026-phase-13-worker-observability-http.md); implementation Phase 13.
 - Optional OpenTelemetry tracing with OTLP export.
 - Request ID propagation through request context.
 

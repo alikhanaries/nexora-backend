@@ -8,7 +8,10 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { toErrorMessage } from '../../shared/errors/index.js';
 const NOOP_TRACING = { shutdown: () => Promise.resolve() };
-export function startTracing(config, logger) {
+export function isObservabilityProbePath(url) {
+    return url.startsWith('/health') || url.startsWith('/internal/metrics');
+}
+export function startTracing(config, logger, options = {}) {
     if (!config.observability.tracingEnabled) {
         logger.debug({}, 'Tracing disabled');
         return NOOP_TRACING;
@@ -20,9 +23,10 @@ export function startTracing(config, logger) {
         logger.warn({}, 'Tracing enabled without an OTLP endpoint; skipping');
         return NOOP_TRACING;
     }
+    const serviceName = options.serviceName ?? config.observability.serviceName;
     const sdk = new NodeSDK({
         resource: new Resource({
-            [ATTR_SERVICE_NAME]: config.observability.serviceName,
+            [ATTR_SERVICE_NAME]: serviceName,
             [ATTR_SERVICE_VERSION]: '0.1.0',
             'deployment.environment.name': config.env,
         }),
@@ -32,7 +36,7 @@ export function startTracing(config, logger) {
                 // Probe and scrape traffic would otherwise dominate the trace volume.
                 ignoreIncomingRequestHook: (request) => {
                     const url = request.url ?? '';
-                    return url.startsWith('/health') || url.startsWith('/internal/metrics');
+                    return isObservabilityProbePath(url);
                 },
             }),
             new PgInstrumentation({ enhancedDatabaseReporting: false }),

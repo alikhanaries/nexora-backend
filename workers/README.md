@@ -36,6 +36,10 @@ npm run start:worker
 4. `InboxConsumer` deduplicates integration events per consumer name
 5. Graceful shutdown on SIGTERM/SIGINT via `gracefulShutdown`
 
+## Observability HTTP (Phase 13)
+
+Specification: [ADR-026](../docs/decisions/ADR-026-phase-13-worker-observability-http.md). The worker will expose `GET /health/live`, `GET /health/ready`, and `GET /internal/metrics` on a dedicated port (default `127.0.0.1:3001`), separate from the API. Metrics recorded in-process today (`queue_jobs_total`, webhook delivery, retention, etc.) become scrapeable from the worker target.
+
 ## Queues (Phase 1)
 
 | Queue                | Job                         | Handler                                         |

@@ -17,6 +17,11 @@ export async function gracefulShutdown(targets) {
             await withTimeout(targets.httpServer.close(), remaining(deadline), 'http.close');
         });
     }
+    if (targets.workerObservabilityHttp !== undefined) {
+        await runStep('workerObservabilityHttp.close', async () => {
+            await withTimeout(targets.workerObservabilityHttp.close(), remaining(deadline), 'workerObservabilityHttp.close');
+        });
+    }
     if (targets.outboxPublisher !== undefined) {
         await runStep('outbox.stop', () => targets.outboxPublisher.stop());
     }

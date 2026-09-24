@@ -76,6 +76,12 @@ function toAppConfig(raw) {
             otlpEndpoint: raw.OTEL_EXPORTER_OTLP_ENDPOINT,
             serviceName: raw.OTEL_SERVICE_NAME,
         },
+        workerObservability: {
+            httpEnabled: raw.WORKER_OBSERVABILITY_HTTP_ENABLED,
+            host: raw.WORKER_OBSERVABILITY_HOST,
+            port: raw.WORKER_OBSERVABILITY_PORT,
+            otelServiceName: raw.WORKER_OTEL_SERVICE_NAME ?? `${raw.OTEL_SERVICE_NAME}-worker`,
+        },
         httpClient: {
             timeoutMs: raw.HTTP_CLIENT_TIMEOUT_MS,
         },

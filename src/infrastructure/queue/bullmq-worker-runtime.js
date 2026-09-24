@@ -22,6 +22,9 @@ export class BullMqWorkerRuntime {
         this.metrics = metrics;
         this.logger = logger.child({ component: 'worker-runtime' });
     }
+    hasRegisteredWorkers() {
+        return this.workers.length > 0;
+    }
     /** Starts consuming `queueName`. Handlers must be idempotent. */
     register(queueName, handler) {
         const worker = new Worker(queueName, async (job) => {

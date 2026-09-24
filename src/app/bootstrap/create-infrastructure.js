@@ -19,12 +19,16 @@ import { RedisKeyBuilder } from '../../infrastructure/redis/redis-keys.js';
 import { RedisRateLimiter } from '../../infrastructure/redis/redis-rate-limiter.js';
 import { S3StorageProvider } from '../../infrastructure/storage/s3-storage-provider.js';
 import { noopMetricsRecorder } from '../../shared/metrics/index.js';
-export async function createInfrastructure(config) {
+export async function createInfrastructure(config, options = {}) {
+    const processKind = options.processKind ?? 'api';
+    const metricsServiceName = processKind === 'worker'
+        ? config.workerObservability.otelServiceName
+        : config.observability.serviceName;
     const logger = createPinoLogger(config);
     const metrics = config.observability.metricsEnabled
-        ? new PrometheusMetrics(config.observability.serviceName)
+        ? new PrometheusMetrics(metricsServiceName)
         : noopMetricsRecorder;
-    const tracing = startTracing(config, logger);
+    const tracing = startTracing(config, logger, { serviceName: metricsServiceName });
     const database = new PostgresDatabase({ config: config.database, logger, metrics });
     await database.runMigrations({
         migrationUrl: config.database.migrationUrl,

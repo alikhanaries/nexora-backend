@@ -22,7 +22,7 @@ flowchart LR
 | Component                                  | Role                                                               |
 | ------------------------------------------ | ------------------------------------------------------------------ |
 | **API process** (`src/app/main.ts`)        | HTTP server, readiness probes, metrics, outbox publisher lifecycle |
-| **Worker process** (`src/workers/main.ts`) | BullMQ job handlers, inbox consumer                                |
+| **Worker process** (`src/workers/main.ts`) | BullMQ job handlers, inbox consumer, retention sweeps; Phase 13 adds a dedicated observability HTTP listener (health + metrics) — see [ADR-026](../decisions/ADR-026-phase-13-worker-observability-http.md) |
 | **PostgreSQL**                             | System of record — business data, outbox, inbox, idempotency       |
 | **Redis**                                  | Cache, locks, rate limits, BullMQ backing store                    |
 | **S3 / MinIO**                             | Binary assets, exports, file uploads                               |

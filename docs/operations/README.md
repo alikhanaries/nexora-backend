@@ -42,9 +42,13 @@ Verify:
 
 ```bash
 curl -s http://localhost:3000/health/ready | jq .
+# Worker (Phase 13 — after implementation), default bind:
+curl -s http://127.0.0.1:3001/health/ready | jq .
 ```
 
 ## Health checks
+
+### API (`SERVER_PORT`, default 3000)
 
 | Probe     | Path            | Pass                                     | Fail                         |
 | --------- | --------------- | ---------------------------------------- | ---------------------------- |
@@ -52,6 +56,17 @@ curl -s http://localhost:3000/health/ready | jq .
 | Readiness | `/health/ready` | 200 `{ status: "ready", checks: [...] }` | 503 — dependency unavailable |
 
 Readiness evaluates: database ping, Redis ping, queue connection, storage head-bucket.
+
+### Worker ([ADR-026](../decisions/ADR-026-phase-13-worker-observability-http.md))
+
+Separate process; observability HTTP defaults to `127.0.0.1:3001` (`WORKER_OBSERVABILITY_*`). Same path prefixes as the API:
+
+| Probe     | Path            | Pass                                     | Fail                         |
+| --------- | --------------- | ---------------------------------------- | ---------------------------- |
+| Liveness  | `/health/live`  | 200 `{ status: "ok" }`                   | 503 while shutting down      |
+| Readiness | `/health/ready` | 200 `{ status: "ready", checks: [...] }` | 503 — dependency unavailable |
+
+Worker readiness evaluates: PostgreSQL, Redis, queue connectivity, and registered BullMQ workers — **not** object storage. Do not expose the worker observability port on a public load balancer.
 
 ## Graceful shutdown
 
@@ -67,7 +82,8 @@ Orchestrators should use `terminationGracePeriodSeconds` ≥ shutdown timeout.
 
 When `METRICS_ENABLED=true`:
 
-- Scrape `GET /metrics` (Prometheus text format)
+- API: scrape `GET /internal/metrics` on `SERVER_PORT` (default 3000)
+- Worker (Phase 13): scrape `GET /internal/metrics` on `WORKER_OBSERVABILITY_PORT` (default 3001) — see [ADR-026](../decisions/ADR-026-phase-13-worker-observability-http.md)
 - Local Prometheus config: `infrastructure/observability/prometheus.yml`
 
 Key metrics to watch (as domain modules add instrumentation):
