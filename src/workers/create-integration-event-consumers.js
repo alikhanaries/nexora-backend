@@ -9,6 +9,7 @@ import { WebhookDispatchEnqueueHandler } from './handlers/webhook-dispatch-enque
  * @param {import('../infrastructure/postgres/inbox-repository.js').PostgresInboxRepository} deps.inbox
  * @param {import('../shared/logging/logger.port.js').Logger} deps.logger
  * @param {import('../modules/webhooks/application/webhook-dispatch-service.js').WebhookDispatchService} deps.webhookDispatchService
+ * @param {import('./handlers/catalog-sync-enqueue.handler.js').CatalogSyncEnqueueHandler} [deps.catalogSyncEnqueueHandler]
  */
 export function createIntegrationEventConsumers(deps) {
     const loggingHandler = new LoggingIntegrationEventHandler(deps.logger);
@@ -17,6 +18,9 @@ export function createIntegrationEventConsumers(deps) {
         new InboxConsumer(deps.database, deps.inbox, loggingHandler, deps.logger),
         new InboxConsumer(deps.database, deps.inbox, webhookHandler, deps.logger),
     ];
+    if (deps.catalogSyncEnqueueHandler !== undefined) {
+        consumers.push(new InboxConsumer(deps.database, deps.inbox, deps.catalogSyncEnqueueHandler, deps.logger));
+    }
     const integrationEventRouter = new CompositeIntegrationEventRouter(consumers);
     return {
         integrationEventRouter,

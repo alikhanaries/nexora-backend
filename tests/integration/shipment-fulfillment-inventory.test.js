@@ -174,7 +174,7 @@ describe('shipment fulfillment inventory integration (ADR-027)', () => {
     });
 
     it('fulfills inventory when UpdateShipmentTracking transitions to SHIPPED', async () => {
-        const { tenantId, headers, fixture, order, orderLineId } = await seedTenantWithOrder(2);
+        const { tenantId, headers, fixture, order } = await seedTenantWithOrder(2);
         const merchantShipmentNo = `MSN-TRACK-${Date.now()}`;
         const createRes = await server.inject({
             method: 'POST',
@@ -216,7 +216,7 @@ describe('shipment fulfillment inventory integration (ADR-027)', () => {
     });
 
     it('does not fulfill inventory again when tracking is updated on an already SHIPPED shipment', async () => {
-        const { tenantId, headers, fixture, order, orderLineId } = await seedTenantWithOrder(2);
+        const { tenantId, headers, fixture, order } = await seedTenantWithOrder(2);
         const merchantShipmentNo = `MSN-RETRACK-${Date.now()}`;
         await server.inject({
             method: 'POST',
@@ -258,7 +258,6 @@ describe('shipment fulfillment inventory integration (ADR-027)', () => {
         });
         const lineId = detail.json().data.lines[0].id;
         expect(await saleMovementCount(tenantId, shipmentId, lineId)).toBe(1);
-        expect(orderLineId).toBeDefined();
     });
 
     it('rolls back shipment status when inventory fulfillment fails', async () => {

@@ -18,6 +18,7 @@ describe('queue job handlers', () => {
             workerRuntime,
             integrationEventRouter: { route: vi.fn() },
             webhookDeliveryService,
+            channelCatalogSyncService: { processSyncJob: vi.fn() },
         });
         const handler = handlers.get('webhook-deliveries');
         expect(handler).toBeTypeOf('function');
