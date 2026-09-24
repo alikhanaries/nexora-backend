@@ -184,4 +184,23 @@ export class PostgresInventoryRepository {
        SET status = 'RELEASED', released_at = $2
        WHERE id = $1 AND status = 'ACTIVE'`, [reservationId, releasedAt], { operation: 'inventory.reservations.release' });
     }
+    async updateReservationQuantity(transaction, reservationId, quantity, releasedAt) {
+        if (quantity <= 0) {
+            await this.markReservationReleased(transaction, reservationId, releasedAt);
+            return;
+        }
+        await transaction.query(`UPDATE inventory_reservations
+       SET quantity = $2
+       WHERE id = $1 AND status = 'ACTIVE'`, [reservationId, quantity], { operation: 'inventory.reservations.update_quantity' });
+    }
+    async findMovementByIdempotency(transaction, tenantId, referenceType, referenceId, movementType, idempotencyKey) {
+        const result = await transaction.query(`SELECT id
+       FROM inventory_movements
+       WHERE tenant_id = $1
+         AND reference_type = $2
+         AND reference_id = $3
+         AND movement_type = $4
+         AND idempotency_key = $5`, [tenantId, referenceType, referenceId, movementType, idempotencyKey], { operation: 'inventory.movements.find_by_idempotency' });
+        return result.rows[0]?.id ?? null;
+    }
 }

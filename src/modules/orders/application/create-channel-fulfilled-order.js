@@ -291,6 +291,7 @@ export class CreateChannelFulfilledOrder {
             carrier: shipmentInput.carrier,
             trackingNumber: shipmentInput.trackingNumber,
             skipAuthorization: true,
+            inventoryConsumptionMode: 'record_sale_only',
             transaction: tx,
         });
         const refreshedOrder = await this.deps.orders.findById(tx, input.tenantId, orderId);

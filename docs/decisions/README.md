@@ -22,5 +22,6 @@
 | [ADR-024](ADR-024-phase-11-commerce-webhook-catalog.md) | Phase 11 Commerce Webhook Catalog | Accepted        |
 | [ADR-025](ADR-025-phase-12-webhook-retry-after-scheduling.md) | Phase 12 Webhook Retry-After Scheduling | Accepted |
 | [ADR-026](ADR-026-phase-13-worker-observability-http.md) | Phase 13 Worker Observability HTTP | Accepted |
+| [ADR-027](ADR-027-phase-14-shipment-fulfillment-inventory.md) | Phase 14 Shipment Fulfillment Inventory (spec) | Accepted / implementation pending |
 
 Add a new ADR only when a genuine architectural fork exists. Implementation details belong in module READMEs, not ADRs.

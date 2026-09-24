@@ -134,6 +134,8 @@ export async function createApplication(infra) {
     const shipments = createShipmentsModule({
         database: infra.database,
         orderFulfillmentService: orders.orderFulfillmentService,
+        orderQueryService: orders.orderQueryService,
+        inventoryService: inventory.inventoryService,
         eventRecorder: infra.eventRecorder,
         idempotency: infra.idempotency,
         auditRecorder: audit.auditRecorder,
