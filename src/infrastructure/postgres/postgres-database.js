@@ -94,13 +94,56 @@ export class PostgresDatabase {
     }
     async execute(work, options = {}) {
         this.assertOpen();
-        const tenantId = normaliseTenantId(options.tenantId);
         const client = await this.connect();
+        try {
+            return await this.runTransactionOnClient(client, work, options);
+        }
+        finally {
+            client.release();
+        }
+    }
+
+    /**
+     * Runs work while holding a session-level advisory lock on one connection.
+     * Lock/unlock use the same client so concurrent callers serialize correctly.
+     *
+     * @template T
+     * @param {string} lockKey
+     * @param {(scope: { query: PostgresTransaction['query'], runTransaction: typeof PostgresDatabase.prototype.runTransactionOnClient }) => Promise<T>} work
+     */
+    async withSessionAdvisoryLock(lockKey, work) {
+        this.assertOpen();
+        const client = await this.connect();
+        const lockToken = `session-advisory:${lockKey}`;
+        try {
+            await runQuery(client, 'SELECT pg_advisory_lock(hashtext($1))', [lockToken], { operation: 'postgres.advisory_lock' }, this.metrics);
+            const scope = {
+                query: (sql, parameters = [], options) => runQuery(client, sql, parameters, options, this.metrics),
+                runTransaction: (fn, options) => this.runTransactionOnClient(client, fn, options),
+            };
+            return await work(scope);
+        }
+        finally {
+            try {
+                await runQuery(client, 'SELECT pg_advisory_unlock(hashtext($1))', [lockToken], { operation: 'postgres.advisory_unlock' }, this.metrics);
+            }
+            catch (unlockError) {
+                this.logger.warn({
+                    err: { message: unlockError instanceof Error ? unlockError.message : 'unknown' },
+                }, 'Advisory unlock failed');
+            }
+            client.release();
+        }
+    }
+
+    /**
+     * @param {import('pg').PoolClient} client
+     */
+    async runTransactionOnClient(client, work, options = {}) {
+        const tenantId = normaliseTenantId(options.tenantId);
         try {
             await client.query(buildBeginStatement(options));
             if (tenantId !== null) {
-                // `SET LOCAL` does not accept bind parameters; set_config(..., true)
-                // is the parameterised, transaction-local equivalent.
                 await client.query('SELECT set_config($1, $2, true)', [TENANT_SETTING, tenantId]);
             }
             const result = await work(new PostgresTransaction(client, tenantId, this.metrics));
@@ -110,10 +153,6 @@ export class PostgresDatabase {
         catch (error) {
             await this.rollbackQuietly(client);
             throw mapPostgresError(error, 'transaction');
-        }
-        finally {
-            // Returning the client resets SET LOCAL state along with the transaction.
-            client.release();
         }
     }
     /** Cheap round-trip used by the readiness probe. */

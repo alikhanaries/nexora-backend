@@ -55,6 +55,9 @@ export class CreateChannelOrder {
             throw new BusinessRuleError('Order total cannot be negative');
         }
         const work = async (tx) => {
+            await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+                `channel-order:${input.tenantId}:${input.channelId}:${externalOrderReference}`,
+            ], { operation: 'orders.advisory_channel_external_ref' });
             const existing = await this.deps.orders.findByChannelAndExternalReference(tx, input.tenantId, input.channelId, externalOrderReference);
             if (existing !== null) {
                 return this.resolveExistingChannelOrder(tx, input, existing, resolvedLines, currency, discountMinor, taxMinor, shippingMinor);
@@ -77,7 +80,11 @@ export class CreateChannelOrder {
         const detail = input.transaction !== undefined
             ? await work(input.transaction)
             : await this.deps.database.execute(work, { tenantId: input.tenantId });
-        return { order: detail };
+        const { ingestionOutcome, ...order } = detail;
+        return {
+            order,
+            ingestionOutcome: ingestionOutcome ?? 'created',
+        };
     }
 
     /**
@@ -106,7 +113,10 @@ export class CreateChannelOrder {
                 channelId: input.channelId,
             });
         }
-        return this.toOrderDetail(existing, existingLines, existingCustomer);
+        return {
+            ...this.toOrderDetail(existing, existingLines, existingCustomer),
+            ingestionOutcome: 'duplicate',
+        };
     }
 
     /**
@@ -143,11 +153,15 @@ export class CreateChannelOrder {
             totalMinor: prepared.totalMinor,
             createdAt: now,
         });
+        const insertSavepoint = 'create_channel_order_insert';
+        await tx.query(`SAVEPOINT ${insertSavepoint}`, [], { operation: 'orders.create_channel.savepoint' });
         try {
             await this.deps.orders.insertOrder(tx, order);
+            await tx.query(`RELEASE SAVEPOINT ${insertSavepoint}`, [], { operation: 'orders.create_channel.release_savepoint' });
         }
         catch (error) {
             if (isExternalReferenceUniqueViolation(error)) {
+                await tx.query(`ROLLBACK TO SAVEPOINT ${insertSavepoint}`, [], { operation: 'orders.create_channel.rollback_savepoint' });
                 const raced = await this.deps.orders.lockByChannelAndExternalReferenceForUpdate(tx, input.tenantId, input.channelId, prepared.externalOrderReference);
                 if (raced !== null) {
                     return this.resolveExistingChannelOrder(tx, input, raced, prepared.resolvedLines, prepared.currency, prepared.discountMinor, prepared.taxMinor, prepared.shippingMinor);
@@ -223,6 +237,7 @@ export class CreateChannelOrder {
             ...orderDto,
             lines: orderLines.map(toOrderLineDto),
             customer: toCustomerSnapshotDto(snapshot),
+            ingestionOutcome: 'created',
         };
     }
 

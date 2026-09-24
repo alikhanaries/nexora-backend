@@ -20,6 +20,7 @@ export const noopMetricsRecorder = {
     recordWebhookDelivery: () => undefined,
     recordCatalogSync: () => undefined,
     recordCatalogSyncReconciliation: () => undefined,
+    recordMarketplaceOrderIngestion: () => undefined,
     recordRetentionCleanup: () => undefined,
     setDbPoolConnections: () => undefined,
     render: () => Promise.resolve(''),
