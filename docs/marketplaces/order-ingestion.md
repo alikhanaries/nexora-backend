@@ -1,11 +1,11 @@
-# Marketplace order ingestion architecture (Phase 28)
+# Marketplace order ingestion architecture (Phase 28 + Shopify Phase 29)
 
 ## Flow
 
 ```text
-Marketplace API / Webhook (future)
+Marketplace Admin API / Webhook (future)
         ↓
-Provider order adapter (future per provider)
+Provider order adapter
         ↓
 Normalized marketplace order
         ↓
@@ -52,18 +52,58 @@ Missing mapping → permanent failure (`NotFoundError`), not silent wrong produc
 
 `MarketplaceOrderAdapter` (`marketplace-order-adapter.port.js`):
 
-- `getOrderCapabilities()` — `supportsOrdersInbound`, webhook/poll flags  
-- `fetchOrder` / `normalizeWebhookOrder` — provider-specific (not implemented for Shopify/Amazon/Noon/Namshi in Phase 28)
+- `getOrderCapabilities()` — `supportsOrdersInbound`, webhook/poll flags
+- `fetchOrder` — load one order by external id (requires channel `stockLocationId` on the fetch context)
+- `listOrders` — cursor page of normalized orders (polling)
+- `normalizeWebhookOrder` — future webhook phases
 
-Webhook and polling workers should call `IngestNormalizedMarketplaceOrder` with either a normalized payload or `externalOrderId` + adapter fetch.
+Webhook and polling entrypoints call `IngestNormalizedMarketplaceOrder` or `FetchAndIngestMarketplaceOrders`.
+
+## Shopify order ingestion (Phase 29)
+
+**Scope:** initial order create via Admin GraphQL only. No webhooks, updates, cancellations, returns, refunds, fulfillment, or shipment sync.
+
+### API operations
+
+| Operation | Shopify Admin GraphQL |
+| --------- | --------------------- |
+| Fetch one order | `order(id:)` query |
+| Poll orders | `orders(first, after, query)` query with `pageInfo` cursor pagination |
+
+Page size is clamped to Shopify’s documented `first` limit (1–250). Optional `query` uses Shopify’s [order search syntax](https://shopify.dev/docs/api/admin-graphql/latest/queries/orders#argument-query).
+
+### Connection and authentication
+
+Reuses the existing Shopify marketplace connection (`shopDomain`, `accessToken`, optional `apiVersion`, `shopifyLocationId` for catalog). Order reads use the same encrypted credentials and `ShopifyGraphqlClient` as catalog sync.
+
+**OAuth scopes:** Shopify apps must include permission to read orders (for example `read_orders` on custom apps, or the orders access scope appropriate to your app type). Nexora does not grant scopes automatically; configure them in the Shopify app / token used for the connection.
+
+### Mapping
+
+- **External id:** Shopify order GID (`gid://shopify/Order/...`) is stored as `externalOrderId` (numeric ids are normalized to GID for API calls).
+- **Order number:** Shopify `name` (for example `#1001`) → `externalOrderNumber`.
+- **Status:** From `cancelledAt`, `displayFinancialStatus`, and `displayFulfillmentStatus`. Cancelled / fulfilled orders are normalized but **skipped during polling**; single-order fetch still returns them and ingestion rejects non-ingestible statuses. Refunded / voided / expired financial states are permanent mapping errors.
+- **Lines:** SKU → `merchantSku`; otherwise Shopify variant GID → `marketplaceExternalEntity` type `shopify_product_variant`.
+- **Customer / addresses:** Mapped into the normalized customer snapshot (no extra Shopify customer storage).
+
+### Polling
+
+`FetchAndIngestMarketplaceOrders` loads pages through `listOrders`, skips non-ingestible statuses, and ingests each order via `IngestNormalizedMarketplaceOrder`. `maxPages` defaults to `1` to avoid unbounded loops; callers pass `after` to continue cursors.
+
+No dedicated order-poll queue or cron is added in Phase 29; wire `wireMarketplaceOrderIngestion` registers the Shopify order adapter for workers or future jobs.
+
+### Limitations
+
+- Line items request `lineItems(first: 100)`; orders with more lines need a future pagination pass.
+- Orders already fulfilled or cancelled are not created during poll.
+- Lifecycle changes on Shopify after create are out of scope.
 
 ## Observability
 
 Metric `marketplace_order_ingestion_total` labels: `outcome`, `marketplace`, `operation`. No PII or order IDs in labels.
 
-## Deferred (provider phases)
+## Deferred (later phases)
 
-- Verified provider order APIs and adapters  
-- Inbound webhook routes and signature verification  
-- Order update / cancel / fulfillment sync  
-- Polling schedules and cursors  
+- Inbound webhook routes and signature verification
+- Order update / cancel / fulfillment / shipment sync
+- Scheduled order polling workers

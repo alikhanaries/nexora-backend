@@ -3,6 +3,7 @@ import { PostgresChannelRepository } from '../../modules/channels/infrastructure
 import { PostgresMarketplaceRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../../modules/marketplaces/public/index.js';
 import { PostgresMarketplaceEntityMappingRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-entity-mapping-repository.js';
+import { registerMarketplaceOrderAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-order-adapters.js';
 import { createMarketplaceOrderIngestionModule } from '../../modules/marketplace-order-ingestion/index.js';
 import { DefaultProductQueryService } from '../../modules/products/public/index.js';
 import { PostgresProductRepository } from '../../modules/products/infrastructure/postgres-product-repository.js';
@@ -15,8 +16,13 @@ import { PostgresProductRepository } from '../../modules/products/infrastructure
  * @param {import('../../modules/orders/public/index.js').CreateChannelOrder} deps.createChannelOrder
  * @param {import('../../modules/channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
  * @param {(registry: import('../../modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry) => void} [deps.registerMarketplaceOrderAdapters]
+ * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
  */
 export function wireMarketplaceOrderIngestion(deps) {
+    const registerOrderAdapters = deps.registerMarketplaceOrderAdapters ??
+        ((registry) => registerMarketplaceOrderAdapters(registry, {
+            shopifyAdminApiVersion: deps.shopifyAdminApiVersion,
+        }));
     const channelRepository = new PostgresChannelRepository();
     const channelQueryService = new DefaultChannelQueryService({
         queryable: deps.database,
@@ -58,8 +64,6 @@ export function wireMarketplaceOrderIngestion(deps) {
         ...(deps.marketplaceAdapterRuntimeFactory === undefined
             ? {}
             : { marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory }),
-        ...(deps.registerMarketplaceOrderAdapters === undefined
-            ? {}
-            : { registerMarketplaceOrderAdapters: deps.registerMarketplaceOrderAdapters }),
+        registerMarketplaceOrderAdapters: registerOrderAdapters,
     });
 }
