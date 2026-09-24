@@ -46,7 +46,12 @@ export class MarketplaceHttpClient {
                     body: json ?? text,
                 });
             }
-            return { status: response.status, json, text };
+            return {
+                status: response.status,
+                json,
+                text,
+                headers: readResponseHeaders(response.headers),
+            };
         }
         catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
@@ -60,4 +65,17 @@ export class MarketplaceHttpClient {
             clearTimeout(timer);
         }
     }
+}
+
+/**
+ * @param {Headers} headers
+ * @returns {Record<string, string>}
+ */
+function readResponseHeaders(headers) {
+    /** @type {Record<string, string>} */
+    const out = {};
+    headers.forEach((value, key) => {
+        out[key.toLowerCase()] = value;
+    });
+    return out;
 }

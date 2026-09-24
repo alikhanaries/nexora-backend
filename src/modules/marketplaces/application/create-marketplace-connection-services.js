@@ -11,12 +11,19 @@ import { PostgresMarketplaceRepository } from '../infrastructure/postgres-market
  * @param {import('../../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
  * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
  * @param {import('../../audit/public/index.js').AuditRecorderPort} [deps.auditRecorder]
+ * @param {string | null | undefined} [deps.amazonLwaTokenUrl]
+ * @param {string | null | undefined} [deps.noonApiBaseUrl]
+ * @param {string | null | undefined} [deps.noonUserAgent]
  */
 export function createMarketplaceConnectionServices(deps) {
     const authorization = new DefaultAuthorizationService();
     const connections = new PostgresMarketplaceConnectionRepository();
     const marketplaces = new PostgresMarketplaceRepository();
-    const adapterRegistry = createMarketplaceAdapterRegistry();
+    const adapterRegistry = createMarketplaceAdapterRegistry({
+        amazonLwaTokenUrl: deps.amazonLwaTokenUrl,
+        noonApiBaseUrl: deps.noonApiBaseUrl,
+        noonUserAgent: deps.noonUserAgent,
+    });
     const shared = {
         authorization,
         connections,

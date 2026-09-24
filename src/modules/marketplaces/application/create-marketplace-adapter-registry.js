@@ -2,10 +2,10 @@ import { MarketplaceCatalogAdapterRegistry } from '../../channel-catalog-sync/pu
 import { registerMarketplaceCatalogAdapters } from '../infrastructure/adapters/register-marketplace-catalog-adapters.js';
 
 /**
- * Production adapter registry for API connection tests and worker catalog sync.
+ * @param {{ amazonLwaTokenUrl?: string | null, noonApiBaseUrl?: string | null, noonUserAgent?: string | null }} [deps]
  */
-export function createMarketplaceAdapterRegistry() {
+export function createMarketplaceAdapterRegistry(deps = {}) {
     const registry = new MarketplaceCatalogAdapterRegistry();
-    registerMarketplaceCatalogAdapters(registry);
+    registerMarketplaceCatalogAdapters(registry, deps);
     return registry;
 }

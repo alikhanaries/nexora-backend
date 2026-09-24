@@ -22,7 +22,7 @@ Core commerce modules are unchanged. This module consumes existing integration e
 
 Implement `MarketplaceCatalogAdapter` and register on `MarketplaceCatalogAdapterRegistry` by `marketplaces.key`.
 
-Workers register **`nexora-foundation-stub`** (tests / pipeline verification) plus production adapters via `registerMarketplaceCatalogAdapters`. **`shopify`** (Phase 23) and **`amazon`** (Phase 24) are fully implemented; `noon` and `namshi` remain partial. Unregistered keys still fail with `UnsupportedMarketplaceAdapterError` (non-retrying).
+Workers register **`nexora-foundation-stub`** (tests / pipeline verification) plus production adapters via `registerMarketplaceCatalogAdapters`. **`shopify`** (Phase 23), **`amazon`** (Phase 24), and **`noon`** (Phase 25) are fully implemented for verified catalog operations; `namshi` remains partial. Unregistered keys still fail with `UnsupportedMarketplaceAdapterError` (non-retrying).
 
 At job execution, `MarketplaceAdapterRuntimeFactory` loads the tenant’s encrypted **marketplace connection** for the channel (except the foundation stub). Credentials never appear in queue payloads or integration events.
 
@@ -37,7 +37,7 @@ Inventory jobs (`target = inventory` or `channel_inventory_resync`) run through 
 
 Jobs coalesce per `(tenant, channel, product)`; execution always re-reads current inventory so older queued events cannot publish stale quantities.
 
-Shopify and Amazon adapters implement verified inventory/price HTTP surfaces; Noon and Namshi register the provider boundary and return standardized unsupported/configuration outcomes until partner APIs are verified. The foundation stub remains a no-op for CI.
+Shopify, Amazon, and Noon adapters implement verified inventory/price HTTP surfaces (Noon: stock-update and pricing upsert; see [noon/README.md](../marketplaces/infrastructure/adapters/noon/README.md)). Namshi registers the provider boundary and returns standardized unsupported/configuration outcomes until partner APIs are verified. The foundation stub remains a no-op for CI.
 
 ## Pricing synchronization (Phase 18)
 

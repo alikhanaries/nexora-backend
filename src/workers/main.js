@@ -37,6 +37,9 @@ async function main() {
         catalogSyncReconciliation: config.catalogSyncReconciliation,
         secretEncryptor,
         shopifyAdminApiVersion: config.marketplace.shopifyAdminApiVersion,
+        amazonLwaTokenUrl: config.marketplace.amazonLwaTokenUrl,
+        noonApiBaseUrl: config.marketplace.noonApiBaseUrl,
+        noonUserAgent: config.marketplace.noonUserAgent,
     });
     const catalogSyncReconciliationLockTtlSeconds = Math.max(300, Math.ceil(config.catalogSyncReconciliation.intervalMs / 1_000));
     const catalogSyncReconciliationScheduler = new CatalogSyncReconciliationScheduler(catalogSyncReconciliationService, infra.lock, config.catalogSyncReconciliation, infra.logger, catalogSyncReconciliationLockTtlSeconds);

@@ -116,6 +116,8 @@ function toAppConfig(raw) {
         marketplace: {
             shopifyAdminApiVersion: raw.SHOPIFY_ADMIN_API_VERSION,
             amazonLwaTokenUrl: raw.AMAZON_LWA_TOKEN_URL,
+            noonApiBaseUrl: raw.NOON_API_BASE_URL,
+            noonUserAgent: raw.NOON_USER_AGENT,
         },
     };
 }

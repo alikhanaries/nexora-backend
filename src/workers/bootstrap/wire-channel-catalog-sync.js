@@ -27,6 +27,9 @@ import { PostgresPriceRepository } from '../../modules/pricing/infrastructure/in
  * @param {{ enabled: boolean, offerBatchSize: number, maxJobsPerTick: number }} [deps.catalogSyncReconciliation]
  * @param {import('../../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
  * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
+ * @param {string | null | undefined} [deps.amazonLwaTokenUrl]
+ * @param {string | null | undefined} [deps.noonApiBaseUrl]
+ * @param {string | null | undefined} [deps.noonUserAgent]
  */
 export function wireChannelCatalogSync(deps) {
     const channelRepository = new PostgresChannelRepository();
@@ -104,7 +107,11 @@ export function wireChannelCatalogSync(deps) {
         pricingService,
         productQueryService,
         marketplaceAdapterRuntimeFactory,
-        registerMarketplaceAdapters: registerMarketplaceCatalogAdapters,
+        registerMarketplaceAdapters: (registry) => registerMarketplaceCatalogAdapters(registry, {
+            amazonLwaTokenUrl: deps.amazonLwaTokenUrl,
+            noonApiBaseUrl: deps.noonApiBaseUrl,
+            noonUserAgent: deps.noonUserAgent,
+        }),
         marketplaceEntityMappingRecorder: createMarketplaceEntityMappingRecorder(),
     });
 }
