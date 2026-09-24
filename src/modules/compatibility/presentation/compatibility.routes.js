@@ -166,7 +166,7 @@ const compatibilityRoutes = async (app, deps) => {
                 description: 'Ingests a channel order into Nexora as status NEW with inventory reservation. '
                     + 'Requires channel context from a channel-scoped API key (`api_keys.channel_id`) or the '
                     + 'Nexora Bearer-auth extension header `X-Channel-Reference` (maps to `channels.external_reference`). '
-                    + 'Stock location is resolved from `channels.configurationReference`, which must contain the Nexora stock location UUID. '
+                    + 'Stock location is resolved from `channels.defaultStockLocationId` when set, otherwise from `channels.configurationReference` (legacy UUID convention). '
                     + 'Requires `orders.ingest` permission and `Idempotency-Key`.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: createChannelOrderBodySchema,
@@ -210,7 +210,7 @@ const compatibilityRoutes = async (app, deps) => {
                     + 'auto-creates and ships a shipment, and does not reserve inventory. '
                     + 'Requires channel context from a channel-scoped API key (`api_keys.channel_id`) or the '
                     + 'Nexora Bearer-auth extension header `X-Channel-Reference` (maps to `channels.external_reference`). '
-                    + 'Stock location is resolved from `channels.configurationReference`, which must contain the Nexora stock location UUID. '
+                    + 'Stock location is resolved from `channels.defaultStockLocationId` when set, otherwise from `channels.configurationReference` (legacy UUID convention). '
                     + 'Requires `orders.ingest_channel_fulfilled` permission and `Idempotency-Key`.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: createChannelOrderBodySchema,

@@ -58,11 +58,25 @@ function mapExternalAddressToCore(address) {
 /**
  * Resolves the stock location UUID for channel ingest lines from the channel configuration.
  *
- * Convention: `channels.configurationReference` stores the Nexora stock location UUID.
+ * Prefers `channels.defaultStockLocationId` when set; otherwise falls back to
+ * `configurationReference` storing the Nexora stock location UUID (legacy convention).
  *
  * @param {object} channel
  */
 export function resolveChannelStockLocationId(channel) {
+    const defaultStockLocationId = channel.defaultStockLocationId?.trim?.() ?? channel.defaultStockLocationId;
+    if (defaultStockLocationId !== undefined &&
+        defaultStockLocationId !== null &&
+        String(defaultStockLocationId).length > 0) {
+        const normalized = String(defaultStockLocationId).trim();
+        if (!STOCK_LOCATION_UUID_PATTERN.test(normalized)) {
+            throw new BusinessRuleError('Channel default stock location must be a stock location UUID', {
+                channelId: channel.id,
+                defaultStockLocationId: normalized,
+            });
+        }
+        return normalized;
+    }
     const configurationReference = channel.configurationReference?.trim();
     if (configurationReference === undefined || configurationReference.length === 0) {
         throw new BusinessRuleError('Channel stock location is not configured', {

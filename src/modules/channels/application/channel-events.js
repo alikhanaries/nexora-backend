@@ -11,6 +11,7 @@ function channelPayload(channel) {
         status: channel.status,
         externalReference: channel.externalReference,
         configurationReference: channel.configurationReference,
+        defaultStockLocationId: channel.defaultStockLocationId,
     };
 }
 export function channelCreatedEvent(channel) {

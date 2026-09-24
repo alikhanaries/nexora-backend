@@ -10,7 +10,8 @@ export class UpdateChannel {
         requireChannelUpdate(this.deps.authorization, input.actorPermissions);
         if (input.name === undefined &&
             input.externalReference === undefined &&
-            input.configurationReference === undefined) {
+            input.configurationReference === undefined &&
+            input.defaultStockLocationId === undefined) {
             throw new ValidationError('At least one field must be provided');
         }
         if (input.name !== undefined && input.name.trim().length === 0) {
@@ -32,11 +33,23 @@ export class UpdateChannel {
                 ...(input.configurationReference === undefined
                     ? {}
                     : { configurationReference: input.configurationReference }),
+                ...(input.defaultStockLocationId === undefined
+                    ? {}
+                    : { defaultStockLocationId: input.defaultStockLocationId }),
             }, new Date());
             if (updated.name === existing.name &&
                 updated.externalReference === existing.externalReference &&
-                updated.configurationReference === existing.configurationReference) {
+                updated.configurationReference === existing.configurationReference &&
+                updated.defaultStockLocationId === existing.defaultStockLocationId) {
                 return existing;
+            }
+            if (input.defaultStockLocationId !== undefined &&
+                input.defaultStockLocationId !== null) {
+                await this.deps.inventoryService.verifyUsableStockLocation(
+                    input.tenantId,
+                    input.defaultStockLocationId,
+                    tx,
+                );
             }
             await this.deps.repository.update(tx, updated);
             await this.deps.eventRecorder.record(tx, channelUpdatedEvent(updated));

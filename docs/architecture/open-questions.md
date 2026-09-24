@@ -43,7 +43,7 @@ Unresolved design items tracked across phases. Move to an ADR when decided.
 | OQ-7-04  | Product/line resolution hierarchy? | **Resolved** — SKU-first; public port gaps documented for 7.1 ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
 | OQ-7-05  | Inventory reserve at ingest vs acknowledge? | **Resolved** — reserve at ingest for standard channel; skip for channel-fulfilled ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
 | OQ-7-06  | Channel create response shape? | **Resolved** — mapped external order summary, not Merchant `{Success}` envelope ([ADR-020](../decisions/ADR-020-phase-7-channel-inbound-integration.md)) |
-| OQ-7-07  | Default stock location for channel ingest lines? | **Open** — resolve in 7.2 via configurationReference convention or migration |
+| OQ-7-07  | Default stock location for channel ingest lines? | **Resolved** — `channels.default_stock_location_id` FK with legacy `configurationReference` fallback ([ADR-022](../decisions/ADR-022-phase-9-channel-default-stock-location.md)) |
 
 ## Phase 8 — External integer ID mapping
 

@@ -8,12 +8,14 @@ export const createChannelBodySchema = z.object({
     name: z.string().min(1).max(256),
     externalReference: z.string().max(256).nullable().optional(),
     configurationReference: z.string().max(512).nullable().optional(),
+    defaultStockLocationId: z.string().uuid().nullable().optional(),
 });
 export const updateChannelBodySchema = z
     .object({
     name: z.string().min(1).max(256).optional(),
     externalReference: z.string().max(256).nullable().optional(),
     configurationReference: z.string().max(512).nullable().optional(),
+    defaultStockLocationId: z.string().uuid().nullable().optional(),
     status: z
         .enum([ChannelStatus.ACTIVE, ChannelStatus.INACTIVE, ChannelStatus.SUSPENDED])
         .optional(),
@@ -21,6 +23,7 @@ export const updateChannelBodySchema = z
     .refine((body) => body.name !== undefined ||
     body.externalReference !== undefined ||
     body.configurationReference !== undefined ||
+    body.defaultStockLocationId !== undefined ||
     body.status !== undefined, { message: 'At least one field must be provided' });
 export const listChannelsQuerySchema = z.object({
     status: z
@@ -36,6 +39,7 @@ export const channelResponseSchema = z.object({
     externalReference: z.string().nullable(),
     status: z.enum([ChannelStatus.ACTIVE, ChannelStatus.INACTIVE, ChannelStatus.SUSPENDED]),
     configurationReference: z.string().nullable(),
+    defaultStockLocationId: z.string().uuid().nullable(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
 });

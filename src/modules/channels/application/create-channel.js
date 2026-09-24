@@ -32,9 +32,19 @@ export class CreateChannel {
             ...(input.configurationReference === undefined
                 ? {}
                 : { configurationReference: input.configurationReference }),
+            ...(input.defaultStockLocationId === undefined
+                ? {}
+                : { defaultStockLocationId: input.defaultStockLocationId }),
             createdAt: now,
         });
         await this.deps.database.execute(async (tx) => {
+            if (channel.defaultStockLocationId !== null) {
+                await this.deps.inventoryService.verifyUsableStockLocation(
+                    input.tenantId,
+                    channel.defaultStockLocationId,
+                    tx,
+                );
+            }
             await this.deps.repository.insert(tx, channel);
             await this.deps.eventRecorder.record(tx, channelCreatedEvent(channel));
         }, { tenantId: input.tenantId });
