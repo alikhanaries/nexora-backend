@@ -22,7 +22,7 @@ Core commerce modules are unchanged. This module consumes existing integration e
 
 Implement `MarketplaceCatalogAdapter` and register on `MarketplaceCatalogAdapterRegistry` by `marketplaces.key`.
 
-Workers register **`nexora-foundation-stub`** (tests / pipeline verification) plus production adapters via `registerMarketplaceCatalogAdapters`. **`shopify`** is fully implemented (Phase 23); `amazon`, `noon`, and `namshi` remain partial. Unregistered keys still fail with `UnsupportedMarketplaceAdapterError` (non-retrying).
+Workers register **`nexora-foundation-stub`** (tests / pipeline verification) plus production adapters via `registerMarketplaceCatalogAdapters`. **`shopify`** (Phase 23) and **`amazon`** (Phase 24) are fully implemented; `noon` and `namshi` remain partial. Unregistered keys still fail with `UnsupportedMarketplaceAdapterError` (non-retrying).
 
 At job execution, `MarketplaceAdapterRuntimeFactory` loads the tenant’s encrypted **marketplace connection** for the channel (except the foundation stub). Credentials never appear in queue payloads or integration events.
 
