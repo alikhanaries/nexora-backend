@@ -74,6 +74,9 @@ export class PostgresExternalIntegerIdMappingRepository {
             input.resourceType,
         );
         const mappingId = randomUUID();
+        await transaction.query('SAVEPOINT external_integer_id_mapping_insert', [], {
+            operation: 'external_integer_id_mappings.insert_savepoint',
+        });
         try {
             const result = await transaction.query(
                 `INSERT INTO external_integer_id_mappings (
@@ -83,6 +86,9 @@ export class PostgresExternalIntegerIdMappingRepository {
                 [mappingId, input.tenantId, input.provider, input.resourceType, input.resourceId, externalId],
                 { operation: 'external_integer_id_mappings.insert' },
             );
+            await transaction.query('RELEASE SAVEPOINT external_integer_id_mapping_insert', [], {
+                operation: 'external_integer_id_mappings.release_savepoint',
+            });
             const row = result.rows[0];
             if (row === undefined) {
                 throw new InternalError('Failed to insert external integer ID mapping');
@@ -91,6 +97,9 @@ export class PostgresExternalIntegerIdMappingRepository {
         }
         catch (error) {
             if (error instanceof ConflictError) {
+                await transaction.query('ROLLBACK TO SAVEPOINT external_integer_id_mapping_insert', [], {
+                    operation: 'external_integer_id_mappings.rollback_savepoint',
+                });
                 const raced = await this.#findMappingRowByResourceId(
                     transaction,
                     input.tenantId,
