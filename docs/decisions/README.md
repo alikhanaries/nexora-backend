@@ -40,5 +40,6 @@
 | 24 | Amazon SP-API adapter | ADR-029 | **Done** (branch) |
 | 25 | Noon Partners API adapter | ADR-029 | **Done** (branch) |
 | 26 | Namshi Partners gateway adapter | ADR-029 | **Done** (branch) |
+| 27 | Marketplace adapter hardening | ADR-029 | **Done** (branch) |
 
 Add a new ADR only when a genuine architectural fork exists. Implementation details belong in module READMEs, not ADRs.

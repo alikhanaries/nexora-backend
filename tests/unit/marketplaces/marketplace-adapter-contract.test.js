@@ -5,9 +5,12 @@ import { SHOPIFY_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infra
 import { AMAZON_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-catalog-adapter.js';
 import { NOON_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-catalog-adapter.js';
 import { NAMSHI_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-catalog-adapter.js';
+import { createEmptyMarketplaceCapabilities } from '../../../src/modules/marketplaces/domain/marketplace-capabilities.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
 } from '../../../src/modules/channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+
+const CAPABILITY_KEYS = Object.keys(createEmptyMarketplaceCapabilities());
 
 /**
  * @param {import('../../../src/modules/channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceCatalogAdapter} adapter
@@ -23,8 +26,41 @@ export function runMarketplaceAdapterContractTests(adapter, marketplaceKey) {
                 return;
             }
             const caps = adapter.getCapabilities();
-            expect(typeof caps.supportsInventorySync).toBe('boolean');
-            expect(typeof caps.supportsPriceSync).toBe('boolean');
+            for (const key of CAPABILITY_KEYS) {
+                expect(typeof caps[key]).toBe('boolean');
+            }
+        });
+        it('exposes testConnection when supportsConnectionTest is true', () => {
+            const caps = adapter.getCapabilities?.();
+            if (caps?.supportsConnectionTest !== true) {
+                return;
+            }
+            expect(typeof adapter.testConnection).toBe('function');
+        });
+        it('maps unsupported product sync to permanent adapter error', async () => {
+            if (typeof adapter.syncProduct !== 'function') {
+                return;
+            }
+            const caps = adapter.getCapabilities?.();
+            if (caps?.supportsProductSync) {
+                return;
+            }
+            await expect(adapter.syncProduct({
+                tenantId: '00000000-0000-4000-8000-000000000001',
+                channelId: '00000000-0000-4000-8000-000000000002',
+                marketplaceKey,
+                productId: '00000000-0000-4000-8000-000000000003',
+                merchantSku: 'SKU',
+                productType: 'SIMPLE',
+                productStatus: 'ACTIVE',
+                productExternalReference: null,
+                externalCatalogIdentifier: 'SKU',
+                offerStatus: 'ACTIVE',
+                listingStatus: 'ACTIVE',
+                operation: 'sync',
+                sourceEventId: 'evt',
+                correlationId: null,
+            })).rejects.toBeInstanceOf(MarketplaceCatalogAdapterPermanentError);
         });
         it('maps unsupported inventory sync to permanent adapter error without runtime', async () => {
             if (typeof adapter.syncInventory !== 'function') {

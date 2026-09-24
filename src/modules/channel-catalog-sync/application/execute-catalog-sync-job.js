@@ -1,7 +1,11 @@
-import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
+import { ConflictError, NotFoundError, ValidationError } from '../../../shared/errors/index.js';
 import { parseOrThrow } from '../../../shared/validation/index.js';
 import { ChannelStatus } from '../../channels/public/index.js';
 import { recordCatalogSyncOutcome } from '../../../shared/metrics/record-catalog-sync.js';
+import {
+    MarketplaceCatalogAdapterPermanentError,
+    MarketplaceCatalogAdapterRetryError,
+} from '../public/catalog-sync-adapter-errors.js';
 import {
     CatalogSyncPermanentError,
     CatalogSyncRetryError,
@@ -81,6 +85,7 @@ export class ExecuteCatalogSyncJob {
                         status: marketplace.status,
                     });
                 }
+                metricContext = { marketplaceKey: marketplace.key, operation: job.target };
                 const rateLimit = await this.deps.rateLimiter.consume(job.tenantId, job.channelId);
                 if (!rateLimit.allowed) {
                     recordCatalogSyncOutcome(this.deps.metrics, 'rate_limited', metricContext);
@@ -88,7 +93,6 @@ export class ExecuteCatalogSyncJob {
                         retryDelayMs: Math.max(1, rateLimit.retryAfterSeconds) * 1_000,
                     });
                 }
-                metricContext = { marketplaceKey: marketplace.key, operation: job.target };
                 const adapter = this.deps.adapterRegistry.resolve(marketplace.key);
                 const adapterRuntime = this.deps.marketplaceAdapterRuntimeFactory === undefined
                     ? null
@@ -171,9 +175,23 @@ export class ExecuteCatalogSyncJob {
                 recordCatalogSyncOutcome(this.deps.metrics, 'skipped', ctx);
                 return;
             }
-            if (error instanceof CatalogSyncRetryError) {
+            if (error instanceof CatalogSyncRetryError || error instanceof MarketplaceCatalogAdapterRetryError) {
                 recordCatalogSyncOutcome(this.deps.metrics, 'retryable_failure', ctx);
+                if (error instanceof MarketplaceCatalogAdapterRetryError) {
+                    throw new CatalogSyncRetryError(error.message, {
+                        retryDelayMs: error.retryDelayMs ?? 5_000,
+                    });
+                }
                 throw error;
+            }
+            if (error instanceof MarketplaceCatalogAdapterPermanentError) {
+                recordCatalogSyncOutcome(this.deps.metrics, 'permanent_failure', ctx);
+                this.deps.logger?.warn({
+                    tenantId: job.tenantId,
+                    channelId: job.channelId,
+                    err: error.message,
+                }, 'Catalog sync permanent adapter failure');
+                return;
             }
             if (error instanceof UnsupportedMarketplaceAdapterError) {
                 this.deps.logger?.warn({
@@ -194,6 +212,15 @@ export class ExecuteCatalogSyncJob {
                     channelId: job.channelId,
                     err: error.message,
                 }, 'Catalog sync permanent failure');
+                return;
+            }
+            if (error instanceof ConflictError) {
+                recordCatalogSyncOutcome(this.deps.metrics, 'permanent_failure', ctx);
+                this.deps.logger?.warn({
+                    tenantId: job.tenantId,
+                    channelId: job.channelId,
+                    err: error.message,
+                }, 'Catalog sync conflict');
                 return;
             }
             if (error instanceof ValidationError || error instanceof NotFoundError) {

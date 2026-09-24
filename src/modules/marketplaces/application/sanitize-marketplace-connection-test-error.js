@@ -1,5 +1,5 @@
 const MAX_ERROR_LENGTH = 500;
-const SECRET_PATTERN = /(?:shpat_|sk_live_|sk_test_|access[_-]?token|refresh[_-]?token|api[_-]?key|client[_-]?secret|password|Bearer\s+\S+)/gi;
+const SECRET_PATTERN = /(?:shpat_|sk_live_|sk_test_|Atzr\|[\w|]+|Atza\|[\w|]+|AKIA[A-Z0-9]{8,}|-----BEGIN\s+[A-Z\s]+PRIVATE KEY-----|access[_-]?token|refresh[_-]?token|api[_-]?key|client[_-]?secret|private[_-]?key|password|Bearer\s+\S+|Cookie:\s*\S+)/gi;
 
 /**
  * @param {unknown} error

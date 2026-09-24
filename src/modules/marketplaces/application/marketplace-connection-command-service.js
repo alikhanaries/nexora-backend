@@ -12,6 +12,8 @@ import { sanitizeMarketplaceConnectionTestError } from './sanitize-marketplace-c
 
 import { toMarketplaceConnectionDto } from './marketplace-connection-dto.js';
 
+import { validateMarketplaceConnectionConfiguration } from './validate-marketplace-connection-configuration.js';
+
 
 
 export class MarketplaceConnectionCommandService {
@@ -81,6 +83,8 @@ export class MarketplaceConnectionCommandService {
             }
 
             const marketplaceKey = marketplace.key;
+
+            await validateMarketplaceConnectionConfiguration(input.configuration ?? {});
 
             const credentialsCiphertext = this.deps.secretEncryptor.encrypt(JSON.stringify(input.credentials));
 
@@ -155,6 +159,8 @@ export class MarketplaceConnectionCommandService {
             ? existing.configuration
 
             : { ...existing.configuration, ...input.configuration };
+
+        await validateMarketplaceConnectionConfiguration(configuration);
 
         const credentialsCiphertext = credentials === undefined
 
@@ -396,7 +402,7 @@ export class MarketplaceConnectionCommandService {
 
             }, { tenantId: input.tenantId });
 
-            throw error;
+            throw new ValidationError(sanitized);
 
         }
 

@@ -21,7 +21,10 @@ export class AmazonLwaTokenProvider {
      * @param {string | null | undefined} [deploymentLwaTokenUrl]
      */
     async getAccessToken(runtime, deploymentLwaTokenUrl) {
-        const cacheKey = buildCacheKey(runtime.credentials);
+        const cacheKey = buildCacheKey(runtime.credentials, resolveAmazonLwaTokenUrl(
+            runtime.configuration ?? {},
+            deploymentLwaTokenUrl,
+        ));
         const cached = this.tokenCache.get(cacheKey);
         if (cached !== undefined && cached.expiresAtMs > Date.now() + 60_000) {
             return cached.accessToken;
@@ -58,8 +61,10 @@ export class AmazonLwaTokenProvider {
 /**
  * @param {Record<string, unknown>} credentials
  */
-function buildCacheKey(credentials) {
+function buildCacheKey(credentials, lwaTokenUrl) {
     const { clientId, refreshToken } = readAmazonLwaCredentials(credentials);
-    const digest = createHash('sha256').update(`${clientId}\0${refreshToken}`, 'utf8').digest('hex');
+    const digest = createHash('sha256')
+        .update(`${clientId}\0${refreshToken}\0${lwaTokenUrl}`, 'utf8')
+        .digest('hex');
     return digest;
 }

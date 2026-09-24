@@ -6,6 +6,11 @@ import { ExecuteCatalogSyncJob } from '../../../src/modules/channel-catalog-sync
 import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/channel-catalog-sync/infrastructure/marketplace-catalog-adapter-registry.js';
 import { FOUNDATION_STUB_MARKETPLACE_KEY } from '../../../src/modules/channel-catalog-sync/public/marketplace-catalog-adapter.port.js';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
+import {
+    MarketplaceCatalogAdapterPermanentError,
+    MarketplaceCatalogAdapterRetryError,
+} from '../../../src/modules/channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+import { CatalogSyncRetryError } from '../../../src/modules/channel-catalog-sync/application/catalog-sync-errors.js';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
 const otherTenantId = '99999999-9999-4999-8999-999999999999';
@@ -173,5 +178,23 @@ describe('ExecuteCatalogSyncJob', () => {
         });
         await executor.execute(validPayload({ tenantId: otherTenantId }));
         expect(adapterExecute).not.toHaveBeenCalled();
+    });
+
+    it('does not retry permanent adapter failures from sync handlers', async () => {
+        const syncExecute = vi.fn().mockRejectedValue(new MarketplaceCatalogAdapterPermanentError('bad sku'));
+        const { executor } = createExecutor({
+            syncChannelOffer: { execute: syncExecute },
+        });
+        await expect(executor.execute(validPayload())).resolves.toBeUndefined();
+    });
+
+    it('rethrows catalog retry when sync handler surfaces adapter retry errors', async () => {
+        const syncExecute = vi.fn().mockRejectedValue(new MarketplaceCatalogAdapterRetryError('rate limited', {
+            retryDelayMs: 3_000,
+        }));
+        const { executor } = createExecutor({
+            syncChannelOffer: { execute: syncExecute },
+        });
+        await expect(executor.execute(validPayload())).rejects.toBeInstanceOf(CatalogSyncRetryError);
     });
 });
