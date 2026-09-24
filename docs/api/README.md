@@ -62,6 +62,20 @@ Error (shape from error handler):
 
 Optional Merchant-compatible surface — not required for native Nexora operation. Foundation probe only until endpoints are implemented. See [platform-independence.md](../architecture/platform-independence.md), [compatibility.md](../architecture/compatibility.md), and [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md).
 
+## Marketplace connections (Phase 21–22)
+
+Generic channel-scoped routes (never provider-specific paths). Credentials are accepted on create/patch but **never** returned in responses.
+
+| Method   | Path                                                      |
+| -------- | --------------------------------------------------------- |
+| `POST`   | `/api/v1/channels/:channelId/marketplace-connection`      |
+| `GET`    | `/api/v1/channels/:channelId/marketplace-connection`      |
+| `PATCH`  | `/api/v1/channels/:channelId/marketplace-connection`      |
+| `DELETE` | `/api/v1/channels/:channelId/marketplace-connection`      |
+| `POST`   | `/api/v1/channels/:channelId/marketplace-connection/test` |
+
+Requires `channels.read` / `channels.update`. See [ADR-029](../decisions/ADR-029-marketplace-connector-framework.md).
+
 ## Operations endpoints
 
 Not part of the product API version contract:

@@ -99,6 +99,14 @@ Native Nexora operation must not require external commerce platform configuratio
 
 Removing `src/modules/compatibility/` must not break Nexora core business modules. Core modules must compile and operate without importing compatibility. The composition root registers compatibility as an optional adapter — core factories do not depend on it.
 
+## Marketplace catalog adapters (Phase 21)
+
+Outbound marketplace catalog sync uses **`MarketplaceCatalogAdapter`** implementations registered in the `marketplaces` module (`shopify`, `amazon`, `noon`, `namshi`, …). Core modules (`products`, `offers`, `pricing`, `inventory`, `channel-catalog-sync` orchestration) resolve adapters by `marketplaces.key` only — never with provider-specific branching.
+
+Tenant credentials live in **`marketplace_connections`** (encrypted). Workers load connections at **job execution** via `MarketplaceAdapterRuntimeFactory`; credentials are not stored in BullMQ payloads, domain events, or integration events.
+
+See [ADR-029](../decisions/ADR-029-marketplace-connector-framework.md) and [channel-catalog-sync README](../../src/modules/channel-catalog-sync/README.md).
+
 See [module-boundaries.md](module-boundaries.md) for enforceable dependency rules and [compatibility.md](compatibility.md) for the `/api/v2` boundary.
 
 ## Related

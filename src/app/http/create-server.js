@@ -86,7 +86,7 @@ export async function createHttpServer(deps) {
     await app.register(deps.apiKeys.routes.plugin, deps.apiKeys.routes.options);
     await app.register(deps.mfa.routes.plugin, deps.mfa.routes.options);
     await app.register(deps.marketplaces.routes, deps.marketplaces.useCases);
-    await app.register(deps.channels.routes, deps.channels.useCases);
+    await app.register(deps.channels.routes, deps.channels.routeDeps ?? deps.channels.useCases);
     await app.register(deps.products.routes, deps.products.useCases);
     await app.register(deps.pricing.routes, deps.pricing.useCases);
     await app.register(deps.offers.routes, deps.offers.useCases);

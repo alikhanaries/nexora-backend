@@ -64,7 +64,7 @@ describe('SyncChannelPrice', () => {
             externalCatalogIdentifier: 'MP-SKU-001',
             currency: 'USD',
             amountMinor: 1999,
-        }));
+        }), undefined);
     });
 
     it('skips when no effective price exists', async () => {
@@ -129,6 +129,6 @@ describe('SyncChannelPrice', () => {
         };
         await service.execute({ job: priceJob(), ...ctx });
         await service.execute({ job: priceJob({ sourceEventId: 'later' }), ...ctx });
-        expect(syncPrice).toHaveBeenLastCalledWith(expect.objectContaining({ amountMinor: 1500 }));
+        expect(syncPrice).toHaveBeenLastCalledWith(expect.objectContaining({ amountMinor: 1500 }), undefined);
     });
 });

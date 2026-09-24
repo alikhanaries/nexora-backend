@@ -29,6 +29,28 @@ Keys are normalised with `normalizeMarketplaceKey` (trim + lowercase) and valida
 | List / get      | `marketplaces.read`   | `tenant.admin` |
 | Create / update | `marketplaces.manage` | `tenant.admin` |
 
+## Marketplace connections (Phase 21)
+
+Tenant-scoped credentials live in `marketplace_connections` (encrypted at rest). Manage them through generic channel routes — never provider-specific connect URLs:
+
+| Method   | Path                                                      |
+| -------- | --------------------------------------------------------- |
+| `POST`   | `/api/v1/channels/:channelId/marketplace-connection`      |
+| `GET`    | `/api/v1/channels/:channelId/marketplace-connection`      |
+| `PATCH`  | `/api/v1/channels/:channelId/marketplace-connection`      |
+| `DELETE` | `/api/v1/channels/:channelId/marketplace-connection`      |
+| `POST`   | `/api/v1/channels/:channelId/marketplace-connection/test` |
+
+Requires `channels.read` / `channels.update`. Responses never include ciphertext or secrets.
+
+Catalog adapters live under `infrastructure/adapters/{shopify,amazon,noon,namshi}/` and register on `MarketplaceCatalogAdapterRegistry`. See [ADR-029](../../docs/decisions/ADR-029-marketplace-connector-framework.md).
+
+## Entity mappings (Phase 22)
+
+Outbound sync may persist Nexora ↔ marketplace identifiers in `marketplace_entity_mappings` via `MarketplaceEntityMappingService` / `DefaultMarketplaceEntityMappingRecorder`. Adapters return optional mapping hints from sync methods; `channel-catalog-sync` applies them through the `MarketplaceEntityMappingRecorder` port only.
+
+Connection test outcomes (`lastTestAt`, `lastTestOutcome`, `lastTestError`) are stored on `marketplace_connections` (migration `0046`); errors are sanitized before persistence. Audit events: `MARKETPLACE_CONNECTION_*`. See [ADR-030](../../docs/decisions/ADR-030-marketplace-connection-entity-mapping.md).
+
 ## HTTP API
 
 | Method  | Path                       | Use case                                                            |
