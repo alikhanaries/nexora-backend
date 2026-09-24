@@ -31,6 +31,32 @@ export class DefaultOfferQueryService {
         });
         return offers.map(toOfferDto);
     }
+    /**
+     * Keyset-paginated offers for bounded reconciliation scans.
+     *
+     * @param {string} tenantId
+     * @param {{ channelId?: string, status?: string }} filters
+     * @param {number} limit
+     * @param {{ createdAt: Date, id: string } | null} cursor
+     * @param {object} [tx]
+     */
+    async listOffersPage(tenantId, filters, limit, cursor, tx) {
+        const queryable = tx ?? this.deps.queryable;
+        const page = await this.deps.offers.listPage(
+            queryable,
+            tenantId,
+            filters,
+            limit,
+            cursor?.createdAt ?? null,
+            cursor?.id ?? null,
+        );
+        const items = page.items.map(toOfferDto);
+        const last = items.at(-1);
+        const nextCursor = items.length === limit && last !== undefined
+            ? { createdAt: last.createdAt, id: last.id }
+            : null;
+        return { items, nextCursor };
+    }
     async verifyOfferUsable(tenantId, offerId, tx) {
         const offer = await this.getOfferById(tenantId, offerId, tx);
         if (offer.status !== OfferStatus.ACTIVE) {

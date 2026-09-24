@@ -57,6 +57,10 @@ export const configSchema = z.object({
     WEBHOOK_DELIVERY_RETENTION_DAYS: envInteger({ default: 30, min: 1, max: 3_650 }),
     RETENTION_CLEANUP_BATCH_SIZE: envInteger({ default: 100, min: 1, max: 1_000 }),
     RETENTION_CLEANUP_INTERVAL_MS: envInteger({ default: 3_600_000, min: 60_000, max: 86_400_000 }),
+    CATALOG_SYNC_RECONCILIATION_ENABLED: envBoolean(false),
+    CATALOG_SYNC_RECONCILIATION_INTERVAL_MS: envInteger({ default: 86_400_000, min: 60_000, max: 604_800_000 }),
+    CATALOG_SYNC_RECONCILIATION_OFFER_BATCH_SIZE: envInteger({ default: 50, min: 1, max: 1_000 }),
+    CATALOG_SYNC_RECONCILIATION_MAX_JOBS_PER_TICK: envInteger({ default: 500, min: 1, max: 10_000 }),
     LOG_LEVEL: z
         .string()
         .optional()

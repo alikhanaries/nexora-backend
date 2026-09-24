@@ -4,8 +4,7 @@ import { CatalogSyncTarget } from '../domain/sync-target.js';
 import { isCatalogSyncIntegrationEventType } from './catalog-sync-event-types.js';
 import { resolveProductSyncOperation } from './resolve-product-sync-operation.js';
 
-/**
- * @typedef {object} PlannedCatalogSyncJob
+/** @typedef {object} PlannedCatalogSyncJob
  * @property {string} tenantId
  * @property {string} channelId
  * @property {string} target

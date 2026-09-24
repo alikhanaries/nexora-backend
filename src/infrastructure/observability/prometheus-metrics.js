@@ -159,6 +159,24 @@ export class PrometheusMetrics {
             labelNames: ['outcome'],
             registers: [this.registry],
         });
+        this.catalogSyncReconciliationRunsTotal = new Counter({
+            name: 'channel_catalog_reconciliation_runs_total',
+            help: 'Scheduled catalog sync reconciliation runs by outcome.',
+            labelNames: ['outcome'],
+            registers: [this.registry],
+        });
+        this.catalogSyncReconciliationJobsTotal = new Counter({
+            name: 'channel_catalog_reconciliation_jobs_total',
+            help: 'Jobs planned by catalog sync reconciliation.',
+            labelNames: ['outcome'],
+            registers: [this.registry],
+        });
+        this.catalogSyncReconciliationDuration = new Histogram({
+            name: 'channel_catalog_reconciliation_duration_seconds',
+            help: 'Catalog sync reconciliation run duration in seconds.',
+            buckets: DURATION_BUCKETS,
+            registers: [this.registry],
+        });
     }
     recordHttpRequest(sample) {
         const statusClass = classifyStatus(sample.statusCode);
@@ -217,6 +235,20 @@ export class PrometheusMetrics {
     }
     recordCatalogSync(sample) {
         this.catalogSyncJobsTotal.inc({ outcome: sample.outcome });
+    }
+    recordCatalogSyncReconciliation(sample) {
+        this.catalogSyncReconciliationRunsTotal.inc({ outcome: sample.outcome });
+        if (sample.outcome === 'success') {
+            if (sample.jobsPlanned > 0) {
+                this.catalogSyncReconciliationJobsTotal.inc({ outcome: 'planned' }, sample.jobsPlanned);
+            }
+            if (sample.offersSkipped > 0) {
+                this.catalogSyncReconciliationJobsTotal.inc({ outcome: 'skipped' }, sample.offersSkipped);
+            }
+            if (sample.durationSeconds !== undefined) {
+                this.catalogSyncReconciliationDuration.observe(sample.durationSeconds);
+            }
+        }
     }
     recordRetentionCleanup(sample) {
         if (sample.outcome === 'success') {

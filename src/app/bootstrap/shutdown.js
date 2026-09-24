@@ -28,6 +28,9 @@ export async function gracefulShutdown(targets) {
     if (targets.retentionCleanupScheduler !== undefined) {
         await runStep('retention.stop', () => targets.retentionCleanupScheduler.stop());
     }
+    if (targets.catalogSyncReconciliationScheduler !== undefined) {
+        await runStep('catalogSyncReconciliation.stop', () => targets.catalogSyncReconciliationScheduler.stop());
+    }
     if (targets.workerRuntime !== undefined) {
         await runStep('workers.close', () => targets.workerRuntime.close());
     }

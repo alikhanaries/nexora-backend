@@ -8,6 +8,7 @@ import { describeErrorForLog } from '../shared/errors/index.js';
 import { createIntegrationEventConsumers } from './create-integration-event-consumers.js';
 import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
 import { CatalogSyncEnqueueHandler } from './handlers/catalog-sync-enqueue.handler.js';
+import { CatalogSyncReconciliationScheduler } from '../modules/channel-catalog-sync/application/catalog-sync-reconciliation-scheduler.js';
 import { wireChannelCatalogSync } from './bootstrap/wire-channel-catalog-sync.js';
 import { createWorkerObservabilityHttpServer } from './observability/create-worker-observability-http-server.js';
 async function main() {
@@ -26,13 +27,16 @@ async function main() {
         metrics: infra.metrics,
         config,
     });
-    const { channelCatalogSyncService } = wireChannelCatalogSync({
+    const { channelCatalogSyncService, catalogSyncReconciliationService } = wireChannelCatalogSync({
         database: infra.database,
         queue: infra.queue,
         rateLimiter: infra.rateLimiter,
         metrics: infra.metrics,
         logger: infra.logger,
+        catalogSyncReconciliation: config.catalogSyncReconciliation,
     });
+    const catalogSyncReconciliationLockTtlSeconds = Math.max(300, Math.ceil(config.catalogSyncReconciliation.intervalMs / 1_000));
+    const catalogSyncReconciliationScheduler = new CatalogSyncReconciliationScheduler(catalogSyncReconciliationService, infra.lock, config.catalogSyncReconciliation, infra.logger, catalogSyncReconciliationLockTtlSeconds);
     const catalogSyncEnqueueHandler = new CatalogSyncEnqueueHandler(channelCatalogSyncService);
     const { integrationEventRouter } = createIntegrationEventConsumers({
         database: infra.database,
@@ -70,6 +74,7 @@ async function main() {
         }, 'Worker observability HTTP started');
     }
     infra.retentionCleanupScheduler.start();
+    catalogSyncReconciliationScheduler.start();
     const poolMetricsTimer = setInterval(() => {
         infra.database.reportPoolMetrics();
     }, 5_000);
@@ -86,6 +91,7 @@ async function main() {
             workerObservabilityHttp,
             workerRuntime: infra.workerRuntime,
             retentionCleanupScheduler: infra.retentionCleanupScheduler,
+            catalogSyncReconciliationScheduler,
             queue: infra.queue,
             redis: infra.redis,
             database: infra.database,

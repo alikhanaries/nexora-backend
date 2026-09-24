@@ -72,6 +72,36 @@ No HTTP routes in this phase.
 
 Redis GCRA policy `catalog-sync` scoped per `(tenantId, channelId)` — separate from webhooks and compatibility HTTP.
 
+## Reconciliation (Phase 20)
+
+Secondary **scheduled** path (ADR-028 §16.2). Does not replace integration-event enqueue; it sweeps eligible catalog rows and enqueues the same `channel-catalog-sync` jobs.
+
+```text
+Worker scheduler (optional) → CatalogSyncReconciliationService
+  → plan jobs per active offer on active channel
+  → CatalogSyncEnqueueService.enqueuePlannedJobs (deterministic BullMQ jobId)
+  → existing ExecuteCatalogSyncJob handlers (read current state at execution)
+```
+
+| Resource | Reconciliation behavior |
+| -------- | ------------------------ |
+| Product | `target = product`, `operation = sync` |
+| Offer | `target = offer`, `operation = sync` |
+| Inventory | When channel stock location resolves (ADR-022) |
+| Price | One job per listed currency on the offer channel |
+
+**Eligibility:** tenant-scoped queries (RLS via `database.execute`), **ACTIVE** channels only, **ACTIVE** offers only. Offers without `externalReference` are **skipped** at plan time (same permanent-skip semantics as sync handlers). No marketplace HTTP in the scheduler.
+
+**Batching:** checkpointed scan across tenants → channels → offers (`listOffersPage` keyset). Limits per tick: `CATALOG_SYNC_RECONCILIATION_OFFER_BATCH_SIZE`, `CATALOG_SYNC_RECONCILIATION_MAX_JOBS_PER_TICK`.
+
+**Coalescing:** identical `buildCatalogSyncJobId` as the event-driven path; reconciliation and events share one queue and one rate limiter (`catalog-sync`).
+
+**Configuration:** disabled by default (`CATALOG_SYNC_RECONCILIATION_ENABLED=false`). Interval and batch env vars validated in `config/schema.js`.
+
+**Metrics:** `channel_catalog_reconciliation_runs_total`, `channel_catalog_reconciliation_jobs_total` (planned / skipped), duration histogram.
+
+**Deferred:** marketplace read/compare APIs, `channel_sync_state` / `channel_sync_attempts` tables, inbound drift repair, media/content sync.
+
 ## Persistence
 
-No Phase 16 migrations. Job coalescing uses BullMQ job IDs; inbox deduplicates event fan-out per consumer.
+No Phase 16 migrations. Job coalescing uses BullMQ job IDs; inbox deduplicates event fan-out per consumer. Reconciliation checkpoint state is in-process only (resumes across ticks on the same worker instance).

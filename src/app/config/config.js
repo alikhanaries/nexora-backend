@@ -68,6 +68,12 @@ function toAppConfig(raw) {
             batchSize: raw.RETENTION_CLEANUP_BATCH_SIZE,
             intervalMs: raw.RETENTION_CLEANUP_INTERVAL_MS,
         },
+        catalogSyncReconciliation: {
+            enabled: raw.CATALOG_SYNC_RECONCILIATION_ENABLED,
+            intervalMs: raw.CATALOG_SYNC_RECONCILIATION_INTERVAL_MS,
+            offerBatchSize: raw.CATALOG_SYNC_RECONCILIATION_OFFER_BATCH_SIZE,
+            maxJobsPerTick: raw.CATALOG_SYNC_RECONCILIATION_MAX_JOBS_PER_TICK,
+        },
         observability: {
             logLevel: raw.LOG_LEVEL,
             logPretty: raw.LOG_PRETTY && !isProduction,
