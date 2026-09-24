@@ -8,7 +8,7 @@ import { AuthenticateAccessTokenUseCase } from '../../modules/identity/applicati
 import { createMfaModule } from '../../modules/mfa/index.js';
 import { createChannelsModule } from '../../modules/channels/index.js';
 import { createInventoryModule } from '../../modules/inventory/index.js';
-import { createMarketplacesModule, } from '../../modules/marketplaces/index.js';
+import { createMarketplacesModule, createMarketplaceConnectionServices, } from '../../modules/marketplaces/index.js';
 import { createOffersModule } from '../../modules/offers/index.js';
 import { createOrdersModule } from '../../modules/orders/index.js';
 import { createCancellationsModule, } from '../../modules/cancellations/index.js';
@@ -90,6 +90,29 @@ export async function createApplication(infra) {
         inventoryService: inventory.inventoryService,
         auditRecorder: audit.auditRecorder,
     });
+    const marketplaceConnections = createMarketplaceConnectionServices({
+        queryable: infra.database,
+        secretEncryptor: identity.auth.secretEncryptor,
+        channelQueryService: channels.channelQueryService,
+    });
+    const channelRouteDeps = {
+        ...channels.useCases,
+        upsertMarketplaceConnection: {
+            execute: (input) => marketplaceConnections.commandService.upsertMarketplaceConnection(input),
+        },
+        getMarketplaceConnection: {
+            execute: (input) => marketplaceConnections.queryService.getMarketplaceConnection(input),
+        },
+        patchMarketplaceConnection: {
+            execute: (input) => marketplaceConnections.commandService.patchMarketplaceConnection(input),
+        },
+        deleteMarketplaceConnection: {
+            execute: (input) => marketplaceConnections.commandService.deleteMarketplaceConnection(input),
+        },
+        testMarketplaceConnection: {
+            execute: (input) => marketplaceConnections.commandService.testMarketplaceConnection(input),
+        },
+    };
     const pricing = createPricingModule({
         database: infra.database,
         productQueryService: products.productQueryService,
@@ -194,7 +217,7 @@ export async function createApplication(infra) {
         apiKeys,
         mfa,
         marketplaces,
-        channels,
+        channels: { ...channels, routeDeps: channelRouteDeps },
         products,
         pricing,
         offers,
@@ -216,7 +239,7 @@ export async function createApplication(infra) {
         apiKeys,
         mfa,
         marketplaces,
-        channels,
+        channels: { ...channels, routeDeps: channelRouteDeps },
         products,
         pricing,
         offers,

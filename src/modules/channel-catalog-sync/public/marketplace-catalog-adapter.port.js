@@ -68,13 +68,28 @@
  * @property {string} sourceEventId
  * @property {string|null} correlationId
  *
+ * @typedef {import('./marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} MarketplaceAdapterRuntime
+ *
+ * @typedef {object} MarketplaceCatalogCapabilities
+ * @property {boolean} supportsProductSync
+ * @property {boolean} supportsOfferSync
+ * @property {boolean} supportsInventorySync
+ * @property {boolean} supportsPriceSync
+ * @property {boolean} supportsActivation
+ * @property {boolean} supportsDeactivation
+ * @property {boolean} supportsConnectionTest
+ * @property {boolean} supportsInboundCatalog
+ * @property {boolean} supportsOrdersInbound
+ *
  * @typedef {object} MarketplaceCatalogAdapter
  * @property {string} marketplaceKey
+ * @property {() => MarketplaceCatalogCapabilities} [getCapabilities]
+ * @property {(runtime: MarketplaceAdapterRuntime) => Promise<void>} [testConnection]
  * @property {(context: MarketplaceCatalogSyncContext) => Promise<void>} [execute]
- * @property {(input: MarketplaceInventorySyncInput) => Promise<void>} [syncInventory]
- * @property {(input: MarketplacePriceSyncInput) => Promise<void>} [syncPrice]
- * @property {(input: MarketplaceProductSyncInput) => Promise<void>} [syncProduct]
- * @property {(input: MarketplaceOfferSyncInput) => Promise<void>} [syncOffer]
+ * @property {(input: MarketplaceInventorySyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<void>} [syncInventory]
+ * @property {(input: MarketplacePriceSyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<void>} [syncPrice]
+ * @property {(input: MarketplaceProductSyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<void>} [syncProduct]
+ * @property {(input: MarketplaceOfferSyncInput, runtime?: MarketplaceAdapterRuntime) => Promise<void>} [syncOffer]
  */
 
 export const FOUNDATION_STUB_MARKETPLACE_KEY = 'nexora-foundation-stub';

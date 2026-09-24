@@ -83,7 +83,7 @@ describe('SyncChannelInventory', () => {
             externalCatalogIdentifier: 'MP-SKU-001',
             availableQuantity: 80,
             stockLocationId,
-        }));
+        }), undefined);
     });
 
     it('uses legacy configurationReference when default stock location is unset', async () => {
@@ -101,7 +101,7 @@ describe('SyncChannelInventory', () => {
             adapter: { syncInventory },
             tx: {},
         });
-        expect(syncInventory).toHaveBeenCalledWith(expect.objectContaining({ stockLocationId }));
+        expect(syncInventory).toHaveBeenCalledWith(expect.objectContaining({ stockLocationId }), undefined);
     });
 
     it('skips when stock location is not configured', async () => {
@@ -209,6 +209,6 @@ describe('SyncChannelInventory', () => {
             adapter,
             tx: {},
         });
-        expect(syncInventory).toHaveBeenLastCalledWith(expect.objectContaining({ availableQuantity: 15 }));
+        expect(syncInventory).toHaveBeenLastCalledWith(expect.objectContaining({ availableQuantity: 15 }), undefined);
     });
 });

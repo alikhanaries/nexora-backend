@@ -2,6 +2,13 @@ import { requireActorContext } from '../../../shared/context/require-principal.j
 import { ChannelStatus } from '../domain/channel-status.js';
 import { toChannelResponse } from './channel.mapper.js';
 import { channelIdParamsSchema, channelListSuccessResponseSchema, channelSuccessResponseSchema, createChannelBodySchema, listChannelsQuerySchema, updateChannelBodySchema, } from './channel.schemas.js';
+import {
+    marketplaceConnectionBodySchema,
+    marketplaceConnectionDeleteSuccessResponseSchema,
+    marketplaceConnectionPatchBodySchema,
+    marketplaceConnectionSuccessResponseSchema,
+    marketplaceConnectionTestSuccessResponseSchema,
+} from './marketplace-connection.schemas.js';
 const channelRoutes = async (app, deps) => {
     const typed = app.withTypeProvider();
     typed.get('/api/v1/channels', {
@@ -152,6 +159,113 @@ const channelRoutes = async (app, deps) => {
             success: true,
             data: toChannelResponse(channel),
         };
+    });
+    typed.post('/api/v1/channels/:channelId/marketplace-connection', {
+        schema: {
+            tags: ['Channels'],
+            summary: 'Create or replace the marketplace connection for a channel',
+            params: channelIdParamsSchema,
+            body: marketplaceConnectionBodySchema,
+            response: {
+                201: marketplaceConnectionSuccessResponseSchema,
+            },
+        },
+    }, async (request, reply) => {
+        const actor = requireActorContext();
+        const { connection } = await deps.upsertMarketplaceConnection.execute({
+            tenantId: actor.tenantId,
+            actorPermissions: actor.permissions,
+            actorId: actor.userId ?? actor.tenantId,
+            channelId: request.params.channelId,
+            credentials: request.body.credentials,
+            ...(request.body.configuration === undefined
+                ? {}
+                : { configuration: request.body.configuration }),
+        });
+        void reply.status(201);
+        return { success: true, data: connection };
+    });
+    typed.get('/api/v1/channels/:channelId/marketplace-connection', {
+        schema: {
+            tags: ['Channels'],
+            summary: 'Get the active marketplace connection for a channel',
+            params: channelIdParamsSchema,
+            response: {
+                200: marketplaceConnectionSuccessResponseSchema,
+            },
+        },
+    }, async (request) => {
+        const actor = requireActorContext();
+        const { connection } = await deps.getMarketplaceConnection.execute({
+            tenantId: actor.tenantId,
+            actorPermissions: actor.permissions,
+            channelId: request.params.channelId,
+        });
+        return { success: true, data: connection };
+    });
+    typed.patch('/api/v1/channels/:channelId/marketplace-connection', {
+        schema: {
+            tags: ['Channels'],
+            summary: 'Update marketplace connection configuration or credentials',
+            params: channelIdParamsSchema,
+            body: marketplaceConnectionPatchBodySchema,
+            response: {
+                200: marketplaceConnectionSuccessResponseSchema,
+            },
+        },
+    }, async (request) => {
+        const actor = requireActorContext();
+        const { connection } = await deps.patchMarketplaceConnection.execute({
+            tenantId: actor.tenantId,
+            actorPermissions: actor.permissions,
+            actorId: actor.userId ?? actor.tenantId,
+            channelId: request.params.channelId,
+            ...(request.body.credentials === undefined
+                ? {}
+                : { credentials: request.body.credentials }),
+            ...(request.body.configuration === undefined
+                ? {}
+                : { configuration: request.body.configuration }),
+        });
+        return { success: true, data: connection };
+    });
+    typed.delete('/api/v1/channels/:channelId/marketplace-connection', {
+        schema: {
+            tags: ['Channels'],
+            summary: 'Disable the marketplace connection for a channel',
+            params: channelIdParamsSchema,
+            response: {
+                200: marketplaceConnectionDeleteSuccessResponseSchema,
+            },
+        },
+    }, async (request) => {
+        const actor = requireActorContext();
+        await deps.deleteMarketplaceConnection.execute({
+            tenantId: actor.tenantId,
+            actorPermissions: actor.permissions,
+            actorId: actor.userId ?? actor.tenantId,
+            channelId: request.params.channelId,
+        });
+        return { success: true };
+    });
+    typed.post('/api/v1/channels/:channelId/marketplace-connection/test', {
+        schema: {
+            tags: ['Channels'],
+            summary: 'Verify marketplace connection credentials and connectivity',
+            params: channelIdParamsSchema,
+            response: {
+                200: marketplaceConnectionTestSuccessResponseSchema,
+            },
+        },
+    }, async (request) => {
+        const actor = requireActorContext();
+        await deps.testMarketplaceConnection.execute({
+            tenantId: actor.tenantId,
+            actorPermissions: actor.permissions,
+            actorId: actor.userId ?? actor.tenantId,
+            channelId: request.params.channelId,
+        });
+        return { success: true };
     });
     await Promise.resolve();
 };

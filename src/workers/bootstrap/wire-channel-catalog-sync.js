@@ -4,6 +4,9 @@ import { DefaultOfferQueryService } from '../../modules/offers/public/offer-quer
 import { PostgresOfferRepository } from '../../modules/offers/infrastructure/postgres-offer-repository.js';
 import { PostgresMarketplaceRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
 import { createChannelCatalogSyncModule } from '../../modules/channel-catalog-sync/index.js';
+import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
+import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
+import { registerMarketplaceCatalogAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-catalog-adapters.js';
 import { DefaultInventoryService } from '../../modules/inventory/public/index.js';
 import { PostgresInventoryRepository, PostgresStockLocationRepository, } from '../../modules/inventory/infrastructure/index.js';
 import { DefaultProductQueryService } from '../../modules/products/public/index.js';
@@ -21,6 +24,7 @@ import { PostgresPriceRepository } from '../../modules/pricing/infrastructure/in
  * @param {import('../../shared/metrics/metrics-recorder.js').MetricsRecorder} deps.metrics
  * @param {import('../../shared/logging/logger.port.js').Logger} deps.logger
  * @param {{ enabled: boolean, offerBatchSize: number, maxJobsPerTick: number }} [deps.catalogSyncReconciliation]
+ * @param {import('../../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
  */
 export function wireChannelCatalogSync(deps) {
     const channelRepository = new PostgresChannelRepository();
@@ -78,6 +82,12 @@ export function wireChannelCatalogSync(deps) {
         channelQueryService,
         eventRecorder: noopEventRecorder,
     });
+    const marketplaceConnections = new PostgresMarketplaceConnectionRepository();
+    const marketplaceAdapterRuntimeFactory = new MarketplaceAdapterRuntimeFactory({
+        connections: marketplaceConnections,
+        secretEncryptor: deps.secretEncryptor,
+        queryable: deps.database,
+    });
     return createChannelCatalogSyncModule({
         database: deps.database,
         queue: deps.queue,
@@ -90,5 +100,7 @@ export function wireChannelCatalogSync(deps) {
         inventoryService,
         pricingService,
         productQueryService,
+        marketplaceAdapterRuntimeFactory,
+        registerMarketplaceAdapters: registerMarketplaceCatalogAdapters,
     });
 }

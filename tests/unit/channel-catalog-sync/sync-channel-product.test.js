@@ -48,7 +48,7 @@ describe('SyncChannelProduct', () => {
             merchantSku: 'SKU-1',
             externalCatalogIdentifier: 'MP-LISTING-1',
             productExternalReference: 'PROD-EXT',
-        }));
+        }), undefined);
     });
 
     it('uses current product title state on repeated execution', async () => {
@@ -97,6 +97,6 @@ describe('SyncChannelProduct', () => {
         };
         await service.execute({ job, ...ctx });
         await service.execute({ job, ...ctx });
-        expect(syncProduct).toHaveBeenLastCalledWith(expect.objectContaining({ merchantSku: 'SKU-NEW' }));
+        expect(syncProduct).toHaveBeenLastCalledWith(expect.objectContaining({ merchantSku: 'SKU-NEW' }), undefined);
     });
 });

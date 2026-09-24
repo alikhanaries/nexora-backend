@@ -8,7 +8,7 @@ import { SyncChannelPrice } from './application/sync-channel-price.js';
 import { SyncChannelProduct } from './application/sync-channel-product.js';
 import { SyncChannelOffer } from './application/sync-channel-offer.js';
 import { FoundationStubMarketplaceCatalogAdapter } from './infrastructure/foundation-stub-marketplace-catalog-adapter.js';
-import { MarketplaceCatalogAdapterRegistry } from './infrastructure/marketplace-catalog-adapter-registry.js';
+import { MarketplaceCatalogAdapterRegistry } from './public/marketplace-catalog-adapter-registry.js';
 
 /**
  * @param {object} deps
@@ -23,10 +23,13 @@ import { MarketplaceCatalogAdapterRegistry } from './infrastructure/marketplace-
  * @param {import('../inventory/public/inventory-service.js').DefaultInventoryService} deps.inventoryService
  * @param {import('../pricing/public/pricing-service.js').DefaultPricingService} deps.pricingService
  * @param {import('../products/public/product-query-service.js').DefaultProductQueryService} deps.productQueryService
+ * @param {import('../marketplaces/application/marketplace-adapter-runtime-factory.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
+ * @param {(registry: MarketplaceCatalogAdapterRegistry) => void} [deps.registerMarketplaceAdapters]
  */
 export function createChannelCatalogSyncModule(deps) {
     const adapterRegistry = new MarketplaceCatalogAdapterRegistry();
     adapterRegistry.register(new FoundationStubMarketplaceCatalogAdapter());
+    deps.registerMarketplaceAdapters?.(adapterRegistry);
     const catalogSyncRateLimiter = new ChannelCatalogSyncRateLimiter({
         rateLimiter: deps.rateLimiter,
     });
@@ -60,6 +63,9 @@ export function createChannelCatalogSyncModule(deps) {
         syncChannelOffer,
         metrics: deps.metrics,
         logger: deps.logger,
+        ...(deps.marketplaceAdapterRuntimeFactory === undefined
+            ? {}
+            : { marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory }),
     });
     const enqueueService = new CatalogSyncEnqueueService({
         queue: deps.queue,

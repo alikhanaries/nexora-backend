@@ -22,7 +22,9 @@ Core commerce modules are unchanged. This module consumes existing integration e
 
 Implement `MarketplaceCatalogAdapter` and register on `MarketplaceCatalogAdapterRegistry` by `marketplaces.key`.
 
-Phase 16 ships **`nexora-foundation-stub`** only (no HTTP). Other keys fail with `UnsupportedMarketplaceAdapterError` (non-retrying).
+Workers register **`nexora-foundation-stub`** (tests / pipeline verification) plus production adapters (`shopify`, `amazon`, `noon`, `namshi`) via `registerMarketplaceCatalogAdapters`. Unregistered keys still fail with `UnsupportedMarketplaceAdapterError` (non-retrying).
+
+At job execution, `MarketplaceAdapterRuntimeFactory` loads the tenant’s encrypted **marketplace connection** for the channel (except the foundation stub). Credentials never appear in queue payloads or integration events.
 
 ## Inventory synchronization (Phase 17)
 
@@ -35,7 +37,7 @@ Inventory jobs (`target = inventory` or `channel_inventory_resync`) run through 
 
 Jobs coalesce per `(tenant, channel, product)`; execution always re-reads current inventory so older queued events cannot publish stale quantities.
 
-No real marketplace HTTP adapter exists in the repository yet — the foundation stub implements `syncInventory` as a no-op. A future adapter registers on `marketplaces.key` and maps `externalCatalogIdentifier` + `availableQuantity` to the marketplace API inside the adapter only.
+Shopify and Amazon adapters implement verified inventory/price HTTP surfaces; Noon and Namshi register the provider boundary and return standardized unsupported/configuration outcomes until partner APIs are verified. The foundation stub remains a no-op for CI.
 
 ## Pricing synchronization (Phase 18)
 

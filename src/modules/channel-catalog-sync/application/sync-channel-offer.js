@@ -11,7 +11,6 @@ import {
     MarketplaceCatalogAdapterRetryError,
 } from './catalog-sync-adapter-errors.js';
 import { normalizeExternalCatalogReference } from './catalog-sync-external-reference.js';
-
 export class SyncChannelOffer {
     deps;
 
@@ -27,7 +26,7 @@ export class SyncChannelOffer {
     /**
      * @param {object} input
      */
-    async execute({ job, channel, marketplace, adapter, tx }) {
+    async execute({ job, channel, marketplace, adapter, adapterRuntime, tx }) {
         if (job.target !== CatalogSyncTarget.OFFER) {
             return;
         }
@@ -88,7 +87,7 @@ export class SyncChannelOffer {
                 operation,
                 sourceEventId: job.sourceEventId,
                 correlationId: job.correlationId,
-            });
+            }, adapterRuntime ?? undefined);
         }
         catch (error) {
             if (error instanceof MarketplaceCatalogAdapterRetryError) {

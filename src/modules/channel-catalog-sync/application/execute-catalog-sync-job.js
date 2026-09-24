@@ -27,6 +27,7 @@ export class ExecuteCatalogSyncJob {
      * @param {import('./sync-channel-offer.js').SyncChannelOffer} deps.syncChannelOffer
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
+     * @param {import('../public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
      */
     constructor(deps) {
         this.deps = deps;
@@ -47,7 +48,11 @@ export class ExecuteCatalogSyncJob {
             }, 'Catalog sync job payload rejected');
             return;
         }
-        recordCatalogSyncOutcome(this.deps.metrics, 'received');
+        recordCatalogSyncOutcome(this.deps.metrics, 'received', {
+            operation: job.target,
+        });
+        /** @type {{ marketplaceKey: string, operation: string } | undefined} */
+        let metricContext;
         try {
             await this.deps.database.execute(async (tx) => {
                 const channel = await this.deps.channelQueryService.getChannelById(job.tenantId, job.channelId);
@@ -77,12 +82,21 @@ export class ExecuteCatalogSyncJob {
                 }
                 const rateLimit = await this.deps.rateLimiter.consume(job.tenantId, job.channelId);
                 if (!rateLimit.allowed) {
-                    recordCatalogSyncOutcome(this.deps.metrics, 'rate_limited');
+                    recordCatalogSyncOutcome(this.deps.metrics, 'rate_limited', metricContext);
                     throw new CatalogSyncRetryError('Catalog sync rate limit exceeded', {
                         retryDelayMs: Math.max(1, rateLimit.retryAfterSeconds) * 1_000,
                     });
                 }
+                metricContext = { marketplaceKey: marketplace.key, operation: job.target };
                 const adapter = this.deps.adapterRegistry.resolve(marketplace.key);
+                const adapterRuntime = this.deps.marketplaceAdapterRuntimeFactory === undefined
+                    ? null
+                    : await this.deps.marketplaceAdapterRuntimeFactory.createForSync({
+                        tenantId: job.tenantId,
+                        channelId: job.channelId,
+                        marketplaceKey: marketplace.key,
+                        tx,
+                    });
                 if (job.target === CatalogSyncTarget.INVENTORY ||
                     job.target === CatalogSyncTarget.CHANNEL_INVENTORY_RESYNC) {
                     await this.deps.syncChannelInventory.execute({
@@ -90,6 +104,7 @@ export class ExecuteCatalogSyncJob {
                         channel,
                         marketplace,
                         adapter,
+                        adapterRuntime,
                         tx,
                     });
                 }
@@ -99,6 +114,7 @@ export class ExecuteCatalogSyncJob {
                         channel,
                         marketplace,
                         adapter,
+                        adapterRuntime,
                         tx,
                     });
                 }
@@ -108,6 +124,7 @@ export class ExecuteCatalogSyncJob {
                         channel,
                         marketplace,
                         adapter,
+                        adapterRuntime,
                         tx,
                     });
                 }
@@ -117,6 +134,7 @@ export class ExecuteCatalogSyncJob {
                         channel,
                         marketplace,
                         adapter,
+                        adapterRuntime,
                         tx,
                     });
                 }
@@ -134,9 +152,10 @@ export class ExecuteCatalogSyncJob {
                     });
                 }
             }, { tenantId: job.tenantId });
-            recordCatalogSyncOutcome(this.deps.metrics, 'success');
+            recordCatalogSyncOutcome(this.deps.metrics, 'success', metricContext);
         }
         catch (error) {
+            const ctx = metricContext ?? { operation: job.target };
             if (error instanceof CatalogSyncSkippedError) {
                 this.deps.logger?.info({
                     tenantId: job.tenantId,
@@ -144,11 +163,11 @@ export class ExecuteCatalogSyncJob {
                     target: job.target,
                     reason: error.message,
                 }, 'Catalog sync job skipped');
-                recordCatalogSyncOutcome(this.deps.metrics, 'skipped');
+                recordCatalogSyncOutcome(this.deps.metrics, 'skipped', ctx);
                 return;
             }
             if (error instanceof CatalogSyncRetryError) {
-                recordCatalogSyncOutcome(this.deps.metrics, 'retryable_failure');
+                recordCatalogSyncOutcome(this.deps.metrics, 'retryable_failure', ctx);
                 throw error;
             }
             if (error instanceof UnsupportedMarketplaceAdapterError) {
@@ -157,11 +176,14 @@ export class ExecuteCatalogSyncJob {
                     channelId: job.channelId,
                     marketplaceKey: error.safeDetails?.marketplaceKey,
                 }, 'Unsupported marketplace adapter');
-                recordCatalogSyncOutcome(this.deps.metrics, 'adapter_unsupported');
+                recordCatalogSyncOutcome(this.deps.metrics, 'adapter_unsupported', {
+                    marketplaceKey: error.safeDetails?.marketplaceKey ?? 'unknown',
+                    operation: job.target,
+                });
                 return;
             }
             if (error instanceof CatalogSyncPermanentError) {
-                recordCatalogSyncOutcome(this.deps.metrics, 'permanent_failure');
+                recordCatalogSyncOutcome(this.deps.metrics, 'permanent_failure', ctx);
                 this.deps.logger?.warn({
                     tenantId: job.tenantId,
                     channelId: job.channelId,
@@ -170,7 +192,7 @@ export class ExecuteCatalogSyncJob {
                 return;
             }
             if (error instanceof ValidationError || error instanceof NotFoundError) {
-                recordCatalogSyncOutcome(this.deps.metrics, 'permanent_failure');
+                recordCatalogSyncOutcome(this.deps.metrics, 'permanent_failure', ctx);
                 this.deps.logger?.warn({
                     tenantId: job.tenantId,
                     channelId: job.channelId,
@@ -178,7 +200,7 @@ export class ExecuteCatalogSyncJob {
                 }, 'Catalog sync rejected — tenant-scoped resource missing');
                 return;
             }
-            recordCatalogSyncOutcome(this.deps.metrics, 'retryable_failure');
+            recordCatalogSyncOutcome(this.deps.metrics, 'retryable_failure', ctx);
             throw error;
         }
     }

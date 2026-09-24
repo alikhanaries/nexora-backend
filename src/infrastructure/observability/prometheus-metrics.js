@@ -156,7 +156,7 @@ export class PrometheusMetrics {
         this.catalogSyncJobsTotal = new Counter({
             name: 'channel_catalog_sync_jobs_total',
             help: 'Channel catalog sync worker outcomes.',
-            labelNames: ['outcome'],
+            labelNames: ['outcome', 'marketplace', 'operation'],
             registers: [this.registry],
         });
         this.catalogSyncReconciliationRunsTotal = new Counter({
@@ -234,7 +234,11 @@ export class PrometheusMetrics {
         }
     }
     recordCatalogSync(sample) {
-        this.catalogSyncJobsTotal.inc({ outcome: sample.outcome });
+        this.catalogSyncJobsTotal.inc({
+            outcome: sample.outcome,
+            marketplace: sample.marketplace ?? 'unknown',
+            operation: sample.operation ?? 'unknown',
+        });
     }
     recordCatalogSyncReconciliation(sample) {
         this.catalogSyncReconciliationRunsTotal.inc({ outcome: sample.outcome });

@@ -22,11 +22,12 @@ async function main() {
         database: infra.database,
         outbox: infra.outbox,
         httpClient: infra.httpClient,
-        secretEncryptor: new AesSecretEncryptor(config.auth.mfaEncryptionKey),
+        secretEncryptor,
         logger: infra.logger,
         metrics: infra.metrics,
         config,
     });
+    const secretEncryptor = new AesSecretEncryptor(config.auth.mfaEncryptionKey);
     const { channelCatalogSyncService, catalogSyncReconciliationService } = wireChannelCatalogSync({
         database: infra.database,
         queue: infra.queue,
@@ -34,6 +35,7 @@ async function main() {
         metrics: infra.metrics,
         logger: infra.logger,
         catalogSyncReconciliation: config.catalogSyncReconciliation,
+        secretEncryptor,
     });
     const catalogSyncReconciliationLockTtlSeconds = Math.max(300, Math.ceil(config.catalogSyncReconciliation.intervalMs / 1_000));
     const catalogSyncReconciliationScheduler = new CatalogSyncReconciliationScheduler(catalogSyncReconciliationService, infra.lock, config.catalogSyncReconciliation, infra.logger, catalogSyncReconciliationLockTtlSeconds);

@@ -33,7 +33,7 @@ export class SyncChannelInventory {
      * @param {import('../public/marketplace-catalog-adapter.port.js').MarketplaceCatalogAdapter} input.adapter
      * @param {object} input.tx
      */
-    async execute({ job, channel, marketplace, adapter, tx }) {
+    async execute({ job, channel, marketplace, adapter, adapterRuntime, tx }) {
         if (channel.tenantId !== job.tenantId) {
             throw new CatalogSyncPermanentError('Channel tenant mismatch', {
                 tenantId: job.tenantId,
@@ -75,6 +75,7 @@ export class SyncChannelInventory {
                 sourceEventId: job.sourceEventId,
                 correlationId: job.correlationId,
                 adapter,
+                adapterRuntime,
                 tx,
             });
             return;
@@ -91,6 +92,7 @@ export class SyncChannelInventory {
                     sourceEventId: job.sourceEventId,
                     correlationId: job.correlationId,
                     adapter,
+                    adapterRuntime,
                     tx,
                 });
             }
@@ -145,7 +147,7 @@ export class SyncChannelInventory {
                 availableQuantity,
                 sourceEventId: input.sourceEventId,
                 correlationId: input.correlationId,
-            });
+            }, input.adapterRuntime ?? undefined);
         }
         catch (error) {
             if (error instanceof MarketplaceCatalogAdapterRetryError) {

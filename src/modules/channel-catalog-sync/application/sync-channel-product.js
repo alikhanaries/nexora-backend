@@ -10,7 +10,6 @@ import {
     MarketplaceCatalogAdapterRetryError,
 } from './catalog-sync-adapter-errors.js';
 import { normalizeExternalCatalogReference } from './catalog-sync-external-reference.js';
-
 export class SyncChannelProduct {
     deps;
 
@@ -26,7 +25,7 @@ export class SyncChannelProduct {
     /**
      * @param {object} input
      */
-    async execute({ job, channel, marketplace, adapter, tx }) {
+    async execute({ job, channel, marketplace, adapter, adapterRuntime, tx }) {
         if (job.target !== CatalogSyncTarget.PRODUCT) {
             return;
         }
@@ -85,7 +84,7 @@ export class SyncChannelProduct {
                 operation: CatalogSyncOperation.DEACTIVATE,
                 sourceEventId: job.sourceEventId,
                 correlationId: job.correlationId,
-            });
+            }, adapterRuntime);
             return;
         }
         await this.invokeAdapter(adapter, {
@@ -103,21 +102,22 @@ export class SyncChannelProduct {
             operation: job.operation,
             sourceEventId: job.sourceEventId,
             correlationId: job.correlationId,
-        });
+        }, adapterRuntime);
     }
 
     /**
      * @param {import('../public/marketplace-catalog-adapter.port.js').MarketplaceCatalogAdapter} adapter
      * @param {import('../public/marketplace-catalog-adapter.port.js').MarketplaceProductSyncInput} input
+     * @param {import('../public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} adapterRuntime
      */
-    async invokeAdapter(adapter, input) {
+    async invokeAdapter(adapter, input, adapterRuntime) {
         if (typeof adapter.syncProduct !== 'function') {
             throw new CatalogSyncSkippedError('Marketplace adapter does not implement product sync', {
                 marketplaceKey: input.marketplaceKey,
             });
         }
         try {
-            await adapter.syncProduct(input);
+            await adapter.syncProduct(input, adapterRuntime ?? undefined);
         }
         catch (error) {
             if (error instanceof MarketplaceCatalogAdapterRetryError) {
