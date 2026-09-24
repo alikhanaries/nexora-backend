@@ -91,6 +91,4 @@ export const configSchema = z.object({
     AUTH_PASSWORD_MAX_LENGTH: envInteger({ default: 128, min: 12, max: 256 }),
     SHOPIFY_ADMIN_API_VERSION: envOptionalString(),
     AMAZON_LWA_TOKEN_URL: envOptionalString(),
-    NOON_API_BASE_URL: envOptionalString(),
-    NOON_USER_AGENT: envOptionalString(),
 });

@@ -71,8 +71,8 @@ Table `marketplace_entity_mappings` stores provider string IDs (e.g. Shopify GID
 | -------- | ------------------- | ----- |
 | **Shopify** | Admin GraphQL — **Phase 23 complete**: connection test, product/offer sync (SKU + publish via product status), inventory, price, entity mapping hints | [Shopify Admin GraphQL](https://shopify.dev/docs/api/admin-graphql/latest/mutations/inventorySetQuantities) |
 | **Amazon** | SP-API **Phase 24 complete**: LWA + AWS SigV4, marketplace participations test, Listings Items PATCH (inventory, price, deactivate via quantity 0) | [Amazon SP-API docs](https://developer-docs.amazon.com/sp-api/docs/partially-update-a-listing) |
-| **Noon** | Partners API **Phase 25 complete**: RS256 service-account login + cookie session, whoami test, UpdateStock, BatchUpsertPricing (price + is_active), GetProductOffers mapping | [Noon Partners API](https://noon-docs.noonpartners.dev) — product/catalog create not wired |
-| **Namshi** | Partners gateway **Phase 26 complete**: same auth/stock as noon; **local** pricing upsert; delist via stock `qty: 0` (no `is_active`) | [noon Partners docs — Namshi columns](https://noon-docs.noonpartners.dev/docs/fbpi/setup/product-inventory) |
+| **Noon** | — | Public seller API contract not verified in-repo; adapter returns `MarketplaceUnsupportedError` / configuration guidance |
+| **Namshi** | — | Public partner API contract not verified in-repo; same as Noon |
 
 ## 8. Phase 27 hardening (summary)
 

@@ -34,7 +34,7 @@ export class NoonAuthSessionProvider {
      * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      */
     async getCookieHeader(runtime) {
-        const cacheKey = buildSessionCacheKey(runtime, this.deploymentApiBaseUrl);
+        const cacheKey = buildSessionCacheKey(runtime);
         const cached = this.sessionCache.get(cacheKey);
         if (cached !== undefined && cached.expiresAtMs > Date.now() + 60_000) {
             return cached.cookieHeader;
@@ -81,14 +81,13 @@ export class NoonAuthSessionProvider {
 /**
  * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
  */
-function buildSessionCacheKey(runtime, deploymentApiBaseUrl) {
+function buildSessionCacheKey(runtime) {
     const { keyId, projectCode } = readNoonServiceAccount(runtime.credentials, runtime.configuration ?? {});
     const privateKey = stringField(runtime.credentials, 'privateKey')
         ?? stringField(runtime.credentials, 'private_key')
         ?? '';
-    const baseUrl = resolveNoonApiBaseUrl(runtime.configuration ?? {}, deploymentApiBaseUrl);
     const digest = createHash('sha256')
-        .update(`${keyId}\0${projectCode}\0${privateKey}\0${baseUrl}`, 'utf8')
+        .update(`${keyId}\0${projectCode}\0${privateKey}`, 'utf8')
         .digest('hex');
     return digest;
 }
