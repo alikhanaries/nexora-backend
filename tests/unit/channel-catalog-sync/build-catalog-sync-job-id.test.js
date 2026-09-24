@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCatalogSyncJobId } from '../../../src/modules/channel-catalog-sync/application/build-catalog-sync-job-id.js';
+import { CatalogSyncOperation } from '../../../src/modules/channel-catalog-sync/domain/sync-operation.js';
 import { CatalogSyncTarget } from '../../../src/modules/channel-catalog-sync/domain/sync-target.js';
 
 describe('buildCatalogSyncJobId', () => {
@@ -19,6 +20,20 @@ describe('buildCatalogSyncJobId', () => {
             target: CatalogSyncTarget.OFFER,
         });
         expect(first).toBe(second);
+    });
+
+    it('does not coalesce product jobs with different operations', () => {
+        const sync = buildCatalogSyncJobId({
+            ...base,
+            target: CatalogSyncTarget.PRODUCT,
+            operation: CatalogSyncOperation.SYNC,
+        });
+        const deactivate = buildCatalogSyncJobId({
+            ...base,
+            target: CatalogSyncTarget.PRODUCT,
+            operation: CatalogSyncOperation.DEACTIVATE,
+        });
+        expect(sync).not.toBe(deactivate);
     });
 
     it('coalesces price jobs per tenant, channel, product, and currency', () => {

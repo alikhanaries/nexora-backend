@@ -23,6 +23,8 @@ export class ExecuteCatalogSyncJob {
      * @param {import('./channel-catalog-sync-rate-limiter.js').ChannelCatalogSyncRateLimiter} deps.rateLimiter
      * @param {import('./sync-channel-inventory.js').SyncChannelInventory} deps.syncChannelInventory
      * @param {import('./sync-channel-price.js').SyncChannelPrice} deps.syncChannelPrice
+     * @param {import('./sync-channel-product.js').SyncChannelProduct} deps.syncChannelProduct
+     * @param {import('./sync-channel-offer.js').SyncChannelOffer} deps.syncChannelOffer
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
      */
@@ -93,6 +95,24 @@ export class ExecuteCatalogSyncJob {
                 }
                 else if (job.target === CatalogSyncTarget.PRICE) {
                     await this.deps.syncChannelPrice.execute({
+                        job,
+                        channel,
+                        marketplace,
+                        adapter,
+                        tx,
+                    });
+                }
+                else if (job.target === CatalogSyncTarget.PRODUCT) {
+                    await this.deps.syncChannelProduct.execute({
+                        job,
+                        channel,
+                        marketplace,
+                        adapter,
+                        tx,
+                    });
+                }
+                else if (job.target === CatalogSyncTarget.OFFER) {
+                    await this.deps.syncChannelOffer.execute({
                         job,
                         channel,
                         marketplace,

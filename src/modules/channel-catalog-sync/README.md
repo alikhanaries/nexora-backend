@@ -48,6 +48,20 @@ Price jobs (`target = price`) run through `SyncChannelPrice`:
 
 Triggers: `price.created` / `price.updated` / `price.changed` (channel-scoped rows only), and `offer.status_changed` → `ACTIVE` (one job per listed currency on that offer’s channel).
 
+## Product and offer synchronization (Phase 19)
+
+| Event | Jobs |
+| ----- | ---- |
+| `product.created` / `product.updated` | `target = product` per offer channel (`entityId = productId`, `operation = sync`) |
+| `product.status_changed` | `operation = deactivate` when status is not `ACTIVE` |
+| `offer.created` / `offer.updated` | `target = offer` (`entityId = offerId`) |
+| `offer.status_changed` → `ACTIVE` | `offer` + `activate` and Phase 18 price jobs |
+| `offer.status_changed` → `INACTIVE` / `SUSPENDED` | `offer` + `deactivate` |
+
+Execution reads current `ProductQueryService` / `OfferQueryService` state. Marketplace listing identity uses **`offers.externalReference`** (required except explicit deactivate). Optional `products.externalReference` is passed as tenant product reference only.
+
+Adapter methods: `syncProduct`, `syncOffer` (foundation stub no-op). No product content/media sync in this phase.
+
 ## Worker wiring
 
 The worker composition root (`src/workers/bootstrap/wire-channel-catalog-sync.js`) supplies query ports and registers the enqueue inbox consumer `channel-catalog-sync.enqueue`.

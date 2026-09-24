@@ -66,6 +66,14 @@ function createExecutor(overrides = {}) {
         execute: vi.fn().mockResolvedValue(undefined),
         ...(overrides.syncChannelPrice ?? {}),
     };
+    const syncChannelProduct = {
+        execute: vi.fn().mockResolvedValue(undefined),
+        ...(overrides.syncChannelProduct ?? {}),
+    };
+    const syncChannelOffer = {
+        execute: vi.fn().mockResolvedValue(undefined),
+        ...(overrides.syncChannelOffer ?? {}),
+    };
     const executor = new ExecuteCatalogSyncJob({
         database,
         channelQueryService,
@@ -74,17 +82,23 @@ function createExecutor(overrides = {}) {
         rateLimiter,
         syncChannelInventory,
         syncChannelPrice,
+        syncChannelProduct,
+        syncChannelOffer,
         metrics: { recordCatalogSync: vi.fn() },
         logger: { info: vi.fn(), warn: vi.fn() },
     });
-    return { executor, adapterExecute, channelQueryService, rateLimiter, database };
+    return { executor, adapterExecute, channelQueryService, rateLimiter, database, syncChannelOffer };
 }
 
 describe('ExecuteCatalogSyncJob', () => {
-    it('completes a valid job using the foundation stub adapter', async () => {
-        const { executor, adapterExecute } = createExecutor();
+    it('routes offer jobs to SyncChannelOffer', async () => {
+        const syncExecute = vi.fn().mockResolvedValue(undefined);
+        const { executor, adapterExecute } = createExecutor({
+            syncChannelOffer: { execute: syncExecute },
+        });
         await executor.execute(validPayload());
-        expect(adapterExecute).toHaveBeenCalledTimes(1);
+        expect(syncExecute).toHaveBeenCalledTimes(1);
+        expect(adapterExecute).not.toHaveBeenCalled();
     });
 
     it('routes price jobs to SyncChannelPrice', async () => {

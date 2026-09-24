@@ -36,6 +36,7 @@ export class CatalogSyncEnqueueService {
                 entityId: job.entityId,
                 ...(job.stockLocationId === undefined ? {} : { stockLocationId: job.stockLocationId }),
                 ...(job.currency === undefined ? {} : { currency: job.currency }),
+                operation: job.operation,
             });
             await this.deps.queue.enqueue(
                 QueueName.CHANNEL_CATALOG_SYNC,
