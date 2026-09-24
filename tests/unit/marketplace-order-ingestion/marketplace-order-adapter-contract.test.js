@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { MarketplaceOrderAdapterRegistry } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js';
 import { MarketplaceOrderIngestionPermanentError } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
 import { registerMarketplaceCatalogAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-catalog-adapters.js';
+import { registerMarketplaceOrderAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-order-adapters.js';
 import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/channel-catalog-sync/public/marketplace-catalog-adapter-registry.js';
+import { ShopifyOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-order-adapter.js';
 
 /**
  * @param {import('../../../src/modules/marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderAdapter} adapter
@@ -26,15 +28,26 @@ export function runMarketplaceOrderAdapterContractTests(adapter) {
             }
             expect(adapter.fetchOrder).toBeUndefined();
         });
+        it('registers listOrders when order polling is supported', () => {
+            const caps = adapter.getOrderCapabilities?.();
+            if (caps?.supportsOrderPolling === true) {
+                expect(typeof adapter.listOrders).toBe('function');
+                return;
+            }
+            expect(adapter.listOrders).toBeUndefined();
+        });
     });
 }
+
+runMarketplaceOrderAdapterContractTests(new ShopifyOrderAdapter());
 
 describe('marketplace order adapter registry', () => {
     it('catalog adapters remain separate from order registry', () => {
         const catalogRegistry = new MarketplaceCatalogAdapterRegistry();
         registerMarketplaceCatalogAdapters(catalogRegistry, {});
         const orderRegistry = new MarketplaceOrderAdapterRegistry();
-        expect(orderRegistry.listAdapters()).toHaveLength(0);
+        registerMarketplaceOrderAdapters(orderRegistry);
+        expect(orderRegistry.resolve('shopify')).toBeInstanceOf(ShopifyOrderAdapter);
         expect(catalogRegistry.resolve('shopify')).not.toBeNull();
     });
 });
@@ -45,6 +58,7 @@ describe('ingest fetch guard', () => {
         const useCase = new IngestNormalizedMarketplaceOrder({
             ingestionService: { ingest: async () => ({}) },
             orderAdapterRegistry: new MarketplaceOrderAdapterRegistry(),
+            channelQueryService: { getChannelById: async () => ({ tenantId: '00000000-0000-4000-8000-000000000001', stockLocationId: '00000000-0000-4000-8000-000000000099' }) },
             database: { execute: async (fn) => fn({}) },
         });
         await expect(useCase.execute({

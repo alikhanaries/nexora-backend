@@ -1,3 +1,4 @@
+import { FetchAndIngestMarketplaceOrders } from './application/fetch-and-ingest-marketplace-orders.js';
 import { IngestNormalizedMarketplaceOrder } from './application/ingest-normalized-marketplace-order.js';
 import { MarketplaceOrderIngestionService } from './application/marketplace-order-ingestion-service.js';
 import { MarketplaceOrderAdapterRegistry } from './public/marketplace-order-adapter-registry.js';
@@ -31,14 +32,27 @@ export function createMarketplaceOrderIngestionModule(deps) {
     const ingestNormalizedMarketplaceOrder = new IngestNormalizedMarketplaceOrder({
         ingestionService,
         orderAdapterRegistry,
+        channelQueryService: deps.channelQueryService,
         database: deps.database,
         ...(deps.marketplaceAdapterRuntimeFactory === undefined
             ? {}
             : { marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory }),
     });
+    const fetchAndIngestMarketplaceOrders = deps.marketplaceAdapterRuntimeFactory === undefined
+        ? undefined
+        : new FetchAndIngestMarketplaceOrders({
+            ingestNormalizedMarketplaceOrder,
+            orderAdapterRegistry,
+            channelQueryService: deps.channelQueryService,
+            marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory,
+            database: deps.database,
+        });
     return {
         ingestionService,
         ingestNormalizedMarketplaceOrder,
+        ...(fetchAndIngestMarketplaceOrders === undefined
+            ? {}
+            : { fetchAndIngestMarketplaceOrders }),
         orderAdapterRegistry,
     };
 }

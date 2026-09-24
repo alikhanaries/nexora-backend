@@ -14,12 +14,31 @@
  * @property {string} channelId
  * @property {string} marketplaceKey
  * @property {string} externalOrderId
+ * @property {string} stockLocationId
  * @property {string|null} correlationId
+ *
+ * @typedef {object} MarketplaceOrderListContext
+ * @property {string} tenantId
+ * @property {string} channelId
+ * @property {string} marketplaceKey
+ * @property {string} stockLocationId
+ * @property {string|null} correlationId
+ *
+ * @typedef {object} MarketplaceOrderListOptions
+ * @property {number} first
+ * @property {string|null} [after]
+ * @property {string|null} [query]
+ *
+ * @typedef {object} MarketplaceOrderListPage
+ * @property {NormalizedMarketplaceOrder[]} orders
+ * @property {boolean} hasNextPage
+ * @property {string|null} endCursor
  *
  * @typedef {object} MarketplaceOrderAdapter
  * @property {string} marketplaceKey
  * @property {() => MarketplaceOrderCapabilities} [getOrderCapabilities]
  * @property {(runtime: MarketplaceAdapterRuntime, context: MarketplaceOrderFetchContext) => Promise<NormalizedMarketplaceOrder>} [fetchOrder]
+ * @property {(runtime: MarketplaceAdapterRuntime, context: MarketplaceOrderListContext, options: MarketplaceOrderListOptions) => Promise<MarketplaceOrderListPage>} [listOrders]
  * @property {(payload: unknown, runtime: MarketplaceAdapterRuntime, context: { tenantId: string, channelId: string, marketplaceKey: string }) => Promise<NormalizedMarketplaceOrder>} [normalizeWebhookOrder]
  */
 

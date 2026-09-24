@@ -129,6 +129,7 @@ describe('marketplace order ingestion integration', () => {
             }),
             productQueryService,
             metrics: infra.metrics,
+            registerMarketplaceOrderAdapters: () => {},
         });
     });
 

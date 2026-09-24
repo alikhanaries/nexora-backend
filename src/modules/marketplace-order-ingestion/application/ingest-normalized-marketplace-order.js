@@ -3,6 +3,7 @@ import {
     MarketplaceCatalogAdapterRetryError,
 } from '../../channel-catalog-sync/public/catalog-sync-adapter-errors.js';
 import { mapMarketplaceErrorToAdapterError } from '../../marketplaces/public/index.js';
+import { requireChannelStockLocationId } from '../../channels/public/index.js';
 import {
     MarketplaceOrderIngestionPermanentError,
     MarketplaceOrderIngestionRetryError,
@@ -19,6 +20,7 @@ export class IngestNormalizedMarketplaceOrder {
      * @param {object} deps
      * @param {import('./marketplace-order-ingestion-service.js').MarketplaceOrderIngestionService} deps.ingestionService
      * @param {import('../public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
+     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
      * @param {import('../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
      */
@@ -73,6 +75,8 @@ export class IngestNormalizedMarketplaceOrder {
             throw new MarketplaceOrderIngestionPermanentError('Marketplace adapter runtime is not configured');
         }
         try {
+            const channel = await this.deps.channelQueryService.getChannelById(input.tenantId, input.channelId);
+            const stockLocationId = requireChannelStockLocationId(channel);
             return await this.deps.database.execute(async (tx) => {
                 const runtime = await this.deps.marketplaceAdapterRuntimeFactory.createForSync({
                     tenantId: input.tenantId,
@@ -85,6 +89,7 @@ export class IngestNormalizedMarketplaceOrder {
                     channelId: input.channelId,
                     marketplaceKey: input.marketplaceKey,
                     externalOrderId: input.externalOrderId,
+                    stockLocationId,
                     correlationId: input.correlationId ?? null,
                 });
             }, { tenantId: input.tenantId });

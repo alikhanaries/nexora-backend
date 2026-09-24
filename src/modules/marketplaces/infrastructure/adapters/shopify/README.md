@@ -40,6 +40,10 @@ Adapter-defined external types (stored in `marketplace_entity_mappings`):
 
 Mapping hints are returned only after Shopify confirms identifiers in GraphQL responses.
 
+## Order ingestion (Phase 29)
+
+Inbound orders use the same connection and `ShopifyGraphqlClient` as catalog sync. See [order-ingestion.md](../../../../../docs/marketplaces/order-ingestion.md#shopify-order-ingestion-phase-29). Requires Shopify order read access on the Admin API token (`read_orders` or equivalent for your app type).
+
 ## Limitations
 
 - Nexora has no generic variant model. **`offer.externalReference` must hold the Shopify variant id** (numeric or GID) for outbound sync. The adapter does not create new Shopify products when that reference is missing.
