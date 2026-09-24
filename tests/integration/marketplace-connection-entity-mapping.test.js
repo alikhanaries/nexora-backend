@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
@@ -101,7 +102,7 @@ describe('marketplace connection and entity mapping foundation', () => {
         ) VALUES ($1, $2, $3, $4, 'offer', $5, 'listing', 'ext-a')
         ON CONFLICT (tenant_id, channel_id, marketplace_key, nexora_entity_type, nexora_entity_id)
         DO UPDATE SET external_entity_id = EXCLUDED.external_entity_id, updated_at = now()`, [
-                '44444444-4444-4444-8444-444444444444',
+                randomUUID(),
                 tenantId,
                 fixture.channelId,
                 marketplaceKey,
@@ -113,7 +114,7 @@ describe('marketplace connection and entity mapping foundation', () => {
         ) VALUES ($1, $2, $3, $4, 'offer', $5, 'listing', 'ext-b')
         ON CONFLICT (tenant_id, channel_id, marketplace_key, nexora_entity_type, nexora_entity_id)
         DO UPDATE SET external_entity_id = EXCLUDED.external_entity_id, updated_at = now()`, [
-                '55555555-5555-4555-8555-555555555555',
+                randomUUID(),
                 tenantId,
                 fixture.channelId,
                 marketplaceKey,

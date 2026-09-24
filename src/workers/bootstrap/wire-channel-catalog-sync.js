@@ -26,6 +26,7 @@ import { PostgresPriceRepository } from '../../modules/pricing/infrastructure/in
  * @param {import('../../shared/logging/logger.port.js').Logger} deps.logger
  * @param {{ enabled: boolean, offerBatchSize: number, maxJobsPerTick: number }} [deps.catalogSyncReconciliation]
  * @param {import('../../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
+ * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
  */
 export function wireChannelCatalogSync(deps) {
     const channelRepository = new PostgresChannelRepository();
@@ -88,6 +89,7 @@ export function wireChannelCatalogSync(deps) {
         connections: marketplaceConnections,
         secretEncryptor: deps.secretEncryptor,
         queryable: deps.database,
+        shopifyAdminApiVersion: deps.shopifyAdminApiVersion,
     });
     return createChannelCatalogSyncModule({
         database: deps.database,

@@ -31,8 +31,19 @@ export class BaseMarketplaceCatalogAdapter {
      * @param {() => Promise<void>} operation
      */
     async run(operation) {
-        try {
+        await this.runWithResult(async () => {
             await operation();
+        });
+    }
+
+    /**
+     * @template T
+     * @param {() => Promise<T>} operation
+     * @returns {Promise<T>}
+     */
+    async runWithResult(operation) {
+        try {
+            return await operation();
         }
         catch (error) {
             throw mapMarketplaceErrorToAdapterError(error);

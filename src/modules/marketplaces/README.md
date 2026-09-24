@@ -43,7 +43,7 @@ Tenant-scoped credentials live in `marketplace_connections` (encrypted at rest).
 
 Requires `channels.read` / `channels.update`. Responses never include ciphertext or secrets.
 
-Catalog adapters live under `infrastructure/adapters/{shopify,amazon,noon,namshi}/` and register on `MarketplaceCatalogAdapterRegistry`. See [ADR-029](../../docs/decisions/ADR-029-marketplace-connector-framework.md).
+Catalog adapters live under `infrastructure/adapters/{shopify,amazon,noon,namshi}/` and register on `MarketplaceCatalogAdapterRegistry`. **Shopify** (Phase 23) and **Amazon** (Phase 24) are production-complete — see [shopify/README.md](infrastructure/adapters/shopify/README.md) and [amazon/README.md](infrastructure/adapters/amazon/README.md). Noon and Namshi remain partial stubs. See [ADR-029](../../docs/decisions/ADR-029-marketplace-connector-framework.md).
 
 ## Entity mappings (Phase 22)
 

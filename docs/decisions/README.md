@@ -35,6 +35,8 @@
 | 15 | Catalog sync architecture | ADR-028 | **Done** (spec) |
 | 16–20 | Outbound catalog sync + reconciliation | ADR-028 §23 | **Done** (Nexora-side; stub adapter) |
 | 21 | Marketplace connectors | ADR-029 | **Done** (branch) |
-| 22 | Connection test metadata + entity mappings | ADR-030 | **Done** (branch) |
+| 22 | Connection test metadata + entity mappings | ADR-030 | **Done** |
+| 23 | Shopify production adapter | ADR-029 | **Done** (branch) |
+| 24 | Amazon SP-API adapter | ADR-029 | **Done** (branch) |
 
 Add a new ADR only when a genuine architectural fork exists. Implementation details belong in module READMEs, not ADRs.
