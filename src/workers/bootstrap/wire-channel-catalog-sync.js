@@ -8,6 +8,8 @@ import { DefaultInventoryService } from '../../modules/inventory/public/index.js
 import { PostgresInventoryRepository, PostgresStockLocationRepository, } from '../../modules/inventory/infrastructure/index.js';
 import { DefaultProductQueryService } from '../../modules/products/public/index.js';
 import { PostgresProductRepository } from '../../modules/products/infrastructure/postgres-product-repository.js';
+import { DefaultPricingService } from '../../modules/pricing/public/index.js';
+import { PostgresPriceRepository } from '../../modules/pricing/infrastructure/index.js';
 
 /**
  * Worker-only wiring for channel catalog sync query ports (composition root).
@@ -62,6 +64,19 @@ export function wireChannelCatalogSync(deps) {
             recordDomainEvent: async () => {},
         },
     });
+    const noopEventRecorder = {
+        record: async () => {},
+        recordIntegrationEvent: async () => {},
+        recordDomainEvent: async () => {},
+    };
+    const pricingService = new DefaultPricingService({
+        transactionManager: deps.database,
+        queryable: deps.database,
+        prices: new PostgresPriceRepository(),
+        productQueryService,
+        channelQueryService,
+        eventRecorder: noopEventRecorder,
+    });
     return createChannelCatalogSyncModule({
         database: deps.database,
         queue: deps.queue,
@@ -72,5 +87,6 @@ export function wireChannelCatalogSync(deps) {
         offerQueryService,
         marketplaceLookup,
         inventoryService,
+        pricingService,
     });
 }

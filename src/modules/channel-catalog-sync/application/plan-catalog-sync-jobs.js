@@ -13,6 +13,7 @@ import { isCatalogSyncIntegrationEventType } from './catalog-sync-event-types.js
  * @property {string} sourceEventId
  * @property {string|null} correlationId
  * @property {string} [stockLocationId]
+ * @property {string} [currency]
  */
 
 /**
@@ -20,6 +21,7 @@ import { isCatalogSyncIntegrationEventType } from './catalog-sync-event-types.js
  * @param {object} deps
  * @param {import('../../offers/public/offer-query-service.js').DefaultOfferQueryService} deps.offerQueryService
  * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+ * @param {import('../../pricing/public/pricing-service.js').DefaultPricingService} [deps.pricingService]
  * @returns {Promise<PlannedCatalogSyncJob[]>}
  */
 export async function planCatalogSyncJobsFromEvent(event, deps) {
@@ -56,6 +58,15 @@ export async function planCatalogSyncJobsFromEvent(event, deps) {
         }
         return jobs;
     }
+    if (type === 'offer.status_changed') {
+        const channelId = readUuid(payload, 'channelId');
+        const productId = readUuid(payload, 'productId');
+        const status = typeof payload.status === 'string' ? payload.status : null;
+        if (channelId === null || productId === null || status !== 'ACTIVE') {
+            return [];
+        }
+        return planPriceJobsForOfferActivation(tenantId, productId, channelId, base, deps.pricingService);
+    }
     if (type.startsWith('offer.')) {
         const channelId = readUuid(payload, 'channelId');
         const offerId = readUuid(payload, 'id') ?? event.aggregateId;
@@ -72,15 +83,17 @@ export async function planCatalogSyncJobsFromEvent(event, deps) {
     }
     if (type.startsWith('price.')) {
         const channelId = readNullableUuid(payload, 'channelId');
-        const priceId = readUuid(payload, 'id') ?? event.aggregateId;
-        if (channelId === null || priceId === null) {
+        const productId = readUuid(payload, 'productId');
+        const currency = readCurrencyCode(payload, 'currency');
+        if (channelId === null || productId === null || currency === null) {
             return [];
         }
         jobs.push({
             ...base,
             channelId,
             target: CatalogSyncTarget.PRICE,
-            entityId: priceId,
+            entityId: productId,
+            currency,
         });
         return jobs;
     }
@@ -153,4 +166,43 @@ function readNullableUuid(payload, key) {
         return null;
     }
     return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+/**
+ * @param {Record<string, unknown>} payload
+ * @param {string} key
+ */
+function readCurrencyCode(payload, key) {
+    const value = payload[key];
+    if (typeof value !== 'string' || value.length !== 3) {
+        return null;
+    }
+    return value.toUpperCase();
+}
+
+/**
+ * @param {string} tenantId
+ * @param {string} productId
+ * @param {string} channelId
+ * @param {Omit<PlannedCatalogSyncJob, 'channelId' | 'target' | 'entityId' | 'currency'>} base
+ * @param {import('../../pricing/public/pricing-service.js').DefaultPricingService | undefined} pricingService
+ */
+async function planPriceJobsForOfferActivation(tenantId, productId, channelId, base, pricingService) {
+    if (pricingService === undefined) {
+        return [];
+    }
+    const page = await pricingService.listPrices({
+        tenantId,
+        productId,
+        channelId,
+        limit: 100,
+    });
+    const currencies = [...new Set(page.items.map((price) => price.currency))];
+    return currencies.map((currency) => ({
+        ...base,
+        channelId,
+        target: CatalogSyncTarget.PRICE,
+        entityId: productId,
+        currency,
+    }));
 }

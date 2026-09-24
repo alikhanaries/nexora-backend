@@ -10,6 +10,7 @@ export class CatalogSyncEnqueueService {
      * @param {import('../../../shared/queue/job-queue.port.js').JobQueue} deps.queue
      * @param {import('../../offers/public/offer-query-service.js').DefaultOfferQueryService} deps.offerQueryService
      * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../pricing/public/pricing-service.js').DefaultPricingService} [deps.pricingService]
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      */
     constructor(deps) {
@@ -23,6 +24,9 @@ export class CatalogSyncEnqueueService {
         const planned = await planCatalogSyncJobsFromEvent(event, {
             offerQueryService: this.deps.offerQueryService,
             channelQueryService: this.deps.channelQueryService,
+            ...(this.deps.pricingService === undefined
+                ? {}
+                : { pricingService: this.deps.pricingService }),
         });
         for (const job of planned) {
             const jobId = buildCatalogSyncJobId({
@@ -31,6 +35,7 @@ export class CatalogSyncEnqueueService {
                 target: job.target,
                 entityId: job.entityId,
                 ...(job.stockLocationId === undefined ? {} : { stockLocationId: job.stockLocationId }),
+                ...(job.currency === undefined ? {} : { currency: job.currency }),
             });
             await this.deps.queue.enqueue(
                 QueueName.CHANNEL_CATALOG_SYNC,
@@ -44,6 +49,7 @@ export class CatalogSyncEnqueueService {
                     sourceEventId: job.sourceEventId,
                     correlationId: job.correlationId,
                     ...(job.stockLocationId === undefined ? {} : { stockLocationId: job.stockLocationId }),
+                    ...(job.currency === undefined ? {} : { currency: job.currency }),
                 },
                 { jobId },
             );

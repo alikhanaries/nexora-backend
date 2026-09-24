@@ -37,6 +37,17 @@ Jobs coalesce per `(tenant, channel, product)`; execution always re-reads curren
 
 No real marketplace HTTP adapter exists in the repository yet — the foundation stub implements `syncInventory` as a no-op. A future adapter registers on `marketplaces.key` and maps `externalCatalogIdentifier` + `availableQuantity` to the marketplace API inside the adapter only.
 
+## Pricing synchronization (Phase 18)
+
+Price jobs (`target = price`) run through `SyncChannelPrice`:
+
+1. Require `currency` on the job payload (coalesced per tenant, channel, product, currency).
+2. Load an active offer; **`offers.externalReference`** is the marketplace catalog identifier.
+3. Read **authoritative** effective price via `PricingService.getEffectivePrice` at execution time.
+4. Call `MarketplaceCatalogAdapter.syncPrice` with `amountMinor`, currency, and validity window.
+
+Triggers: `price.created` / `price.updated` / `price.changed` (channel-scoped rows only), and `offer.status_changed` → `ACTIVE` (one job per listed currency on that offer’s channel).
+
 ## Worker wiring
 
 The worker composition root (`src/workers/bootstrap/wire-channel-catalog-sync.js`) supplies query ports and registers the enqueue inbox consumer `channel-catalog-sync.enqueue`.
