@@ -64,6 +64,7 @@ function toAppConfig(raw) {
             outboxDays: raw.OUTBOX_RETENTION_DAYS,
             inboxDays: raw.INBOX_RETENTION_DAYS,
             idempotencyDays: raw.IDEMPOTENCY_RETENTION_DAYS,
+            webhookDeliveryDays: raw.WEBHOOK_DELIVERY_RETENTION_DAYS,
             batchSize: raw.RETENTION_CLEANUP_BATCH_SIZE,
             intervalMs: raw.RETENTION_CLEANUP_INTERVAL_MS,
         },

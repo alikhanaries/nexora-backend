@@ -16,14 +16,16 @@ describe('RetentionCleanupService', () => {
                 .mockResolvedValueOnce(1), };
         const inbox = { purgeProcessedBefore: vi.fn().mockResolvedValueOnce(1), };
         const idempotency = { purgeExpiredBefore: vi.fn().mockResolvedValue(0), };
+        const webhookDeliveries = { purgeTerminalBefore: vi.fn().mockResolvedValue(0), };
         const logger = {
             info: vi.fn(),
             error: vi.fn(),
         };
-        const service = new RetentionCleanupService(outbox, inbox, idempotency, {
+        const service = new RetentionCleanupService(outbox, inbox, idempotency, webhookDeliveries, {
             outboxDays: 30,
             inboxDays: 30,
             idempotencyDays: 7,
+            webhookDeliveryDays: 30,
             batchSize: 2,
             intervalMs: 60_000,
         }, logger, undefined);
@@ -33,35 +35,40 @@ describe('RetentionCleanupService', () => {
             outboxDeleted: 5,
             inboxDeleted: 1,
             idempotencyDeleted: 0,
+            webhookDeliveriesDeleted: 0,
         });
         expect(outbox.purgePublishedBefore).toHaveBeenCalledTimes(3);
         expect(inbox.purgeProcessedBefore).toHaveBeenCalledTimes(1);
         expect(idempotency.purgeExpiredBefore).toHaveBeenCalledTimes(1);
+        expect(webhookDeliveries.purgeTerminalBefore).toHaveBeenCalledTimes(1);
         expect(outbox.purgePublishedBefore.mock.calls[0]?.[0].toISOString()).toBe('2026-01-02T00:00:00.000Z');
     });
     it('continues other resources when one category fails and reports aggregate failure', async () => {
         const outbox = { purgePublishedBefore: vi.fn().mockResolvedValue(1), };
         const inbox = { purgeProcessedBefore: vi.fn().mockRejectedValue(new Error('inbox failed')), };
         const idempotency = { purgeExpiredBefore: vi.fn().mockResolvedValue(2), };
+        const webhookDeliveries = { purgeTerminalBefore: vi.fn().mockResolvedValue(0), };
         const logger = {
             info: vi.fn(),
             error: vi.fn(),
         };
-        const service = new RetentionCleanupService(outbox, inbox, idempotency, {
+        const service = new RetentionCleanupService(outbox, inbox, idempotency, webhookDeliveries, {
             outboxDays: 30,
             inboxDays: 30,
             idempotencyDays: 7,
+            webhookDeliveryDays: 30,
             batchSize: 100,
             intervalMs: 60_000,
         }, logger, undefined);
         await expect(service.run()).rejects.toBeInstanceOf(RetentionCleanupError);
         expect(outbox.purgePublishedBefore).toHaveBeenCalled();
         expect(idempotency.purgeExpiredBefore).toHaveBeenCalled();
+        expect(webhookDeliveries.purgeTerminalBefore).toHaveBeenCalled();
     });
 });
 describe('RetentionCleanupScheduler', () => {
     it('invokes the cleanup service under a distributed lock', async () => {
-        const stats = { outboxDeleted: 1, inboxDeleted: 0, idempotencyDeleted: 0 };
+        const stats = { outboxDeleted: 1, inboxDeleted: 0, idempotencyDeleted: 0, webhookDeliveriesDeleted: 0 };
         const service = { run: vi.fn().mockResolvedValue(stats), };
         const lock = {
             withLock: vi.fn(async (_resource, _ttl, work) => work()),

@@ -17,5 +17,6 @@
 | [ADR-019](ADR-019-phase-6-webhooks-events.md)         | Phase 6 Webhooks & Event Consumption | Accepted           |
 | [ADR-020](ADR-020-phase-7-channel-inbound-integration.md) | Phase 7 Channel Inbound Integration | Accepted        |
 | [ADR-021](ADR-021-external-id-mapping.md)                 | External Integer ID Mapping (Phase 8) | Accepted        |
+| [ADR-023](ADR-023-phase-10-webhook-delivery-retention.md) | Phase 10 Webhook Delivery Retention | Accepted        |
 
 Add a new ADR only when a genuine architectural fork exists. Implementation details belong in module READMEs, not ADRs.
