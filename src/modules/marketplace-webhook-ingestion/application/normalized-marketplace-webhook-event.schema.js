@@ -7,14 +7,22 @@ const orderCreateResourceSchema = z.object({
     order: normalizedMarketplaceOrderSchema,
 });
 
-const orderUpdateResourceSchema = z.object({
-    type: z.literal('order'),
-    lifecyclePayload: z.unknown(),
-});
+const orderUpdateResourceSchema = z.union([
+    z.object({
+        type: z.literal('order'),
+        lifecyclePayload: z.unknown(),
+    }),
+    z.object({
+        type: z.literal('order'),
+        order: normalizedMarketplaceOrderSchema,
+    }),
+]);
 
 const webhookEventBaseSchema = z.object({
     deduplicationKey: z.string().min(1).max(512),
     marketplaceKey: z.string().min(1).max(64),
+    providerEventId: z.string().min(1).max(256).optional(),
+    providerTopic: z.string().min(1).max(128).optional(),
 });
 
 export const normalizedMarketplaceWebhookEventSchema = z.discriminatedUnion('eventKind', [
