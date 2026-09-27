@@ -55,12 +55,37 @@ Deployment defaults for the shared gateway may use `NOON_API_BASE_URL` and `NOON
 | Delist | `is_active: false` on pricing upsert | `qty: 0` on stock update |
 | `is_active` on pricing | Supported | **Not supported** (per platform docs table) |
 
+## Order lifecycle (Phase 36 — FBPI)
+
+Namshi orders use the shared [FBPI](https://noon-docs.noonpartners.dev/docs/fbpi/setup/order-flow) APIs on the noon Partners gateway (`mp_code: namshi` on `GetFbpiOrder`).
+
+| Generic operation | Namshi support | Mechanism |
+| ----------------- | -------------- | --------- |
+| `status_sync` | **Yes** | `FBPI::ORDER_SYNC` webhook → `GET /fbpi/v1/fbpi-order/{fbpi_order_nr}/get` → map item `mp_status` / `integration_status` |
+| `cancel_order` | **Yes** (inbound) | Partial line `MP_ITEM_STATUS_CANCELLED` → generic cancellation with line hints |
+| `update_order` | **No** | `UpdateOrder` is outbound OOS marking, not inbound lifecycle |
+| `return_order` / `refund_order` | **No** | RTO/return APIs not wired in Phase 36 |
+| `fulfill_order` / `shipment_update` | **No** (inbound) | Outbound `CreateShipment` exists on FBPI but generic executor/outbound adapter deferred |
+
+### Webhooks
+
+Event Notifications deliver `FBPI::ORDER_SYNC` with `payload.order_nr` only. Nexora marketplace webhook ingress (opaque ingress token per connection) routes `marketplaceKey = namshi` to `NamshiWebhookAdapter`, then `ProcessMarketplaceLifecyclePayload` fetches full order details.
+
+`metadata.message_id` is the preferred lifecycle `externalEventId`; fallback: `FBPI::ORDER_SYNC:{order_nr}:{published_at}`.
+
+### Polling
+
+`NamshiOrderAdapter.fetchOrderLifecycleCommand` calls `GetFbpiOrder` for status sync (same mapping as webhook path).
+
+Authentication reuses Namshi catalog session cookies (`NamshiAuthSessionProvider` / `NamshiApiClient`).
+
 ## Limitations
 
 - **Product/catalog create** not implemented in Nexora.
 - **MSRP** not synced on local pricing upsert (only `price` from effective Nexora amount).
 - **Activate** does not push stock; run inventory sync to restock.
-- **Async batch jobs / webhooks** not used; synchronous batch item statuses only.
+- **Catalog** async batch jobs only; order webhooks use Event Notifications (separate from catalog batch responses).
+- **Outbound** FBPI shipment/create and order/update (OOS) not exposed through generic lifecycle outbound in Phase 36.
 - Separate Namshi-only public docs URL was not used; behavior is taken from noon Partners documentation where Namshi columns/examples are explicit.
 
 ## Errors and retries
