@@ -118,6 +118,11 @@ describe('mapShopifyOrderToNormalized', () => {
 });
 
 describe('ShopifyOrderAdapter', () => {
+    it('does not advertise inbound return sync until Shopify return status is normalized', () => {
+        const adapter = new ShopifyOrderAdapter();
+        expect(adapter.getOrderLifecycleCapabilities().supportsOrderReturn).toBe(false);
+    });
+
     it('fetchOrder loads order by GID', async () => {
         const fetchImpl = vi.fn(async () => jsonResponse({
             data: { order: buildShopifyGraphqlOrder() },

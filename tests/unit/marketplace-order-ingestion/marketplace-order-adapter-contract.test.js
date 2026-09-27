@@ -6,6 +6,7 @@ import { registerMarketplaceOrderAdapters } from '../../../src/modules/marketpla
 import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/channel-catalog-sync/public/marketplace-catalog-adapter-registry.js';
 import { AmazonOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-order-adapter.js';
 import { NamshiOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-order-adapter.js';
+import { NoonOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-order-adapter.js';
 import { ShopifyOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-order-adapter.js';
 
 /**
@@ -53,6 +54,7 @@ export function runMarketplaceOrderAdapterContractTests(adapter) {
 runMarketplaceOrderAdapterContractTests(new ShopifyOrderAdapter());
 runMarketplaceOrderAdapterContractTests(new AmazonOrderAdapter());
 runMarketplaceOrderAdapterContractTests(new NamshiOrderAdapter());
+runMarketplaceOrderAdapterContractTests(new NoonOrderAdapter());
 
 describe('marketplace order adapter registry', () => {
     it('catalog adapters remain separate from order registry', () => {
@@ -63,6 +65,7 @@ describe('marketplace order adapter registry', () => {
         expect(orderRegistry.resolve('shopify')).toBeInstanceOf(ShopifyOrderAdapter);
         expect(orderRegistry.resolve('amazon')).toBeInstanceOf(AmazonOrderAdapter);
         expect(orderRegistry.resolve('namshi')).toBeInstanceOf(NamshiOrderAdapter);
+        expect(orderRegistry.resolve('noon')).toBeInstanceOf(NoonOrderAdapter);
         expect(catalogRegistry.resolve('shopify')).not.toBeNull();
     });
 });

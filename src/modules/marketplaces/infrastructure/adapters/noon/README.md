@@ -70,6 +70,47 @@ Pricing rate limits (documented ~1500 req/min) surface as HTTP 429 → retryable
 - **MSRP** and multi-country price rows beyond the configured `countryCode` are not synced.
 - **Namshi** uses overlapping noon gateway patterns but remains a separate adapter (Phase 26).
 
+## Order lifecycle (Phase 35)
+
+Noon FBPI order lifecycle uses the generic marketplace lifecycle framework (Phase 31) and webhook ingress (Phase 32).
+
+### Event Notifications
+
+| Event | Direction | Nexora handling |
+| ----- | --------- | --------------- |
+| `FBPI::ORDER_SYNC` | Inbound webhook | `NoonWebhookAdapter` → `order.update` + `lifecyclePayload.noonEvent`; `GetFbpiOrder` before applying lifecycle |
+
+Webhook envelope: `event_schema_version`, `event_type`, `metadata.message_id` (deduplication key), `payload.order_nr`.
+
+### FBPI APIs (lifecycle)
+
+| Operation | API | Phase 35 |
+| --------- | --- | -------- |
+| Read order | `GET /fbpi/v1/fbpi-order/{fbpi_order_nr}/get` | Yes — status sync / cancel detection |
+| Mark out of stock | `POST` UpdateOrder | **Deferred** (not mapped to generic `update_order`) |
+| Create shipment | `POST /fbpi/v1/shipment/create` | **Deferred** (outbound fulfill/shipment) |
+| Returns / refunds | — | **Unsupported** in Nexora lifecycle |
+
+### Lifecycle capabilities
+
+| Capability | Enabled | Notes |
+| ---------- | ------- | ----- |
+| `status_sync` | yes | From `mp_status` / `integration_status` on FBPI items |
+| `cancel_order` | yes (inbound) | When all items are `MP_ITEM_STATUS_CANCELLED` |
+| `update_order`, returns, refunds, fulfill, shipment | no | Deferred until generic executors + verified outbound mapping |
+
+### Status mapping (item → order)
+
+| Noon `mp_status` | Generic target |
+| ---------------- | -------------- |
+| `MP_ITEM_STATUS_CONFIRMED` | `confirmed` |
+| `MP_ITEM_STATUS_CANCELLED` | `cancelled` |
+| `MP_ITEM_STATUS_UNSPECIFIED` | `unknown` |
+
+Shipped integration lines (`INTEGRATION_ITEM_STATUS_SHIPPED`) map to `unknown` until fulfillment executors exist. Partial cancellation across lines maps to `unknown`.
+
+Authentication reuses the existing service-account session (`NoonApiClient` + `NoonAuthSessionProvider`).
+
 ## Deployment env (optional)
 
 See root `.env.example`: `NOON_API_BASE_URL`, `NOON_USER_AGENT`.

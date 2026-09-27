@@ -6,7 +6,14 @@ import { MarketplaceOrderLifecyclePermanentError } from './marketplace-order-lif
 import { resolveMarketplaceLifecycleOrderLines } from './resolve-marketplace-lifecycle-order-lines.js';
 
 const SYSTEM_ACTOR_ID = 'marketplace-order-lifecycle';
-const LIFECYCLE_PERMISSIONS = Object.freeze(['orders.update', 'orders.cancel', 'cancellations.create', 'returns.create']);
+const LIFECYCLE_PERMISSIONS = Object.freeze([
+    'orders.update',
+    'orders.cancel',
+    'cancellations.create',
+    'returns.create',
+    'shipments.create',
+    'shipments.ship',
+]);
 
 /**
  * Applies a normalized lifecycle command to Nexora order services (no provider HTTP).
@@ -20,6 +27,9 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
      * @param {import('../../products/public/index.js').ProductQueryService} deps.productQueryService
      * @param {import('../../orders/application/confirm-order.js').ConfirmOrder} deps.confirmOrder
      * @param {import('../../cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} deps.cancellationCommandService
+     * @param {import('../../returns/public/return-command-service.js').DefaultReturnCommandService} [deps.returnCommandService]
+     * @param {import('../../shipments/public/shipment-command-service.js').DefaultShipmentCommandService} [deps.shipmentCommandService]
+     * @param {{ execute: (input: object) => Promise<{ shipment: object }> }} [deps.shipShipment]
      */
     constructor(deps) {
         this.deps = deps;
@@ -42,6 +52,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
             case MarketplaceOrderLifecycleOperation.UPDATE_ORDER:
                 return { outcome: MarketplaceOrderLifecycleOutcome.NOOP, orderId: order.id };
             case MarketplaceOrderLifecycleOperation.RETURN_ORDER:
+                return this.applyReturnOrder(input, command, order, tx);
             case MarketplaceOrderLifecycleOperation.REFUND_ORDER:
             case MarketplaceOrderLifecycleOperation.FULFILL_ORDER:
             case MarketplaceOrderLifecycleOperation.SHIPMENT_UPDATE:
@@ -86,9 +97,107 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
                 lines: undefined,
             }, order, tx);
         }
+        if (command.targetStatus === NormalizedMarketplaceLifecycleTargetStatus.FULFILLED) {
+            return this.applyFulfilledStatusSync(input, command, order, tx);
+        }
+        if (command.targetStatus === NormalizedMarketplaceLifecycleTargetStatus.RETURNED) {
+            return this.applyReturnOrder(input, {
+                ...command,
+                operation: MarketplaceOrderLifecycleOperation.RETURN_ORDER,
+                lines: command.lines ?? [],
+            }, order, tx);
+        }
         throw new MarketplaceOrderLifecyclePermanentError('Target status is not supported for synchronization', {
             targetStatus: command.targetStatus,
         });
+    }
+
+    /**
+     * @param {object} input
+     * @param {object} command
+     * @param {import('../../orders/domain/order.js').Order} order
+     * @param {object} tx
+     */
+    async applyFulfilledStatusSync(input, command, order, tx) {
+        if (order.status === 'SHIPPED' || order.status === 'DELIVERED') {
+            return { outcome: MarketplaceOrderLifecycleOutcome.DUPLICATE, orderId: order.id };
+        }
+        if (this.deps.shipmentCommandService === undefined || this.deps.shipShipment === undefined) {
+            throw new MarketplaceOrderLifecyclePermanentError('Shipment services are not configured for fulfillment sync');
+        }
+        const lines = await resolveMarketplaceLifecycleOrderLines({
+            orders: this.deps.orders,
+            productQueryService: this.deps.productQueryService,
+        }, {
+            tenantId: input.tenantId,
+            orderId: order.id,
+            lines: undefined,
+        }, tx);
+        const shipmentLines = lines
+            .map((line) => ({ orderLineId: line.orderLineId, quantity: line.quantity }))
+            .filter((line) => line.quantity > 0);
+        if (shipmentLines.length === 0) {
+            return { outcome: MarketplaceOrderLifecycleOutcome.NOOP, orderId: order.id };
+        }
+        const { shipment } = await this.deps.shipmentCommandService.createShipment({
+            tenantId: input.tenantId,
+            actorId: SYSTEM_ACTOR_ID,
+            actorKind: 'api-key',
+            actorPermissions: LIFECYCLE_PERMISSIONS,
+            orderId: order.id,
+            lines: shipmentLines,
+            externalReference: command.externalEventId,
+            skipAuthorization: true,
+            transaction: tx,
+        });
+        await this.deps.shipShipment.execute({
+            tenantId: input.tenantId,
+            actorId: SYSTEM_ACTOR_ID,
+            actorKind: 'api-key',
+            actorPermissions: LIFECYCLE_PERMISSIONS,
+            shipmentId: shipment.id,
+            skipAuthorization: true,
+            transaction: tx,
+        });
+        return { outcome: MarketplaceOrderLifecycleOutcome.APPLIED, orderId: order.id, shipmentId: shipment.id };
+    }
+
+    /**
+     * @param {object} input
+     * @param {object} command
+     * @param {import('../../orders/domain/order.js').Order} order
+     * @param {object} tx
+     */
+    async applyReturnOrder(input, command, order, tx) {
+        if (this.deps.returnCommandService === undefined) {
+            throw new MarketplaceOrderLifecyclePermanentError('Return command service is not configured');
+        }
+        const lines = await resolveMarketplaceLifecycleOrderLines({
+            orders: this.deps.orders,
+            productQueryService: this.deps.productQueryService,
+        }, {
+            tenantId: input.tenantId,
+            orderId: order.id,
+            lines: command.lines,
+        }, tx);
+        const returnLines = lines
+            .map((line) => ({ orderLineId: line.orderLineId, quantity: line.quantity }))
+            .filter((line) => line.quantity > 0);
+        if (returnLines.length === 0) {
+            throw new BusinessRuleError('Return must include at least one line');
+        }
+        const { return: createdReturn } = await this.deps.returnCommandService.createReturn({
+            tenantId: input.tenantId,
+            actorId: SYSTEM_ACTOR_ID,
+            actorKind: 'api-key',
+            actorPermissions: LIFECYCLE_PERMISSIONS,
+            orderId: order.id,
+            lines: returnLines,
+            reason: command.reason ?? null,
+            externalReference: command.externalEventId,
+            transaction: tx,
+        });
+        return { outcome: MarketplaceOrderLifecycleOutcome.APPLIED, orderId: order.id, returnId: createdReturn.id };
     }
 
     /**

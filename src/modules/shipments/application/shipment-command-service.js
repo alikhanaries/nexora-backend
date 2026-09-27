@@ -19,6 +19,7 @@ function toCreateShipmentInput(command) {
         ...(command.service === undefined ? {} : { service: command.service }),
         ...(command.trackingNumber === undefined ? {} : { trackingNumber: command.trackingNumber }),
         ...(command.externalReference === undefined ? {} : { externalReference: command.externalReference }),
+        ...(command.skipAuthorization === undefined ? {} : { skipAuthorization: command.skipAuthorization }),
     };
 }
 

@@ -99,6 +99,8 @@ export class MarketplaceOrderLifecycleService {
                 channelId: input.channelId,
                 marketplaceKey: command.marketplaceKey,
                 operation: command.operation,
+                externalOrderId: command.externalOrderId,
+                externalEventId: command.externalEventId,
                 outcome: result.outcome,
                 orderId: result.orderId,
                 ...(input.jobId === undefined ? {} : { jobId: input.jobId }),

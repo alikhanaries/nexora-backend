@@ -143,6 +143,30 @@ describe('MarketplaceOrderLifecycleService', () => {
         })).rejects.toBeInstanceOf(MarketplaceOrderLifecyclePermanentError);
     });
 
+    it('rejects when resolved order belongs to another tenant', async () => {
+        const { service } = buildService({
+            orders: {
+                findByChannelAndExternalReference: vi.fn(async () => ({
+                    id: '00000000-0000-4000-8000-000000000099',
+                    tenantId: '00000000-0000-4000-8000-000000000099',
+                    channelId,
+                    status: OrderStatus.NEW,
+                })),
+            },
+        });
+        await expect(service.apply({
+            tenantId,
+            channelId,
+            command: {
+                operation: MarketplaceOrderLifecycleOperation.STATUS_SYNC,
+                marketplaceKey,
+                externalOrderId: 'ext-1',
+                externalEventId: 'evt-tenant-mismatch',
+                targetStatus: NormalizedMarketplaceLifecycleTargetStatus.CONFIRMED,
+            },
+        })).rejects.toBeInstanceOf(MarketplaceOrderLifecyclePermanentError);
+    });
+
     it('returns duplicate when idempotency replays', async () => {
         const { service } = buildService({
             idempotency: {

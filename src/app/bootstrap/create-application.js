@@ -24,6 +24,10 @@ import { createMarketplaceWebhookIngestionModule } from '../../modules/marketpla
 import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
 import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
 import { registerMarketplaceWebhookAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-webhook-adapters.js';
+import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
+import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../modules/marketplaces/application/marketplace-outbound-order-lifecycle-adapter-registry.js';
+import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/application/execute-outbound-marketplace-order-lifecycle-command.js';
+import { ShopifyOrderAdapter } from '../../modules/marketplaces/infrastructure/adapters/shopify/shopify-order-adapter.js';
 import { PostgresOrderRepository } from '../../modules/orders/infrastructure/postgres-order-repository.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestion.js';
@@ -202,6 +206,9 @@ export async function createApplication(infra) {
         queryable: infra.database,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
     });
+    const shopifyOrderAdapter = new ShopifyOrderAdapter({
+        deploymentDefaultApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
+    });
     const marketplaceOrderIngestion = wireMarketplaceOrderIngestion({
         database: infra.database,
         metrics: infra.metrics,
@@ -215,6 +222,19 @@ export async function createApplication(infra) {
         orders: new PostgresOrderRepository(),
         confirmOrder: orders.useCases.confirmOrder,
         cancellationCommandService: cancellations.cancellationCommandService,
+        returnCommandService: returns.returnCommandService,
+        shipmentCommandService: shipments.shipmentCommandService,
+        shipShipment: shipments.useCases.shipShipment,
+        idempotency: infra.idempotency,
+    });
+    const outboundOrderLifecycleAdapterRegistry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
+    registerMarketplaceOutboundOrderLifecycleAdapters(outboundOrderLifecycleAdapterRegistry, {
+        shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
+    });
+    const executeOutboundMarketplaceOrderLifecycle = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
+        lifecycleAdapterRegistry: outboundOrderLifecycleAdapterRegistry,
+        marketplaceAdapterRuntimeFactory,
+        database: infra.database,
         idempotency: infra.idempotency,
     });
     const marketplaceWebhookIngestion = createMarketplaceWebhookIngestionModule({
@@ -226,7 +246,15 @@ export async function createApplication(infra) {
         ...(marketplaceOrderIngestion.processMarketplaceLifecyclePayload === undefined
             ? {}
             : { processMarketplaceLifecyclePayload: marketplaceOrderIngestion.processMarketplaceLifecyclePayload }),
-        registerMarketplaceWebhookAdapters: (registry) => registerMarketplaceWebhookAdapters(registry),
+        ...(marketplaceOrderIngestion.lifecycleService === undefined
+            ? {}
+            : { marketplaceOrderLifecycleService: marketplaceOrderIngestion.lifecycleService }),
+        registerMarketplaceWebhookAdapters: (registry) => registerMarketplaceWebhookAdapters(registry, {
+            marketplaceAdapterRuntimeFactory,
+            channelQueryService: channels.channelQueryService,
+            database: infra.database,
+            shopifyOrderAdapter,
+        }),
     });
     const compatibility = createCompatibilityModule({
         rateLimiter: infra.rateLimiter,
@@ -295,6 +323,7 @@ export async function createApplication(infra) {
         compatibility,
         webhooks,
         marketplaceOrderIngestion,
+        executeOutboundMarketplaceOrderLifecycle,
         marketplaceWebhookIngestion,
         readiness,
         httpServer,
