@@ -36,6 +36,15 @@ export function runMarketplaceOrderAdapterContractTests(adapter) {
             }
             expect(adapter.listOrders).toBeUndefined();
         });
+
+        it('declares lifecycle capabilities when getOrderLifecycleCapabilities exists', () => {
+            if (typeof adapter.getOrderLifecycleCapabilities !== 'function') {
+                return;
+            }
+            const caps = adapter.getOrderLifecycleCapabilities();
+            expect(typeof caps.supportsOrderCancel).toBe('boolean');
+            expect(typeof caps.supportsOrderStatusSync).toBe('boolean');
+        });
     });
 }
 

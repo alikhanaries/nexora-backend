@@ -34,6 +34,7 @@ export class PrometheusMetrics {
     commerceOperationsTotal;
     catalogSyncJobsTotal;
     marketplaceOrderIngestionTotal;
+    marketplaceOrderLifecycleTotal;
     constructor(serviceName) {
         this.registry = new Registry();
         this.registry.setDefaultLabels({ service: serviceName });
@@ -166,6 +167,12 @@ export class PrometheusMetrics {
             labelNames: ['outcome', 'marketplace', 'operation'],
             registers: [this.registry],
         });
+        this.marketplaceOrderLifecycleTotal = new Counter({
+            name: 'marketplace_order_lifecycle_total',
+            help: 'Marketplace order lifecycle outcomes.',
+            labelNames: ['outcome', 'marketplace', 'operation'],
+            registers: [this.registry],
+        });
         this.catalogSyncReconciliationRunsTotal = new Counter({
             name: 'channel_catalog_reconciliation_runs_total',
             help: 'Scheduled catalog sync reconciliation runs by outcome.',
@@ -252,6 +259,13 @@ export class PrometheusMetrics {
             outcome: sample.outcome,
             marketplace: sample.marketplace ?? 'unknown',
             operation: sample.operation ?? 'ingest',
+        });
+    }
+    recordMarketplaceOrderLifecycle(sample) {
+        this.marketplaceOrderLifecycleTotal.inc({
+            outcome: sample.outcome,
+            marketplace: sample.marketplace ?? 'unknown',
+            operation: sample.operation ?? 'lifecycle',
         });
     }
     recordCatalogSyncReconciliation(sample) {

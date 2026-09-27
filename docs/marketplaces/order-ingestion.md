@@ -102,8 +102,25 @@ No dedicated order-poll queue or cron is added in Phase 29; wire `wireMarketplac
 
 Metric `marketplace_order_ingestion_total` labels: `outcome`, `marketplace`, `operation`. No PII or order IDs in labels.
 
+## Generic order lifecycle (Phase 31)
+
+Phase 31 adds a **provider-neutral lifecycle engine** alongside ingestion. Adapters may expose `getOrderLifecycleCapabilities()` and optional `normalizeLifecycleCommand()`; they do **not** perform outbound marketplace HTTP in this layer.
+
+| Operation | Normalized command | Nexora behavior (initial) |
+| --------- | ------------------ | ------------------------- |
+| `status_sync` | `targetStatus` | `confirmed` → `ConfirmOrder`; `cancelled` → `CreateCancellation` |
+| `cancel_order` | optional line hints | `CreateCancellation` with idempotent `externalReference` = `externalEventId` |
+| `update_order`, `return_order`, `refund_order`, `fulfill_order`, `shipment_update` | schema defined | Executors deferred until a provider opts in via capabilities |
+
+Idempotency uses `externalEventId` with the shared `idempotency_records` store (`routeId`: `marketplace-order-lifecycle.apply`). Unsupported capabilities raise `MarketplaceOrderLifecycleUnsupportedError` (permanent, not retried).
+
+Shopify declares **no lifecycle capabilities** in Phase 31; create/poll ingestion (Phase 29) is unchanged.
+
+Metric: `marketplace_order_lifecycle_total` (`outcome`, `marketplace`, `operation`).
+
 ## Deferred (later phases)
 
 - Inbound webhook routes and signature verification
-- Order update / cancel / fulfillment / shipment sync
-- Scheduled order polling workers
+- Provider-specific lifecycle normalization (Shopify/Amazon/Noon/Namshi)
+- Outbound lifecycle sync to marketplaces
+- Scheduled order polling workers (Phase 30 when merged)
