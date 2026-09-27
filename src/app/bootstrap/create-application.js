@@ -21,7 +21,10 @@ import { createCompatibilityModule } from '../../modules/compatibility/index.js'
 import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
 import { createWebhooksModule } from '../../modules/webhooks/index.js';
 import { createMarketplaceWebhookIngestionModule } from '../../modules/marketplace-webhook-ingestion/index.js';
+import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
+import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
 import { registerMarketplaceWebhookAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-webhook-adapters.js';
+import { PostgresOrderRepository } from '../../modules/orders/infrastructure/postgres-order-repository.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestion.js';
 import { createHttpServer } from '../http/create-server.js';
@@ -193,13 +196,26 @@ export async function createApplication(infra) {
         stepUpVerifier: mfa.stepUpService,
         auditRecorder: audit.auditRecorder,
     });
+    const marketplaceAdapterRuntimeFactory = new MarketplaceAdapterRuntimeFactory({
+        connections: new PostgresMarketplaceConnectionRepository(),
+        secretEncryptor: identity.auth.secretEncryptor,
+        queryable: infra.database,
+        shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
+    });
     const marketplaceOrderIngestion = wireMarketplaceOrderIngestion({
         database: infra.database,
         metrics: infra.metrics,
         logger: infra.logger,
         createChannelOrder: orders.createChannelOrder,
+        marketplaceAdapterRuntimeFactory,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
+        noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
+        noonUserAgent: infra.config.marketplace.noonUserAgent,
+        orders: new PostgresOrderRepository(),
+        confirmOrder: orders.useCases.confirmOrder,
+        cancellationCommandService: cancellations.cancellationCommandService,
+        idempotency: infra.idempotency,
     });
     const marketplaceWebhookIngestion = createMarketplaceWebhookIngestionModule({
         database: infra.database,
@@ -207,6 +223,9 @@ export async function createApplication(infra) {
         metrics: infra.metrics,
         logger: infra.logger,
         ingestNormalizedMarketplaceOrder: marketplaceOrderIngestion.ingestNormalizedMarketplaceOrder,
+        ...(marketplaceOrderIngestion.processMarketplaceLifecyclePayload === undefined
+            ? {}
+            : { processMarketplaceLifecyclePayload: marketplaceOrderIngestion.processMarketplaceLifecyclePayload }),
         registerMarketplaceWebhookAdapters: (registry) => registerMarketplaceWebhookAdapters(registry),
     });
     const compatibility = createCompatibilityModule({

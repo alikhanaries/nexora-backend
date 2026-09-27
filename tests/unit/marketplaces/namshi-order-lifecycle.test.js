@@ -1,4 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+import { MarketplaceWebhookPermanentError, MarketplaceWebhookUnsupportedError } from '../../../src/modules/marketplace-webhook-ingestion/application/marketplace-webhook-errors.js';
+import {
+    MarketplaceCatalogAdapterPermanentError,
+    MarketplaceCatalogAdapterRetryError,
+} from '../../../src/modules/channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+import { MarketplaceTransientError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
 import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
 import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';
 import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/domain/marketplace-webhook-event-kind.js';
@@ -121,9 +127,39 @@ describe('parseNamshiFbpiWebhookEvent', () => {
         expect(parsed.orderNr).toBe('NFBO123456789');
         expect(parsed.messageId).toBe('msg-namshi-001');
     });
+
+    it('rejects unsupported event types', () => {
+        expect(() => parseNamshiFbpiWebhookEvent(buildNamshiFbpiOrderSyncWebhook({
+            event_type: 'FBPI::OTHER',
+        }))).toThrow(MarketplaceValidationError);
+    });
+
+    it('rejects missing order_nr', () => {
+        expect(() => parseNamshiFbpiWebhookEvent(buildNamshiFbpiOrderSyncWebhook({
+            payload: {},
+        }))).toThrow(MarketplaceValidationError);
+    });
 });
 
 describe('NamshiWebhookAdapter', () => {
+    it('rejects invalid JSON', async () => {
+        const adapter = new NamshiWebhookAdapter();
+        await expect(adapter.normalizeWebhookEvent({
+            rawBody: '{not-json',
+            headers: {},
+            connection: { tenantId: 't', channelId: 'c', marketplaceKey: 'namshi', connectionId: 'x' },
+        })).rejects.toBeInstanceOf(MarketplaceWebhookPermanentError);
+    });
+
+    it('maps unsupported event type to webhook unsupported error', async () => {
+        const adapter = new NamshiWebhookAdapter();
+        await expect(adapter.normalizeWebhookEvent({
+            rawBody: JSON.stringify(buildNamshiFbpiOrderSyncWebhook({ event_type: 'FBPI::OTHER' })),
+            headers: {},
+            connection: { tenantId: 't', channelId: 'c', marketplaceKey: 'namshi', connectionId: 'x' },
+        })).rejects.toBeInstanceOf(MarketplaceWebhookUnsupportedError);
+    });
+
     it('normalizes FBPI ORDER_SYNC to lifecycle webhook event', async () => {
         const adapter = new NamshiWebhookAdapter();
         const event = await adapter.normalizeWebhookEvent({
@@ -196,5 +232,41 @@ describe('NamshiOrderAdapter', () => {
         }, 'poll-evt-1');
         expect(command.externalEventId).toBe('poll-evt-1');
         expect(command.targetStatus).toBe(NormalizedMarketplaceLifecycleTargetStatus.CONFIRMED);
+    });
+
+    it('maps transient provider failures to retryable adapter errors', async () => {
+        const getFbpiOrder = vi.fn(async () => {
+            throw new MarketplaceTransientError('Namshi FBPI gateway timeout');
+        });
+        const adapter = new NamshiOrderAdapter({ api: { getFbpiOrder } });
+        await expect(adapter.fetchOrderLifecycleCommand({
+            marketplaceKey: 'namshi',
+            credentials: {},
+            configuration: {},
+        }, {
+            tenantId: '00000000-0000-4000-8000-000000000001',
+            channelId: '00000000-0000-4000-8000-000000000002',
+            marketplaceKey: 'namshi',
+            externalOrderId: 'NFBO123456789',
+            stockLocationId: '00000000-0000-4000-8000-000000000099',
+            correlationId: null,
+        }, 'poll-evt-2')).rejects.toBeInstanceOf(MarketplaceCatalogAdapterRetryError);
+    });
+
+    it('maps validation failures to permanent adapter errors', async () => {
+        const adapter = new NamshiOrderAdapter({ api: { getFbpiOrder: vi.fn() } });
+        await expect(adapter.normalizeLifecycleCommand({
+            source: 'fbpi_get_order',
+            externalEventId: 'evt',
+            orderPayload: buildNamshiFbpiGetOrderResponse({ mp_code: 'noon' }),
+        }, {
+            marketplaceKey: 'namshi',
+            credentials: {},
+            configuration: {},
+        }, {
+            tenantId: '00000000-0000-4000-8000-000000000001',
+            channelId: '00000000-0000-4000-8000-000000000002',
+            marketplaceKey: 'namshi',
+        })).rejects.toBeInstanceOf(MarketplaceCatalogAdapterPermanentError);
     });
 });

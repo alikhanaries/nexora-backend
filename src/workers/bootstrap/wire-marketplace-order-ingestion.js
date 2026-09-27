@@ -56,7 +56,7 @@ export function wireMarketplaceOrderIngestion(deps) {
         },
     };
     const productQueryService = new DefaultProductQueryService({
-        queryable: deps.database,
+        database: deps.database,
         products: new PostgresProductRepository(),
     });
     const marketplaceEntityMappingLookup = new DefaultMarketplaceEntityMappingLookup({

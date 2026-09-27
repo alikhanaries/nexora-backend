@@ -122,7 +122,7 @@ Metric: `marketplace_order_lifecycle_total` (`outcome`, `marketplace`, `operatio
 
 Namshi uses FBPI on the noon Partners gateway. See [namshi/README.md](../../src/modules/marketplaces/infrastructure/adapters/namshi/README.md).
 
-- **Inbound:** `FBPI::ORDER_SYNC` (Event Notifications) → marketplace webhook ingress → `GetFbpiOrder` → `ProcessMarketplaceLifecyclePayload`.
+- **Inbound:** `FBPI::ORDER_SYNC` (Event Notifications) → marketplace webhook ingress → `GetFbpiOrder` → `ProcessMarketplaceLifecyclePayload`. The HTTP app wires `processMarketplaceLifecyclePayload` in `createApplication` (shared with Amazon ORDER_CHANGE webhooks).
 - **Polling sync:** `NamshiOrderAdapter.fetchOrderLifecycleCommand` → `GET /fbpi/v1/fbpi-order/{fbpi_order_nr}/get`.
 - **Capabilities:** `status_sync` and inbound `cancel_order` (partial line cancel); returns/refunds/outbound fulfill deferred.
 

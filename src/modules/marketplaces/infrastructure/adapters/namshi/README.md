@@ -65,7 +65,7 @@ Namshi orders use the shared [FBPI](https://noon-docs.noonpartners.dev/docs/fbpi
 | `cancel_order` | **Yes** (inbound) | Partial line `MP_ITEM_STATUS_CANCELLED` → generic cancellation with line hints |
 | `update_order` | **No** | `UpdateOrder` is outbound OOS marking, not inbound lifecycle |
 | `return_order` / `refund_order` | **No** | RTO/return APIs not wired in Phase 36 |
-| `fulfill_order` / `shipment_update` | **No** (inbound) | Outbound `CreateShipment` exists on FBPI but generic executor/outbound adapter deferred |
+| `fulfill_order` / `shipment_update` | **No** | **Outbound:** `POST /fbpi/v1/shipment/create` registers shipments with noon logistics (AWB, warehouse, line items) — seller-initiated, not an inbound webhook operation. **Inbound:** shipped state appears as `INTEGRATION_ITEM_STATUS_SHIPPED` on `GetFbpiOrder` → `status_sync` with `unknown` (generic executor does not apply `fulfilled` yet). No `ExecuteOutboundMarketplaceOrderLifecycleCommand` / Namshi outbound adapter on this branch. |
 
 ### Webhooks
 

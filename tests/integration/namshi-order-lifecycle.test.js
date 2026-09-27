@@ -105,7 +105,7 @@ describe('Namshi order lifecycle integration', () => {
             },
         };
         const productQueryService = new DefaultProductQueryService({
-            queryable: infra.database,
+            database: infra.database,
             products: new PostgresProductRepository(),
         });
         module = createMarketplaceOrderIngestionModule({
@@ -140,6 +140,11 @@ describe('Namshi order lifecycle integration', () => {
 
     afterAll(async () => {
         await closeTestInfrastructure();
+    });
+
+    it('createApplication wires lifecycle webhook processing for all marketplaces', () => {
+        expect(app.marketplaceOrderIngestion.processMarketplaceLifecyclePayload).toBeDefined();
+        expect(app.marketplaceOrderIngestion.orderAdapterRegistry.resolve('namshi')).toBeInstanceOf(NamshiOrderAdapter);
     });
 
     it('applies FBPI webhook lifecycle payload through ProcessMarketplaceLifecyclePayload', async () => {
@@ -185,6 +190,71 @@ describe('Namshi order lifecycle integration', () => {
             },
         });
         expect(duplicate.outcome).toBe('duplicate');
+    });
+
+    it('applies partial cancellation lifecycle from FBPI order items', async () => {
+        const { tenantId, slug } = await createTestTenant(server);
+        const user = await createAuthenticatedUser(app, tenantId, slug);
+        const headers = authHeaders(user.accessToken);
+        const fixture = await seedNamshiChannel(server, headers);
+        const externalOrderId = 'NFBO-PARTIAL-CANCEL';
+        const ingest = await module.ingestionService.ingest({
+            tenantId,
+            channelId: fixture.channelId,
+            order: {
+                externalOrderId,
+                marketplaceKey: 'namshi',
+                status: NormalizedMarketplaceOrderStatus.PENDING,
+                currency: 'USD',
+                lines: [
+                    { quantity: 1, stockLocationId: fixture.stockLocationId, merchantSku: fixture.merchantSku },
+                    { quantity: 1, stockLocationId: fixture.stockLocationId, merchantSku: fixture.merchantSku },
+                ],
+            },
+        });
+        expect(ingest.outcome).toBe('created');
+        await app.orders.useCases.confirmOrder.execute({
+            tenantId,
+            actorId: 'test',
+            actorKind: 'api-key',
+            actorPermissions: ['orders.update'],
+            orderId: ingest.order.id,
+        });
+        getFbpiOrder.mockResolvedValueOnce({
+            json: buildNamshiFbpiGetOrderResponse({
+                fbpi_order_nr: externalOrderId,
+                items: [
+                    {
+                        mp_item_nr: `${externalOrderId}-1`,
+                        partner_sku: fixture.merchantSku,
+                        mp_status: 'MP_ITEM_STATUS_CONFIRMED',
+                        integration_status: 'INTEGRATION_ITEM_STATUS_ACKNOWLEDGED',
+                    },
+                    {
+                        mp_item_nr: `${externalOrderId}-2`,
+                        partner_sku: fixture.merchantSku,
+                        mp_status: 'MP_ITEM_STATUS_CANCELLED',
+                        integration_status: 'INTEGRATION_ITEM_STATUS_ACKNOWLEDGED',
+                    },
+                ],
+            }),
+        });
+        const result = await module.processMarketplaceLifecyclePayload.execute({
+            tenantId,
+            channelId: fixture.channelId,
+            marketplaceKey: 'namshi',
+            payload: {
+                source: 'fbpi_order_sync',
+                event: buildNamshiFbpiOrderSyncWebhook({
+                    payload: { order_nr: externalOrderId },
+                    metadata: {
+                        message_id: 'msg-partial-cancel',
+                        published_at: '2026-04-09T09:00:00Z',
+                    },
+                }),
+            },
+        });
+        expect(result.outcome).toBe('applied');
     });
 
     it('does not apply Namshi lifecycle command to another tenant order', async () => {
