@@ -26,6 +26,7 @@
 | [ADR-028](ADR-028-phase-15-catalog-sync-architecture.md) | Phase 15 Product, Inventory & Pricing Sync (architecture) | Accepted |
 | [ADR-029](ADR-029-marketplace-connector-framework.md) | Phase 21 Marketplace Connector Framework | Accepted |
 | [ADR-030](ADR-030-marketplace-connection-entity-mapping.md) | Phase 22 Connection & Entity Mapping Foundation | Accepted |
+| [ADR-031](ADR-031-phase-32-marketplace-webhook-framework.md) | Phase 32 Generic Marketplace Webhook Framework | Accepted |
 
 ## Phase roadmap (architecture)
 

@@ -66,6 +66,23 @@ export class PostgresMarketplaceConnectionRepository {
      * @param {string} tenantId
      * @param {string} channelId
      */
+    /**
+     * @param {object} queryable
+     * @param {string} tenantId
+     * @param {string} connectionId
+     * @param {string} tokenHash
+     */
+    async updateWebhookIngressTokenHash(queryable, tenantId, connectionId, tokenHash) {
+        await queryable.query(`UPDATE marketplace_connections
+       SET webhook_ingress_token_hash = $3, updated_at = now()
+       WHERE tenant_id = $1 AND id = $2`, [tenantId, connectionId, tokenHash], { operation: 'marketplace_connections.update_webhook_token_hash' });
+    }
+
+    /**
+     * @param {object} queryable
+     * @param {string} tenantId
+     * @param {string} channelId
+     */
     async findByChannel(queryable, tenantId, channelId) {
         const result = await queryable.query(`SELECT id, tenant_id, channel_id, marketplace_key, credentials_ciphertext,
               configuration, status, last_test_at, last_test_outcome, last_test_error, created_at, updated_at

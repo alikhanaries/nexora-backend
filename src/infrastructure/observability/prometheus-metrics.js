@@ -167,9 +167,9 @@ export class PrometheusMetrics {
             labelNames: ['outcome', 'marketplace', 'operation'],
             registers: [this.registry],
         });
-        this.marketplaceOrderLifecycleTotal = new Counter({
-            name: 'marketplace_order_lifecycle_total',
-            help: 'Marketplace order lifecycle outcomes.',
+        this.marketplaceWebhookTotal = new Counter({
+            name: 'marketplace_webhook_total',
+            help: 'Inbound marketplace webhook outcomes.',
             labelNames: ['outcome', 'marketplace', 'operation'],
             registers: [this.registry],
         });
@@ -261,11 +261,11 @@ export class PrometheusMetrics {
             operation: sample.operation ?? 'ingest',
         });
     }
-    recordMarketplaceOrderLifecycle(sample) {
-        this.marketplaceOrderLifecycleTotal.inc({
+    recordMarketplaceWebhook(sample) {
+        this.marketplaceWebhookTotal.inc({
             outcome: sample.outcome,
             marketplace: sample.marketplace ?? 'unknown',
-            operation: sample.operation ?? 'lifecycle',
+            operation: sample.operation ?? 'webhook',
         });
     }
     recordCatalogSyncReconciliation(sample) {

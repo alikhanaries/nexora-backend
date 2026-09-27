@@ -76,6 +76,9 @@ export async function createHttpServer(deps) {
     await app.register(foundationRoutes);
     await app.register(deps.tenants.routes, deps.tenants.useCases);
     await app.register(deps.identity.routes.auth);
+    if (deps.marketplaceWebhookIngestion !== undefined) {
+        await app.register(deps.marketplaceWebhookIngestion.routes);
+    }
     await app.register(authenticationPlugin, {
         authenticateAccessToken: deps.authenticateAccessToken,
         verifyApiKey: deps.verifyApiKey,

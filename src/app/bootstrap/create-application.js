@@ -20,17 +20,23 @@ import { createTenantsModule } from '../../modules/tenants/index.js';
 import { createCompatibilityModule } from '../../modules/compatibility/index.js';
 import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
 import { createWebhooksModule } from '../../modules/webhooks/index.js';
+import { createMarketplaceWebhookIngestionModule } from '../../modules/marketplace-webhook-ingestion/index.js';
+import { registerMarketplaceWebhookAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-webhook-adapters.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
+import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestion.js';
 import { createHttpServer } from '../http/create-server.js';
 import { createDefaultProbes, ReadinessService } from '../observability/readiness.js';
 export async function createApplication(infra) {
     const audit = createAuditModule({ database: infra.database });
     const authorization = createAuthorizationModule({ database: infra.database });
+    const membershipRoles = new PostgresMembershipRoleRepository();
+    const membershipPermissions = new AuthorizationMembershipPermissionResolver(membershipRoles);
     const identity = await createIdentityModule({
         database: infra.database,
         config: infra.config,
         rateLimiter: infra.rateLimiter,
         auditRecorder: audit.auditRecorder,
+        membershipPermissionResolver: membershipPermissions,
     });
     const mfa = createMfaModule({
         database: infra.database,
@@ -46,8 +52,6 @@ export async function createApplication(infra) {
         stepUpVerifier: mfa.stepUpService,
         auditRecorder: audit.auditRecorder,
     });
-    const membershipRoles = new PostgresMembershipRoleRepository();
-    const membershipPermissions = new AuthorizationMembershipPermissionResolver(membershipRoles);
     const authenticateAccessToken = new AuthenticateAccessTokenUseCase({
         db: infra.database,
         accessTokenService: identity.auth.accessTokenService,
@@ -189,6 +193,21 @@ export async function createApplication(infra) {
         stepUpVerifier: mfa.stepUpService,
         auditRecorder: audit.auditRecorder,
     });
+    const marketplaceOrderIngestion = wireMarketplaceOrderIngestion({
+        database: infra.database,
+        metrics: infra.metrics,
+        logger: infra.logger,
+        createChannelOrder: orders.createChannelOrder,
+        shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
+    });
+    const marketplaceWebhookIngestion = createMarketplaceWebhookIngestionModule({
+        database: infra.database,
+        idempotency: infra.idempotency,
+        metrics: infra.metrics,
+        logger: infra.logger,
+        ingestNormalizedMarketplaceOrder: marketplaceOrderIngestion.ingestNormalizedMarketplaceOrder,
+        registerMarketplaceWebhookAdapters: (registry) => registerMarketplaceWebhookAdapters(registry),
+    });
     const compatibility = createCompatibilityModule({
         rateLimiter: infra.rateLimiter,
         coreContracts: {
@@ -231,6 +250,7 @@ export async function createApplication(infra) {
         shipments,
         returns,
         webhooks,
+        marketplaceWebhookIngestion,
         compatibility,
         authenticateAccessToken,
         verifyApiKey: apiKeys.useCases.verifyApiKey,
@@ -254,6 +274,8 @@ export async function createApplication(infra) {
         returns,
         compatibility,
         webhooks,
+        marketplaceOrderIngestion,
+        marketplaceWebhookIngestion,
         readiness,
         httpServer,
     };
