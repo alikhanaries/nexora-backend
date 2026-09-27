@@ -15,6 +15,8 @@ export const normalizedMarketplaceWebhookEventSchema = z.object({
     ]),
     marketplaceKey: z.string().min(1).max(64),
     resource: orderResourceSchema,
+    providerEventId: z.string().min(1).max(256).optional(),
+    providerTopic: z.string().min(1).max(128).optional(),
 });
 
 /** @typedef {z.infer<typeof normalizedMarketplaceWebhookEventSchema>} NormalizedMarketplaceWebhookEvent */

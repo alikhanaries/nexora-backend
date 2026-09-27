@@ -21,6 +21,9 @@ import { MarketplaceOrderAdapterRegistry } from './public/marketplace-order-adap
  * @param {import('../orders/infrastructure/postgres-order-repository.js').PostgresOrderRepository} [deps.orders]
  * @param {import('../orders/application/confirm-order.js').ConfirmOrder} [deps.confirmOrder]
  * @param {import('../cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} [deps.cancellationCommandService]
+ * @param {import('../returns/public/return-command-service.js').DefaultReturnCommandService} [deps.returnCommandService]
+ * @param {import('../shipments/public/shipment-command-service.js').DefaultShipmentCommandService} [deps.shipmentCommandService]
+ * @param {{ execute: (input: object) => Promise<{ shipment: object }> }} [deps.shipShipment]
  * @param {import('../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
  */
 export function createMarketplaceOrderIngestionModule(deps) {
@@ -63,6 +66,9 @@ export function createMarketplaceOrderIngestionModule(deps) {
             productQueryService: deps.productQueryService,
             confirmOrder: deps.confirmOrder,
             cancellationCommandService: deps.cancellationCommandService,
+            ...(deps.returnCommandService === undefined ? {} : { returnCommandService: deps.returnCommandService }),
+            ...(deps.shipmentCommandService === undefined ? {} : { shipmentCommandService: deps.shipmentCommandService }),
+            ...(deps.shipShipment === undefined ? {} : { shipShipment: deps.shipShipment }),
         })
         : undefined;
     const lifecycleService = lifecycleEnabled

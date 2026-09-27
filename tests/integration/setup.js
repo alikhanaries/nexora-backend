@@ -1,7 +1,7 @@
 import { config as loadEnv } from 'dotenv';
 loadEnv({ path: '.env', override: false });
 process.env.NODE_ENV ??= 'test';
-process.env.DATABASE_URL = 'postgresql://nexora:nexora@localhost:5433/nexora';
+process.env.DATABASE_URL ??= 'postgresql://nexora:nexora@localhost:5433/nexora';
 process.env.REDIS_URL ??= 'redis://localhost:6379';
 process.env.QUEUE_REDIS_URL ??= 'redis://localhost:6379';
 process.env.STORAGE_ENDPOINT ??= 'http://localhost:9000';

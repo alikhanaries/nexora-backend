@@ -9,6 +9,7 @@ import { createMarketplaceWebhookRoutes } from './presentation/marketplace-webho
  * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
  * @param {import('../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
  * @param {import('../marketplace-order-ingestion/application/ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
+ * @param {import('../marketplace-order-ingestion/application/marketplace-order-lifecycle-service.js').MarketplaceOrderLifecycleService} [deps.marketplaceOrderLifecycleService]
  * @param {import('../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
  * @param {import('../../shared/logging/logger.port.js').Logger} [deps.logger]
  * @param {(registry: MarketplaceWebhookAdapterRegistry) => void} [deps.registerMarketplaceWebhookAdapters]
@@ -19,6 +20,9 @@ export function createMarketplaceWebhookIngestionModule(deps) {
     const resolveConnection = new ResolveMarketplaceWebhookConnection(deps.database);
     const orderLifecycleProcessor = new MarketplaceOrderLifecycleProcessor({
         ingestNormalizedMarketplaceOrder: deps.ingestNormalizedMarketplaceOrder,
+        ...(deps.marketplaceOrderLifecycleService === undefined
+            ? {}
+            : { marketplaceOrderLifecycleService: deps.marketplaceOrderLifecycleService }),
     });
     const receiveMarketplaceWebhook = new ReceiveMarketplaceWebhook({
         resolveConnection: resolveConnection,

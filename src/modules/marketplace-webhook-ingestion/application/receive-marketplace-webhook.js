@@ -12,6 +12,7 @@ import {
     MarketplaceOrderIngestionPermanentError,
     MarketplaceOrderIngestionRetryError,
 } from '../../marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
+import { MarketplaceOrderLifecycleRetryError } from '../../marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
 
 const ROUTE_ID = 'POST /api/v1/inbound/marketplace-webhooks/:ingressToken';
 
@@ -139,7 +140,7 @@ export class ReceiveMarketplaceWebhook {
             };
         }
         catch (error) {
-            if (error instanceof MarketplaceOrderIngestionRetryError) {
+            if (error instanceof MarketplaceOrderIngestionRetryError || error instanceof MarketplaceOrderLifecycleRetryError) {
                 recordMarketplaceWebhookOutcome(this.deps.metrics, 'retryable_failure', metricBase);
                 throw new MarketplaceWebhookRetryableError(error.message, {
                     retryAfterSeconds: error.retryDelayMs === null ? null : Math.ceil(error.retryDelayMs / 1_000),

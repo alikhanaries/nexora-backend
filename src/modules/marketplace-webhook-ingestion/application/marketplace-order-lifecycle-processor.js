@@ -4,6 +4,11 @@ import {
     MarketplaceWebhookUnsupportedError,
 } from './marketplace-webhook-errors.js';
 import { MarketplaceOrderIngestionPermanentError, MarketplaceOrderIngestionRetryError, } from '../../marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
+import {
+    MarketplaceOrderLifecyclePermanentError,
+    MarketplaceOrderLifecycleRetryError,
+} from '../../marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
+import { mapNormalizedMarketplaceOrderToStatusSyncCommand } from '../../marketplace-order-ingestion/application/map-normalized-order-to-status-sync-command.js';
 
 /**
  * Generic order lifecycle handler for normalized marketplace webhook events (Phase 31/32 boundary).
@@ -15,6 +20,7 @@ export class MarketplaceOrderLifecycleProcessor {
     /**
      * @param {object} deps
      * @param {import('../../marketplace-order-ingestion/application/ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
+     * @param {import('../../marketplace-order-ingestion/application/marketplace-order-lifecycle-service.js').MarketplaceOrderLifecycleService} [deps.marketplaceOrderLifecycleService]
      */
     constructor(deps) {
         this.deps = deps;
@@ -38,13 +44,44 @@ export class MarketplaceOrderLifecycleProcessor {
             case MarketplaceWebhookEventKind.ORDER_CREATE:
                 return this.ingestOrderCreate(input);
             case MarketplaceWebhookEventKind.ORDER_UPDATE:
-                throw new MarketplaceWebhookUnsupportedError('Order update webhooks are not implemented', {
-                    eventKind: event.eventKind,
-                });
+                return this.syncOrderUpdate(input);
             default:
                 throw new MarketplaceWebhookUnsupportedError('Webhook event kind is not supported', {
                     eventKind: event.eventKind,
                 });
+        }
+    }
+
+    async syncOrderUpdate(input) {
+        if (this.deps.marketplaceOrderLifecycleService === undefined) {
+            throw new MarketplaceWebhookUnsupportedError('Order update webhooks require marketplace lifecycle service');
+        }
+        const { event } = input;
+        const externalEventId = event.providerEventId ?? event.deduplicationKey;
+        const command = mapNormalizedMarketplaceOrderToStatusSyncCommand({
+            normalizedOrder: event.resource.order,
+            externalEventId,
+        });
+        try {
+            return await this.deps.marketplaceOrderLifecycleService.apply({
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                command,
+                ...(input.correlationId === undefined ? {} : { correlationId: input.correlationId }),
+            });
+        }
+        catch (error) {
+            if (error instanceof MarketplaceOrderLifecycleRetryError) {
+                throw error;
+            }
+            if (error instanceof MarketplaceOrderLifecyclePermanentError) {
+                const message = error.message ?? '';
+                if (message.includes('Marketplace order was not found')) {
+                    return this.ingestOrderCreate(input);
+                }
+                throw new MarketplaceWebhookPermanentError(error.message, error.safeDetails);
+            }
+            throw error;
         }
     }
 
