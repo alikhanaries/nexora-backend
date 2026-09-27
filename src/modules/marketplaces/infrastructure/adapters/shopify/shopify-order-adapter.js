@@ -1,4 +1,5 @@
 import { MarketplaceValidationError } from '../../../domain/marketplace-errors.js';
+import { defaultMarketplaceOrderLifecycleCapabilities } from '../../../../marketplace-order-ingestion/public/marketplace-order-lifecycle-capabilities.js';
 import { BaseMarketplaceOrderAdapter } from '../base-marketplace-order-adapter.js';
 import { SHOPIFY_MARKETPLACE_KEY } from './shopify-catalog-adapter.js';
 import { ShopifyGraphqlClient } from './shopify-graphql-client.js';
@@ -36,6 +37,10 @@ export class ShopifyOrderAdapter extends BaseMarketplaceOrderAdapter {
             supportsOrderWebhookIngestion: false,
             supportsOrderPolling: true,
         };
+    }
+
+    getOrderLifecycleCapabilities() {
+        return defaultMarketplaceOrderLifecycleCapabilities();
     }
 
     /**

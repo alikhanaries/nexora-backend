@@ -34,6 +34,7 @@ export class PrometheusMetrics {
     commerceOperationsTotal;
     catalogSyncJobsTotal;
     marketplaceOrderIngestionTotal;
+    marketplaceOrderLifecycleTotal;
     constructor(serviceName) {
         this.registry = new Registry();
         this.registry.setDefaultLabels({ service: serviceName });
