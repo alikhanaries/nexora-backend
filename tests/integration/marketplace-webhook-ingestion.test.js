@@ -47,7 +47,7 @@ describe('marketplace webhook ingestion integration', () => {
             headers,
         });
         const marketplaceKey = marketplaceRes.json().data.key;
-        await server.inject({
+        const connectionRes = await server.inject({
             method: 'POST',
             url: `/api/v1/channels/${fixture.channelId}/marketplace-connection`,
             headers,
@@ -56,12 +56,12 @@ describe('marketplace webhook ingestion integration', () => {
                 configuration: {},
             },
         });
+        expect(connectionRes.statusCode).toBe(201);
+        const connectionId = connectionRes.json().data.id;
         const ingressToken = generateWebhookIngressToken();
         const connections = new PostgresMarketplaceConnectionRepository();
         await database.execute(async (tx) => {
-            const active = await connections.findActiveByChannel(tx, tenantId, fixture.channelId);
-            expect(active).not.toBeNull();
-            await connections.updateWebhookIngressTokenHash(tx, tenantId, active.id, hashWebhookIngressToken(ingressToken));
+            await connections.updateWebhookIngressTokenHash(tx, tenantId, connectionId, hashWebhookIngressToken(ingressToken));
         }, { tenantId });
         app.marketplaceWebhookIngestion.webhookAdapterRegistry.register(createTestMarketplaceWebhookAdapter(marketplaceKey));
         return {

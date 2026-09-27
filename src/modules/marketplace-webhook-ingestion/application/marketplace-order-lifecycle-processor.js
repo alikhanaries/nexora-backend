@@ -8,7 +8,6 @@ import {
     MarketplaceOrderLifecyclePermanentError,
     MarketplaceOrderLifecycleRetryError,
 } from '../../marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
-import { mapNormalizedMarketplaceOrderToStatusSyncCommand } from '../../marketplace-order-ingestion/application/map-normalized-order-to-status-sync-command.js';
 
 /**
  * Generic order lifecycle handler for normalized marketplace webhook events (Phase 31/32 boundary).
@@ -20,7 +19,7 @@ export class MarketplaceOrderLifecycleProcessor {
     /**
      * @param {object} deps
      * @param {import('../../marketplace-order-ingestion/application/ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
-     * @param {import('../../marketplace-order-ingestion/application/marketplace-order-lifecycle-service.js').MarketplaceOrderLifecycleService} [deps.marketplaceOrderLifecycleService]
+     * @param {import('../../marketplace-order-ingestion/application/process-marketplace-lifecycle-payload.js').ProcessMarketplaceLifecyclePayload} [deps.processMarketplaceLifecyclePayload]
      */
     constructor(deps) {
         this.deps = deps;
@@ -44,7 +43,7 @@ export class MarketplaceOrderLifecycleProcessor {
             case MarketplaceWebhookEventKind.ORDER_CREATE:
                 return this.ingestOrderCreate(input);
             case MarketplaceWebhookEventKind.ORDER_UPDATE:
-                return this.syncOrderUpdate(input);
+                return this.applyOrderUpdate(input);
             default:
                 throw new MarketplaceWebhookUnsupportedError('Webhook event kind is not supported', {
                     eventKind: event.eventKind,
@@ -52,33 +51,33 @@ export class MarketplaceOrderLifecycleProcessor {
         }
     }
 
-    async syncOrderUpdate(input) {
-        if (this.deps.marketplaceOrderLifecycleService === undefined) {
-            throw new MarketplaceWebhookUnsupportedError('Order update webhooks require marketplace lifecycle service');
+    async applyOrderUpdate(input) {
+        if (this.deps.processMarketplaceLifecyclePayload === undefined) {
+            throw new MarketplaceWebhookUnsupportedError('Order update webhooks require marketplace lifecycle processing', {
+                eventKind: input.event.eventKind,
+            });
         }
-        const { event } = input;
-        const externalEventId = event.providerEventId ?? event.deduplicationKey;
-        const command = mapNormalizedMarketplaceOrderToStatusSyncCommand({
-            normalizedOrder: event.resource.order,
-            externalEventId,
-        });
+        const lifecyclePayload = input.event.resource.lifecyclePayload;
         try {
-            return await this.deps.marketplaceOrderLifecycleService.apply({
+            const result = await this.deps.processMarketplaceLifecyclePayload.execute({
                 tenantId: input.tenantId,
                 channelId: input.channelId,
-                command,
-                ...(input.correlationId === undefined ? {} : { correlationId: input.correlationId }),
+                marketplaceKey: input.event.marketplaceKey,
+                payload: lifecyclePayload,
+                ...(input.correlationId === undefined ? {} : { jobId: input.correlationId }),
             });
+            return {
+                outcome: result.outcome,
+                externalOrderReference: null,
+            };
         }
         catch (error) {
             if (error instanceof MarketplaceOrderLifecycleRetryError) {
-                throw error;
+                throw new MarketplaceOrderIngestionRetryError(error.message, {
+                    retryDelayMs: error.retryDelayMs ?? null,
+                });
             }
             if (error instanceof MarketplaceOrderLifecyclePermanentError) {
-                const message = error.message ?? '';
-                if (message.includes('Marketplace order was not found')) {
-                    return this.ingestOrderCreate(input);
-                }
                 throw new MarketplaceWebhookPermanentError(error.message, error.safeDetails);
             }
             throw error;

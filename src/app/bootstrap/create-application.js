@@ -216,23 +216,7 @@ export async function createApplication(infra) {
         createChannelOrder: orders.createChannelOrder,
         marketplaceAdapterRuntimeFactory,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
-        orders: new PostgresOrderRepository(),
-        confirmOrder: orders.useCases.confirmOrder,
-        cancellationCommandService: cancellations.cancellationCommandService,
-        returnCommandService: returns.returnCommandService,
-        shipmentCommandService: shipments.shipmentCommandService,
-        shipShipment: shipments.useCases.shipShipment,
-        idempotency: infra.idempotency,
-    });
-    const outboundOrderLifecycleAdapterRegistry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
-    registerMarketplaceOutboundOrderLifecycleAdapters(outboundOrderLifecycleAdapterRegistry, {
-        shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
-    });
-    const executeOutboundMarketplaceOrderLifecycle = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
-        lifecycleAdapterRegistry: outboundOrderLifecycleAdapterRegistry,
-        marketplaceAdapterRuntimeFactory,
-        database: infra.database,
-        idempotency: infra.idempotency,
+        amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
     });
     const marketplaceWebhookIngestion = createMarketplaceWebhookIngestionModule({
         database: infra.database,

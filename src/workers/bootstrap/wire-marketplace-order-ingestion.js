@@ -17,18 +17,18 @@ import { PostgresProductRepository } from '../../modules/products/infrastructure
  * @param {import('../../modules/channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
  * @param {(registry: import('../../modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry) => void} [deps.registerMarketplaceOrderAdapters]
  * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
+ * @param {string | null | undefined} [deps.amazonLwaTokenUrl]
  * @param {import('../../modules/orders/infrastructure/postgres-order-repository.js').PostgresOrderRepository} [deps.orders]
  * @param {import('../../modules/orders/application/confirm-order.js').ConfirmOrder} [deps.confirmOrder]
  * @param {import('../../modules/cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} [deps.cancellationCommandService]
- * @param {import('../../modules/returns/public/return-command-service.js').DefaultReturnCommandService} [deps.returnCommandService]
- * @param {import('../../modules/shipments/public/shipment-command-service.js').DefaultShipmentCommandService} [deps.shipmentCommandService]
- * @param {{ execute: (input: object) => Promise<{ shipment: object }> }} [deps.shipShipment]
  * @param {import('../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
+ * @param {import('../../modules/channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
  */
 export function wireMarketplaceOrderIngestion(deps) {
     const registerOrderAdapters = deps.registerMarketplaceOrderAdapters ??
         ((registry) => registerMarketplaceOrderAdapters(registry, {
             shopifyAdminApiVersion: deps.shopifyAdminApiVersion,
+            amazonLwaTokenUrl: deps.amazonLwaTokenUrl,
         }));
     const channelRepository = new PostgresChannelRepository();
     const channelQueryService = new DefaultChannelQueryService({
@@ -68,20 +68,13 @@ export function wireMarketplaceOrderIngestion(deps) {
         productQueryService,
         metrics: deps.metrics,
         logger: deps.logger,
+        registerMarketplaceOrderAdapters: registerOrderAdapters,
         ...(deps.marketplaceAdapterRuntimeFactory === undefined
             ? {}
             : { marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory }),
-        registerMarketplaceOrderAdapters: registerOrderAdapters,
         ...(deps.orders === undefined ? {} : { orders: deps.orders }),
         ...(deps.confirmOrder === undefined ? {} : { confirmOrder: deps.confirmOrder }),
-        ...(deps.cancellationCommandService === undefined
-            ? {}
-            : { cancellationCommandService: deps.cancellationCommandService }),
-        ...(deps.returnCommandService === undefined ? {} : { returnCommandService: deps.returnCommandService }),
-        ...(deps.shipmentCommandService === undefined
-            ? {}
-            : { shipmentCommandService: deps.shipmentCommandService }),
-        ...(deps.shipShipment === undefined ? {} : { shipShipment: deps.shipShipment }),
+        ...(deps.cancellationCommandService === undefined ? {} : { cancellationCommandService: deps.cancellationCommandService }),
         ...(deps.idempotency === undefined ? {} : { idempotency: deps.idempotency }),
     });
 }

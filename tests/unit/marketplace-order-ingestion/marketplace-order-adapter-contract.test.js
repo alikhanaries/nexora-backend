@@ -4,6 +4,7 @@ import { MarketplaceOrderIngestionPermanentError } from '../../../src/modules/ma
 import { registerMarketplaceCatalogAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-catalog-adapters.js';
 import { registerMarketplaceOrderAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-order-adapters.js';
 import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/channel-catalog-sync/public/marketplace-catalog-adapter-registry.js';
+import { AmazonOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-order-adapter.js';
 import { ShopifyOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-order-adapter.js';
 
 /**
@@ -49,6 +50,7 @@ export function runMarketplaceOrderAdapterContractTests(adapter) {
 }
 
 runMarketplaceOrderAdapterContractTests(new ShopifyOrderAdapter());
+runMarketplaceOrderAdapterContractTests(new AmazonOrderAdapter());
 
 describe('marketplace order adapter registry', () => {
     it('catalog adapters remain separate from order registry', () => {
@@ -57,6 +59,7 @@ describe('marketplace order adapter registry', () => {
         const orderRegistry = new MarketplaceOrderAdapterRegistry();
         registerMarketplaceOrderAdapters(orderRegistry);
         expect(orderRegistry.resolve('shopify')).toBeInstanceOf(ShopifyOrderAdapter);
+        expect(orderRegistry.resolve('amazon')).toBeInstanceOf(AmazonOrderAdapter);
         expect(catalogRegistry.resolve('shopify')).not.toBeNull();
     });
 });

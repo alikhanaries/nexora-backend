@@ -46,6 +46,33 @@ Deployment may set `AMAZON_LWA_TOKEN_URL` in environment config (see `.env.examp
 - **SigV4:** `AwsSigV4RequestSigner` (`execute-api` service) — reusable for other signed providers
 - **Transport:** generic `MarketplaceHttpClient` (no Amazon branches)
 
+## Order lifecycle (Phase 34)
+
+Uses the generic marketplace order lifecycle framework (Phase 31) and webhook ingress (Phase 32).
+
+| Generic operation | Amazon support | Mechanism |
+| ----------------- | -------------- | --------- |
+| `status_sync` | Yes | `ORDER_CHANGE` notification → map `Summary.OrderStatus`; optional `GET /orders/v0/orders/{orderId}` polling |
+| `cancel_order` | Yes (inbound) | `BuyerRequestedChange` / `Canceled` status → generic cancellation |
+| `update_order` | No | Amazon orders are not arbitrarily mutable via Orders API |
+| `return_order` / `refund_order` | No | Not implemented in Phase 34 (no direct mutation API wired) |
+| `fulfill_order` / `shipment_update` | No | `confirmShipment` client method exists; generic executor deferred |
+
+### Notifications
+
+Amazon delivers SP-API notifications through **SNS**. Nexora’s marketplace webhook endpoint expects the **SNS HTTPS POST body** (Type `Notification`, JSON `Message` containing the SP-API notification). `NotificationMetadata.NotificationId` is the lifecycle/webhook deduplication key.
+
+SNS subscription confirmation must be completed outside Nexora before events arrive.
+
+### Orders API (read / outbound)
+
+| Operation | SP-API |
+| --------- | ------ |
+| Read order | `GET /orders/v0/orders/{orderId}` |
+| Confirm shipment (MFN, deferred) | `POST /orders/v0/orders/{orderId}/shipmentConfirmation` |
+
+Authentication reuses LWA + SigV4 from catalog (`AmazonSpApiClient`).
+
 ## Limitations
 
 - Does **not** create new Amazon catalog listings or ASINs — SKU must already exist in Seller Central / Listings API.
