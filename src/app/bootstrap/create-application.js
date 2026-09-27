@@ -200,6 +200,8 @@ export async function createApplication(infra) {
         createChannelOrder: orders.createChannelOrder,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
+        noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
+        noonUserAgent: infra.config.marketplace.noonUserAgent,
     });
     const marketplaceWebhookIngestion = createMarketplaceWebhookIngestionModule({
         database: infra.database,
