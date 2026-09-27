@@ -9,7 +9,7 @@ Legend: **In** = inbound only, **Out** = outbound only, **Both** = implemented i
 | Amazon | — | In | — | — | — | — | In | In (SNS `ORDER_CHANGE`) | In (`getOrder`) |
 | Shopify | — | In + Out | — | Out | Out | — | In | In (Admin webhooks) | In (GraphQL poll) |
 | Noon | — | In | — | — | — | — | In | In (`FBPI::ORDER_SYNC`) | In (`GetFbpiOrder`) |
-| Namshi | — | — | — | — | — | — | — | — | — |
+| Namshi | — | In | — | — | — | — | In | In (FBPI `ORDER_SYNC`) | In (`GetFbpiOrder`) |
 
 ## Idempotency keys (inbound)
 
@@ -18,6 +18,7 @@ Legend: **In** = inbound only, **Out** = outbound only, **Both** = implemented i
 | Amazon | SNS / `NotificationId` | Notification id or composite |
 | Shopify | `shopify:webhook:{x-shopify-webhook-id}` | Webhook id or status-sync from normalized order |
 | Noon | `metadata.message_id` | Same as message id after `GetFbpiOrder` |
+| Namshi | `metadata.message_id` | Same as message id after `GetFbpiOrder` |
 
 ## Application wiring
 

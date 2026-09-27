@@ -217,6 +217,8 @@ export async function createApplication(infra) {
         marketplaceAdapterRuntimeFactory,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
+        noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
+        noonUserAgent: infra.config.marketplace.noonUserAgent,
         orders: new PostgresOrderRepository(),
         confirmOrder: orders.useCases.confirmOrder,
         cancellationCommandService: cancellations.cancellationCommandService,

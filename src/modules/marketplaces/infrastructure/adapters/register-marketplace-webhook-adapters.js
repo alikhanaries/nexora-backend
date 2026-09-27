@@ -1,4 +1,5 @@
 import { AmazonWebhookAdapter } from './amazon/amazon-webhook-adapter.js';
+import { NamshiWebhookAdapter } from './namshi/namshi-webhook-adapter.js';
 import { NoonWebhookAdapter } from './noon/noon-webhook-adapter.js';
 import { ShopifyMarketplaceWebhookAdapter } from './shopify/shopify-marketplace-webhook-adapter.js';
 
@@ -12,6 +13,7 @@ import { ShopifyMarketplaceWebhookAdapter } from './shopify/shopify-marketplace-
  */
 export function registerMarketplaceWebhookAdapters(registry, deps = {}) {
     registry.register(new AmazonWebhookAdapter());
+    registry.register(new NamshiWebhookAdapter());
     registry.register(new NoonWebhookAdapter());
     if (deps.marketplaceAdapterRuntimeFactory !== undefined
         && deps.channelQueryService !== undefined

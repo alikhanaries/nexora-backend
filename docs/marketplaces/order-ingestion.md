@@ -118,6 +118,16 @@ Shopify declares **no lifecycle capabilities** in Phase 31; create/poll ingestio
 
 Metric: `marketplace_order_lifecycle_total` (`outcome`, `marketplace`, `operation`).
 
+## Namshi order lifecycle (Phase 36)
+
+Namshi uses FBPI on the noon Partners gateway. See [namshi/README.md](../../src/modules/marketplaces/infrastructure/adapters/namshi/README.md).
+
+- **Inbound:** `FBPI::ORDER_SYNC` (Event Notifications) → marketplace webhook ingress → `GetFbpiOrder` → `ProcessMarketplaceLifecyclePayload`. The HTTP app wires `processMarketplaceLifecyclePayload` in `createApplication` (shared with Amazon ORDER_CHANGE webhooks).
+- **Polling sync:** `NamshiOrderAdapter.fetchOrderLifecycleCommand` → `GET /fbpi/v1/fbpi-order/{fbpi_order_nr}/get`.
+- **Capabilities:** `status_sync` and inbound `cancel_order` (partial line cancel); returns/refunds/outbound fulfill deferred.
+
+Orders with `mp_code !== namshi` are rejected at normalization time (tenant/channel isolation uses connection marketplace key plus order lookup scope).
+
 ## Amazon order lifecycle (Phase 34)
 
 Amazon is the second provider on the generic lifecycle framework. See [amazon/README.md](../../src/modules/marketplaces/infrastructure/adapters/amazon/README.md).
