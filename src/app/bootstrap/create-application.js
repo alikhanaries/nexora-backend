@@ -216,6 +216,7 @@ export async function createApplication(infra) {
         createChannelOrder: orders.createChannelOrder,
         marketplaceAdapterRuntimeFactory,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
+        amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
         orders: new PostgresOrderRepository(),
         confirmOrder: orders.useCases.confirmOrder,
         cancellationCommandService: cancellations.cancellationCommandService,
@@ -240,6 +241,9 @@ export async function createApplication(infra) {
         metrics: infra.metrics,
         logger: infra.logger,
         ingestNormalizedMarketplaceOrder: marketplaceOrderIngestion.ingestNormalizedMarketplaceOrder,
+        ...(marketplaceOrderIngestion.processMarketplaceLifecyclePayload === undefined
+            ? {}
+            : { processMarketplaceLifecyclePayload: marketplaceOrderIngestion.processMarketplaceLifecyclePayload }),
         ...(marketplaceOrderIngestion.lifecycleService === undefined
             ? {}
             : { marketplaceOrderLifecycleService: marketplaceOrderIngestion.lifecycleService }),

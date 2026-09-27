@@ -41,6 +41,37 @@ export class AmazonSpApiClient {
      * @param {string} sku
      * @param {object[]} patches
      */
+    /**
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} amazonOrderId
+     */
+    async getOrder(runtime, amazonOrderId) {
+        const host = resolveAmazonSpApiHost(runtime.configuration ?? {});
+        const url = `${host}/orders/v0/orders/${encodeURIComponent(amazonOrderId)}`;
+        return this.signedRequest(runtime, {
+            url,
+            method: 'GET',
+        });
+    }
+
+    /**
+     * Merchant-fulfilled shipment confirmation (Orders API v0).
+     *
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} amazonOrderId
+     * @param {object} body
+     */
+    async confirmShipment(runtime, amazonOrderId, body) {
+        const host = resolveAmazonSpApiHost(runtime.configuration ?? {});
+        const url = `${host}/orders/v0/orders/${encodeURIComponent(amazonOrderId)}/shipmentConfirmation`;
+        return this.signedRequest(runtime, {
+            url,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+    }
+
     async patchListingItem(runtime, sku, patches) {
         const host = resolveAmazonSpApiHost(runtime.configuration ?? {});
         const sellerId = readAmazonSellerId(runtime.credentials);

@@ -118,6 +118,14 @@ Shopify declares **no lifecycle capabilities** in Phase 31; create/poll ingestio
 
 Metric: `marketplace_order_lifecycle_total` (`outcome`, `marketplace`, `operation`).
 
+## Amazon order lifecycle (Phase 34)
+
+Amazon is the second provider on the generic lifecycle framework. See [amazon/README.md](../../src/modules/marketplaces/infrastructure/adapters/amazon/README.md).
+
+- **Inbound:** SP-API `ORDER_CHANGE` notifications (SNS → marketplace webhook ingress) normalize to `order.update` events with a provider `lifecyclePayload`, then `ProcessMarketplaceLifecyclePayload` → `MarketplaceOrderLifecycleService`.
+- **Polling sync:** `AmazonOrderAdapter.fetchOrderLifecycleCommand` / `normalizeLifecycleCommand` with `source: sp_api_get_order` calls `GET /orders/v0/orders/{orderId}`.
+- **Capabilities:** `status_sync` and inbound `cancel_order` only; outbound fulfillment and returns/refunds deferred.
+
 ## Deferred (later phases)
 
 - Inbound webhook routes and signature verification

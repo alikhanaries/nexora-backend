@@ -21,6 +21,7 @@ export class MarketplaceOrderLifecycleProcessor {
      * @param {object} deps
      * @param {import('../../marketplace-order-ingestion/application/ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
      * @param {import('../../marketplace-order-ingestion/application/marketplace-order-lifecycle-service.js').MarketplaceOrderLifecycleService} [deps.marketplaceOrderLifecycleService]
+     * @param {import('../../marketplace-order-ingestion/application/process-marketplace-lifecycle-payload.js').ProcessMarketplaceLifecyclePayload} [deps.processMarketplaceLifecyclePayload]
      */
     constructor(deps) {
         this.deps = deps;
@@ -44,6 +45,9 @@ export class MarketplaceOrderLifecycleProcessor {
             case MarketplaceWebhookEventKind.ORDER_CREATE:
                 return this.ingestOrderCreate(input);
             case MarketplaceWebhookEventKind.ORDER_UPDATE:
+                if ('lifecyclePayload' in event.resource) {
+                    return this.applyOrderUpdate(input);
+                }
                 return this.syncOrderUpdate(input);
             default:
                 throw new MarketplaceWebhookUnsupportedError('Webhook event kind is not supported', {
@@ -57,6 +61,9 @@ export class MarketplaceOrderLifecycleProcessor {
             throw new MarketplaceWebhookUnsupportedError('Order update webhooks require marketplace lifecycle service');
         }
         const { event } = input;
+        if (!('order' in event.resource)) {
+            throw new MarketplaceWebhookUnsupportedError('Order update webhook is missing normalized order');
+        }
         const externalEventId = event.providerEventId ?? event.deduplicationKey;
         const command = mapNormalizedMarketplaceOrderToStatusSyncCommand({
             normalizedOrder: event.resource.order,
@@ -79,6 +86,39 @@ export class MarketplaceOrderLifecycleProcessor {
                 if (message.includes('Marketplace order was not found')) {
                     return this.ingestOrderCreate(input);
                 }
+                throw new MarketplaceWebhookPermanentError(error.message, error.safeDetails);
+            }
+            throw error;
+        }
+    }
+
+    async applyOrderUpdate(input) {
+        if (this.deps.processMarketplaceLifecyclePayload === undefined) {
+            throw new MarketplaceWebhookUnsupportedError('Order update webhooks require marketplace lifecycle processing', {
+                eventKind: input.event.eventKind,
+            });
+        }
+        const lifecyclePayload = input.event.resource.lifecyclePayload;
+        try {
+            const result = await this.deps.processMarketplaceLifecyclePayload.execute({
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                marketplaceKey: input.event.marketplaceKey,
+                payload: lifecyclePayload,
+                ...(input.correlationId === undefined ? {} : { jobId: input.correlationId }),
+            });
+            return {
+                outcome: result.outcome,
+                externalOrderReference: null,
+            };
+        }
+        catch (error) {
+            if (error instanceof MarketplaceOrderLifecycleRetryError) {
+                throw new MarketplaceOrderIngestionRetryError(error.message, {
+                    retryDelayMs: error.retryDelayMs ?? null,
+                });
+            }
+            if (error instanceof MarketplaceOrderLifecyclePermanentError) {
                 throw new MarketplaceWebhookPermanentError(error.message, error.safeDetails);
             }
             throw error;
