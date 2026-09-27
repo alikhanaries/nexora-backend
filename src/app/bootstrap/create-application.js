@@ -231,6 +231,7 @@ export async function createApplication(infra) {
     const outboundOrderLifecycleAdapterRegistry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
     registerMarketplaceOutboundOrderLifecycleAdapters(outboundOrderLifecycleAdapterRegistry, {
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
+        amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
     });
     const marketplaceRepository = new PostgresMarketplaceRepository();
     const executeOutboundMarketplaceOrderLifecycle = new ExecuteOutboundMarketplaceOrderLifecycleCommand({

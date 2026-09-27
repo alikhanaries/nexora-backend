@@ -121,6 +121,76 @@ describe('ExecuteOutboundMarketplaceOrderLifecycleCommand', () => {
         expect(adapter.cancelOrder).toHaveBeenCalledTimes(1);
     });
 
+    it('executes Amazon fulfill when adapter registered', async () => {
+        const amazonAdapter = {
+            marketplaceKey: 'amazon',
+            getLifecycleCapabilities: () => ({
+                supportsOutboundCancellation: false,
+                supportsOutboundRefund: false,
+                supportsOutboundFulfillment: true,
+                supportsOutboundReturns: false,
+            }),
+            createFulfillment: vi.fn(async () => ({ outcome: 'fulfilled', providerReference: 'pkg-1' })),
+        };
+        const registry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
+        registry.register(amazonAdapter);
+        const command = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
+            lifecycleAdapterRegistry: registry,
+            marketplaceAdapterRuntimeFactory: {
+                createForSync: vi.fn(async () => ({
+                    marketplaceKey: 'amazon',
+                    credentials: {},
+                    configuration: { marketplaceId: 'ATVPDKIKX0DER' },
+                    connectionRequired: true,
+                })),
+            },
+            database: { execute: vi.fn(async (fn) => fn({})) },
+        });
+        const result = await command.execute({
+            tenantId: tenantA,
+            channelId,
+            marketplaceKey: 'amazon',
+            externalOrderId: '123-4567890-1234567',
+            operation: MarketplaceOrderLifecycleOperation.FULFILL_ORDER,
+            idempotencyKey: 'amz-fulfill-1',
+            payload: {
+                lines: [{ externalLineItemId: '60696125413094', quantity: 1 }],
+                trackingNumber: '1Z999',
+                carrier: 'UPS',
+            },
+        });
+        expect(result.outcome).toBe('fulfilled');
+        expect(amazonAdapter.createFulfillment).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects Amazon outbound cancel', async () => {
+        const amazonAdapter = {
+            marketplaceKey: 'amazon',
+            getLifecycleCapabilities: () => ({
+                supportsOutboundCancellation: false,
+                supportsOutboundRefund: false,
+                supportsOutboundFulfillment: true,
+                supportsOutboundReturns: false,
+            }),
+            createFulfillment: vi.fn(),
+        };
+        const registry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
+        registry.register(amazonAdapter);
+        const command = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
+            lifecycleAdapterRegistry: registry,
+            marketplaceAdapterRuntimeFactory: { createForSync: vi.fn() },
+            database: { execute: vi.fn() },
+        });
+        await expect(command.execute({
+            tenantId: tenantA,
+            channelId,
+            marketplaceKey: 'amazon',
+            externalOrderId: '123-4567890-1234567',
+            operation: MarketplaceOrderLifecycleOperation.CANCEL_ORDER,
+            idempotencyKey: 'amz-cancel-1',
+        })).rejects.toBeInstanceOf(MarketplaceOrderLifecycleUnsupportedError);
+    });
+
     it('rejects cross-tenant channel access', async () => {
         const command = buildCommand({
             adapter: shopifyAdapter(),
