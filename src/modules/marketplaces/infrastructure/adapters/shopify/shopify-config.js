@@ -26,6 +26,28 @@ export function resolveShopifyAdminApiVersion(configuration, deploymentDefaultAp
 /**
  * @param {Record<string, unknown>} credentials
  */
+/**
+ * Shopify webhook HMAC verification secret (API secret key / custom app client secret).
+ *
+ * @param {Record<string, unknown>} credentials
+ */
+export function readShopifyWebhookSecret(credentials) {
+    const secret = typeof credentials.webhookSecret === 'string'
+        ? credentials.webhookSecret.trim()
+        : typeof credentials.apiSecretKey === 'string'
+            ? credentials.apiSecretKey.trim()
+            : typeof credentials.clientSecret === 'string'
+                ? credentials.clientSecret.trim()
+                : '';
+    if (secret.length === 0) {
+        throw new MarketplaceConfigurationError('Shopify connection requires webhookSecret (API secret) for inbound webhooks');
+    }
+    return secret;
+}
+
+/**
+ * @param {Record<string, unknown>} credentials
+ */
 export function readShopifyCredentials(credentials) {
     const shopDomain = normalizeShopDomain(credentials.shopDomain);
     const accessToken = typeof credentials.accessToken === 'string' ? credentials.accessToken.trim() : '';

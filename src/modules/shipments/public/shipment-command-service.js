@@ -23,6 +23,7 @@
  * @property {string} [routeId]
  * @property {string} [requestFingerprint]
  * @property {object} [transaction]
+ * @property {boolean} [skipAuthorization]
  *
  * @typedef {object} ShipmentDetailDto
  * @property {string} id
