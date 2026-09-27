@@ -5,9 +5,12 @@ import { toErrorEnvelope } from './error-envelope.js';
 export function mapErrorToHttp(error, requestId) {
     const appError = normaliseError(error);
     const body = toErrorEnvelope(appError, requestId);
+    const retryAfterFromDetails = appError.safeDetails?.retryAfterSeconds;
     const headers = appError instanceof RateLimitError
         ? { 'retry-after': String(appError.retryAfterSeconds) }
-        : undefined;
+        : typeof retryAfterFromDetails === 'number'
+            ? { 'retry-after': String(retryAfterFromDetails) }
+            : undefined;
     return {
         statusCode: appError.httpStatus,
         body,

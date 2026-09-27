@@ -166,6 +166,12 @@ export class PrometheusMetrics {
             labelNames: ['outcome', 'marketplace', 'operation'],
             registers: [this.registry],
         });
+        this.marketplaceWebhookTotal = new Counter({
+            name: 'marketplace_webhook_total',
+            help: 'Inbound marketplace webhook outcomes.',
+            labelNames: ['outcome', 'marketplace', 'operation'],
+            registers: [this.registry],
+        });
         this.catalogSyncReconciliationRunsTotal = new Counter({
             name: 'channel_catalog_reconciliation_runs_total',
             help: 'Scheduled catalog sync reconciliation runs by outcome.',
@@ -252,6 +258,13 @@ export class PrometheusMetrics {
             outcome: sample.outcome,
             marketplace: sample.marketplace ?? 'unknown',
             operation: sample.operation ?? 'ingest',
+        });
+    }
+    recordMarketplaceWebhook(sample) {
+        this.marketplaceWebhookTotal.inc({
+            outcome: sample.outcome,
+            marketplace: sample.marketplace ?? 'unknown',
+            operation: sample.operation ?? 'webhook',
         });
     }
     recordCatalogSyncReconciliation(sample) {

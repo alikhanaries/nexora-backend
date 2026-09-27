@@ -11,6 +11,7 @@ const PUBLIC_ROUTE_PATTERNS = [
     /^\/api\/v1\/auth\/refresh$/,
     /^\/api\/v1\/auth\/logout$/,
     /^\/api\/v1\/tenants$/,
+    /^\/api\/v1\/inbound\/marketplace-webhooks\/.+$/,
 ];
 function isPublicRoute(method, path) {
     if (method === 'POST' && path === '/api/v1/tenants') {
