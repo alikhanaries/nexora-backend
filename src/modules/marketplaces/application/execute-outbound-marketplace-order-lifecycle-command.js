@@ -1,4 +1,5 @@
 import { fingerprintRequest } from '../../../shared/idempotency/index.js';
+import { recordMarketplaceOrderLifecycleOutcome } from '../../../shared/metrics/record-marketplace-order-lifecycle.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
@@ -25,6 +26,10 @@ export class ExecuteOutboundMarketplaceOrderLifecycleCommand {
      * @param {import('../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
      * @param {import('../../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} [deps.idempotency]
+     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} [deps.channelQueryService]
+     * @param {import('../../marketplace-order-ingestion/public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} [deps.marketplaceLookup]
+     * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
+     * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
      */
     constructor(deps) {
         this.deps = deps;
@@ -42,54 +47,125 @@ export class ExecuteOutboundMarketplaceOrderLifecycleCommand {
      * @param {string|null} [input.correlationId]
      */
     async execute(input) {
-        const capabilityKey = capabilityForOperation(input.operation);
-        const adapter = this.deps.lifecycleAdapterRegistry.requireAdapter(input.marketplaceKey, capabilityKey);
-        const context = {
-            tenantId: input.tenantId,
-            channelId: input.channelId,
+        const metricContext = {
             marketplaceKey: input.marketplaceKey,
-            externalOrderId: input.externalOrderId,
-            correlationId: input.correlationId ?? null,
-        };
-        const principalFingerprint = `marketplace-lifecycle:${input.channelId}:${input.marketplaceKey}`;
-        const idempotencyKey = {
-            tenantId: input.tenantId,
-            principalFingerprint,
-            routeId: ROUTE_ID,
-            idempotencyKey: input.idempotencyKey,
-        };
-        const fingerprint = fingerprintRequest({
             operation: input.operation,
-            externalOrderId: input.externalOrderId,
-            payload: input.payload ?? null,
-        });
-        const run = async () => {
-            return this.deps.database.execute(async (tx) => {
-                const runtime = await this.deps.marketplaceAdapterRuntimeFactory.createForSync({
+        };
+        recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'outbound_received', metricContext);
+        try {
+            if (this.deps.channelQueryService !== undefined && this.deps.marketplaceLookup !== undefined) {
+                await this.assertChannelContext(input.tenantId, input.channelId, input.marketplaceKey);
+            }
+            const capabilityKey = capabilityForOperation(input.operation, input.marketplaceKey);
+            const adapter = this.deps.lifecycleAdapterRegistry.requireAdapter(input.marketplaceKey, capabilityKey);
+            const context = {
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                marketplaceKey: input.marketplaceKey,
+                externalOrderId: input.externalOrderId,
+                correlationId: input.correlationId ?? null,
+            };
+            const principalFingerprint = `marketplace-lifecycle:${input.channelId}:${input.marketplaceKey}`;
+            const idempotencyKey = {
+                tenantId: input.tenantId,
+                principalFingerprint,
+                routeId: ROUTE_ID,
+                idempotencyKey: input.idempotencyKey,
+            };
+            const fingerprint = fingerprintRequest({
+                operation: input.operation,
+                externalOrderId: input.externalOrderId,
+                payload: input.payload ?? null,
+            });
+            const run = async () => {
+                const runtime = await this.deps.database.execute(async (tx) => this.deps.marketplaceAdapterRuntimeFactory.createForSync({
                     tenantId: input.tenantId,
                     channelId: input.channelId,
                     marketplaceKey: input.marketplaceKey,
                     tx,
-                });
+                }), { tenantId: input.tenantId });
                 return invokeAdapter(adapter, runtime, context, input);
-            }, { tenantId: input.tenantId });
-        };
-        if (this.deps.idempotency === undefined) {
-            return run();
+            };
+            let result;
+            if (this.deps.idempotency === undefined) {
+                result = await run();
+            }
+            else {
+                const outcome = await this.deps.idempotency.execute(idempotencyKey, fingerprint, run, (value) => ({
+                    statusCode: 200,
+                    body: value,
+                }));
+                const payload = outcome.value;
+                result = payload?.body ?? payload;
+            }
+            recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, result.outcome ?? 'outbound_success', metricContext);
+            this.deps.logger?.info({
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                marketplaceKey: input.marketplaceKey,
+                externalOrderId: input.externalOrderId,
+                operation: input.operation,
+                idempotencyKey: input.idempotencyKey,
+                outcome: result.outcome,
+                provider: input.marketplaceKey,
+                ...(input.correlationId === undefined || input.correlationId === null
+                    ? {}
+                    : { correlationId: input.correlationId }),
+            }, 'Marketplace outbound order lifecycle executed');
+            return result;
         }
-        const outcome = await this.deps.idempotency.execute(idempotencyKey, fingerprint, run, (value) => ({
-            statusCode: 200,
-            body: value,
-        }));
-        const payload = outcome.kind === 'replayed' ? outcome.value : outcome.value;
-        return payload?.body ?? payload;
+        catch (error) {
+            if (error instanceof MarketplaceOrderLifecycleUnsupportedError) {
+                recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'unsupported', metricContext);
+                throw error;
+            }
+            if (error instanceof MarketplaceOrderLifecyclePermanentError) {
+                recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'permanent_failure', metricContext);
+                throw error;
+            }
+            if (error instanceof MarketplaceOrderLifecycleRetryError) {
+                recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'retryable_failure', metricContext);
+                throw error;
+            }
+            recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'retryable_failure', metricContext);
+            throw error;
+        }
+    }
+
+    /**
+     * @param {string} tenantId
+     * @param {string} channelId
+     * @param {string} marketplaceKey
+     */
+    async assertChannelContext(tenantId, channelId, marketplaceKey) {
+        const channelQueryService = this.deps.channelQueryService;
+        const marketplaceLookup = this.deps.marketplaceLookup;
+        if (channelQueryService === undefined || marketplaceLookup === undefined) {
+            return;
+        }
+        const channel = await channelQueryService.getChannelById(tenantId, channelId);
+        if (channel.tenantId !== tenantId) {
+            throw new MarketplaceOrderLifecyclePermanentError('Channel tenant mismatch', { channelId });
+        }
+        const marketplace = await marketplaceLookup.findById(channel.marketplaceId);
+        if (marketplace === null) {
+            throw new MarketplaceOrderLifecyclePermanentError('Channel marketplace was not found', {
+                marketplaceId: channel.marketplaceId,
+            });
+        }
+        if (marketplace.key !== marketplaceKey) {
+            throw new MarketplaceOrderLifecyclePermanentError('Lifecycle command marketplaceKey does not match channel', {
+                expected: marketplace.key,
+                received: marketplaceKey,
+            });
+        }
     }
 }
 
 /**
  * @param {string} operation
  */
-function capabilityForOperation(operation) {
+function capabilityForOperation(operation, marketplaceKey) {
     switch (operation) {
         case MarketplaceOrderLifecycleOperation.CANCEL_ORDER:
             return 'supportsOutboundCancellation';
@@ -97,8 +173,10 @@ function capabilityForOperation(operation) {
             return 'supportsOutboundRefund';
         case MarketplaceOrderLifecycleOperation.FULFILL_ORDER:
             return 'supportsOutboundFulfillment';
+        case MarketplaceOrderLifecycleOperation.RETURN_ORDER:
+            return 'supportsOutboundReturns';
         default:
-            throw new MarketplaceOrderLifecycleUnsupportedError(operation, 'unknown');
+            throw new MarketplaceOrderLifecycleUnsupportedError(operation, marketplaceKey);
     }
 }
 
