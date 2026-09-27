@@ -32,7 +32,9 @@ Provider authenticity is enforced only inside the registered `MarketplaceWebhook
 
 See `src/modules/marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js`.
 
-Phase 32 ships **no** Shopify/Amazon/Noon/Namshi webhook adapters. Unsupported providers return `422` with explicit capability errors.
+Phase 32 ships the generic pipeline only. **Amazon** registers an inbound webhook adapter in Phase 34 (SNS-wrapped SP-API `ORDER_CHANGE`). Shopify webhook adapters remain deferred.
+
+`order.update` events carry a provider `lifecyclePayload` and route to `ProcessMarketplaceLifecyclePayload` when lifecycle services are wired in the composition root.
 
 ## Idempotency
 
