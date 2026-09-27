@@ -18,6 +18,8 @@ import { PostgresProductRepository } from '../../modules/products/infrastructure
  * @param {(registry: import('../../modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry) => void} [deps.registerMarketplaceOrderAdapters]
  * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
  * @param {string | null | undefined} [deps.amazonLwaTokenUrl]
+ * @param {string | null | undefined} [deps.noonApiBaseUrl]
+ * @param {string | null | undefined} [deps.noonUserAgent]
  * @param {import('../../modules/orders/infrastructure/postgres-order-repository.js').PostgresOrderRepository} [deps.orders]
  * @param {import('../../modules/orders/application/confirm-order.js').ConfirmOrder} [deps.confirmOrder]
  * @param {import('../../modules/cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} [deps.cancellationCommandService]
@@ -31,6 +33,8 @@ export function wireMarketplaceOrderIngestion(deps) {
         ((registry) => registerMarketplaceOrderAdapters(registry, {
             shopifyAdminApiVersion: deps.shopifyAdminApiVersion,
             amazonLwaTokenUrl: deps.amazonLwaTokenUrl,
+            noonApiBaseUrl: deps.noonApiBaseUrl,
+            noonUserAgent: deps.noonUserAgent,
         }));
     const channelRepository = new PostgresChannelRepository();
     const channelQueryService = new DefaultChannelQueryService({

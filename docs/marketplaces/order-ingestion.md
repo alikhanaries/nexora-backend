@@ -126,9 +126,17 @@ Amazon is the second provider on the generic lifecycle framework. See [amazon/RE
 - **Polling sync:** `AmazonOrderAdapter.fetchOrderLifecycleCommand` / `normalizeLifecycleCommand` with `source: sp_api_get_order` calls `GET /orders/v0/orders/{orderId}`.
 - **Capabilities:** `status_sync` and inbound `cancel_order` only; outbound fulfillment and returns/refunds deferred.
 
+## Noon order lifecycle (Phase 35)
+
+See [noon/README.md](../../src/modules/marketplaces/infrastructure/adapters/noon/README.md).
+
+- **Inbound:** Event Notifications `FBPI::ORDER_SYNC` → marketplace webhook ingress → `GetFbpiOrder` → lifecycle command.
+- **Polling sync:** `NoonOrderAdapter.fetchOrderLifecycleCommand` calls `GET /fbpi/v1/fbpi-order/{order_nr}/get`.
+- **Capabilities:** `status_sync` and inbound `cancel_order` only; FBPI UpdateOrder / CreateShipment / returns deferred.
+
 ## Deferred (later phases)
 
 - Inbound webhook routes and signature verification
-- Provider-specific lifecycle normalization (Shopify/Amazon/Noon/Namshi)
+- Provider-specific lifecycle normalization (Shopify/Namshi remaining gaps)
 - Outbound lifecycle sync to marketplaces
 - Scheduled order polling workers (Phase 30 when merged)

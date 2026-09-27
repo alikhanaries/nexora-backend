@@ -1,3 +1,4 @@
+import { MarketplaceValidationError } from '../../../domain/marketplace-errors.js';
 import { MarketplaceHttpClient } from '../../http/marketplace-http-client.js';
 import {
     readNoonCountryCode,
@@ -117,6 +118,23 @@ export class NoonApiClient {
     async getProductOffers(runtime, partnerSku) {
         return this.authenticatedRequest(runtime, {
             path: `/offer/v1/product/${encodeURIComponent(partnerSku)}`,
+            method: 'GET',
+        });
+    }
+
+    /**
+     * FBPI GetFbpiOrder — full order details for lifecycle sync (Phase 35).
+     *
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} fbpiOrderNr
+     */
+    async getFbpiOrder(runtime, fbpiOrderNr) {
+        const trimmed = fbpiOrderNr.trim();
+        if (trimmed.length === 0) {
+            throw new MarketplaceValidationError('fbpiOrderNr is required');
+        }
+        return this.authenticatedRequest(runtime, {
+            path: `/fbpi/v1/fbpi-order/${encodeURIComponent(trimmed)}/get`,
             method: 'GET',
         });
     }
