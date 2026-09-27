@@ -29,7 +29,7 @@ export async function resolveMarketplaceLifecycleOrderLines(deps, input, queryab
     for (const hint of input.lines) {
         let matched = null;
         if (hint.merchantSku !== undefined) {
-            const product = await deps.productQueryService.getProductBySku(input.tenantId, hint.merchantSku);
+            const product = await deps.productQueryService.getProductBySku(input.tenantId, hint.merchantSku, queryable);
             if (product === null) {
                 throw new NotFoundError('Product was not found for merchant SKU', { merchantSku: hint.merchantSku });
             }

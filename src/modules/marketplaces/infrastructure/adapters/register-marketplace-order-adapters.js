@@ -1,4 +1,5 @@
 import { AmazonOrderAdapter } from './amazon/amazon-order-adapter.js';
+import { NamshiOrderAdapter } from './namshi/namshi-order-adapter.js';
 import { NoonOrderAdapter } from './noon/noon-order-adapter.js';
 import { ShopifyOrderAdapter } from './shopify/shopify-order-adapter.js';
 
@@ -12,6 +13,10 @@ export function registerMarketplaceOrderAdapters(registry, deps = {}) {
     }));
     registry.register(new AmazonOrderAdapter({
         deploymentLwaTokenUrl: deps.amazonLwaTokenUrl,
+    }));
+    registry.register(new NamshiOrderAdapter({
+        deploymentApiBaseUrl: deps.noonApiBaseUrl,
+        deploymentUserAgent: deps.noonUserAgent,
     }));
     registry.register(new NoonOrderAdapter({
         deploymentApiBaseUrl: deps.noonApiBaseUrl,

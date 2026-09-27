@@ -1,3 +1,4 @@
+import { MarketplaceValidationError } from '../../../domain/marketplace-errors.js';
 import { MarketplaceHttpClient } from '../../http/marketplace-http-client.js';
 import {
     readNamshiCountryCode,
@@ -93,6 +94,23 @@ export class NamshiApiClient {
     async getProductOffers(runtime, partnerSku) {
         return this.authenticatedRequest(runtime, {
             path: `/offer/v1/product/${encodeURIComponent(partnerSku)}`,
+            method: 'GET',
+        });
+    }
+
+    /**
+     * FBPI order details (verified: GET /fbpi/v1/fbpi-order/{fbpi_order_nr}/get).
+     *
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} fbpiOrderNr
+     */
+    async getFbpiOrder(runtime, fbpiOrderNr) {
+        const trimmed = fbpiOrderNr.trim();
+        if (trimmed.length === 0) {
+            throw new MarketplaceValidationError('fbpi_order_nr is required');
+        }
+        return this.authenticatedRequest(runtime, {
+            path: `/fbpi/v1/fbpi-order/${encodeURIComponent(trimmed)}/get`,
             method: 'GET',
         });
     }

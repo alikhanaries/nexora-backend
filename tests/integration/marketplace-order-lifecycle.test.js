@@ -98,7 +98,7 @@ describe('marketplace order lifecycle integration', () => {
             },
         };
         const productQueryService = new DefaultProductQueryService({
-            queryable: infra.database,
+            database: infra.database,
             products: new PostgresProductRepository(),
         });
         module = createMarketplaceOrderIngestionModule({
