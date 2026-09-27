@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import { z } from 'zod';
 import { getRequestContext } from '../../../shared/context/request-context.js';
 
@@ -21,13 +22,22 @@ export function createMarketplaceWebhookRoutes(deps) {
             if (!path.includes('/api/v1/inbound/marketplace-webhooks/')) {
                 return payload;
             }
-            const chunks = [];
-            for await (const chunk of payload) {
-                chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+            let buffer;
+            if (typeof payload === 'string') {
+                buffer = Buffer.from(payload, 'utf8');
             }
-            const buffer = Buffer.concat(chunks);
+            else if (Buffer.isBuffer(payload)) {
+                buffer = payload;
+            }
+            else {
+                const chunks = [];
+                for await (const chunk of payload) {
+                    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+                }
+                buffer = Buffer.concat(chunks);
+            }
             request.marketplaceWebhookRawBody = buffer.toString('utf8');
-            return buffer;
+            return Readable.from([buffer]);
         });
         const typed = app.withTypeProvider();
         typed.post('/api/v1/inbound/marketplace-webhooks/:ingressToken', {

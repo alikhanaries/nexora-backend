@@ -4,6 +4,10 @@ import {
     MarketplaceWebhookUnsupportedError,
 } from './marketplace-webhook-errors.js';
 import { MarketplaceOrderIngestionPermanentError, MarketplaceOrderIngestionRetryError, } from '../../marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
+import {
+    MarketplaceOrderLifecyclePermanentError,
+    MarketplaceOrderLifecycleRetryError,
+} from '../../marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
 
 /**
  * Generic order lifecycle handler for normalized marketplace webhook events (Phase 31/32 boundary).
@@ -15,6 +19,7 @@ export class MarketplaceOrderLifecycleProcessor {
     /**
      * @param {object} deps
      * @param {import('../../marketplace-order-ingestion/application/ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
+     * @param {import('../../marketplace-order-ingestion/application/process-marketplace-lifecycle-payload.js').ProcessMarketplaceLifecyclePayload} [deps.processMarketplaceLifecyclePayload]
      */
     constructor(deps) {
         this.deps = deps;
@@ -38,13 +43,44 @@ export class MarketplaceOrderLifecycleProcessor {
             case MarketplaceWebhookEventKind.ORDER_CREATE:
                 return this.ingestOrderCreate(input);
             case MarketplaceWebhookEventKind.ORDER_UPDATE:
-                throw new MarketplaceWebhookUnsupportedError('Order update webhooks are not implemented', {
-                    eventKind: event.eventKind,
-                });
+                return this.applyOrderUpdate(input);
             default:
                 throw new MarketplaceWebhookUnsupportedError('Webhook event kind is not supported', {
                     eventKind: event.eventKind,
                 });
+        }
+    }
+
+    async applyOrderUpdate(input) {
+        if (this.deps.processMarketplaceLifecyclePayload === undefined) {
+            throw new MarketplaceWebhookUnsupportedError('Order update webhooks require marketplace lifecycle processing', {
+                eventKind: input.event.eventKind,
+            });
+        }
+        const lifecyclePayload = input.event.resource.lifecyclePayload;
+        try {
+            const result = await this.deps.processMarketplaceLifecyclePayload.execute({
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                marketplaceKey: input.event.marketplaceKey,
+                payload: lifecyclePayload,
+                ...(input.correlationId === undefined ? {} : { jobId: input.correlationId }),
+            });
+            return {
+                outcome: result.outcome,
+                externalOrderReference: null,
+            };
+        }
+        catch (error) {
+            if (error instanceof MarketplaceOrderLifecycleRetryError) {
+                throw new MarketplaceOrderIngestionRetryError(error.message, {
+                    retryDelayMs: error.retryDelayMs ?? null,
+                });
+            }
+            if (error instanceof MarketplaceOrderLifecyclePermanentError) {
+                throw new MarketplaceWebhookPermanentError(error.message, error.safeDetails);
+            }
+            throw error;
         }
     }
 
