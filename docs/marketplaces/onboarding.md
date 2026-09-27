@@ -56,7 +56,7 @@ Adapter errors are classified into retryable vs permanent via existing catalog a
 - Unit tests on the provider outbound adapter (mock client).
 - `marketplace-outbound-lifecycle-adapter.contract.test.js` for registry adapters.
 - `marketplace-outbound-order-lifecycle-provider-registration.test.js` keeps declared keys in sync with registration.
-- Integration tests where the app exposes `executeOutboundMarketplaceOrderLifecycle` (Shopify today).
+- Integration tests where the app exposes `executeOutboundMarketplaceOrderLifecycle` (Shopify integration suite; Amazon covered by unit tests with mocked SP-API).
 
 ### Registration
 
@@ -70,6 +70,15 @@ Adapter errors are classified into retryable vs permanent via existing catalog a
 | Marketplace | Outbound operations |
 | ----------- | ------------------- |
 | Shopify | Cancel, refund, fulfill (Admin GraphQL) |
-| Amazon | None registered (SP-API shipment confirmation not wired to generic fulfill/shipment) |
+| Amazon | MFN fulfill (`confirmShipment` → generic `fulfill_order`) |
 | Noon | None (FBPI outbound shipment/update not integrated) |
 | Namshi | None (FBPI shipment create not exposed through outbound command) |
+
+### Amazon outbound (Phase 40)
+
+- Adapter: `AmazonOutboundOrderLifecycleAdapter` (`createFulfillment` only).
+- API: `POST /orders/v0/orders/{orderId}/shipmentConfirmation` on `AmazonSpApiClient`.
+- Map `MarketplaceCreateFulfillmentRequest` → confirmShipment body in `map-marketplace-fulfillment-to-amazon-confirm-shipment.js`.
+- Generic `fulfill_order` only; `shipment_update` remains disabled (same SP-API can edit packages, but not exposed as a separate generic operation).
+- Idempotency: Phase 39 Postgres idempotency route; `packageReferenceId` derived from lines + tracking for Amazon-side package identity.
+- Limitations: MFN only; requires Amazon OrderItemId in `externalLineItemId`; FBA / Amazon Shipping label flows may fail at provider.

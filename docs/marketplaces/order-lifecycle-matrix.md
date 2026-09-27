@@ -1,4 +1,4 @@
-# Marketplace order lifecycle matrix (Phases 31–39)
+# Marketplace order lifecycle matrix (Phases 31–40)
 
 Authoritative summary of **implemented** lifecycle behavior. Legend:
 
@@ -11,7 +11,7 @@ Authoritative summary of **implemented** lifecycle behavior. Legend:
 
 | Marketplace | Update | Cancel | Return | Refund | Fulfill | Shipment | Status sync |
 | ----------- | -----: | -----: | -----: | -----: | ------: | -------: | ----------: |
-| Amazon | — | In | — | — | — | — | In |
+| Amazon | — | In | — | — | Out | — | In |
 | Shopify | — | Both | — | Out | Out | — | In |
 | Noon | — | In | — | — | — | — | In |
 | Namshi | — | In | — | — | — | — | In |
@@ -25,7 +25,7 @@ Generic entrypoint: `ExecuteOutboundMarketplaceOrderLifecycleCommand` + `Marketp
 | Shopify | Cancel | Admin GraphQL `orderCancel` | OAuth access token via channel connection; idempotency route `marketplace-order-lifecycle/outbound` |
 | Shopify | Refund | Admin GraphQL `refundCreate` | Line-level + optional shipping refund |
 | Shopify | Fulfill | Admin GraphQL `fulfillmentCreate` | Requires fulfillment orders; tracking optional |
-| Amazon | — | — | `confirmShipment` client exists; not registered—MFN shipment semantics vs generic `fulfill_order`/`shipment_update` not enabled |
+| Amazon | Fulfill (MFN) | Orders API `POST …/shipmentConfirmation` | LWA + SigV4; `externalLineItemId` = Amazon OrderItemId; tracking + carrier required |
 | Noon | — | — | FBPI outbound (`UpdateOrder`, shipment create) not integrated |
 | Namshi | — | — | FBPI `shipment/create` seller-initiated; not wired to outbound registry |
 
@@ -40,13 +40,14 @@ Generic entrypoint: `ExecuteOutboundMarketplaceOrderLifecycleCommand` + `Marketp
 
 ## Application wiring
 
-HTTP `createApplication` wires inbound lifecycle via `wireMarketplaceOrderIngestion` and outbound via `executeOutboundMarketplaceOrderLifecycle` (Shopify outbound adapter registered in bootstrap).
+HTTP `createApplication` wires inbound lifecycle via `wireMarketplaceOrderIngestion` and outbound via `executeOutboundMarketplaceOrderLifecycle` (Shopify + Amazon outbound adapters registered in bootstrap).
 
 ## Deferred
 
 - Outbound `return_order` for all providers (Shopify returns not enabled—`supportsOutboundReturns: false`)
 - Outbound `update_order`, `shipment_update` where provider semantics are not verified
-- Amazon outbound shipment confirmation
+- Amazon outbound cancel/refund/return/update; generic `shipment_update` (confirmShipment edits not exposed separately)
+- Amazon FBA / label-purchased flows that reject confirmShipment
 - Noon/Namshi FBPI outbound shipment flows
 
 Provider READMEs: `src/modules/marketplaces/infrastructure/adapters/{amazon,shopify,noon,namshi}/README.md`.
