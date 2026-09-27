@@ -23,6 +23,7 @@ import { createWebhooksModule } from '../../modules/webhooks/index.js';
 import { createMarketplaceWebhookIngestionModule } from '../../modules/marketplace-webhook-ingestion/index.js';
 import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
 import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
+import { PostgresMarketplaceRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
 import { registerMarketplaceWebhookAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-webhook-adapters.js';
 import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
 import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../modules/marketplaces/application/marketplace-outbound-order-lifecycle-adapter-registry.js';
@@ -231,11 +232,28 @@ export async function createApplication(infra) {
     registerMarketplaceOutboundOrderLifecycleAdapters(outboundOrderLifecycleAdapterRegistry, {
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
     });
+    const marketplaceRepository = new PostgresMarketplaceRepository();
     const executeOutboundMarketplaceOrderLifecycle = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
         lifecycleAdapterRegistry: outboundOrderLifecycleAdapterRegistry,
         marketplaceAdapterRuntimeFactory,
         database: infra.database,
         idempotency: infra.idempotency,
+        channelQueryService: channels.channelQueryService,
+        marketplaceLookup: {
+            findById: async (marketplaceId) => {
+                const marketplace = await marketplaceRepository.findById(infra.database, marketplaceId);
+                if (marketplace === null) {
+                    return null;
+                }
+                return {
+                    id: marketplace.id,
+                    key: marketplace.key,
+                    status: marketplace.status,
+                };
+            },
+        },
+        metrics: infra.metrics,
+        logger: infra.logger,
     });
     const marketplaceWebhookIngestion = createMarketplaceWebhookIngestionModule({
         database: infra.database,
