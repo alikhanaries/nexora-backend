@@ -9,6 +9,8 @@ import { OrderCompatibilityQuery } from './application/order-compatibility-query
 import { ShipmentCompatibilityCommand } from './application/shipment-compatibility-command.js';
 import { ShipmentCompatibilityQuery } from './application/shipment-compatibility-query.js';
 import compatibilityRoutes from './presentation/compatibility.routes.js';
+import stockconnectCeRoutes from './presentation/stockconnect-ce.routes.js';
+import { StockConnectCeOrderCompatibilityQuery } from './application/stockconnect-ce-order-compatibility-query.js';
 
 /**
  * @param {object} deps
@@ -62,34 +64,20 @@ export function createCompatibilityModule(deps) {
         channelQueryService: deps.coreContracts.channelQueryService,
         externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
-    const catalogCompatibilityCommand = new CatalogCompatibilityCommand({
-        productQueryService: deps.coreContracts.productQueryService,
+    const stockConnectCeOrderCompatibilityQuery = new StockConnectCeOrderCompatibilityQuery({
+        orderQueryService: deps.coreContracts.orderQueryService,
         channelQueryService: deps.coreContracts.channelQueryService,
-        inventoryService: deps.coreContracts.inventoryService,
-        pricingService: deps.coreContracts.pricingService,
-        offerQueryService: deps.coreContracts.offerQueryService,
-        authorization: deps.authorization,
-        idempotency: deps.idempotency,
-        createProduct: deps.catalogCommands.createProduct,
-        deactivateProduct: deps.catalogCommands.deactivateProduct,
-        upsertProductContent: deps.catalogCommands.upsertProductContent,
-        getProductContent: deps.catalogCommands.getProductContent,
-        createPrice: deps.catalogCommands.createPrice,
-        updatePrice: deps.catalogCommands.updatePrice,
-        createOffer: deps.catalogCommands.createOffer,
-        activateOffer: deps.catalogCommands.activateOffer,
-        suspendOffer: deps.catalogCommands.suspendOffer,
-        adjustInventory: deps.catalogCommands.adjustInventory,
+        externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
-    const catalogCompatibilityQuery = new CatalogCompatibilityQuery({
-        productQueryService: deps.coreContracts.productQueryService,
-        getProductContent: deps.catalogCommands.getProductContent,
-        authorization: deps.authorization,
-    });
+    const registerCompatibilityRoutes = async (app, routeDeps) => {
+        await compatibilityRoutes(app, routeDeps);
+        await stockconnectCeRoutes(app, routeDeps);
+    };
     return {
-        routes: compatibilityRoutes,
+        routes: registerCompatibilityRoutes,
         routeDeps: {
             orderCompatibilityQuery,
+            stockConnectCeOrderCompatibilityQuery,
             orderCompatibilityCommand,
             shipmentCompatibilityCommand,
             shipmentCompatibilityQuery,
