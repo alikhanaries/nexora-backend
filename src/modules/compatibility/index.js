@@ -1,3 +1,5 @@
+import { CatalogCompatibilityCommand } from './application/catalog-compatibility-command.js';
+import { CatalogCompatibilityQuery } from './application/catalog-compatibility-query.js';
 import { CancellationCompatibilityCommand } from './application/cancellation-compatibility-command.js';
 import { CancellationCompatibilityQuery } from './application/cancellation-compatibility-query.js';
 import { ReturnCompatibilityCommand } from './application/return-compatibility-command.js';
@@ -11,6 +13,9 @@ import compatibilityRoutes from './presentation/compatibility.routes.js';
 /**
  * @param {object} deps
  * @param {import('./application/core-contracts.js').CompatibilityCoreContracts} deps.coreContracts
+ * @param {import('../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
+ * @param {import('../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
+ * @param {import('./application/catalog-compatibility-contracts.js').CompatibilityCatalogCommands} deps.catalogCommands
  * @param {import('../../infrastructure/redis/redis-rate-limiter.js').RedisRateLimiter} deps.rateLimiter
  */
 export function createCompatibilityModule(deps) {
@@ -57,6 +62,30 @@ export function createCompatibilityModule(deps) {
         channelQueryService: deps.coreContracts.channelQueryService,
         externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
+    const catalogCompatibilityCommand = new CatalogCompatibilityCommand({
+        productQueryService: deps.coreContracts.productQueryService,
+        channelQueryService: deps.coreContracts.channelQueryService,
+        inventoryService: deps.coreContracts.inventoryService,
+        pricingService: deps.coreContracts.pricingService,
+        offerQueryService: deps.coreContracts.offerQueryService,
+        authorization: deps.authorization,
+        idempotency: deps.idempotency,
+        createProduct: deps.catalogCommands.createProduct,
+        deactivateProduct: deps.catalogCommands.deactivateProduct,
+        upsertProductContent: deps.catalogCommands.upsertProductContent,
+        getProductContent: deps.catalogCommands.getProductContent,
+        createPrice: deps.catalogCommands.createPrice,
+        updatePrice: deps.catalogCommands.updatePrice,
+        createOffer: deps.catalogCommands.createOffer,
+        activateOffer: deps.catalogCommands.activateOffer,
+        suspendOffer: deps.catalogCommands.suspendOffer,
+        adjustInventory: deps.catalogCommands.adjustInventory,
+    });
+    const catalogCompatibilityQuery = new CatalogCompatibilityQuery({
+        productQueryService: deps.coreContracts.productQueryService,
+        getProductContent: deps.catalogCommands.getProductContent,
+        authorization: deps.authorization,
+    });
     return {
         routes: compatibilityRoutes,
         routeDeps: {
@@ -68,6 +97,8 @@ export function createCompatibilityModule(deps) {
             cancellationCompatibilityQuery,
             returnCompatibilityCommand,
             returnCompatibilityQuery,
+            catalogCompatibilityCommand,
+            catalogCompatibilityQuery,
             rateLimiter: deps.rateLimiter,
         },
         coreContracts: deps.coreContracts,
