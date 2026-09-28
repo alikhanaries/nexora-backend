@@ -1,6 +1,7 @@
 import { recordWebhookDeliveryOutcome } from '../../../shared/metrics/record-webhook-delivery.js';
 import { WebhookDeliveryStatus } from '../domain/webhook-delivery-status.js';
 import { WebhookSubscriptionStatus } from '../domain/webhook-subscription-status.js';
+import { isStockConnectCeBridgeSubscription } from '../../../shared/stockconnect/stockconnect-ce-webhook-subscription.js';
 import { buildWebhookEventEnvelope } from './build-webhook-event-envelope.js';
 import { classifyWebhookHttpResponse, parseRetryAfterSeconds } from './classify-webhook-http-response.js';
 import { sanitizeWebhookDeliveryError, WebhookDeliveryRetryError } from './webhook-delivery-errors.js';
@@ -98,7 +99,23 @@ export class WebhookDeliveryService {
             }, 'Webhook delivery dead-lettered because secret decryption failed');
             return;
         }
-        const body = buildWebhookEventEnvelope(event);
+        const body = await this.resolveWebhookRequestBody(subscription, event);
+        if (body === null) {
+            await this.persistTerminalFailure(job.tenantId, delivery, {
+                status: WebhookDeliveryStatus.DEAD_LETTERED,
+                lastError: 'Webhook payload could not be built for this subscription',
+                lastHttpStatus: null,
+            });
+            recordWebhookDeliveryOutcome(this.deps.metrics, 'dead_lettered');
+            this.deps.logger.warn({
+                tenantId: job.tenantId,
+                deliveryId: job.deliveryId,
+                subscriptionId: job.subscriptionId,
+                eventId: job.eventId,
+                eventType: job.eventType,
+            }, 'Webhook delivery dead-lettered because CE bridge payload mapping failed');
+            return;
+        }
         const signature = signWebhookRequestBody(secret, body);
         secret = '';
         try {
@@ -169,6 +186,21 @@ export class WebhookDeliveryService {
             });
         }
     }
+    /**
+     * @param {import('../domain/webhook-subscription.js').WebhookSubscription} subscription
+     * @param {import('../../../shared/events/integration-event.js').IntegrationEvent} event
+     * @returns {Promise<string|null>}
+     */
+    async resolveWebhookRequestBody(subscription, event) {
+        if (isStockConnectCeBridgeSubscription(subscription)) {
+            if (this.deps.stockConnectCeWebhookBodyBuilder === undefined) {
+                return null;
+            }
+            return this.deps.stockConnectCeWebhookBodyBuilder(event);
+        }
+        return buildWebhookEventEnvelope(event);
+    }
+
     async prepareDelivery(job) {
         return this.deps.database.execute(async (tx) => {
             const delivery = await this.deps.deliveries.findById(tx, job.tenantId, job.deliveryId);

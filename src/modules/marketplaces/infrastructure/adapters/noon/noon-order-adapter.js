@@ -7,6 +7,7 @@ import {
     mapNoonFbpiOrderToLifecycleCommand,
     normalizeNoonLifecyclePayload,
 } from './map-noon-fbpi-order-to-lifecycle-command.js';
+import { mapFbpiOrderPayloadToNormalizedMarketplaceOrder } from '../shared/map-fbpi-order-payload-to-normalized.js';
 import {
     buildNoonLifecycleExternalEventId,
     NOON_FBPI_ORDER_SYNC_EVENT_TYPE,
@@ -90,6 +91,45 @@ export class NoonOrderAdapter extends BaseMarketplaceOrderAdapter {
                 externalEventId,
             });
         });
+    }
+
+    /**
+     * @param {unknown} payload
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
+     * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderLifecycleContext} context
+     */
+    async normalizeOrderFromLifecyclePayload(payload, runtime, context) {
+        return this.runWithResult(async () => {
+            if (typeof context.stockLocationId !== 'string') {
+                throw new MarketplaceValidationError('stockLocationId is required for Noon order ingestion');
+            }
+            const orderPayload = await this.resolveNoonOrderPayload(payload, runtime, context.marketplaceKey);
+            return mapFbpiOrderPayloadToNormalizedMarketplaceOrder({
+                marketplaceKey: context.marketplaceKey,
+                orderPayload,
+                stockLocationId: context.stockLocationId,
+            });
+        });
+    }
+
+    /**
+     * @param {unknown} payload
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
+     * @param {string} marketplaceKey
+     */
+    async resolveNoonOrderPayload(payload, runtime, marketplaceKey) {
+        if (payload !== null && typeof payload === 'object' && payload.noonEvent !== undefined) {
+            this.assertRuntime(runtime, 'normalizeOrderFromLifecyclePayload');
+            const noonEvent = payload.noonEvent;
+            const eventPayload = noonEvent !== null && typeof noonEvent === 'object' ? noonEvent.payload : null;
+            const orderNr = readNoonEventOrderNr(eventPayload ?? noonEvent);
+            const response = await this.api.getFbpiOrder(runtime, orderNr);
+            return response.json;
+        }
+        if (payload !== null && typeof payload === 'object' && payload.orderPayload !== undefined) {
+            return payload.orderPayload;
+        }
+        throw new MarketplaceValidationError('Noon lifecycle payload cannot be mapped to an ingest order');
     }
 
     /**

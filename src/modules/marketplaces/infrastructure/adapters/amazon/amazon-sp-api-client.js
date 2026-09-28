@@ -55,6 +55,19 @@ export class AmazonSpApiClient {
     }
 
     /**
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} amazonOrderId
+     */
+    async getOrderItems(runtime, amazonOrderId) {
+        const host = resolveAmazonSpApiHost(runtime.configuration ?? {});
+        const url = `${host}/orders/v0/orders/${encodeURIComponent(amazonOrderId)}/orderItems`;
+        return this.signedRequest(runtime, {
+            url,
+            method: 'GET',
+        });
+    }
+
+    /**
      * Merchant-fulfilled shipment confirmation (Orders API v0).
      *
      * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime

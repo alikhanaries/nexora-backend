@@ -57,6 +57,7 @@ describe('platform independence', () => {
         const allowed = new Set([
             'src/app/bootstrap/create-application.js',
             'src/app/http/create-server.js',
+            'src/workers/bootstrap/wire-stockconnect-ce-webhook-delivery.js',
         ]);
         const offenders = [];
         for (const file of collectJsFiles(join(repoRoot, 'src'))) {
