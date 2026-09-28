@@ -115,7 +115,9 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 
 ## Phase 49 — StockConnect CE staging cutover (2026-09-28)
 
-**Status on `origin/dev`:** Phase 46 (`a544d54`) and Phase 47 (`0ef22d2`) were **not merged** at branch time. Staging validation uses integration branch `feat/phase-49-stockconnect-ce-staging-validation` (merges 46+47+48) until PRs land on `dev`.
+**Status on `origin/dev`:** Phase 46 (`a544d54`) and Phase 47 (`0ef22d2`) remain **unmerged** on `origin/dev` at validation time. Branch `feat/phase-49-stockconnect-ce-staging-validation` merges 46+47+48 locally for cutover prep.
+
+**Phase 49 code fix:** `createCompatibilityModule` now receives `authorization.authorizationService` (catalog/CE product GET permission checks were throwing 500 when given the full authorization module object).
 
 **Staging configuration (do not commit secrets):**
 
