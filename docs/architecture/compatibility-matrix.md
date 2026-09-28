@@ -56,8 +56,22 @@ StockConnect should set `CHANNEL_ENGINE_BASE_URL` to include the `/api/v2/ce/` p
 
 | External (StockConnect) | Nexora route | Notes |
 | ----------------------- | ------------ | ----- |
-| GET products?merchantProductNoList= | GET `/api/v2/ce/products` | `ceService.getExistingProductsBySkuFromCE`; delegates to catalog compatibility query |
+| GET products?merchantProductNoList= | GET `/api/v2/ce/products` | `ceService.getExistingProductsBySkuFromCE`; `StockConnectCeProductsQuery` |
 | GET channels/{channelId}/products | GET `/api/v2/ce/channels/:channelId/products` | `productSyncService.fetchChannelStatusMap`; numeric path `channelId` = `channels.external_reference` |
+| GET orders/{merchantOrderNo}/invoice | GET `/api/v2/ce/orders/:merchantOrderNo/invoice` | Phase 47 — `application/pdf` |
+
+### StockConnect CE order webhook bridge (Phase 46)
+
+Configure a tenant webhook subscription pointing at StockConnect `POST /orders/channelengine-webhook`:
+
+| Setting | Value |
+| ------- | ----- |
+| `description` | `stockconnect-ce-bridge` (exact match) |
+| `url` | StockConnect base URL + `/orders/channelengine-webhook` |
+| `eventTypes` | `order.created`, `order.confirmed`, `order.status_changed`, `order.cancelled` (subset allowed) |
+| Authentication | Standard Nexora webhook HMAC (`X-Nexora-Signature`) on the UTF-8 JSON body |
+
+Delivery uses the existing webhook queue (retry, idempotency per subscription+event, tenant isolation). The worker maps matching events to `{ Content: [ CE order ] }` via `mapStockConnectCeOrder`; marketplace-created orders remain visible through GET `/api/v2/ce/orders` after ingestion.
 
 ## Phase 48 — StockConnect CE contract verification (2026-09-28)
 
@@ -79,9 +93,9 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 | Offer / offer stock | Yes | Yes | **VERIFIED** — catalog integration tests |
 | Channels | Yes | Yes | **VERIFIED WITH LIMITATION** — numeric `ChannelId` only when `channels.external_reference` is numeric |
 | Channel products | Yes (`productSyncService`) | Yes | **VERIFIED** — Phase 48 GET channel products; `ChannelStatus` mapped from offer status |
-| Invoice | Yes (`invoiceService`, `ParseInvoice`) | No on `origin/dev` | **BLOCKED** — requires merge of Phase 47 (`0ef22d2`); then **NEEDS ENVIRONMENT VERIFICATION** for tax PDF parity |
-| Marketplace order bridge | Indirect (orders in CE poll) | Partial | **BLOCKED** — Phase 46 (`a544d54`) not on `origin/dev`; webhook wiring not active until merged |
-| CE webhook bridge | Yes (StockConnect handler) | Not on `origin/dev` | **BLOCKED** — Phase 46 dependency |
+| Invoice | Yes (`invoiceService`, `ParseInvoice`) | Implemented (Phase 47) | **NEEDS CONTROLLED STAGING TEST** — ParseInvoice / tax PDF parity on staging |
+| Marketplace order bridge | Indirect (orders in CE poll) | Implemented (Phase 46) | **NEEDS CONTROLLED STAGING TEST** on `origin/dev` until PR merge |
+| CE webhook bridge | Yes (StockConnect handler) | Implemented (Phase 46) | **NEEDS CONTROLLED STAGING TEST** |
 | CE async job API | No | N/A | **NOT REQUIRED** — StockConnect uses internal BullMQ only |
 | CE queue admin | No | N/A | **NOT REQUIRED** — StockConnect internal queue routes |
 
@@ -97,6 +111,28 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 | Invoice PDF | After Phase 47 merge, validate `ParseInvoice` extracts invoice number/date |
 | Webhook URL | StockConnect `POST /orders/channelengine-webhook` after Phase 46 merge |
 | Webhook secret | Nexora subscription HMAC must match StockConnect verifier |
+
+## Phase 49 — StockConnect CE staging cutover (2026-09-28)
+
+**Status on `origin/dev`:** Phase 46 (`a544d54`) and Phase 47 (`0ef22d2`) were **not merged** at branch time. Staging validation uses integration branch `feat/phase-49-stockconnect-ce-staging-validation` (merges 46+47+48) until PRs land on `dev`.
+
+**Staging configuration (do not commit secrets):**
+
+| Variable | Target |
+| -------- | ------ |
+| `CHANNEL_ENGINE_BASE_URL` | `https://<nexora-staging-host>/api/v2/ce/` |
+| `CHANNEL_ENGINE_API_KEY` | Nexora tenant API key (orders, catalog, shipments, returns scopes) |
+| Webhook subscription | `stockconnect-ce-bridge` → StockConnect `/orders/channelengine-webhook` |
+
+| Flow step | Staging result (agent environment) | Classification |
+| --------- | ----------------------------------- | -------------- |
+| Orders poll | Integration tests only | **NEEDS CONTROLLED STAGING TEST** |
+| Acknowledge | Integration tests only | **NEEDS CONTROLLED STAGING TEST** |
+| Marketplace ingestion → CE poll | Code present (Phase 46); not exercised vs live StockConnect | **NEEDS CONTROLLED STAGING TEST** |
+| Catalog / channels | Integration tests | **NEEDS CONTROLLED STAGING TEST** |
+| Shipments / returns | Integration tests | **NEEDS CONTROLLED STAGING TEST** |
+| Invoice PDF + ParseInvoice | Route present (Phase 47); live parser not run | **NEEDS CONTROLLED STAGING TEST** |
+| CE webhook delivery | Worker wired (Phase 46); live StockConnect not hit | **NEEDS CONTROLLED STAGING TEST** |
 
 | External contract | External endpoint | Nexora route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |

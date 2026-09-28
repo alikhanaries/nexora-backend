@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
+import { STOCKCONNECT_CE_BRIDGE_SUBSCRIPTION_DESCRIPTION } from '../../../src/shared/stockconnect/stockconnect-ce-webhook-subscription.js';
 import { WebhookDeliveryService } from '../../../src/modules/webhooks/application/webhook-delivery-service.js';
 import { WebhookDeliveryRetryError } from '../../../src/modules/webhooks/application/webhook-delivery-errors.js';
 import { verifyWebhookRequestBody } from '../../../src/modules/webhooks/application/webhook-request-signer.js';
@@ -75,6 +76,56 @@ function createService(overrides = {}) {
 }
 
 describe('WebhookDeliveryService', () => {
+    it('delivers StockConnect CE bridge payloads when subscription description matches', async () => {
+        const job = buildJob();
+        const ceBody = JSON.stringify({ Content: [{ Id: 1, MerchantOrderNo: 'ORD-CE' }] });
+        const { service, deps } = createService({
+            stockConnectCeWebhookBodyBuilder: vi.fn(async () => ceBody),
+        });
+        const delivery = {
+            id: job.deliveryId,
+            tenantId: job.tenantId,
+            subscriptionId: job.subscriptionId,
+            eventId: job.eventId,
+            eventType: job.eventType,
+            status: 'PENDING',
+            attemptCount: 0,
+            nextAttemptAt: null,
+            lastHttpStatus: null,
+            lastError: null,
+            deliveredAt: null,
+            createdAt: new Date(),
+        };
+        deps.deliveries.findById.mockResolvedValue(delivery);
+        deps.deliveries.claimAttempt.mockResolvedValue({ ...delivery, status: 'DELIVERING', attemptCount: 1 });
+        deps.subscriptions.findById.mockResolvedValue({
+            id: job.subscriptionId,
+            tenantId: job.tenantId,
+            url: 'https://stockconnect.example/orders/channelengine-webhook',
+            description: STOCKCONNECT_CE_BRIDGE_SUBSCRIPTION_DESCRIPTION,
+            secretCiphertext: 'cipher',
+            status: 'ACTIVE',
+            eventTypes: ['order.created'],
+        });
+        deps.outbox.findByIdForTenant.mockResolvedValue({
+            id: job.eventId,
+            type: job.eventType,
+            version: 1,
+            aggregateType: 'order',
+            aggregateId: randomUUID(),
+            tenantId: job.tenantId,
+            payload: { orderId: randomUUID() },
+            occurredAt: new Date('2026-01-01T00:00:00.000Z'),
+            correlationId: null,
+        });
+        deps.httpClient.send.mockResolvedValue({ status: 200, headers: {}, body: null, durationMs: 10, ok: true });
+        await service.deliver(job, buildContext());
+        const request = deps.httpClient.send.mock.calls[0][0];
+        expect(request.body).toBe(ceBody);
+        expect(request.body).toContain('MerchantOrderNo');
+        expect(verifyWebhookRequestBody('plain-secret', request.body, request.headers['X-Nexora-Signature'])).toBe(true);
+    });
+
     it('delivers a signed webhook and marks the delivery as DELIVERED', async () => {
         const job = buildJob();
         const { service, deps } = createService();

@@ -13,6 +13,7 @@ export class ProcessMarketplaceLifecyclePayload {
      * @param {import('../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
      * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+     * @param {import('./ensure-marketplace-order-ingested-from-lifecycle.js').EnsureMarketplaceOrderIngestedFromLifecycle} [deps.ensureMarketplaceOrderIngestedFromLifecycle]
      */
     constructor(deps) {
         this.deps = deps;
@@ -49,6 +50,16 @@ export class ProcessMarketplaceLifecyclePayload {
                 marketplaceKey: input.marketplaceKey,
             });
         }, { tenantId: input.tenantId });
+        if (this.deps.ensureMarketplaceOrderIngestedFromLifecycle !== undefined) {
+            await this.deps.ensureMarketplaceOrderIngestedFromLifecycle.execute({
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                marketplaceKey: input.marketplaceKey,
+                payload: input.payload,
+                command,
+                ...(input.jobId === undefined ? {} : { jobId: input.jobId }),
+            });
+        }
         return this.deps.lifecycleService.apply({
             tenantId: input.tenantId,
             channelId: input.channelId,
