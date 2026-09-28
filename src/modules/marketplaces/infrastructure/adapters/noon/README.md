@@ -88,7 +88,7 @@ Webhook envelope: `event_schema_version`, `event_type`, `metadata.message_id` (d
 | --------- | --- | -------- |
 | Read order | `GET /fbpi/v1/fbpi-order/{fbpi_order_nr}/get` | Yes — status sync / cancel detection |
 | Mark out of stock | `POST` UpdateOrder | **Deferred** (not mapped to generic `update_order`) |
-| Create shipment | `POST /fbpi/v1/shipment/create` | **Deferred** (outbound fulfill/shipment) |
+| Create shipment | `POST /fbpi/v1/shipment/create` | **Yes (Phase 41)** — outbound `fulfill_order` via `NoonOutboundOrderLifecycleAdapter` |
 | Returns / refunds | — | **Unsupported** in Nexora lifecycle |
 
 ### Lifecycle capabilities
@@ -97,7 +97,8 @@ Webhook envelope: `event_schema_version`, `event_type`, `metadata.message_id` (d
 | ---------- | ------- | ----- |
 | `status_sync` | yes | From `mp_status` / `integration_status` on FBPI items |
 | `cancel_order` | yes (inbound) | When all items are `MP_ITEM_STATUS_CANCELLED` |
-| `update_order`, returns, refunds, fulfill, shipment | no | Deferred until generic executors + verified outbound mapping |
+| `fulfill_order` (outbound) | yes | CreateShipment with AWB + `mp_item_nr` lines |
+| `update_order`, returns, refunds, outbound cancel, `shipment_update` | no | UpdateOrder / GetShipment / CancelShipment not wired; returns/refunds unsupported |
 
 ### Status mapping (item → order)
 
@@ -110,6 +111,22 @@ Webhook envelope: `event_schema_version`, `event_type`, `metadata.message_id` (d
 Shipped integration lines (`INTEGRATION_ITEM_STATUS_SHIPPED`) map to `unknown` until fulfillment executors exist. Partial cancellation across lines maps to `unknown`.
 
 Authentication reuses the existing service-account session (`NoonApiClient` + `NoonAuthSessionProvider`).
+
+### Outbound fulfillment (Phase 41)
+
+`NoonOutboundOrderLifecycleAdapter.createFulfillment` maps generic `fulfill_order` to **CreateShipment** ([order flow](https://noon-docs.noonpartners.dev/docs/fbpi/setup/order-flow)).
+
+| Generic field | Noon field |
+| ------------- | ---------- |
+| `externalOrderId` | `fbpi_order_nr` |
+| `lines[].externalLineItemId` | `items[].mp_item_nr` (quantity must be `1` per line; partial shipments = subset of lines) |
+| `trackingNumber` | `awbs[].awb_nr` |
+| `carrier` | `awbs[].courier` |
+| `configuration.warehouseCode` | `warehouse_code` |
+
+`integration_shipment_nr` is derived deterministically (hashed lines + AWB). HTTP 200 with empty body → `providerReference` = `integration_shipment_nr`.
+
+**Deferred:** `GetShipment`, `CancelShipment`, `UpdateOrder`, `AddShipmentCourierAwbs` (not mapped to generic lifecycle ops).
 
 ## Deployment env (optional)
 

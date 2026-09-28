@@ -56,7 +56,8 @@ Uses the generic marketplace order lifecycle framework (Phase 31) and webhook in
 | `cancel_order` | Yes (inbound) | `BuyerRequestedChange` / `Canceled` status → generic cancellation |
 | `update_order` | No | Amazon orders are not arbitrarily mutable via Orders API |
 | `return_order` / `refund_order` | No | Not implemented in Phase 34 (no direct mutation API wired) |
-| `fulfill_order` / `shipment_update` | No | `confirmShipment` client method exists; generic executor deferred |
+| `fulfill_order` | Yes (outbound, MFN) | `POST /orders/v0/orders/{orderId}/shipmentConfirmation` via `AmazonOutboundOrderLifecycleAdapter` |
+| `shipment_update` | No | Same SP-API operation can edit packages, but generic `shipment_update` is not enabled separately (use `fulfill_order` / confirmShipment for MFN packages) |
 
 ### Notifications
 
@@ -69,7 +70,27 @@ SNS subscription confirmation must be completed outside Nexora before events arr
 | Operation | SP-API |
 | --------- | ------ |
 | Read order | `GET /orders/v0/orders/{orderId}` |
-| Confirm shipment (MFN, deferred) | `POST /orders/v0/orders/{orderId}/shipmentConfirmation` |
+| Confirm shipment (MFN outbound) | `POST /orders/v0/orders/{orderId}/shipmentConfirmation` |
+
+### Outbound fulfillment (Phase 40)
+
+`AmazonOutboundOrderLifecycleAdapter.createFulfillment` maps generic `fulfill_order` to **confirmShipment** for merchant-fulfilled (MFN) orders.
+
+| Generic field | Amazon field |
+| ------------- | ------------ |
+| `externalOrderId` | Path `{orderId}` (AmazonOrderId) |
+| `lines[].externalLineItemId` | `packageDetail.orderItems[].orderItemId` |
+| `lines[].quantity` | `packageDetail.orderItems[].quantity` |
+| `trackingNumber` | `packageDetail.trackingNumber` (required) |
+| `carrier` | `packageDetail.carrierCode` (required) |
+| Connection `configuration.marketplaceId` | Body `marketplaceId` |
+| Optional `configuration.shipFromSupplySourceId` | `packageDetail.shipFromSupplySourceId` |
+
+`packageReferenceId` is derived deterministically from line items + tracking (supports partial shipments via line quantities; multiple packages require separate outbound calls with distinct line/tracking combinations).
+
+**Not supported outbound:** seller-initiated cancel, refund, return, order update. **FBA** and Amazon-purchased shipping labels may reject confirmShipment—treat as permanent provider errors.
+
+Authentication: existing LWA + SigV4 on `AmazonSpApiClient` (no new token store).
 
 Authentication reuses LWA + SigV4 from catalog (`AmazonSpApiClient`).
 
