@@ -1,4 +1,4 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import { COMPATIBILITY_RATE_LIMIT_POLICIES } from '../../../shared/auth/rate-limit-policies.js';
 import { requireActorContext } from '../../../shared/context/require-principal.js';
 import { RateLimitError } from '../../../shared/errors/index.js';
@@ -87,7 +87,7 @@ async function enforceMutationRateLimit(deps) {
 
 /**
  * StockConnect / ChannelEngine-style merchant compatibility routes (`/api/v2/ce/*`).
- * Additive surface — existing `/api/v2/*` contracts are unchanged.
+ * Additive surface ΓÇö existing `/api/v2/*` contracts are unchanged.
  */
 const stockconnectCeRoutes = async (app, deps) => {
     await app.register(async (ceApp) => {

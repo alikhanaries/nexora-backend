@@ -1,3 +1,5 @@
+import { CatalogCompatibilityCommand } from './application/catalog-compatibility-command.js';
+import { CatalogCompatibilityQuery } from './application/catalog-compatibility-query.js';
 import { CancellationCompatibilityCommand } from './application/cancellation-compatibility-command.js';
 import { CancellationCompatibilityQuery } from './application/cancellation-compatibility-query.js';
 import { ReturnCompatibilityCommand } from './application/return-compatibility-command.js';
@@ -16,6 +18,9 @@ import { StockConnectCeShipmentDeliveryCommand } from './application/stockconnec
 /**
  * @param {object} deps
  * @param {import('./application/core-contracts.js').CompatibilityCoreContracts} deps.coreContracts
+ * @param {import('../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
+ * @param {import('../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
+ * @param {import('./application/catalog-compatibility-contracts.js').CompatibilityCatalogCommands} deps.catalogCommands
  * @param {import('../../infrastructure/redis/redis-rate-limiter.js').RedisRateLimiter} deps.rateLimiter
  */
 export function createCompatibilityModule(deps) {
@@ -89,6 +94,21 @@ export function createCompatibilityModule(deps) {
         shipShipment: deps.coreContracts.shipShipment,
         deliverShipment: deps.coreContracts.deliverShipment,
     });
+    const catalogCompatibilityCommand = new CatalogCompatibilityCommand({
+        authorization: deps.authorization,
+        idempotency: deps.idempotency,
+        productQueryService: deps.coreContracts.productQueryService,
+        channelQueryService: deps.coreContracts.channelQueryService,
+        inventoryService: deps.coreContracts.inventoryService,
+        pricingService: deps.coreContracts.pricingService,
+        offerQueryService: deps.coreContracts.offerQueryService,
+        ...deps.catalogCommands,
+    });
+    const catalogCompatibilityQuery = new CatalogCompatibilityQuery({
+        authorization: deps.authorization,
+        productQueryService: deps.coreContracts.productQueryService,
+        getProductContent: deps.catalogCommands.getProductContent,
+    });
     const registerCompatibilityRoutes = async (app, routeDeps) => {
         await compatibilityRoutes(app, routeDeps);
         await stockconnectCeRoutes(app, routeDeps);
@@ -108,6 +128,8 @@ export function createCompatibilityModule(deps) {
             cancellationCompatibilityQuery,
             returnCompatibilityCommand,
             returnCompatibilityQuery,
+            catalogCompatibilityCommand,
+            catalogCompatibilityQuery,
             rateLimiter: deps.rateLimiter,
         },
         coreContracts: deps.coreContracts,

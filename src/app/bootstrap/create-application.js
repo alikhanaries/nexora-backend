@@ -290,6 +290,8 @@ export async function createApplication(infra) {
     });
     const compatibility = createCompatibilityModule({
         rateLimiter: infra.rateLimiter,
+        authorization,
+        idempotency: infra.idempotency,
         coreContracts: {
             productQueryService: products.productQueryService,
             channelQueryService: channels.channelQueryService,
@@ -315,6 +317,18 @@ export async function createApplication(infra) {
             activateOffer: offers.useCases.activateOffer,
             shipShipment: shipments.useCases.shipShipment,
             deliverShipment: shipments.useCases.deliverShipment,
+        },
+        catalogCommands: {
+            createProduct: products.useCases.createProduct,
+            deactivateProduct: products.useCases.deactivateProduct,
+            upsertProductContent: products.useCases.upsertProductContent,
+            getProductContent: products.useCases.getProductContent,
+            createPrice: pricing.useCases.createPrice,
+            updatePrice: pricing.useCases.updatePrice,
+            createOffer: offers.useCases.createOffer,
+            activateOffer: offers.useCases.activateOffer,
+            suspendOffer: offers.useCases.suspendOffer,
+            adjustInventory: inventory.useCases.adjustInventory,
         },
     });
     const httpServer = await createHttpServer({

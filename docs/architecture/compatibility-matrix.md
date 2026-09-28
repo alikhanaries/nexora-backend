@@ -75,6 +75,20 @@ StockConnect should set `CHANNEL_ENGINE_BASE_URL` to include the `/api/v2/ce/` p
 | Channel | POST /v2/orders | POST /api/v2/orders | Phase 7.2 | OrderCommandService.createChannelOrder | **Implemented** — see channel create notes below |
 | Channel | POST /v2/orders/channel-fulfilled | POST /api/v2/orders/channel-fulfilled | Phase 7.3 | OrderCommandService.createChannelFulfilledOrder | **Implemented** — see channel-fulfilled notes below |
 
+## Phase 45 — StockConnect CE catalog and offers
+
+Routes are additive under `/api/v2`. Mutations require `Idempotency-Key`. Channel context for offer routes: channel-scoped API key, `X-Channel-Reference`, or body `ChannelId` (maps to `channels.external_reference`).
+
+| External (CE) | Nexora route | Core mapping | Status |
+| ------------- | ------------ | ------------ | ------ |
+| POST /products | POST /api/v2/products | CreateProduct + UpsertProductContent (batch partial success) | **Implemented** |
+| POST /products/freeze | POST /api/v2/products/freeze | SuspendOffer (when channel context) or DeactivateProduct | **Implemented** |
+| POST /products/bulkdelete | POST /api/v2/products/bulkdelete | DeactivateProduct (soft; records retained) | **Implemented** |
+| PATCH /products/extra-data/bulk | PATCH /api/v2/products/extra-data/bulk | UpsertProductContent (`attributes.ceExtraData`) | **Implemented** |
+| PUT /offer | PUT /api/v2/offer | CreateOffer/ActivateOffer + CreatePrice/UpdatePrice | **Implemented** |
+| PUT /offer/stock | PUT /api/v2/offer/stock | AdjustInventory (absolute stock via delta) | **Implemented** |
+| GET /products?merchantProductNoList=… | GET /api/v2/products | ProductQueryService + GetProductContent | **Implemented** |
+
 ## Public contract gap analysis
 
 Only documented gaps — no speculative contracts.
