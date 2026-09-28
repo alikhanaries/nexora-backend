@@ -4,6 +4,12 @@ export class ReadinessService {
     constructor(probes) {
         this.probes = probes;
     }
+    /**
+     * @param {{ name: string, check: () => Promise<void> }} probe
+     */
+    registerProbe(probe) {
+        this.probes.push(probe);
+    }
     markNotReady() {
         this.acceptingTraffic = false;
     }

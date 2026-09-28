@@ -1,7 +1,7 @@
 # Compatibility Matrix
 
 **Status:** Phase 5 — scope locked ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md))  
-**Last updated:** 2026-09-22
+**Last updated:** 2026-09-28 (Phase 52 production readiness)
 
 This matrix tracks external contract support in Nexora's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
 
@@ -135,34 +135,7 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 
 Update this section with **VERIFIED** only after StockConnect’s staging pollers/handlers succeed against Nexora staging (not curl-only checks).
 
-## Phase 53 — Controlled StockConnect staging E2E (2026-09-28)
-
-**Base:** `origin/dev` at `9c02e36` (#67 sign-off docs on top of #66).
-
-**Phase 52 gate:** `0702e27` (`feat: harden StockConnect CE compatibility`) is **not** an ancestor of `origin/dev` (exists on `origin/feat/phase-52-stockconnect-ce-production-readiness` only). **BLOCKED — Phase 52 is not merged into origin/dev.** Staging E2E validation per Phase 53 must not proceed on `dev` until Phase 52 merges (readiness probe `stockconnect_ce_compat`, webhook log fields, etc.).
-
-**Live StockConnect staging client:** Not executed from this environment. No staging credentials or hosts available to the agent.
-
-**Actual CE route inventory** (`stockconnect-ce.routes.js`): all routes in the Phase 53 list, plus `POST /api/v2/ce/cancellations` (StockConnect CE surface; not in the Phase 53 bullet list but registered).
-
-| Flow | Status | Evidence |
-| ---- | ------ | -------- |
-| CE authentication | **BLOCKED — ENVIRONMENT** | Phase 52 not merged; no StockConnect staging run |
-| Orders polling | **NOT TESTED — NO CONTROLLED DATA** | Real StockConnect poller not executed |
-| Stable CE order Id | **NOT TESTED — NO CONTROLLED DATA** | |
-| Order acknowledgement | **NOT TESTED — NO CONTROLLED DATA** | |
-| Amazon / Noon / Namshi order visibility | **NOT TESTED — NO CONTROLLED DATA** | |
-| Products / freeze / bulk delete / extra-data / offer / offer stock | **NOT TESTED — NO CONTROLLED DATA** | |
-| Channel products | **NOT TESTED — NO CONTROLLED DATA** | |
-| Shipments / delivery state | **NOT TESTED — NO CONTROLLED DATA** | |
-| Returns / return acknowledgement | **NOT TESTED — NO CONTROLLED DATA** | |
-| Invoice HTTP / ParseInvoice | **NOT TESTED — NO CONTROLLED DATA** | |
-| Webhook delivery / signature / retry / idempotency | **NOT TESTED — NO CONTROLLED DATA** | |
-| Tenant isolation / error paths | **NOT TESTED — NO CONTROLLED DATA** | Local integration only |
-
-**Production status:** **PRODUCTION NOT VERIFIED**
-
-### Staging cutover checklist (ops)
+## Phase 50 — Live StockConnect staging cutover (historical)
 
 | Item | Status |
 | ---- | ------ |

@@ -13,6 +13,7 @@ import {
     WEBHOOK_EVENT_ID_HEADER,
     WEBHOOK_SIGNATURE_HEADER,
 } from './webhook-request-signer.js';
+import { sanitizeWebhookDestinationForLog } from './sanitize-webhook-destination-for-log.js';
 
 export class WebhookDeliveryService {
     deps;
@@ -49,6 +50,7 @@ export class WebhookDeliveryService {
             return;
         }
         const { delivery, subscription } = preparation;
+        const destination = sanitizeWebhookDestinationForLog(subscription.url);
         const event = await this.deps.outbox.findByIdForTenant(job.tenantId, job.eventId);
         if (event === null || event.type !== job.eventType) {
             await this.persistTerminalFailure(job.tenantId, delivery, {
@@ -148,6 +150,7 @@ export class WebhookDeliveryService {
                     attemptCount: delivery.attemptCount,
                     httpStatus: response.status,
                     durationMs: Date.now() - startedAt,
+                    ...(destination === null ? {} : destination),
                 }, 'Webhook delivery succeeded');
                 return;
             }
@@ -160,7 +163,7 @@ export class WebhookDeliveryService {
                     lastHttpStatus: response.status,
                     lastError,
                     retryAfterSeconds,
-                });
+                }, destination);
                 return;
             }
             await this.persistTerminalFailure(job.tenantId, delivery, {
@@ -183,7 +186,7 @@ export class WebhookDeliveryService {
             await this.handleRetryableFailure(job, delivery, context, {
                 lastHttpStatus: null,
                 lastError: sanitizeWebhookDeliveryError(error),
-            });
+            }, destination);
         }
     }
     /**
@@ -237,7 +240,7 @@ export class WebhookDeliveryService {
             return { kind: 'ready', delivery: claimed, subscription };
         }, { tenantId: job.tenantId });
     }
-    async handleRetryableFailure(job, delivery, context, failure) {
+    async handleRetryableFailure(job, delivery, context, failure, destination = null) {
         const exhausted = context.attempt >= context.maxAttempts;
         const retryDelayMs = resolveWebhookRetryDelayMs(failure.retryAfterSeconds ?? null, this.deps.config.maxRetryAfterSeconds);
         const nextAttemptAt = retryDelayMs === null ? null : new Date(Date.now() + retryDelayMs);
@@ -267,10 +270,14 @@ export class WebhookDeliveryService {
             deliveryId: job.deliveryId,
             subscriptionId: job.subscriptionId,
             eventId: job.eventId,
+            eventType: job.eventType,
             attemptCount: delivery.attemptCount,
             httpStatus: failure.lastHttpStatus,
             attempt: context.attempt,
             maxAttempts: context.maxAttempts,
+            nextAttemptAt: nextAttemptAt?.toISOString() ?? null,
+            lastError: failure.lastError,
+            ...(destination === null ? {} : destination),
         }, 'Webhook delivery failed and will be retried');
         throw new WebhookDeliveryRetryError(failure.lastError, {
             retryDelayMs: retryDelayMs ?? undefined,

@@ -145,6 +145,24 @@ describe('StockConnect CE compatibility foundation', () => {
             expect(body.Content.some((entry) => entry.ChannelOrderNo === 'sc-ce-page')).toBe(true);
         });
 
+        it('returns stable CE order Id across repeated polls', async () => {
+            const { tenantId, slug } = await createTestTenant(server);
+            const user = await createAuthenticatedUser(app, tenantId, slug);
+            const headers = authHeaders(user.accessToken);
+            const fixture = await seedCommerceFixture(server, headers);
+            await createOrder(server, headers, fixture, 'sc-ce-stable-id');
+            const apiKey = await createOrdersReadApiKey(app, tenantId, user);
+            const url = `/api/v2/ce/orders?page=1&pageSize=50&apiKey=${encodeURIComponent(apiKey.secret)}`;
+            const first = await server.inject({ method: 'GET', url });
+            const second = await server.inject({ method: 'GET', url });
+            expect(first.statusCode).toBe(200);
+            expect(second.statusCode).toBe(200);
+            const rowA = first.json().Content.find((entry) => entry.ChannelOrderNo === 'sc-ce-stable-id');
+            const rowB = second.json().Content.find((entry) => entry.ChannelOrderNo === 'sc-ce-stable-id');
+            expect(rowA?.Id).toBeDefined();
+            expect(rowB?.Id).toBe(rowA?.Id);
+        });
+
         it('includes StockConnect CE order fields when channel reference is numeric', async () => {
             const { tenantId, slug } = await createTestTenant(server);
             const user = await createAuthenticatedUser(app, tenantId, slug);

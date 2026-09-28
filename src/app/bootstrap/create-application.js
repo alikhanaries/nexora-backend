@@ -18,6 +18,7 @@ import { createProductsModule } from '../../modules/products/index.js';
 import { createReturnsModule } from '../../modules/returns/index.js';
 import { createTenantsModule } from '../../modules/tenants/index.js';
 import { createCompatibilityModule } from '../../modules/compatibility/index.js';
+import { createStockConnectCeCompatibilityReadinessProbe } from '../../modules/compatibility/application/stockconnect-ce-readiness.js';
 import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
 import { createWebhooksModule } from '../../modules/webhooks/index.js';
 import { createMarketplaceWebhookIngestionModule } from '../../modules/marketplace-webhook-ingestion/index.js';
@@ -331,6 +332,7 @@ export async function createApplication(infra) {
             adjustInventory: inventory.useCases.adjustInventory,
         },
     });
+    readiness.registerProbe(createStockConnectCeCompatibilityReadinessProbe(compatibility.routeDeps));
     const httpServer = await createHttpServer({
         config: infra.config,
         logger: infra.logger,
