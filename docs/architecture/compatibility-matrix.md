@@ -95,34 +95,56 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 | Orders poll | Yes | Yes | Integration tests **PASS** |
 | Acknowledge | Yes | Yes | Integration tests **PASS** |
 | Catalog / channels | Yes | Yes | CE integration suites **PASS** |
-| Invoice route | Yes | Yes (Phase 47 on cutover branch) | `stockconnect-ce-invoice.test.js` **PASS** |
+| Invoice route | Yes | Yes (Phase 47 on `dev` via #66) | `stockconnect-ce-invoice.test.js` **PASS** |
 | Marketplace bridge / webhook | Yes | Yes (Phase 46 on `dev`) | Unit + integration; live webhook **NEEDS CONTROLLED STAGING TEST** |
 | CE async job / queue admin | No | N/A | **NOT REQUIRED** |
 
-## Phase 50 — Live StockConnect staging cutover (2026-09-28)
+## Phase 50 — StockConnect staging readiness merge (2026-09-28)
 
-**`origin/dev` status:** Phase 46 merged (#63). Phase 48 merged (#64). Phase 47 **not yet on `origin/dev`** — present on branch `feat/phase-50-stockconnect-staging-cutover` pending PR. Phase 49 authorization fix (`authorization.authorizationService` in bootstrap) **required on `dev`** — applied on Phase 50 branch.
+**Merged to `origin/dev`:** #66 (`fa6fce1`) — Phase 47 invoice route, Phase 49 `authorization.authorizationService` bootstrap fix, route inventory test, matrix updates. Phase 46 (#63) and Phase 48 (#64) were already on `dev`.
 
-**Live staging:** Not executed from this environment. All StockConnect-client flows remain **NEEDS CONTROLLED STAGING TEST** until ops runs StockConnect against Nexora staging with `CHANNEL_ENGINE_BASE_URL=https://<nexora-staging-host>/api/v2/ce/`.
+**Live StockConnect staging:** Not executed in Phase 50.
 
-| Cutover step | Staging result |
-| ------------ | -------------- |
-| Orders poll / ack | **NEEDS CONTROLLED STAGING TEST** |
-| Marketplace ingestion (Amazon / Noon / Namshi) | **NEEDS CONTROLLED STAGING TEST** |
-| Catalog sync | **NEEDS CONTROLLED STAGING TEST** |
-| Shipments / returns | **NEEDS CONTROLLED STAGING TEST** |
-| Invoice ParseInvoice | **NEEDS CONTROLLED STAGING TEST** |
-| CE webhook `stockconnect-ce-bridge` | **NEEDS CONTROLLED STAGING TEST** |
+## Phase 51 — Live StockConnect staging E2E and cutover sign-off (2026-09-28)
+
+**Code baseline:** `origin/dev` at `fa6fce1` (post #66). Local CE integration suites (**29** tests across 6 files) **PASS** on this baseline. This does **not** substitute for StockConnect-client staging validation.
+
+**Deployment / StockConnect E2E:** Must be executed by ops against Nexora staging + StockConnect staging. This repository phase records checklist status only (no secrets).
+
+| Capability | StockConnect staging (real client) | Classification |
+| ---------- | ----------------------------------- | -------------- |
+| Orders poll (`GET /api/v2/ce/orders`) | Not run from CI/agent | **NEEDS CONTROLLED STAGING TEST** |
+| Acknowledge (`POST …/acknowledge`) | Not run | **NEEDS CONTROLLED STAGING TEST** |
+| Catalog (POST/GET products, offer, channel products) | Not run | **NEEDS CONTROLLED STAGING TEST** |
+| Shipments | Not run | **NEEDS CONTROLLED STAGING TEST** |
+| Returns | Not run | **NEEDS CONTROLLED STAGING TEST** |
+| Invoice + ParseInvoice | Not run | **NEEDS CONTROLLED STAGING TEST** |
+| Webhook `stockconnect-ce-bridge` | Not run | **NEEDS CONTROLLED STAGING TEST** |
+| Amazon / Noon / Namshi ingestion → CE poll | Not run | **NEEDS CONTROLLED STAGING TEST** |
+| CE async job / queue admin | N/A | **NOT REQUIRED** |
+
+### Cutover decision (factual)
+
+| Gate | Status |
+| ---- | ------ |
+| Engineering merge (46–50 on `dev`) | **Complete** on `origin/dev` (#63, #64, #66) |
+| Nexora staging deploy at `fa6fce1`+ | **NEEDS ENVIRONMENT VERIFICATION** |
+| StockConnect `CHANNEL_ENGINE_BASE_URL` / API key | **NEEDS ENVIRONMENT VERIFICATION** |
+| Real StockConnect workflows | **Not verified** — see table above |
+| **Sign-off** | **BLOCKED — ENVIRONMENT** until live E2E completes; not **READY FOR STAGING CUTOVER** |
+
+Update this section with **VERIFIED** only after StockConnect’s staging pollers/handlers succeed against Nexora staging (not curl-only checks).
 
 ### Staging cutover checklist (ops)
 
 | Item | Status |
 | ---- | ------ |
 | Phase 46 on `dev` | Done (#63) |
-| Phase 47 on `dev` | Pending PR from Phase 50 branch |
-| Authorization bootstrap fix on `dev` | Pending (Phase 50 commit) |
-| `CHANNEL_ENGINE_BASE_URL` | Configure in StockConnect staging only |
-| API key / tenant / numeric channel refs / order Id backfill | **NEEDS ENVIRONMENT VERIFICATION** |
+| Phase 47 + auth fix on `dev` | Done (#66) |
+| Deploy Nexora staging from merged `dev` | Pending ops |
+| `CHANNEL_ENGINE_BASE_URL` → `https://<host>/api/v2/ce/` | Pending ops |
+| API key / tenant / webhook `stockconnect-ce-bridge` | Pending ops |
+| Numeric channel `external_reference` / order Id backfill | **NEEDS ENVIRONMENT VERIFICATION** |
 
 | External contract | External endpoint | Nexora route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |
