@@ -58,4 +58,15 @@ Startup fails fast on invalid **global** config via `src/app/config/schema.js`. 
 
 All live StockConnect flows remain **BLOCKED BY ENVIRONMENT** until ops runs controlled staging with real API keys, numeric channel references, webhook URL/secret, and `CHANNEL_ENGINE_BASE_URL` pointing at Nexora staging.
 
-**Phase 55 (production cutover):** Not executed. Do not point StockConnect production at Nexora until Phase 53 staging checklist shows **PASS — VERIFIED AGAINST STOCKCONNECT STAGING** for critical flows, Phase 54 production-readiness doc is merged and approved, and change authorization is recorded. After cutover, set `CHANNEL_ENGINE_BASE_URL` to `https://<nexora-production-host>/api/v2/ce/` via StockConnect config only (never commit values). Monitor `stockconnect_ce_compat` on deployed Nexora; it confirms wiring only, not StockConnect compatibility.
+## Production cutover (Phase 54)
+
+Full checklist, monitoring, rollback, smoke test, and cutover sequence: **[stockconnect-ce-production-cutover.md](./stockconnect-ce-production-cutover.md)**.
+
+| Gate | Status |
+| ---- | ------ |
+| Code on `origin/dev` (Phases 44–52, #68) | **IMPLEMENTED** |
+| Staging E2E with real StockConnect (Phase 53) | **Not completed** — docs/local tests only (#69) |
+| Production traffic | **PRODUCTION NOT YET VERIFIED** |
+| Production configuration (secrets/URLs) | **PRODUCTION CONFIG READY** (checklist; Ops must populate) |
+
+**Phase 55 (production cutover execution):** Not executed. Do not point StockConnect production at Nexora until Phase 53 staging checklist shows **PASS — VERIFIED AGAINST STOCKCONNECT STAGING** for critical flows, Phase 54 runbook is approved, and change authorization is recorded. After cutover, set `CHANNEL_ENGINE_BASE_URL` to `https://<nexora-production-host>/api/v2/ce/` via StockConnect config only (never commit values). Monitor `stockconnect_ce_compat` on deployed Nexora; it confirms wiring only, not StockConnect compatibility.
