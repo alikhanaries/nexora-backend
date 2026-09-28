@@ -27,6 +27,18 @@ This matrix tracks external contract support in Nexora's provider-neutral compat
 
 Nexora routes are prefixed `/api/v2/...` (e.g. external `GET /v2/orders/new` → `GET /api/v2/orders/new`).
 
+## StockConnect CE compatibility surface (Phase 44, additive)
+
+StockConnect-specific ChannelEngine-style routes live under **`/api/v2/ce/*`**. They do not replace or alter existing `/api/v2` Merchant routes.
+
+| External (StockConnect) | Nexora route | Notes |
+| ----------------------- | ------------ | ----- |
+| Query `apiKey` / `apikey` | `/api/v2/ce/*` only | Resolved via existing API key verification; header auth unchanged elsewhere |
+| GET orders poll (`page`, `pageSize`) | GET `/api/v2/ce/orders` | CE-shaped response (`ChannelId` when channel `externalReference` is numeric); not `/api/v2/orders/new` |
+| POST orders/acknowledge | POST `/api/v2/ce/orders/acknowledge` | Optional `Idempotency-Key`; deterministic `ce-compat:*` key when omitted |
+
+StockConnect should set `CHANNEL_ENGINE_BASE_URL` to include the `/api/v2/ce/` path prefix (e.g. `https://host/api/v2/ce/`).
+
 | External contract | External endpoint | Nexora route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |
 | Merchant | GET /v2/orders | GET /api/v2/orders | Initial Phase 5 | OrderQueryService.listOrders | **Implemented** — see filter notes below |
