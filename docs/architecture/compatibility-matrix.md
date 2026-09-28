@@ -36,6 +36,17 @@ StockConnect-specific ChannelEngine-style routes live under **`/api/v2/ce/*`**. 
 | Query `apiKey` / `apikey` | `/api/v2/ce/*` only | Resolved via existing API key verification; header auth unchanged elsewhere |
 | GET orders poll (`page`, `pageSize`) | GET `/api/v2/ce/orders` | CE-shaped response (`ChannelId` when channel `externalReference` is numeric); not `/api/v2/orders/new` |
 | POST orders/acknowledge | POST `/api/v2/ce/orders/acknowledge` | Optional `Idempotency-Key`; deterministic `ce-compat:*` key when omitted |
+| POST cancellations | POST `/api/v2/ce/cancellations` | Delegates to existing cancellation compatibility command |
+| POST shipments | POST `/api/v2/ce/shipments` | Delegates to existing shipment compatibility command |
+| GET shipments/merchant | GET `/api/v2/ce/shipments/merchant` | `page` / `pageSize` query |
+| GET returns | GET `/api/v2/ce/returns` | StockConnect poll; same collection as merchant return list |
+| POST returns/merchant | POST `/api/v2/ce/returns/merchant` | Delegates to existing return create |
+| POST returns/merchant/acknowledge | POST `/api/v2/ce/returns/merchant/acknowledge` | Delegates to existing return acknowledge |
+| PUT returns | PUT `/api/v2/ce/returns` | Accept/reject via existing receive compatibility |
+| GET channels | GET `/api/v2/ce/channels` | Maps Nexora channels to CE nested Content shape |
+| POST products | POST `/api/v2/ce/products` | Upsert by MerchantProductNo → CreateProduct |
+| PUT offer/stock | PUT `/api/v2/ce/offer/stock` | Absolute stock via inventory adjust |
+| PUT offer | PUT `/api/v2/ce/offer` | Price upsert per channel (default currency SAR) |
 
 StockConnect should set `CHANNEL_ENGINE_BASE_URL` to include the `/api/v2/ce/` path prefix (e.g. `https://host/api/v2/ce/`).
 

@@ -21,6 +21,8 @@
  * @property {import('../../orders/public/order-command-service.js').DefaultOrderCommandService} orderCommandService
  *   Command port for order mutations (Merchant acknowledge; Channel ingestion in separate future scope).
  * @property {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} externalIntegerIdMappingQueryService
+ * @property {{ execute: Function }} [createProduct]
+ *   Optional CreateProduct use case for StockConnect CE catalog push.
  */
 
 export {};
