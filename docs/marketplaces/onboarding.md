@@ -72,7 +72,7 @@ Adapter errors are classified into retryable vs permanent via existing catalog a
 | Shopify | Cancel, refund, fulfill (Admin GraphQL) |
 | Amazon | MFN fulfill (`confirmShipment` → generic `fulfill_order`) |
 | Noon | MFN fulfill (`CreateShipment` → generic `fulfill_order`) |
-| Namshi | None (FBPI shipment create not exposed through outbound command) |
+| Namshi | FBPI fulfill (`CreateShipment` → generic `fulfill_order`) |
 
 ### Amazon outbound (Phase 40)
 
@@ -92,3 +92,13 @@ Adapter errors are classified into retryable vs permanent via existing catalog a
 - Partial fulfillment: include only the `mp_item_nr` lines being shipped; each line quantity must be `1`.
 - Idempotency: Phase 39 Postgres route + deterministic `integration_shipment_nr`.
 - Deferred: `CancelShipment` (not order cancel), `UpdateOrder`, `GetShipment`, returns/refunds.
+
+### Namshi outbound (Phase 42)
+
+- Adapter: `NamshiOutboundOrderLifecycleAdapter` (`createFulfillment` only).
+- API: `POST /fbpi/v1/shipment/create` on `NamshiApiClient.createFbpiShipment` (Partners gateway; Namshi FBPI orders).
+- Mapper: `map-marketplace-fulfillment-to-namshi-create-shipment.js`.
+- Auth: `NamshiAuthSessionProvider` (same as catalog/order inbound).
+- Maps to **`fulfill_order`** only; `shipment_update` not enabled separately.
+- Partial fulfillment: subset of `mp_item_nr` lines; quantity `1` per line.
+- Deferred: outbound cancel/refund/return/update; `GetShipment` / `CancelShipment` / `UpdateOrder`.
