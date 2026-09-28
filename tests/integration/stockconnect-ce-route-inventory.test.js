@@ -28,16 +28,14 @@ const REQUIRED_CE_ROUTES = [
     'GET /api/v2/ce/orders/:merchantOrderNo/invoice',
 ];
 
-describe('StockConnect CE route inventory (Phase 49)', () => {
+describe('StockConnect CE route inventory (Phase 50)', () => {
     let app;
-    let server;
     let routeSource;
 
     beforeAll(async () => {
         const infra = await getTestInfrastructure();
         app = await createApplication(infra);
-        server = app.httpServer;
-        await server.ready();
+        await app.httpServer.ready();
         const thisDir = dirname(fileURLToPath(import.meta.url));
         routeSource = readFileSync(
             join(thisDir, '../../src/modules/compatibility/presentation/stockconnect-ce.routes.js'),
@@ -56,7 +54,7 @@ describe('StockConnect CE route inventory (Phase 49)', () => {
         }
     });
 
-    it('mounts StockConnect CE routes on the application instance', () => {
+    it('mounts StockConnect CE route dependencies on the application', () => {
         expect(app.compatibility.routeDeps.stockConnectCeOrderInvoiceQuery).toBeDefined();
         expect(app.compatibility.routeDeps.stockConnectCeProductsQuery).toBeDefined();
         expect(app.compatibility.routeDeps.stockConnectCeChannelProductsQuery).toBeDefined();
