@@ -36,6 +36,7 @@ StockConnect-specific ChannelEngine-style routes live under **`/api/v2/ce/*`**. 
 | Query `apiKey` / `apikey` / header `X-CE-KEY` | `/api/v2/ce/*` only | Resolved via existing API key verification; header auth unchanged elsewhere |
 | GET orders poll (`page`, `pageSize`) | GET `/api/v2/ce/orders` | CE-shaped response (`ChannelId` when channel `externalReference` is numeric); not `/api/v2/orders/new` |
 | POST orders/acknowledge | POST `/api/v2/ce/orders/acknowledge` | Optional `Idempotency-Key`; deterministic `ce-compat:*` key when omitted |
+| GET orders/{merchantOrderNo}/invoice | GET `/api/v2/ce/orders/:merchantOrderNo/invoice` | `application/pdf` (StockConnect `ParseInvoice` + invoice upload); tenant-scoped by merchant order number |
 | POST cancellations | POST `/api/v2/ce/cancellations` | Delegates to existing cancellation compatibility command |
 | POST shipments | POST `/api/v2/ce/shipments` | Delegates to existing shipment compatibility command |
 | GET shipments/merchant | GET `/api/v2/ce/shipments/merchant` | `page` / `pageSize` query |
@@ -133,6 +134,20 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 | Shipments / returns | Integration tests | **NEEDS CONTROLLED STAGING TEST** |
 | Invoice PDF + ParseInvoice | Route present (Phase 47); live parser not run | **NEEDS CONTROLLED STAGING TEST** |
 | CE webhook delivery | Worker wired (Phase 46); live StockConnect not hit | **NEEDS CONTROLLED STAGING TEST** |
+
+### Phase 47 — StockConnect CE invoice (not CE async job API)
+
+StockConnect calls `GET orders/{merchantOrderNo}/invoice` (`invoiceService.js`, `ParseInvoice.js`). It expects **`application/pdf`** (Accept header) or binary image for S3 upload.
+
+Nexora does **not** expose ChannelEngine batch/job/queue admin APIs. StockConnect rate-limits CE HTTP via its **own** BullMQ (`channelEngineClient.js`) and does not poll CE job status endpoints.
+
+| Capability | StockConnect evidence | Nexora Phase 47 |
+| ---------- | --------------------- | --------------- |
+| Order invoice PDF | `invoiceService.js`, `helpers/ParseInvoice.js` | GET `/api/v2/ce/orders/:merchantOrderNo/invoice` |
+| CE async job IDs / status | Not referenced in CE URL usage | **Not implemented** (not required) |
+| CE Queue Admin | StockConnect `/channel-engine-queue/*` is internal to SC backend | **Not implemented** (not required) |
+
+Invoice PDFs use a compatibility generator with optional `OrderInvoiceDocumentPort` for future marketplace invoice providers. **Production verification** may be needed for marketplace-native tax invoice parity vs CE-generated PDFs.
 
 | External contract | External endpoint | Nexora route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |

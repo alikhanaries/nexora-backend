@@ -16,6 +16,7 @@ import { StockConnectCeCatalogCommand } from './application/stockconnect-ce-cata
 import { StockConnectCeShipmentDeliveryCommand } from './application/stockconnect-ce-shipment-delivery-command.js';
 import { StockConnectCeChannelProductsQuery } from './application/stockconnect-ce-channel-products-query.js';
 import { StockConnectCeProductsQuery } from './application/stockconnect-ce-products-query.js';
+import { StockConnectCeOrderInvoiceQuery } from './application/stockconnect-ce-order-invoice-query.js';
 
 /**
  * @param {object} deps
@@ -101,6 +102,9 @@ export function createCompatibilityModule(deps) {
         pricingService: deps.coreContracts.pricingService,
         offerQueryService: deps.coreContracts.offerQueryService,
     });
+    const stockConnectCeOrderInvoiceQuery = new StockConnectCeOrderInvoiceQuery({
+        orderQueryService: deps.coreContracts.orderQueryService,
+    });
     const stockConnectCeShipmentDeliveryCommand = new StockConnectCeShipmentDeliveryCommand({
         shipmentQueryService: deps.coreContracts.shipmentQueryService,
         shipShipment: deps.coreContracts.shipShipment,
@@ -135,6 +139,7 @@ export function createCompatibilityModule(deps) {
             stockConnectCeProductsQuery,
             stockConnectCeCatalogCommand,
             stockConnectCeShipmentDeliveryCommand,
+            stockConnectCeOrderInvoiceQuery,
             orderCompatibilityCommand,
             shipmentCompatibilityCommand,
             shipmentCompatibilityQuery,
