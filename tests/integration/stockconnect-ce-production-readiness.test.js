@@ -18,9 +18,11 @@ describe('StockConnect CE production readiness (Phase 52)', () => {
         await closeTestInfrastructure();
     });
 
-    it('readiness reports stockconnect_ce_compat probe (independent of optional storage check)', async () => {
+    it('readiness reports external compatibility probes (independent of optional storage check)', async () => {
         const response = await server.inject({ method: 'GET', url: '/health/ready' });
-        expect(response.json().checks.stockconnect_ce_compat).toBe('ok');
+        const checks = response.json().checks;
+        expect(checks.external_compat_ce_routes).toBe('ok');
+        expect(checks.stockconnect_ce_compat).toBe('ok');
     });
 
     it('does not expose internal details for unexpected CE errors', () => {

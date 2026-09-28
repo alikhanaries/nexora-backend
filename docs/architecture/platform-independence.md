@@ -119,6 +119,8 @@ StockConnect and future ERPs are **external consumers** of Nexora APIs. They mus
 
 Tenant A and Tenant B may each use a different external consumer profile via configuration only.
 
+Production deployment uses the same consumer-neutral configuration model — see [external-integration.md](external-integration.md) (Production deployment readiness).
+
 ## Related
 
 - [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md) — Merchant-compatible scope
