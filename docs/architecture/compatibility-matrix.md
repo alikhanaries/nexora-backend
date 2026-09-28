@@ -1,7 +1,7 @@
 # Compatibility Matrix
 
 **Status:** Phase 5 — scope locked ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md))  
-**Last updated:** 2026-09-28 (Phase 54 production cutover readiness)
+**Last updated:** 2026-09-28 (Phase 57 final StockConnect CE build audit)
 
 This matrix tracks external contract support in Nexora's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
 
@@ -227,6 +227,140 @@ Update this section with **VERIFIED** only after StockConnect’s staging poller
 | `CHANNEL_ENGINE_BASE_URL` → `https://<host>/api/v2/ce/` | Pending ops |
 | API key / tenant / webhook `stockconnect-ce-bridge` | Pending ops |
 | Numeric channel `external_reference` / order Id backfill | **NEEDS ENVIRONMENT VERIFICATION** |
+
+## Phase 57 — Final StockConnect CE Replacement Build Audit (2026-09-28)
+
+**Branch:** `feat/phase-57-stockconnect-ce-final-build-audit`
+**Base:** `origin/dev` at `ed21f2f` (#71 Phase 55 production cutover gate status).
+
+**Production deployment/cutover was not executed as part of this audit.** Staging and production StockConnect CE traffic were **not** successfully validated in Phase 57.
+
+### Build status
+
+**BUILD COMPLETE — REMAINING WORK IS ENVIRONMENT / DEPLOYMENT / E2E VALIDATION**
+
+Phase 57 found **no `MISSING — ENGINEERING`** item for the established StockConnect CE contract. **No additional StockConnect CE implementation phase is currently required.**
+
+### CE contract
+
+| Metric | Value |
+| ------ | ----- |
+| StockConnect-documented CE HTTP capabilities identified | **20** |
+| Implemented under `/api/v2/ce/*` | **20** |
+| Missing engineering capabilities | **0** |
+| TODO/FIXME/stub in StockConnect compatibility module | **None found** |
+
+CE-focused integration/unit coverage **passes** (see Automated verification). Live StockConnect staging validation remains **pending**.
+
+### Orders
+
+| Capability | Engineering status | Automated tests |
+| ---------- | ------------------ | --------------- |
+| Order polling (`GET /api/v2/ce/orders`) | **IMPLEMENTED** | **PASS** |
+| Stable CE integer `Id` | **IMPLEMENTED** (`external_integer_id_mappings`, provider `compat_v2`) | **PASS** |
+| Acknowledgement | **IMPLEMENTED** | **PASS** |
+| Cancellation | **IMPLEMENTED** | **PASS** |
+| Tenant isolation | **IMPLEMENTED** | **PASS** |
+
+Live StockConnect staging validation for orders remains **pending**.
+
+### Catalog
+
+| Capability | Engineering status | Automated tests |
+| ---------- | ------------------ | --------------- |
+| Products (POST) | **IMPLEMENTED** | **PASS** |
+| Product retrieval (GET) | **IMPLEMENTED** | **PASS** |
+| Freeze | **IMPLEMENTED** | **PASS** |
+| Bulk delete | **IMPLEMENTED** | **PASS** |
+| Extra data (bulk PATCH) | **IMPLEMENTED** | **PASS** |
+| Offers (PUT offer) | **IMPLEMENTED** | **PASS** |
+| Offer stock | **IMPLEMENTED** | **PASS** |
+| Channels | **IMPLEMENTED** | **PASS** |
+| Channel products | **IMPLEMENTED** | **PASS** |
+
+### Fulfillment
+
+| Capability | Engineering status | Automated tests |
+| ---------- | ------------------ | --------------- |
+| Shipments (POST) | **IMPLEMENTED** | **PASS** |
+| Delivery state (PUT) | **IMPLEMENTED** | **PASS** |
+| Merchant shipments (GET) | **IMPLEMENTED** | **PASS** |
+| Returns (GET / POST / PUT) | **IMPLEMENTED** | **PASS** |
+| Return acknowledgement | **IMPLEMENTED** | **PASS** |
+
+### Marketplace lifecycle (StockConnect-relevant)
+
+| Marketplace | Status |
+| ----------- | ------ |
+| Amazon | **IMPLEMENTED** — inbound lifecycle ingestion, normalized commands, outbound where supported |
+| Noon | **IMPLEMENTED** — same framework |
+| Namshi | **IMPLEMENTED** — same framework |
+| Shopify | **Outside StockConnect CE replacement scope** — not part of documented StockConnect cutover; not incomplete for this project |
+
+Live Amazon / Noon / Namshi → CE poll visibility remains **staging validation pending**.
+
+### Invoice
+
+| Item | Status |
+| ---- | ------ |
+| Invoice endpoint (`GET …/invoice`) | **IMPLEMENTED**, automated tests **PASS** |
+| PDF response (`application/pdf`) | **IMPLEMENTED**, automated tests **PASS** |
+| Live StockConnect `ParseInvoice` | **IMPLEMENTED — STAGING VALIDATION PENDING** |
+
+### Webhooks
+
+| Control | Status |
+| ------- | ------ |
+| Delivery (`stockconnect-ce-bridge` body mapping) | **IMPLEMENTED** |
+| Idempotency | **IMPLEMENTED** |
+| Retries | **IMPLEMENTED** |
+| HMAC (`X-Nexora-Signature`) | **IMPLEMENTED** |
+| SSRF protection on subscription URLs | **IMPLEMENTED** |
+| Sanitized destination logging | **IMPLEMENTED** (Phase 52) |
+
+A full worker → StockConnect-shaped receiver integration test would be a **test-coverage improvement**, not a missing production feature.
+
+### Security
+
+| Control | Status |
+| ------- | ------ |
+| CE API authentication (`apiKey` / `apikey` / `X-CE-KEY` on `/api/v2/ce/*` only) | **IMPLEMENTED**, **TESTED** |
+| Authorization (API key scopes / catalog permissions) | **IMPLEMENTED** |
+| Tenant isolation | **IMPLEMENTED**, **TESTED** |
+| Secret-safe logging | **IMPLEMENTED** |
+| Webhook SSRF protection | **IMPLEMENTED** |
+
+### Persistence
+
+Stable CE integer order IDs use **`external_integer_id_mappings`** with provider **`compat_v2`**.
+
+### Automated verification (Phase 57 audit run)
+
+| Command | Result |
+| ------- | ------ |
+| `npm test` | **620** tests passed, **135** files |
+| StockConnect CE focused integration tests | **32** tests passed (7 files) |
+| `npm run arch:check` | **0** errors, **73** pre-existing orphan warnings |
+| `git diff --check` | **PASS** |
+
+The full `npm run test:integration` suite showed unrelated/environmental flake/timeout failures during this audit. **These are not classified as StockConnect CE implementation gaps.**
+
+### Remaining work (environment / deployment / E2E)
+
+These are **environment/deployment/validation tasks** and **do not represent missing StockConnect CE implementation:**
+
+1. Deploy Nexora to staging.
+2. Configure StockConnect staging.
+3. Configure `CHANNEL_ENGINE_BASE_URL` to the Nexora `/api/v2/ce/` surface.
+4. Configure API credentials.
+5. Configure tenant/channel mapping.
+6. Configure webhook destination and secret.
+7. Run real StockConnect staging E2E.
+8. Validate ParseInvoice against the real StockConnect client.
+9. Validate webhook delivery against the real StockConnect client.
+10. Validate Amazon / Noon / Namshi order visibility.
+11. Confirm the actual acknowledgement `MerchantOrderNo` behavior against the live client.
+12. Complete production authorization and cutover only after staging passes.
 
 | External contract | External endpoint | Nexora route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |
