@@ -1,7 +1,7 @@
 # Compatibility Matrix
 
 **Status:** Phase 5 — scope locked ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md))  
-**Last updated:** 2026-09-28 (Phase 52 production readiness)
+**Last updated:** 2026-09-28 (Phase 54 production cutover readiness)
 
 This matrix tracks external contract support in Nexora's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
 
@@ -98,6 +98,31 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 | Invoice route | Yes | Yes (Phase 47 on `dev` via #66) | `stockconnect-ce-invoice.test.js` **PASS** |
 | Marketplace bridge / webhook | Yes | Yes (Phase 46 on `dev`) | Unit + integration; live webhook **NEEDS CONTROLLED STAGING TEST** |
 | CE async job / queue admin | No | N/A | **NOT REQUIRED** |
+
+## Phase 54 — Production cutover readiness (2026-09-28)
+
+Runbook: [stockconnect-ce-production-cutover.md](./stockconnect-ce-production-cutover.md).
+
+### Phase 53 verification summary
+
+| Evidence | Result |
+| -------- | ------ |
+| Live StockConnect staging traffic | **Not executed** (Phase 53 #67 = matrix/sign-off docs + local tests) |
+| Critical flows (poll, ack, catalog, webhook, invoice, etc.) | **PRODUCTION NOT YET VERIFIED** at staging |
+| Phase 52 on `dev` | **Merged** (#68 `02c322b`) — `stockconnect_ce_compat`, webhook log sanitization |
+
+### Production status (factual)
+
+| Label | Applies to |
+| ----- | ---------- |
+| **IMPLEMENTED** | All `/api/v2/ce/*` routes in route inventory (+ cancellations) |
+| **STAGING VERIFIED** | **Not claimed** |
+| **PRODUCTION CONFIG READY** | Checklists documented; Ops must set secrets/URLs |
+| **PRODUCTION NOT YET VERIFIED** | No production StockConnect CE traffic |
+
+**Engineering assessment:** **READY FOR CONTROLLED PRODUCTION CUTOVER** (documentation + code). **Cutover not authorized** without staging E2E and Ops sign-off.
+
+---
 
 ## Phase 50 — StockConnect staging readiness merge (2026-09-28)
 
