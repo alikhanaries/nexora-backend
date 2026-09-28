@@ -19,3 +19,23 @@ export function readMerchantCompatQueryApiKey(query) {
     }
     return null;
 }
+
+/**
+ * Reads merchant freeze-style header key (`X-CE-KEY`) used by StockConnect clients.
+ *
+ * @param {Record<string, unknown>|undefined} headers
+ * @returns {string|null}
+ */
+export function readMerchantCompatCeKeyHeader(headers) {
+    if (headers === undefined || headers === null) {
+        return null;
+    }
+    const raw = headers['x-ce-key'];
+    if (typeof raw === 'string' && raw.trim().length > 0) {
+        return raw.trim();
+    }
+    if (Array.isArray(raw) && typeof raw[0] === 'string' && raw[0].trim().length > 0) {
+        return raw[0].trim();
+    }
+    return null;
+}

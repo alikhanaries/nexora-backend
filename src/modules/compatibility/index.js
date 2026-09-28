@@ -11,6 +11,9 @@ import { ShipmentCompatibilityQuery } from './application/shipment-compatibility
 import compatibilityRoutes from './presentation/compatibility.routes.js';
 import stockconnectCeRoutes from './presentation/stockconnect-ce.routes.js';
 import { StockConnectCeOrderCompatibilityQuery } from './application/stockconnect-ce-order-compatibility-query.js';
+import { StockConnectCeChannelCompatibilityQuery } from './application/stockconnect-ce-channel-compatibility-query.js';
+import { StockConnectCeCatalogCommand } from './application/stockconnect-ce-catalog-command.js';
+import { StockConnectCeShipmentDeliveryCommand } from './application/stockconnect-ce-shipment-delivery-command.js';
 
 /**
  * @param {object} deps
@@ -69,6 +72,43 @@ export function createCompatibilityModule(deps) {
         channelQueryService: deps.coreContracts.channelQueryService,
         externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
+    const stockConnectCeChannelCompatibilityQuery = new StockConnectCeChannelCompatibilityQuery({
+        channelQueryService: deps.coreContracts.channelQueryService,
+    });
+    const stockConnectCeCatalogCommand = new StockConnectCeCatalogCommand({
+        productQueryService: deps.coreContracts.productQueryService,
+        createProduct: deps.coreContracts.createProduct,
+        archiveProduct: deps.coreContracts.archiveProduct,
+        deactivateProduct: deps.coreContracts.deactivateProduct,
+        upsertProductContent: deps.coreContracts.upsertProductContent,
+        getProductContent: deps.coreContracts.getProductContent,
+        suspendOffer: deps.coreContracts.suspendOffer,
+        activateOffer: deps.coreContracts.activateOffer,
+        channelQueryService: deps.coreContracts.channelQueryService,
+        inventoryService: deps.coreContracts.inventoryService,
+        pricingService: deps.coreContracts.pricingService,
+        offerQueryService: deps.coreContracts.offerQueryService,
+    });
+    const stockConnectCeShipmentDeliveryCommand = new StockConnectCeShipmentDeliveryCommand({
+        shipmentQueryService: deps.coreContracts.shipmentQueryService,
+        shipShipment: deps.coreContracts.shipShipment,
+        deliverShipment: deps.coreContracts.deliverShipment,
+    });
+    const catalogCompatibilityCommand = new CatalogCompatibilityCommand({
+        authorization: deps.authorization,
+        idempotency: deps.idempotency,
+        productQueryService: deps.coreContracts.productQueryService,
+        channelQueryService: deps.coreContracts.channelQueryService,
+        inventoryService: deps.coreContracts.inventoryService,
+        pricingService: deps.coreContracts.pricingService,
+        offerQueryService: deps.coreContracts.offerQueryService,
+        ...deps.catalogCommands,
+    });
+    const catalogCompatibilityQuery = new CatalogCompatibilityQuery({
+        authorization: deps.authorization,
+        productQueryService: deps.coreContracts.productQueryService,
+        getProductContent: deps.catalogCommands.getProductContent,
+    });
     const registerCompatibilityRoutes = async (app, routeDeps) => {
         await compatibilityRoutes(app, routeDeps);
         await stockconnectCeRoutes(app, routeDeps);
@@ -78,6 +118,9 @@ export function createCompatibilityModule(deps) {
         routeDeps: {
             orderCompatibilityQuery,
             stockConnectCeOrderCompatibilityQuery,
+            stockConnectCeChannelCompatibilityQuery,
+            stockConnectCeCatalogCommand,
+            stockConnectCeShipmentDeliveryCommand,
             orderCompatibilityCommand,
             shipmentCompatibilityCommand,
             shipmentCompatibilityQuery,
