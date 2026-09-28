@@ -117,6 +117,15 @@ function toAppConfig(raw) {
             shopifyAdminApiVersion: raw.SHOPIFY_ADMIN_API_VERSION,
             amazonLwaTokenUrl: raw.AMAZON_LWA_TOKEN_URL,
         },
+        marketplaceLifecycle: {
+            queueName: raw.MARKETPLACE_LIFECYCLE_QUEUE_NAME,
+            jobAttempts: raw.MARKETPLACE_LIFECYCLE_JOB_ATTEMPTS > 0
+                ? raw.MARKETPLACE_LIFECYCLE_JOB_ATTEMPTS
+                : raw.QUEUE_DEFAULT_ATTEMPTS,
+            backoffBaseMs: raw.MARKETPLACE_LIFECYCLE_BACKOFF_MS > 0
+                ? raw.MARKETPLACE_LIFECYCLE_BACKOFF_MS
+                : raw.QUEUE_BACKOFF_BASE_MS,
+        },
     };
 }
 function assertConsistency(config) {

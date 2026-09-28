@@ -173,6 +173,18 @@ export class PrometheusMetrics {
             labelNames: ['outcome', 'marketplace', 'operation'],
             registers: [this.registry],
         });
+        this.marketplaceOrderLifecycleTotal = new Counter({
+            name: 'marketplace_order_lifecycle_total',
+            help: 'Marketplace order lifecycle command outcomes.',
+            labelNames: ['outcome', 'marketplace', 'operation'],
+            registers: [this.registry],
+        });
+        this.marketplaceLifecycleWorkerTotal = new Counter({
+            name: 'marketplace_lifecycle_worker_jobs_total',
+            help: 'Marketplace lifecycle worker job outcomes.',
+            labelNames: ['outcome', 'marketplace', 'operation', 'source'],
+            registers: [this.registry],
+        });
         this.catalogSyncReconciliationRunsTotal = new Counter({
             name: 'channel_catalog_reconciliation_runs_total',
             help: 'Scheduled catalog sync reconciliation runs by outcome.',
@@ -266,6 +278,21 @@ export class PrometheusMetrics {
             outcome: sample.outcome,
             marketplace: sample.marketplace ?? 'unknown',
             operation: sample.operation ?? 'webhook',
+        });
+    }
+    recordMarketplaceOrderLifecycle(sample) {
+        this.marketplaceOrderLifecycleTotal.inc({
+            outcome: sample.outcome,
+            marketplace: sample.marketplace ?? 'unknown',
+            operation: sample.operation ?? 'unknown',
+        });
+    }
+    recordMarketplaceLifecycleWorker(sample) {
+        this.marketplaceLifecycleWorkerTotal.inc({
+            outcome: sample.outcome,
+            marketplace: sample.marketplace ?? 'unknown',
+            operation: sample.operation ?? 'unknown',
+            source: sample.source ?? 'unknown',
         });
     }
     recordCatalogSyncReconciliation(sample) {

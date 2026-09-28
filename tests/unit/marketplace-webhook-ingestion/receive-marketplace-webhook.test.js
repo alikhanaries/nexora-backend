@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { IdempotentRequestInProgressError } from '../../../src/shared/errors/index.js';
 import { ReceiveMarketplaceWebhook } from '../../../src/modules/marketplace-webhook-ingestion/application/receive-marketplace-webhook.js';
-import { MarketplaceOrderLifecycleProcessor } from '../../../src/modules/marketplace-webhook-ingestion/application/marketplace-order-lifecycle-processor.js';
 import { MarketplaceWebhookAdapterRegistry } from '../../../src/modules/marketplace-webhook-ingestion/public/marketplace-webhook-adapter-registry.js';
-import { MarketplaceWebhookAuthenticationError, MarketplaceWebhookPermanentError, MarketplaceWebhookRetryableError, MarketplaceWebhookUnsupportedError, } from '../../../src/modules/marketplace-webhook-ingestion/application/marketplace-webhook-errors.js';
+import { MarketplaceWebhookAuthenticationError, MarketplaceWebhookRetryableError, MarketplaceWebhookUnsupportedError, } from '../../../src/modules/marketplace-webhook-ingestion/application/marketplace-webhook-errors.js';
 import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/domain/marketplace-webhook-event-kind.js';
 import { normalizedMarketplaceWebhookEventSchema } from '../../../src/modules/marketplace-webhook-ingestion/application/normalized-marketplace-webhook-event.schema.js';
-import { MarketplaceOrderIngestionPermanentError, MarketplaceOrderIngestionRetryError, } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
 import {
     buildTestWebhookPayload,
     createTestMarketplaceWebhookAdapter,
@@ -29,31 +27,28 @@ function buildService(overrides = {}) {
             return { kind: 'executed', value };
         }),
     };
-    const orderLifecycleProcessor = {
-        process: vi.fn(async () => ({
-            outcome: 'created',
-            externalOrderReference: 'ext-1',
-        })),
+    const lifecycleEnqueueService = {
+        enqueueFromWebhook: vi.fn(async () => ({ id: 'job-1', queue: 'marketplace-order-lifecycle', name: 'process-marketplace-lifecycle' })),
     };
     return {
         service: new ReceiveMarketplaceWebhook({
             resolveConnection: { execute: async () => connection },
             webhookAdapterRegistry: registry,
-            orderLifecycleProcessor,
+            lifecycleEnqueueService,
             idempotency,
             metrics: undefined,
             logger: undefined,
             ...overrides.deps,
         }),
         idempotency,
-        orderLifecycleProcessor,
+        lifecycleEnqueueService,
         registry,
     };
 }
 
 describe('ReceiveMarketplaceWebhook', () => {
     it('authenticates and processes a valid webhook', async () => {
-        const { service, orderLifecycleProcessor } = buildService();
+        const { service, lifecycleEnqueueService } = buildService();
         const payload = buildTestWebhookPayload({
             marketplaceKey: 'shopify',
             externalOrderId: 'order-1',
@@ -67,8 +62,8 @@ describe('ReceiveMarketplaceWebhook', () => {
             rawBody,
         });
         expect(result.replayed).toBe(false);
-        expect(result.data.outcome).toBe('created');
-        expect(orderLifecycleProcessor.process).toHaveBeenCalledOnce();
+        expect(result.data.outcome).toBe('enqueued');
+        expect(lifecycleEnqueueService.enqueueFromWebhook).toHaveBeenCalledOnce();
     });
 
     it('rejects invalid signature', async () => {
@@ -90,10 +85,10 @@ describe('ReceiveMarketplaceWebhook', () => {
                     const value = await operation();
                     return { kind: 'executed', value };
                 }
-                return { kind: 'replayed', value: { outcome: 'created', externalOrderReference: 'ext-1' } };
+                return { kind: 'replayed', value: { outcome: 'enqueued', externalOrderReference: null, queueJobId: 'job-1' } };
             }),
         };
-        const { service, orderLifecycleProcessor } = buildService({
+        const { service, lifecycleEnqueueService } = buildService({
             deps: { idempotency },
         });
         const payload = buildTestWebhookPayload({
@@ -108,7 +103,7 @@ describe('ReceiveMarketplaceWebhook', () => {
         await service.execute(input);
         const second = await service.execute(input);
         expect(second.replayed).toBe(true);
-        expect(orderLifecycleProcessor.process).toHaveBeenCalledOnce();
+        expect(lifecycleEnqueueService.enqueueFromWebhook).toHaveBeenCalledOnce();
     });
 
     it('returns in-progress for concurrent duplicate webhook', async () => {
@@ -164,36 +159,36 @@ describe('ReceiveMarketplaceWebhook', () => {
         })).rejects.toBeInstanceOf(MarketplaceWebhookUnsupportedError);
     });
 
-    it('rejects unsupported event kind from lifecycle processor', async () => {
+    it('enqueues order.update webhooks without synchronous lifecycle processing', async () => {
         const registry = new MarketplaceWebhookAdapterRegistry();
         registry.register(createTestMarketplaceWebhookAdapter('shopify', { unsupportedEventKind: true }));
-        const orderLifecycleProcessor = new MarketplaceOrderLifecycleProcessor({
-            ingestNormalizedMarketplaceOrder: { execute: vi.fn() },
-        });
-        const { service } = buildService({
-            deps: { webhookAdapterRegistry: registry, orderLifecycleProcessor },
+        const { service, lifecycleEnqueueService } = buildService({
+            deps: { webhookAdapterRegistry: registry },
         });
         const payload = buildTestWebhookPayload({
             marketplaceKey: 'shopify',
-            externalOrderId: 'order-unsupported',
+            externalOrderId: 'order-update',
             merchantSku: 'SKU-1',
             stockLocationId: '44444444-4444-4444-8444-444444444444',
         });
         const rawBody = JSON.stringify(payload);
-        await expect(service.execute({
+        const result = await service.execute({
             ingressToken: 'test-token-value-1234567890',
             headers: { 'x-test-signature': signTestWebhookBody(rawBody) },
             rawBody,
-        })).rejects.toBeInstanceOf(MarketplaceWebhookUnsupportedError);
+        });
+        expect(result.data.outcome).toBe('enqueued');
+        expect(lifecycleEnqueueService.enqueueFromWebhook).toHaveBeenCalledOnce();
     });
 
-    it('maps retryable ingestion failures', async () => {
-        const orderLifecycleProcessor = {
-            process: vi.fn(async () => {
-                throw new MarketplaceOrderIngestionRetryError('retry me', { retryDelayMs: 10_000 });
+    it('maps queue enqueue failures to retryable webhook errors', async () => {
+        const { ServiceUnavailableError } = await import('../../../src/shared/errors/index.js');
+        const lifecycleEnqueueService = {
+            enqueueFromWebhook: vi.fn(async () => {
+                throw new ServiceUnavailableError('Could not enqueue job');
             }),
         };
-        const { service } = buildService({ deps: { orderLifecycleProcessor } });
+        const { service } = buildService({ deps: { lifecycleEnqueueService } });
         const payload = buildTestWebhookPayload({
             marketplaceKey: 'shopify',
             externalOrderId: 'order-retry',
@@ -206,27 +201,6 @@ describe('ReceiveMarketplaceWebhook', () => {
             headers: { 'x-test-signature': signTestWebhookBody(rawBody) },
             rawBody,
         })).rejects.toBeInstanceOf(MarketplaceWebhookRetryableError);
-    });
-
-    it('maps permanent ingestion failures', async () => {
-        const orderLifecycleProcessor = {
-            process: vi.fn(async () => {
-                throw new MarketplaceOrderIngestionPermanentError('bad order', { reason: 'test' });
-            }),
-        };
-        const { service } = buildService({ deps: { orderLifecycleProcessor } });
-        const payload = buildTestWebhookPayload({
-            marketplaceKey: 'shopify',
-            externalOrderId: 'order-permanent',
-            merchantSku: 'SKU-1',
-            stockLocationId: '44444444-4444-4444-8444-444444444444',
-        });
-        const rawBody = JSON.stringify(payload);
-        await expect(service.execute({
-            ingressToken: 'test-token-value-1234567890',
-            headers: { 'x-test-signature': signTestWebhookBody(rawBody) },
-            rawBody,
-        })).rejects.toBeInstanceOf(MarketplaceWebhookPermanentError);
     });
 });
 

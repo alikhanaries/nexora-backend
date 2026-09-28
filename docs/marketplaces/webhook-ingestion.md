@@ -17,9 +17,21 @@ Normalized marketplace webhook event (Zod)
         ↓
 Postgres idempotency (deduplicationKey)
         ↓
-MarketplaceOrderLifecycleProcessor
+Enqueue `marketplace-order-lifecycle` job (BullMQ)
         ↓
-IngestNormalizedMarketplaceOrder → CreateChannelOrder
+HTTP 200 (`outcome: enqueued`)
+```
+
+Lifecycle side effects run asynchronously in the **marketplace lifecycle worker**:
+
+```text
+marketplace-order-lifecycle queue
+        ↓
+ExecuteMarketplaceLifecycleJob
+        ↓
+MarketplaceOrderLifecycleProcessor / MarketplaceOrderLifecycleService
+        ↓
+Provider adapters (HTTP only inside adapters)
 ```
 
 ## Ingress token

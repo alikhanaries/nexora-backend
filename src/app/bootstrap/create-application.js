@@ -28,6 +28,8 @@ import { registerMarketplaceWebhookAdapters } from '../../modules/marketplaces/i
 import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
 import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../modules/marketplaces/application/marketplace-outbound-order-lifecycle-adapter-registry.js';
 import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/application/execute-outbound-marketplace-order-lifecycle-command.js';
+import { MarketplaceLifecycleEnqueueService } from '../../modules/marketplace-order-ingestion/application/marketplace-lifecycle-enqueue-service.js';
+import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/application/enqueue-outbound-marketplace-order-lifecycle-command.js';
 import { ShopifyOrderAdapter } from '../../modules/marketplaces/infrastructure/adapters/shopify/shopify-order-adapter.js';
 import { PostgresOrderRepository } from '../../modules/orders/infrastructure/postgres-order-repository.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
@@ -236,6 +238,14 @@ export async function createApplication(infra) {
         noonUserAgent: infra.config.marketplace.noonUserAgent,
     });
     const marketplaceRepository = new PostgresMarketplaceRepository();
+    const marketplaceLifecycleEnqueueService = new MarketplaceLifecycleEnqueueService({
+        queue: infra.queue,
+        metrics: infra.metrics,
+        lifecycleConfig: infra.config.marketplaceLifecycle,
+    });
+    const enqueueOutboundMarketplaceOrderLifecycle = new EnqueueOutboundMarketplaceOrderLifecycleCommand({
+        lifecycleEnqueueService: marketplaceLifecycleEnqueueService,
+    });
     const executeOutboundMarketplaceOrderLifecycle = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
         lifecycleAdapterRegistry: outboundOrderLifecycleAdapterRegistry,
         marketplaceAdapterRuntimeFactory,
@@ -263,6 +273,7 @@ export async function createApplication(infra) {
         idempotency: infra.idempotency,
         metrics: infra.metrics,
         logger: infra.logger,
+        lifecycleEnqueueService: marketplaceLifecycleEnqueueService,
         ingestNormalizedMarketplaceOrder: marketplaceOrderIngestion.ingestNormalizedMarketplaceOrder,
         ...(marketplaceOrderIngestion.processMarketplaceLifecyclePayload === undefined
             ? {}
@@ -345,6 +356,8 @@ export async function createApplication(infra) {
         webhooks,
         marketplaceOrderIngestion,
         executeOutboundMarketplaceOrderLifecycle,
+        enqueueOutboundMarketplaceOrderLifecycle,
+        marketplaceLifecycleEnqueueService,
         marketplaceWebhookIngestion,
         readiness,
         httpServer,

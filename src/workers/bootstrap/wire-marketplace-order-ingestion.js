@@ -65,7 +65,7 @@ export function wireMarketplaceOrderIngestion(deps) {
         mappings: new PostgresMarketplaceEntityMappingRepository(),
         queryable: deps.database,
     });
-    return createMarketplaceOrderIngestionModule({
+    const module = createMarketplaceOrderIngestionModule({
         database: deps.database,
         channelQueryService,
         marketplaceLookup,
@@ -90,4 +90,12 @@ export function wireMarketplaceOrderIngestion(deps) {
         ...(deps.shipShipment === undefined ? {} : { shipShipment: deps.shipShipment }),
         ...(deps.idempotency === undefined ? {} : { idempotency: deps.idempotency }),
     });
+    return {
+        ...module,
+        channelQueryService,
+        marketplaceLookup,
+        ...(deps.marketplaceAdapterRuntimeFactory === undefined
+            ? {}
+            : { marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory }),
+    };
 }

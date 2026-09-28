@@ -25,6 +25,9 @@ export function registerWorkerHandlers(deps) {
     if (deps.channelCatalogSyncService === undefined) {
         throw new Error('channelCatalogSyncService is required for worker handlers');
     }
+    if (deps.executeMarketplaceLifecycleJob === undefined) {
+        throw new Error('executeMarketplaceLifecycleJob is required for worker handlers');
+    }
     const publishHandler = async (payload, context) => {
         if (context.name !== JobName.PUBLISH_INTEGRATION_EVENT) {
             return;
@@ -79,7 +82,14 @@ export function registerWorkerHandlers(deps) {
             throw error;
         }
     };
+    const marketplaceLifecycleHandler = async (payload, context) => {
+        if (context.name !== JobName.PROCESS_MARKETPLACE_LIFECYCLE) {
+            return;
+        }
+        await deps.executeMarketplaceLifecycleJob.execute(payload, context);
+    };
     deps.workerRuntime.register(QueueName.INTEGRATION_EVENTS, publishHandler);
     deps.workerRuntime.register(QueueName.WEBHOOK_DELIVERIES, webhookDeliveryHandler);
     deps.workerRuntime.register(QueueName.CHANNEL_CATALOG_SYNC, catalogSyncHandler);
+    deps.workerRuntime.register(deps.marketplaceLifecycleQueueName, marketplaceLifecycleHandler);
 }

@@ -51,6 +51,34 @@ Outbound commands use route id `marketplace-order-lifecycle/outbound` with calle
 
 Adapter errors are classified into retryable vs permanent via existing catalog adapter error mapping. Workers own retry orchestration; provider clients should not multiply retries on top of worker/idempotency retries.
 
+## Lifecycle worker delivery (Phase 43)
+
+Inbound webhooks, polling-derived lifecycle commands, and optional outbound enqueue share one BullMQ queue (default name `marketplace-order-lifecycle`, override via `MARKETPLACE_LIFECYCLE_QUEUE_NAME`):
+
+```text
+Ingress (webhook HTTP / polling / outbound enqueue)
+        ↓
+MarketplaceLifecycleEnqueueService
+        ↓
+BullMQ job (deterministic job id from channel + marketplace + externalEventId + operation)
+        ↓
+ExecuteMarketplaceLifecycleJob (worker process)
+        ↓
+MarketplaceOrderLifecycleProcessor | MarketplaceOrderLifecycleService | ExecuteOutboundMarketplaceOrderLifecycleCommand
+```
+
+| Setting | Default |
+| ------- | ------- |
+| Queue name | `marketplace-order-lifecycle` |
+| Job attempts | `QUEUE_DEFAULT_ATTEMPTS` (override `MARKETPLACE_LIFECYCLE_JOB_ATTEMPTS`) |
+| Backoff | `QUEUE_BACKOFF_BASE_MS` (override `MARKETPLACE_LIFECYCLE_BACKOFF_MS`) |
+| Worker concurrency | `QUEUE_WORKER_CONCURRENCY` |
+| Job lock / timeout | `QUEUE_JOB_TIMEOUT_MS` |
+
+Postgres idempotency remains authoritative for side effects (`marketplace-order-lifecycle.apply`, `marketplace-order-lifecycle/outbound`, webhook ingress route). Queue job ids coalesce duplicate enqueue only; they do not replace idempotency fingerprints.
+
+Metrics: `marketplace_lifecycle_worker_jobs_total` (outcome, marketplace, operation, source) and existing `marketplace_order_lifecycle_total`.
+
 ### Testing
 
 - Unit tests on the provider outbound adapter (mock client).
