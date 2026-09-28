@@ -32,6 +32,7 @@ import {
     externalShipmentSuccessSchema,
 } from './compatibility-shipment.schemas.js';
 import { stockConnectCeOrderCollectionSchema } from './stockconnect-ce-order.schemas.js';
+import { ValidationError } from '../../../shared/errors/index.js';
 
 const stockConnectCeOrdersQuerySchema = z.object({
     page: z.coerce.number().int().min(1).optional(),
@@ -44,6 +45,16 @@ const stockConnectCeApiKeyQuerySchema = z.object({
     apiKey: z.string().optional(),
     apikey: z.string().optional(),
 });
+
+const stockConnectCeProductsQuerySchema = stockConnectCeApiKeyQuerySchema.extend({
+    merchantProductNoList: z.union([z.string(), z.array(z.string())]).optional(),
+    MerchantProductNoList: z.union([z.string(), z.array(z.string())]).optional(),
+});
+
+function readMerchantProductNosFromQuery(query) {
+    const raw = query.merchantProductNoList ?? query.MerchantProductNoList ?? [];
+    return (Array.isArray(raw) ? raw : [raw]).filter((value) => typeof value === 'string' && value.length > 0);
+}
 
 function stockConnectMutationContext(request, routeId) {
     const actor = requireActorContext();
@@ -343,6 +354,63 @@ const stockconnectCeRoutes = async (app, deps) => {
             StatusCode: z.number().int(),
             Message: z.string().nullable().optional(),
             Content: z.unknown().optional(),
+        });
+
+        typed.get('/api/v2/ce/products', {
+            schema: {
+                tags: ['StockConnect CE compatibility'],
+                summary: 'List products by merchant SKU (StockConnect CE GET products)',
+                description: 'Same contract as GET /api/v2/products with CE query `apiKey` auth. '
+                    + 'StockConnect `getExistingProductsBySkuFromCE` uses repeated `merchantProductNoList` query params.',
+                querystring: stockConnectCeProductsQuerySchema,
+                response: {
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request) => {
+            await enforceReadRateLimit(deps);
+            const actor = requireActorContext();
+            const merchantProductNos = readMerchantProductNosFromQuery(request.query);
+            if (merchantProductNos.length === 0) {
+                throw new ValidationError('merchantProductNoList is required');
+            }
+            return deps.stockConnectCeProductsQuery.listProductsByMerchantProductNos({
+                tenantId: actor.tenantId,
+                actorPermissions: actor.permissions,
+                merchantProductNos,
+            });
+        });
+
+        typed.get('/api/v2/ce/channels/:channelId/products', {
+            schema: {
+                tags: ['StockConnect CE compatibility'],
+                summary: 'List channel listing status by SKU (StockConnect productSyncService)',
+                querystring: stockConnectCeApiKeyQuerySchema.extend({
+                    page: z.coerce.number().int().min(1).optional(),
+                    pageSize: z.coerce.number().int().min(1).max(250).optional(),
+                }),
+                params: z.object({
+                    channelId: z.coerce.number().int().positive(),
+                }),
+                response: {
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    404: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request) => {
+            await enforceReadRateLimit(deps);
+            const actor = requireActorContext();
+            return deps.stockConnectCeChannelProductsQuery.listChannelProducts({
+                tenantId: actor.tenantId,
+                actorPermissions: actor.permissions,
+                ceChannelId: request.params.channelId,
+                page: request.query.page,
+                pageSize: request.query.pageSize,
+            });
         });
 
         typed.get('/api/v2/ce/channels', {
