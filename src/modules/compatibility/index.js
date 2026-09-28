@@ -14,6 +14,8 @@ import { StockConnectCeOrderCompatibilityQuery } from './application/stockconnec
 import { StockConnectCeChannelCompatibilityQuery } from './application/stockconnect-ce-channel-compatibility-query.js';
 import { StockConnectCeCatalogCommand } from './application/stockconnect-ce-catalog-command.js';
 import { StockConnectCeShipmentDeliveryCommand } from './application/stockconnect-ce-shipment-delivery-command.js';
+import { StockConnectCeChannelProductsQuery } from './application/stockconnect-ce-channel-products-query.js';
+import { StockConnectCeProductsQuery } from './application/stockconnect-ce-products-query.js';
 
 /**
  * @param {object} deps
@@ -75,6 +77,16 @@ export function createCompatibilityModule(deps) {
     const stockConnectCeChannelCompatibilityQuery = new StockConnectCeChannelCompatibilityQuery({
         channelQueryService: deps.coreContracts.channelQueryService,
     });
+    const stockConnectCeChannelProductsQuery = new StockConnectCeChannelProductsQuery({
+        authorization: deps.authorization,
+        channelQueryService: deps.coreContracts.channelQueryService,
+        offerQueryService: deps.coreContracts.offerQueryService,
+        productQueryService: deps.coreContracts.productQueryService,
+    });
+    const stockConnectCeProductsQuery = new StockConnectCeProductsQuery({
+        authorization: deps.authorization,
+        productQueryService: deps.coreContracts.productQueryService,
+    });
     const stockConnectCeCatalogCommand = new StockConnectCeCatalogCommand({
         productQueryService: deps.coreContracts.productQueryService,
         createProduct: deps.coreContracts.createProduct,
@@ -119,6 +131,8 @@ export function createCompatibilityModule(deps) {
             orderCompatibilityQuery,
             stockConnectCeOrderCompatibilityQuery,
             stockConnectCeChannelCompatibilityQuery,
+            stockConnectCeChannelProductsQuery,
+            stockConnectCeProductsQuery,
             stockConnectCeCatalogCommand,
             stockConnectCeShipmentDeliveryCommand,
             orderCompatibilityCommand,
