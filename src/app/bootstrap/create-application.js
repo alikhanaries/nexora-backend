@@ -307,6 +307,14 @@ export async function createApplication(infra) {
             orderCommandService: orders.orderCommandService,
             externalIntegerIdMappingQueryService: externalIdMapping.externalIntegerIdMappingQueryService,
             createProduct: products.useCases.createProduct,
+            archiveProduct: products.useCases.archiveProduct,
+            deactivateProduct: products.useCases.deactivateProduct,
+            upsertProductContent: products.useCases.upsertProductContent,
+            getProductContent: products.useCases.getProductContent,
+            suspendOffer: offers.useCases.suspendOffer,
+            activateOffer: offers.useCases.activateOffer,
+            shipShipment: shipments.useCases.shipShipment,
+            deliverShipment: shipments.useCases.deliverShipment,
         },
     });
     const httpServer = await createHttpServer({

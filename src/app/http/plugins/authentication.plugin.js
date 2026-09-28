@@ -1,6 +1,9 @@
 import fp from 'fastify-plugin';
 import { isMerchantCompatQueryAuthPath } from '../../../shared/auth/merchant-compat-route-prefix.js';
-import { readMerchantCompatQueryApiKey } from '../../../shared/auth/read-merchant-compat-query-api-key.js';
+import {
+    readMerchantCompatCeKeyHeader,
+    readMerchantCompatQueryApiKey,
+} from '../../../shared/auth/read-merchant-compat-query-api-key.js';
 import { enrichRequestContext, getRequestContext, } from '../../../shared/context/request-context.js';
 import { AuthenticationError } from '../../../shared/errors/index.js';
 const PUBLIC_ROUTE_PATTERNS = [
@@ -49,11 +52,9 @@ const authenticationPlugin = async (app, options) => {
         }
         const bearer = readBearerToken(typeof request.headers.authorization === 'string' ? request.headers.authorization : undefined);
         let apiKey = readApiKey(request);
-        const queryApiKey = isMerchantCompatQueryAuthPath(path)
-            ? readMerchantCompatQueryApiKey(request.query)
-            : null;
-        if (apiKey === null && queryApiKey !== null) {
-            apiKey = queryApiKey;
+        if (apiKey === null && isMerchantCompatQueryAuthPath(path)) {
+            apiKey = readMerchantCompatQueryApiKey(request.query)
+                ?? readMerchantCompatCeKeyHeader(request.headers);
         }
         if (bearer !== null && apiKey !== null) {
             throw new AuthenticationError('Provide either Bearer token or API key, not both');

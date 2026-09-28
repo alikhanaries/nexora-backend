@@ -23,6 +23,14 @@
  * @property {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} externalIntegerIdMappingQueryService
  * @property {{ execute: Function }} [createProduct]
  *   Optional CreateProduct use case for StockConnect CE catalog push.
+ * @property {{ execute: Function }} [archiveProduct]
+ * @property {{ execute: Function }} [deactivateProduct]
+ * @property {{ execute: Function }} [upsertProductContent]
+ * @property {{ execute: Function }} [getProductContent]
+ * @property {{ execute: Function }} [suspendOffer]
+ * @property {{ execute: Function }} [activateOffer]
+ * @property {{ execute: Function }} [shipShipment]
+ * @property {{ execute: Function }} [deliverShipment]
  */
 
 export {};

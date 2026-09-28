@@ -11,6 +11,7 @@ import stockconnectCeRoutes from './presentation/stockconnect-ce.routes.js';
 import { StockConnectCeOrderCompatibilityQuery } from './application/stockconnect-ce-order-compatibility-query.js';
 import { StockConnectCeChannelCompatibilityQuery } from './application/stockconnect-ce-channel-compatibility-query.js';
 import { StockConnectCeCatalogCommand } from './application/stockconnect-ce-catalog-command.js';
+import { StockConnectCeShipmentDeliveryCommand } from './application/stockconnect-ce-shipment-delivery-command.js';
 
 /**
  * @param {object} deps
@@ -72,10 +73,21 @@ export function createCompatibilityModule(deps) {
     const stockConnectCeCatalogCommand = new StockConnectCeCatalogCommand({
         productQueryService: deps.coreContracts.productQueryService,
         createProduct: deps.coreContracts.createProduct,
+        archiveProduct: deps.coreContracts.archiveProduct,
+        deactivateProduct: deps.coreContracts.deactivateProduct,
+        upsertProductContent: deps.coreContracts.upsertProductContent,
+        getProductContent: deps.coreContracts.getProductContent,
+        suspendOffer: deps.coreContracts.suspendOffer,
+        activateOffer: deps.coreContracts.activateOffer,
         channelQueryService: deps.coreContracts.channelQueryService,
         inventoryService: deps.coreContracts.inventoryService,
         pricingService: deps.coreContracts.pricingService,
         offerQueryService: deps.coreContracts.offerQueryService,
+    });
+    const stockConnectCeShipmentDeliveryCommand = new StockConnectCeShipmentDeliveryCommand({
+        shipmentQueryService: deps.coreContracts.shipmentQueryService,
+        shipShipment: deps.coreContracts.shipShipment,
+        deliverShipment: deps.coreContracts.deliverShipment,
     });
     const registerCompatibilityRoutes = async (app, routeDeps) => {
         await compatibilityRoutes(app, routeDeps);
@@ -88,6 +100,7 @@ export function createCompatibilityModule(deps) {
             stockConnectCeOrderCompatibilityQuery,
             stockConnectCeChannelCompatibilityQuery,
             stockConnectCeCatalogCommand,
+            stockConnectCeShipmentDeliveryCommand,
             orderCompatibilityCommand,
             shipmentCompatibilityCommand,
             shipmentCompatibilityQuery,

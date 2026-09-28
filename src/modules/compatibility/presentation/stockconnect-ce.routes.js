@@ -434,6 +434,100 @@ const stockconnectCeRoutes = async (app, deps) => {
             const ctx = stockConnectMutationContext(request, 'PUT /api/v2/ce/offer');
             return deps.stockConnectCeCatalogCommand.updateOfferPrice(ctx);
         });
+
+        typed.post('/api/v2/ce/products/freeze', {
+            schema: {
+                tags: ['StockConnect CE compatibility'],
+                summary: 'Freeze or unfreeze products (StockConnect CE PRODUCTS_FREEZE)',
+                querystring: stockConnectCeApiKeyQuerySchema,
+                body: z.array(z.record(z.unknown())),
+                response: {
+                    200: ceMutationSuccessSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request) => {
+            await enforceMutationRateLimit(deps);
+            const ctx = stockConnectMutationContext(request, 'POST /api/v2/ce/products/freeze');
+            return deps.stockConnectCeCatalogCommand.freezeProducts(ctx);
+        });
+
+        typed.post('/api/v2/ce/products/bulkdelete', {
+            schema: {
+                tags: ['StockConnect CE compatibility'],
+                summary: 'Bulk delete products (StockConnect CE PRODUCTS_BULK_DELETE)',
+                querystring: stockConnectCeApiKeyQuerySchema,
+                body: z.array(z.union([z.string(), z.number()])),
+                response: {
+                    200: ceMutationSuccessSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request) => {
+            await enforceMutationRateLimit(deps);
+            const ctx = stockConnectMutationContext(request, 'POST /api/v2/ce/products/bulkdelete');
+            return deps.stockConnectCeCatalogCommand.bulkDeleteProducts(ctx);
+        });
+
+        typed.patch('/api/v2/ce/products/extra-data/bulk', {
+            schema: {
+                tags: ['StockConnect CE compatibility'],
+                summary: 'Patch product extra-data (StockConnect CE PRODUCTS_EXTRA_DATA)',
+                querystring: stockConnectCeApiKeyQuerySchema,
+                body: z.array(z.record(z.unknown())),
+                response: {
+                    200: ceMutationSuccessSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request) => {
+            await enforceMutationRateLimit(deps);
+            const ctx = stockConnectMutationContext(request, 'PATCH /api/v2/ce/products/extra-data/bulk');
+            return deps.stockConnectCeCatalogCommand.patchExtraData(ctx);
+        });
+
+        typed.put('/api/v2/ce/shipments/:merchantShipmentNo/delivery-state', {
+            schema: {
+                tags: ['StockConnect CE compatibility'],
+                summary: 'Update shipment delivery state (StockConnect CE SHIPMENT_DELIVERY_STATE)',
+                querystring: stockConnectCeApiKeyQuerySchema,
+                params: z.object({
+                    merchantShipmentNo: z.string().min(1).max(250),
+                }),
+                body: z.object({
+                    Status: z.string().min(1),
+                    DeliveredAt: z.union([z.string(), z.number(), z.null()]).optional(),
+                }).passthrough(),
+                response: {
+                    200: ceMutationSuccessSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    404: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request) => {
+            await enforceMutationRateLimit(deps);
+            const ctx = stockConnectMutationContext(request, 'PUT /api/v2/ce/shipments/:merchantShipmentNo/delivery-state');
+            return deps.stockConnectCeShipmentDeliveryCommand.updateDeliveryState({
+                ...ctx,
+                merchantShipmentNo: request.params.merchantShipmentNo,
+            });
+        });
     });
 };
 
