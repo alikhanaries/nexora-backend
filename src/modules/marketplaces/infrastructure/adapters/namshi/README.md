@@ -65,7 +65,8 @@ Namshi orders use the shared [FBPI](https://noon-docs.noonpartners.dev/docs/fbpi
 | `cancel_order` | **Yes** (inbound) | Partial line `MP_ITEM_STATUS_CANCELLED` → generic cancellation with line hints |
 | `update_order` | **No** | `UpdateOrder` is outbound OOS marking, not inbound lifecycle |
 | `return_order` / `refund_order` | **No** | RTO/return APIs not wired in Phase 36 |
-| `fulfill_order` / `shipment_update` | **No** | **Outbound:** `POST /fbpi/v1/shipment/create` registers shipments with noon logistics (AWB, warehouse, line items) — seller-initiated, not an inbound webhook operation. **Inbound:** shipped state appears as `INTEGRATION_ITEM_STATUS_SHIPPED` on `GetFbpiOrder` → `status_sync` with `unknown` (generic executor does not apply `fulfilled` yet). No `ExecuteOutboundMarketplaceOrderLifecycleCommand` / Namshi outbound adapter on this branch. |
+| `fulfill_order` | **Yes** (outbound) | `POST /fbpi/v1/shipment/create` via `NamshiOutboundOrderLifecycleAdapter` (Phase 42) |
+| `shipment_update` | **No** | CreateShipment edits not exposed as generic `shipment_update` |
 
 ### Webhooks
 
@@ -85,7 +86,21 @@ Authentication reuses Namshi catalog session cookies (`NamshiAuthSessionProvider
 - **MSRP** not synced on local pricing upsert (only `price` from effective Nexora amount).
 - **Activate** does not push stock; run inventory sync to restock.
 - **Catalog** async batch jobs only; order webhooks use Event Notifications (separate from catalog batch responses).
-- **Outbound** FBPI shipment/create and order/update (OOS) not exposed through generic lifecycle outbound in Phase 36.
+- **Outbound** `UpdateOrder` (OOS) and shipment query/cancel APIs not wired to generic lifecycle.
+
+### Outbound fulfillment (Phase 42)
+
+`NamshiOutboundOrderLifecycleAdapter.createFulfillment` maps generic `fulfill_order` to FBPI **CreateShipment** ([order flow](https://noon-docs.noonpartners.dev/docs/fbpi/setup/order-flow)).
+
+| Generic field | FBPI field |
+| ------------- | ---------- |
+| `externalOrderId` | `fbpi_order_nr` |
+| `lines[].externalLineItemId` | `items[].mp_item_nr` (quantity must be `1` per line) |
+| `trackingNumber` | `awbs[].awb_nr` |
+| `carrier` | `awbs[].courier` |
+| `configuration.warehouseCode` | `warehouse_code` |
+
+Auth: `NamshiAuthSessionProvider` on `NamshiApiClient.createFbpiShipment`.
 - Separate Namshi-only public docs URL was not used; behavior is taken from noon Partners documentation where Namshi columns/examples are explicit.
 
 ## Errors and retries

@@ -233,6 +233,76 @@ describe('ExecuteOutboundMarketplaceOrderLifecycleCommand', () => {
         })).rejects.toBeInstanceOf(MarketplaceOrderLifecycleUnsupportedError);
     });
 
+    it('executes Namshi fulfill when adapter registered', async () => {
+        const namshiAdapter = {
+            marketplaceKey: 'namshi',
+            getLifecycleCapabilities: () => ({
+                supportsOutboundCancellation: false,
+                supportsOutboundRefund: false,
+                supportsOutboundFulfillment: true,
+                supportsOutboundReturns: false,
+            }),
+            createFulfillment: vi.fn(async () => ({ outcome: 'fulfilled', providerReference: 'namshi-abc' })),
+        };
+        const registry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
+        registry.register(namshiAdapter);
+        const command = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
+            lifecycleAdapterRegistry: registry,
+            marketplaceAdapterRuntimeFactory: {
+                createForSync: vi.fn(async () => ({
+                    marketplaceKey: 'namshi',
+                    credentials: {},
+                    configuration: { countryCode: 'ae', warehouseCode: 'WH-1' },
+                    connectionRequired: true,
+                })),
+            },
+            database: { execute: vi.fn(async (fn) => fn({})) },
+        });
+        const result = await command.execute({
+            tenantId: tenantA,
+            channelId,
+            marketplaceKey: 'namshi',
+            externalOrderId: 'NFBO987654321',
+            operation: MarketplaceOrderLifecycleOperation.FULFILL_ORDER,
+            idempotencyKey: 'namshi-fulfill-1',
+            payload: {
+                lines: [{ externalLineItemId: 'NFBO987654321-1', quantity: 1 }],
+                trackingNumber: 'AWB1',
+                carrier: 'noon',
+            },
+        });
+        expect(result.outcome).toBe('fulfilled');
+        expect(namshiAdapter.createFulfillment).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects Namshi outbound cancel', async () => {
+        const namshiAdapter = {
+            marketplaceKey: 'namshi',
+            getLifecycleCapabilities: () => ({
+                supportsOutboundCancellation: false,
+                supportsOutboundRefund: false,
+                supportsOutboundFulfillment: true,
+                supportsOutboundReturns: false,
+            }),
+            createFulfillment: vi.fn(),
+        };
+        const registry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
+        registry.register(namshiAdapter);
+        const command = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
+            lifecycleAdapterRegistry: registry,
+            marketplaceAdapterRuntimeFactory: { createForSync: vi.fn() },
+            database: { execute: vi.fn() },
+        });
+        await expect(command.execute({
+            tenantId: tenantA,
+            channelId,
+            marketplaceKey: 'namshi',
+            externalOrderId: 'NFBO987654321',
+            operation: MarketplaceOrderLifecycleOperation.CANCEL_ORDER,
+            idempotencyKey: 'namshi-cancel-1',
+        })).rejects.toBeInstanceOf(MarketplaceOrderLifecycleUnsupportedError);
+    });
+
     it('rejects Amazon outbound cancel', async () => {
         const amazonAdapter = {
             marketplaceKey: 'amazon',

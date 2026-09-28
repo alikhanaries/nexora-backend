@@ -116,6 +116,20 @@ export class NamshiApiClient {
     }
 
     /**
+     * FBPI CreateShipment — register seller shipment with AWB (Phase 42 outbound fulfill).
+     *
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {object} body
+     */
+    async createFbpiShipment(runtime, body) {
+        return this.authenticatedRequest(runtime, {
+            path: '/fbpi/v1/shipment/create',
+            method: 'POST',
+            body,
+        });
+    }
+
+    /**
      * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {{ path: string, method?: string, body?: unknown }} request
      */
