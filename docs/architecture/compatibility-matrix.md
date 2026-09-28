@@ -127,7 +127,7 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 
 | Gate | Status |
 | ---- | ------ |
-| Engineering merge (46–50 on `dev`) | **Complete** on `origin/dev` (#63, #64, #66) |
+| Engineering merge (46–52 on `dev`) | **Complete** on `origin/dev` (#63, #64, #66, #68) |
 | Nexora staging deploy at `fa6fce1`+ | **NEEDS ENVIRONMENT VERIFICATION** |
 | StockConnect `CHANNEL_ENGINE_BASE_URL` / API key | **NEEDS ENVIRONMENT VERIFICATION** |
 | Real StockConnect workflows | **Not verified** — see table above |
@@ -135,12 +135,43 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 
 Update this section with **VERIFIED** only after StockConnect’s staging pollers/handlers succeed against Nexora staging (not curl-only checks).
 
-## Phase 50 — Live StockConnect staging cutover (historical)
+## Phase 52 — StockConnect CE production readiness (2026-09-28)
+
+**Merged to `origin/dev`:** #68 (`02c322b`) — readiness probe `stockconnect_ce_compat`, sanitized webhook destination logging, operations doc. See `docs/architecture/stockconnect-ce-operations.md`.
+
+## Phase 53 — Controlled StockConnect staging E2E (2026-09-28)
+
+**Base:** `origin/dev` at `02c322b` (#68 includes Phase 52; prior #66–#67 on `dev`).
+
+**Live StockConnect staging client:** Not executed from this environment. No staging credentials or hosts available to the agent.
+
+**Actual CE route inventory** (`stockconnect-ce.routes.js`): all routes in the Phase 53 list, plus `POST /api/v2/ce/cancellations`.
+
+| Flow | Status | Evidence |
+| ---- | ------ | -------- |
+| CE authentication | **NOT TESTED — NO CONTROLLED DATA** | Real StockConnect staging not run |
+| Orders polling | **NOT TESTED — NO CONTROLLED DATA** | Real StockConnect poller not executed |
+| Stable CE order Id | **NOT TESTED — NO CONTROLLED DATA** | |
+| Order acknowledgement | **NOT TESTED — NO CONTROLLED DATA** | |
+| Amazon / Noon / Namshi order visibility | **NOT TESTED — NO CONTROLLED DATA** | |
+| Products / freeze / bulk delete / extra-data / offer / offer stock | **NOT TESTED — NO CONTROLLED DATA** | |
+| Channel products | **NOT TESTED — NO CONTROLLED DATA** | |
+| Shipments / delivery state | **NOT TESTED — NO CONTROLLED DATA** | |
+| Returns / return acknowledgement | **NOT TESTED — NO CONTROLLED DATA** | |
+| Invoice HTTP / ParseInvoice | **NOT TESTED — NO CONTROLLED DATA** | |
+| Webhook delivery / signature / retry / idempotency | **NOT TESTED — NO CONTROLLED DATA** | |
+| Tenant isolation / error paths | **NOT TESTED — NO CONTROLLED DATA** | Local integration only |
+| Readiness `stockconnect_ce_compat` | **NOT TESTED — NO CONTROLLED DATA** on staging deploy | Local `stockconnect-ce-production-readiness.test.js` on merged code |
+
+**Production status:** **PRODUCTION NOT VERIFIED**
+
+### Staging cutover checklist (ops)
 
 | Item | Status |
 | ---- | ------ |
 | Phase 46 on `dev` | Done (#63) |
 | Phase 47 + auth fix on `dev` | Done (#66) |
+| Phase 52 readiness on `dev` | Done (#68) |
 | Deploy Nexora staging from merged `dev` | Pending ops |
 | `CHANNEL_ENGINE_BASE_URL` → `https://<host>/api/v2/ce/` | Pending ops |
 | API key / tenant / webhook `stockconnect-ce-bridge` | Pending ops |
