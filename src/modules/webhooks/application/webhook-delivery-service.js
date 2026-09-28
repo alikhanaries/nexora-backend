@@ -1,8 +1,7 @@
 import { recordWebhookDeliveryOutcome } from '../../../shared/metrics/record-webhook-delivery.js';
 import { WebhookDeliveryStatus } from '../domain/webhook-delivery-status.js';
 import { WebhookSubscriptionStatus } from '../domain/webhook-subscription-status.js';
-import { isStockConnectCeBridgeSubscription } from '../../../shared/stockconnect/stockconnect-ce-webhook-subscription.js';
-import { buildWebhookEventEnvelope } from './build-webhook-event-envelope.js';
+import { resolveWebhookRequestBody as resolveWebhookPayload } from './webhook-payload-strategy.js';
 import { classifyWebhookHttpResponse, parseRetryAfterSeconds } from './classify-webhook-http-response.js';
 import { sanitizeWebhookDeliveryError, WebhookDeliveryRetryError } from './webhook-delivery-errors.js';
 import { resolveWebhookRetryDelayMs } from './webhook-delivery-retry-delay.js';
@@ -195,13 +194,7 @@ export class WebhookDeliveryService {
      * @returns {Promise<string|null>}
      */
     async resolveWebhookRequestBody(subscription, event) {
-        if (isStockConnectCeBridgeSubscription(subscription)) {
-            if (this.deps.stockConnectCeWebhookBodyBuilder === undefined) {
-                return null;
-            }
-            return this.deps.stockConnectCeWebhookBodyBuilder(event);
-        }
-        return buildWebhookEventEnvelope(event);
+        return resolveWebhookPayload(this.deps.webhookPayloadStrategies, subscription, event);
     }
 
     async prepareDelivery(job) {

@@ -109,7 +109,18 @@ See [ADR-029](../decisions/ADR-029-marketplace-connector-framework.md) and [chan
 
 See [module-boundaries.md](module-boundaries.md) for enforceable dependency rules and [compatibility.md](compatibility.md) for the `/api/v2` boundary.
 
+## External ERP / OMS consumers
+
+StockConnect and future ERPs are **external consumers** of Nexora APIs. They must not become the definition of Nexora's core model.
+
+- HTTP: compatibility routes and mappers (`/api/v2`, `/api/v2/ce/*`).
+- Webhooks: optional `WebhookPayloadStrategy` registrations at the worker composition root ([external-integration.md](external-integration.md)).
+- IDs: provider namespaces on `external_integer_id_mappings` (e.g. `compat_v2`).
+
+Tenant A and Tenant B may each use a different external consumer profile via configuration only.
+
 ## Related
 
 - [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md) — Merchant-compatible scope
 - [compatibility-matrix.md](compatibility-matrix.md) — endpoint scope and contract gaps
+- [external-integration.md](external-integration.md) — ERP/consumer boundaries and webhook strategies

@@ -4,7 +4,7 @@ import { gracefulShutdown } from '../app/bootstrap/shutdown.js';
 import { createWorkerReadinessProbes, ReadinessService, } from '../app/observability/readiness.js';
 import { AesSecretEncryptor } from '../infrastructure/auth/aes-secret-encryptor.js';
 import { createWebhookDeliveryService, createWebhookDispatchService } from '../modules/webhooks/index.js';
-import { wireStockConnectCeWebhookDelivery } from './bootstrap/wire-stockconnect-ce-webhook-delivery.js';
+import { wireExternalConsumerWebhookPayloadStrategies } from './bootstrap/wire-external-consumer-webhook-payload-strategies.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
 import { createIntegrationEventConsumers } from './create-integration-event-consumers.js';
 import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
@@ -50,7 +50,7 @@ async function main() {
         logger: infra.logger,
         metrics: infra.metrics,
         config,
-        stockConnectCeWebhookBodyBuilder: wireStockConnectCeWebhookDelivery({
+        webhookPayloadStrategies: wireExternalConsumerWebhookPayloadStrategies({
             orderQueryService,
             channelQueryService,
             externalIntegerIdMappingQueryService,

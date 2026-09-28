@@ -9,6 +9,8 @@ const PROVIDER_NAME_PATTERN = /\b(?:ChannelEngine|channelengine|channel-engine|C
 
 const COMPATIBILITY_IMPORT_PATTERN = /modules\/compatibility/;
 
+const STOCKCONNECT_NAME_PATTERN = /\b(?:stockconnect|StockConnect|STOCKCONNECT)\b/;
+
 /** @param {string} dir */
 function collectJsFiles(dir, files = []) {
     for (const entry of readdirSync(dir)) {
@@ -57,6 +59,7 @@ describe('platform independence', () => {
         const allowed = new Set([
             'src/app/bootstrap/create-application.js',
             'src/app/http/create-server.js',
+            'src/workers/bootstrap/wire-external-consumer-webhook-payload-strategies.js',
             'src/workers/bootstrap/wire-stockconnect-ce-webhook-delivery.js',
         ]);
         const offenders = [];
@@ -67,6 +70,19 @@ describe('platform independence', () => {
             }
             const content = readFileSync(file, 'utf8');
             if (COMPATIBILITY_IMPORT_PATTERN.test(content) && !allowed.has(rel)) {
+                offenders.push(rel);
+            }
+        }
+        expect(offenders).toEqual([]);
+    });
+
+    it('does not reference external consumer product names in generic webhook delivery', () => {
+        const webhooksRoot = join(repoRoot, 'src/modules/webhooks');
+        const offenders = [];
+        for (const file of collectJsFiles(webhooksRoot)) {
+            const rel = relative(repoRoot, file).replace(/\\/g, '/');
+            const content = readFileSync(file, 'utf8');
+            if (STOCKCONNECT_NAME_PATTERN.test(content)) {
                 offenders.push(rel);
             }
         }
