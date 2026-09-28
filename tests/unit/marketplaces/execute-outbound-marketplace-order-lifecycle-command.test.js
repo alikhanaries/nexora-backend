@@ -163,6 +163,76 @@ describe('ExecuteOutboundMarketplaceOrderLifecycleCommand', () => {
         expect(amazonAdapter.createFulfillment).toHaveBeenCalledTimes(1);
     });
 
+    it('executes Noon fulfill when adapter registered', async () => {
+        const noonAdapter = {
+            marketplaceKey: 'noon',
+            getLifecycleCapabilities: () => ({
+                supportsOutboundCancellation: false,
+                supportsOutboundRefund: false,
+                supportsOutboundFulfillment: true,
+                supportsOutboundReturns: false,
+            }),
+            createFulfillment: vi.fn(async () => ({ outcome: 'fulfilled', providerReference: 'nexora-abc' })),
+        };
+        const registry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
+        registry.register(noonAdapter);
+        const command = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
+            lifecycleAdapterRegistry: registry,
+            marketplaceAdapterRuntimeFactory: {
+                createForSync: vi.fn(async () => ({
+                    marketplaceKey: 'noon',
+                    credentials: {},
+                    configuration: { countryCode: 'ae', warehouseCode: 'WH-1' },
+                    connectionRequired: true,
+                })),
+            },
+            database: { execute: vi.fn(async (fn) => fn({})) },
+        });
+        const result = await command.execute({
+            tenantId: tenantA,
+            channelId,
+            marketplaceKey: 'noon',
+            externalOrderId: 'NFBO123456789',
+            operation: MarketplaceOrderLifecycleOperation.FULFILL_ORDER,
+            idempotencyKey: 'noon-fulfill-1',
+            payload: {
+                lines: [{ externalLineItemId: 'NFBO123456789-1', quantity: 1 }],
+                trackingNumber: 'AWB1',
+                carrier: 'noon',
+            },
+        });
+        expect(result.outcome).toBe('fulfilled');
+        expect(noonAdapter.createFulfillment).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects Noon outbound cancel', async () => {
+        const noonAdapter = {
+            marketplaceKey: 'noon',
+            getLifecycleCapabilities: () => ({
+                supportsOutboundCancellation: false,
+                supportsOutboundRefund: false,
+                supportsOutboundFulfillment: true,
+                supportsOutboundReturns: false,
+            }),
+            createFulfillment: vi.fn(),
+        };
+        const registry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
+        registry.register(noonAdapter);
+        const command = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
+            lifecycleAdapterRegistry: registry,
+            marketplaceAdapterRuntimeFactory: { createForSync: vi.fn() },
+            database: { execute: vi.fn() },
+        });
+        await expect(command.execute({
+            tenantId: tenantA,
+            channelId,
+            marketplaceKey: 'noon',
+            externalOrderId: 'NFBO123456789',
+            operation: MarketplaceOrderLifecycleOperation.CANCEL_ORDER,
+            idempotencyKey: 'noon-cancel-1',
+        })).rejects.toBeInstanceOf(MarketplaceOrderLifecycleUnsupportedError);
+    });
+
     it('rejects Amazon outbound cancel', async () => {
         const amazonAdapter = {
             marketplaceKey: 'amazon',

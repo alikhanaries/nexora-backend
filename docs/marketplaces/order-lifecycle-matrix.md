@@ -1,4 +1,4 @@
-# Marketplace order lifecycle matrix (Phases 31–40)
+# Marketplace order lifecycle matrix (Phases 31–41)
 
 Authoritative summary of **implemented** lifecycle behavior. Legend:
 
@@ -13,7 +13,7 @@ Authoritative summary of **implemented** lifecycle behavior. Legend:
 | ----------- | -----: | -----: | -----: | -----: | ------: | -------: | ----------: |
 | Amazon | — | In | — | — | Out | — | In |
 | Shopify | — | Both | — | Out | Out | — | In |
-| Noon | — | In | — | — | — | — | In |
+| Noon | — | In | — | — | Out | — | In |
 | Namshi | — | In | — | — | — | — | In |
 
 ## Outbound detail (Phase 39)
@@ -26,7 +26,7 @@ Generic entrypoint: `ExecuteOutboundMarketplaceOrderLifecycleCommand` + `Marketp
 | Shopify | Refund | Admin GraphQL `refundCreate` | Line-level + optional shipping refund |
 | Shopify | Fulfill | Admin GraphQL `fulfillmentCreate` | Requires fulfillment orders; tracking optional |
 | Amazon | Fulfill (MFN) | Orders API `POST …/shipmentConfirmation` | LWA + SigV4; `externalLineItemId` = Amazon OrderItemId; tracking + carrier required |
-| Noon | — | — | FBPI outbound (`UpdateOrder`, shipment create) not integrated |
+| Noon | Fulfill (FBPI) | `POST /fbpi/v1/shipment/create` | Service-account session; AWB + `mp_item_nr` required |
 | Namshi | — | — | FBPI `shipment/create` seller-initiated; not wired to outbound registry |
 
 ## Inbound idempotency keys
@@ -40,7 +40,7 @@ Generic entrypoint: `ExecuteOutboundMarketplaceOrderLifecycleCommand` + `Marketp
 
 ## Application wiring
 
-HTTP `createApplication` wires inbound lifecycle via `wireMarketplaceOrderIngestion` and outbound via `executeOutboundMarketplaceOrderLifecycle` (Shopify + Amazon outbound adapters registered in bootstrap).
+HTTP `createApplication` wires inbound lifecycle via `wireMarketplaceOrderIngestion` and outbound via `executeOutboundMarketplaceOrderLifecycle` (Shopify, Amazon, and Noon outbound adapters registered in bootstrap).
 
 ## Deferred
 
@@ -48,6 +48,6 @@ HTTP `createApplication` wires inbound lifecycle via `wireMarketplaceOrderIngest
 - Outbound `update_order`, `shipment_update` where provider semantics are not verified
 - Amazon outbound cancel/refund/return/update; generic `shipment_update` (confirmShipment edits not exposed separately)
 - Amazon FBA / label-purchased flows that reject confirmShipment
-- Noon/Namshi FBPI outbound shipment flows
+- Noon `UpdateOrder`, `GetShipment`, `CancelShipment`, `AddShipmentCourierAwbs`; Namshi FBPI outbound
 
 Provider READMEs: `src/modules/marketplaces/infrastructure/adapters/{amazon,shopify,noon,namshi}/README.md`.

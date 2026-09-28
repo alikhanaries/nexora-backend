@@ -71,7 +71,7 @@ Adapter errors are classified into retryable vs permanent via existing catalog a
 | ----------- | ------------------- |
 | Shopify | Cancel, refund, fulfill (Admin GraphQL) |
 | Amazon | MFN fulfill (`confirmShipment` → generic `fulfill_order`) |
-| Noon | None (FBPI outbound shipment/update not integrated) |
+| Noon | MFN fulfill (`CreateShipment` → generic `fulfill_order`) |
 | Namshi | None (FBPI shipment create not exposed through outbound command) |
 
 ### Amazon outbound (Phase 40)
@@ -82,3 +82,13 @@ Adapter errors are classified into retryable vs permanent via existing catalog a
 - Generic `fulfill_order` only; `shipment_update` remains disabled (same SP-API can edit packages, but not exposed as a separate generic operation).
 - Idempotency: Phase 39 Postgres idempotency route; `packageReferenceId` derived from lines + tracking for Amazon-side package identity.
 - Limitations: MFN only; requires Amazon OrderItemId in `externalLineItemId`; FBA / Amazon Shipping label flows may fail at provider.
+
+### Noon outbound (Phase 41)
+
+- Adapter: `NoonOutboundOrderLifecycleAdapter` (`createFulfillment` only).
+- API: `POST /fbpi/v1/shipment/create` on `NoonApiClient.createFbpiShipment`.
+- Maps to generic **`fulfill_order`** (seller registers shipment + AWB with noon), not `shipment_update`.
+- Auth: existing `NoonAuthSessionProvider` cookie session on authenticated requests.
+- Partial fulfillment: include only the `mp_item_nr` lines being shipped; each line quantity must be `1`.
+- Idempotency: Phase 39 Postgres route + deterministic `integration_shipment_nr`.
+- Deferred: `CancelShipment` (not order cancel), `UpdateOrder`, `GetShipment`, returns/refunds.
