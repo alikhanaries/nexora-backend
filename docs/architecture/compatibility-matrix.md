@@ -190,61 +190,31 @@ Update this section with **VERIFIED** only after StockConnect’s staging poller
 
 **Production status:** **PRODUCTION NOT VERIFIED**
 
-Historical Phase 53 rows above are unchanged; Phase 56 (below) is the staging gate completion attempt on base `c20a733`.
+## Phase 55 — Controlled production cutover & verification (2026-09-28)
 
-## Phase 56 — Staging gate completion & readiness reconciliation (2026-09-28)
+**Base:** `origin/dev` at `9d4ea5c` (#69 Phase 53 matrix record on #68).
 
-**Base:** `origin/dev` at `c20a733` (#70 Phase 54 runbook on #69/#68).
+**Prerequisite gates:**
 
-**Prerequisites:** Phase 52 **MERGED** (#68). Phase 53 gate **open** (no StockConnect staging client evidence). Phase 54 **MERGED** (#70, `stockconnect-ce-production-cutover.md`; feature SHA `6d43b8f` squashed). **No Phase 54 cherry-pick** on this branch.
+| Gate | Status |
+| ---- | ------ |
+| Phase 52 on `dev` | **PASS** — #68: `stockconnect_ce_compat`, webhook log sanitization, stable CE Id integration test, `stockconnect-ce-operations.md` (content verified; `0702e27` squashed) |
+| Phase 53 staging E2E | **BLOCKED — ENVIRONMENT** — matrix #69; all flows **NOT TESTED — NO CONTROLLED DATA** (no real StockConnect staging client evidence) |
+| Phase 54 production readiness | **PASS on `dev`** — #70 (`c20a733`); see `stockconnect-ce-production-cutover.md` |
+| Production authorization | **NOT OBTAINED** in this environment |
 
-**Staging access:** Not available in this environment (no Nexora/StockConnect staging deploy, credentials, or client execution). **Production cutover not executed.**
+**Production execution:** Not performed. No Nexora production deploy, StockConnect `CHANNEL_ENGINE_BASE_URL` change, or live production traffic from this agent.
 
-**Execution attempt (2026-09-28, run `phase56-20260928-execution`):** Executor has no `.env`, no Nexora staging URL, and no StockConnect staging client/logs. Local `phase56-evidence/` run summary records **STAGING BLOCKED — ENVIRONMENT** (directory gitignored; not committed). No matrix row upgraded to PASS without StockConnect-client evidence.
+| Flow | Production status | Evidence |
+| ---- | ----------------- | -------- |
+| Authentication | **NOT TESTED** | No production cutover |
+| Orders polling / stable CE Id / ack | **NOT TESTED** | |
+| Catalog / channels / shipments / returns | **NOT TESTED** | |
+| Invoice / ParseInvoice | **NOT TESTED** | |
+| Webhooks (delivery / signature / retry / idempotency) | **NOT TESTED** | |
+| Tenant isolation / errors | **NOT TESTED** | |
 
-| Flow | Status | Evidence |
-| ---- | ------ | -------- |
-| Authentication | **BLOCKED — ENVIRONMENT** | No StockConnect staging run |
-| Orders polling | **NOT TESTED — NO CONTROLLED DATA** | |
-| Stable CE Id | **NOT TESTED — NO CONTROLLED DATA** | |
-| Order acknowledgement | **NOT TESTED — NO CONTROLLED DATA** | |
-| Amazon order visibility | **NOT TESTED — NO CONTROLLED DATA** | |
-| Noon order visibility | **NOT TESTED — NO CONTROLLED DATA** | |
-| Namshi order visibility | **NOT TESTED — NO CONTROLLED DATA** | |
-| Products | **NOT TESTED — NO CONTROLLED DATA** | |
-| Product freeze | **NOT TESTED — NO CONTROLLED DATA** | |
-| Product bulk delete | **NOT TESTED — NO CONTROLLED DATA** | |
-| Extra-data update | **NOT TESTED — NO CONTROLLED DATA** | |
-| Offer update | **NOT TESTED — NO CONTROLLED DATA** | |
-| Offer stock update | **NOT TESTED — NO CONTROLLED DATA** | |
-| Channel products | **NOT TESTED — NO CONTROLLED DATA** | |
-| Shipments | **NOT TESTED — NO CONTROLLED DATA** | |
-| Delivery state | **NOT TESTED — NO CONTROLLED DATA** | |
-| Returns | **NOT TESTED — NO CONTROLLED DATA** | |
-| Return acknowledgement | **NOT TESTED — NO CONTROLLED DATA** | |
-| Invoice HTTP | **NOT TESTED — NO CONTROLLED DATA** | |
-| StockConnect ParseInvoice | **NOT TESTED — NO CONTROLLED DATA** | |
-| Webhook delivery | **NOT TESTED — NO CONTROLLED DATA** | |
-| Webhook signature | **NOT TESTED — NO CONTROLLED DATA** | |
-| Webhook retry | **NOT TESTED — NO CONTROLLED DATA** | |
-| Webhook idempotency | **NOT TESTED — NO CONTROLLED DATA** | |
-| Tenant isolation | **NOT TESTED — NO CONTROLLED DATA** | |
-| Error paths | **NOT TESTED — NO CONTROLLED DATA** | Local CE integration tests only |
-
-**Phase 56 assessment:** **STAGING BLOCKED — ENVIRONMENT**
-
-**Phase 54 reconciliation (post-staging — evidence-based):**
-
-| Prerequisite | Status |
-| ------------ | ------ |
-| Production configuration checklist | **READY** (doc on `dev`) |
-| Rollback / monitoring / smoke plan | **READY** (doc) |
-| Secret handling | **NOT VERIFIED** (no staging run) |
-| Tenant / channel / CE Id mapping | **NOT VERIFIED** |
-| Webhook configuration | **NOT VERIFIED** |
-| Staging E2E complete | **BLOCKED** |
-
-Ops: after real Phase 56 staging run, replace **NOT TESTED** / **BLOCKED** rows with **PASS — VERIFIED AGAINST STOCKCONNECT STAGING** only where the StockConnect client succeeded.
+**Final Phase 55 status:** **PRODUCTION CUTOVER NOT EXECUTED** — complete Phase 53 staging with StockConnect client, merge Phase 54 readiness docs to `dev`, obtain ops authorization, then execute Phase 55 runbook.
 
 ### Staging cutover checklist (ops)
 
