@@ -80,7 +80,10 @@ describe('WebhookDeliveryService', () => {
         const job = buildJob();
         const ceBody = JSON.stringify({ Content: [{ Id: 1, MerchantOrderNo: 'ORD-CE' }] });
         const { service, deps } = createService({
-            stockConnectCeWebhookBodyBuilder: vi.fn(async () => ceBody),
+            webhookPayloadStrategies: [{
+                matches: (subscription) => subscription.description === STOCKCONNECT_CE_BRIDGE_SUBSCRIPTION_DESCRIPTION,
+                buildBody: vi.fn(async () => ceBody),
+            }],
         });
         const delivery = {
             id: job.deliveryId,

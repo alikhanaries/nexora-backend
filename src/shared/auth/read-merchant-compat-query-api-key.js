@@ -21,7 +21,7 @@ export function readMerchantCompatQueryApiKey(query) {
 }
 
 /**
- * Reads merchant freeze-style header key (`X-CE-KEY`) used by StockConnect clients.
+ * Reads merchant compatibility header key (`X-CE-KEY`) for `/api/v2/ce/*` routes.
  *
  * @param {Record<string, unknown>|undefined} headers
  * @returns {string|null}

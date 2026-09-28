@@ -19,6 +19,7 @@ This folder describes how Nexora Backend is structured, why it is structured tha
 | [api-strategy.md](api-strategy.md)                                             | Native `/api/v1` vs Merchant-compatible `/api/v2`      |
 | [compatibility.md](compatibility.md)                                           | Compatibility layer design                             |
 | [compatibility-matrix.md](compatibility-matrix.md)                             | Endpoint scope and public contract gaps                |
+| [external-integration.md](external-integration.md)                             | ERP/external consumer boundaries and webhook strategies  |
 | [open-questions.md](open-questions.md)                                         | Unresolved design items                                |
 
 ## Related
