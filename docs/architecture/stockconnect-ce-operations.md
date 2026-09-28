@@ -57,3 +57,14 @@ Startup fails fast on invalid **global** config via `src/app/config/schema.js`. 
 ## Staging / production
 
 All live StockConnect flows remain **BLOCKED BY ENVIRONMENT** until ops runs controlled staging with real API keys, numeric channel references, webhook URL/secret, and `CHANNEL_ENGINE_BASE_URL` pointing at Nexora staging.
+
+## Production cutover (Phase 54)
+
+Full checklist, monitoring, rollback, smoke test, and cutover sequence: **[stockconnect-ce-production-cutover.md](./stockconnect-ce-production-cutover.md)**.
+
+| Gate | Status |
+| ---- | ------ |
+| Code on `origin/dev` (Phases 44–52, #68) | **IMPLEMENTED** |
+| Staging E2E with real StockConnect (Phase 53) | **Not completed** — docs/local tests only (#67) |
+| Production traffic | **PRODUCTION NOT YET VERIFIED** |
+| Production configuration (secrets/URLs) | **PRODUCTION CONFIG READY** (checklist; Ops must populate) |
