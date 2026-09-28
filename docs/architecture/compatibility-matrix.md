@@ -223,6 +223,8 @@ Update this section with **VERIFIED** only after StockConnect’s staging poller
 | Phase 46 on `dev` | Done (#63) |
 | Phase 47 + auth fix on `dev` | Done (#66) |
 | Phase 52 readiness on `dev` | Done (#68) |
+| Phase 54 runbook on `dev` | Done (#70) |
+| Phase 56 staging E2E | **BLOCKED — ENVIRONMENT** (see Phase 56 section) |
 | Deploy Nexora staging from merged `dev` | Pending ops |
 | `CHANNEL_ENGINE_BASE_URL` → `https://<host>/api/v2/ce/` | Pending ops |
 | API key / tenant / webhook `stockconnect-ce-bridge` | Pending ops |
