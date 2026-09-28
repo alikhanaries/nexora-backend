@@ -1,7 +1,7 @@
 # Compatibility Matrix
 
 **Status:** Phase 5 — scope locked ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md))  
-**Last updated:** 2026-09-28 (Phase 54 production cutover readiness)
+**Last updated:** 2026-09-28 (Phase 56 staging gate reconciliation)
 
 This matrix tracks external contract support in Nexora's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
 
@@ -190,6 +190,60 @@ Update this section with **VERIFIED** only after StockConnect’s staging poller
 
 **Production status:** **PRODUCTION NOT VERIFIED**
 
+Historical Phase 53 rows above are unchanged; Phase 56 (below) is the staging gate completion attempt on base `c20a733`.
+
+## Phase 56 — Staging gate completion & readiness reconciliation (2026-09-28)
+
+**Base:** `origin/dev` at `c20a733` (#70 Phase 54 runbook on #69/#68).
+
+**Prerequisites:** Phase 52 **MERGED** (#68). Phase 53 gate **open** (no StockConnect staging client evidence). Phase 54 **MERGED** (#70, `stockconnect-ce-production-cutover.md`; feature SHA `6d43b8f` squashed). **No Phase 54 cherry-pick** on this branch.
+
+**Staging access:** Not available in this environment (no Nexora/StockConnect staging deploy, credentials, or client execution). **Production cutover not executed.**
+
+| Flow | Status | Evidence |
+| ---- | ------ | -------- |
+| Authentication | **BLOCKED — ENVIRONMENT** | No StockConnect staging run |
+| Orders polling | **NOT TESTED — NO CONTROLLED DATA** | |
+| Stable CE Id | **NOT TESTED — NO CONTROLLED DATA** | |
+| Order acknowledgement | **NOT TESTED — NO CONTROLLED DATA** | |
+| Amazon order visibility | **NOT TESTED — NO CONTROLLED DATA** | |
+| Noon order visibility | **NOT TESTED — NO CONTROLLED DATA** | |
+| Namshi order visibility | **NOT TESTED — NO CONTROLLED DATA** | |
+| Products | **NOT TESTED — NO CONTROLLED DATA** | |
+| Product freeze | **NOT TESTED — NO CONTROLLED DATA** | |
+| Product bulk delete | **NOT TESTED — NO CONTROLLED DATA** | |
+| Extra-data update | **NOT TESTED — NO CONTROLLED DATA** | |
+| Offer update | **NOT TESTED — NO CONTROLLED DATA** | |
+| Offer stock update | **NOT TESTED — NO CONTROLLED DATA** | |
+| Channel products | **NOT TESTED — NO CONTROLLED DATA** | |
+| Shipments | **NOT TESTED — NO CONTROLLED DATA** | |
+| Delivery state | **NOT TESTED — NO CONTROLLED DATA** | |
+| Returns | **NOT TESTED — NO CONTROLLED DATA** | |
+| Return acknowledgement | **NOT TESTED — NO CONTROLLED DATA** | |
+| Invoice HTTP | **NOT TESTED — NO CONTROLLED DATA** | |
+| StockConnect ParseInvoice | **NOT TESTED — NO CONTROLLED DATA** | |
+| Webhook delivery | **NOT TESTED — NO CONTROLLED DATA** | |
+| Webhook signature | **NOT TESTED — NO CONTROLLED DATA** | |
+| Webhook retry | **NOT TESTED — NO CONTROLLED DATA** | |
+| Webhook idempotency | **NOT TESTED — NO CONTROLLED DATA** | |
+| Tenant isolation | **NOT TESTED — NO CONTROLLED DATA** | |
+| Error paths | **NOT TESTED — NO CONTROLLED DATA** | Local CE integration tests only |
+
+**Phase 56 assessment:** **STAGING BLOCKED — ENVIRONMENT**
+
+**Phase 54 reconciliation (post-staging — evidence-based):**
+
+| Prerequisite | Status |
+| ------------ | ------ |
+| Production configuration checklist | **READY** (doc on `dev`) |
+| Rollback / monitoring / smoke plan | **READY** (doc) |
+| Secret handling | **NOT VERIFIED** (no staging run) |
+| Tenant / channel / CE Id mapping | **NOT VERIFIED** |
+| Webhook configuration | **NOT VERIFIED** |
+| Staging E2E complete | **BLOCKED** |
+
+Ops: after real Phase 56 staging run, replace **NOT TESTED** / **BLOCKED** rows with **PASS — VERIFIED AGAINST STOCKCONNECT STAGING** only where the StockConnect client succeeded.
+
 ### Staging cutover checklist (ops)
 
 | Item | Status |
@@ -197,6 +251,8 @@ Update this section with **VERIFIED** only after StockConnect’s staging poller
 | Phase 46 on `dev` | Done (#63) |
 | Phase 47 + auth fix on `dev` | Done (#66) |
 | Phase 52 readiness on `dev` | Done (#68) |
+| Phase 54 runbook on `dev` | Done (#70) |
+| Phase 56 staging E2E | **BLOCKED — ENVIRONMENT** (see Phase 56 section) |
 | Deploy Nexora staging from merged `dev` | Pending ops |
 | `CHANNEL_ENGINE_BASE_URL` → `https://<host>/api/v2/ce/` | Pending ops |
 | API key / tenant / webhook `stockconnect-ce-bridge` | Pending ops |

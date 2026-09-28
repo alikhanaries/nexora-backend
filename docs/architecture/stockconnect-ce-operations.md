@@ -65,6 +65,6 @@ Full checklist, monitoring, rollback, smoke test, and cutover sequence: **[stock
 | Gate | Status |
 | ---- | ------ |
 | Code on `origin/dev` (Phases 44–52, #68) | **IMPLEMENTED** |
-| Staging E2E with real StockConnect (Phase 53) | **Not completed** — docs/local tests only (#67) |
+| Staging E2E with real StockConnect (Phase 53 / Phase 56) | **Not completed** — Phase 56 blocked by environment (#69 matrix; no client run) |
 | Production traffic | **PRODUCTION NOT YET VERIFIED** |
 | Production configuration (secrets/URLs) | **PRODUCTION CONFIG READY** (checklist; Ops must populate) |
