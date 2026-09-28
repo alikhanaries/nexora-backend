@@ -1,7 +1,7 @@
 # Compatibility Matrix
 
 **Status:** Phase 5 — scope locked ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md))  
-**Last updated:** 2026-09-22
+**Last updated:** 2026-09-28 (Phase 52 production readiness)
 
 This matrix tracks external contract support in Nexora's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
 
@@ -135,7 +135,7 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 
 Update this section with **VERIFIED** only after StockConnect’s staging pollers/handlers succeed against Nexora staging (not curl-only checks).
 
-### Staging cutover checklist (ops)
+## Phase 50 — Live StockConnect staging cutover (historical)
 
 | Item | Status |
 | ---- | ------ |
