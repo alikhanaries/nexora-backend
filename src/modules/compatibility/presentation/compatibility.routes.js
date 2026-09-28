@@ -39,6 +39,17 @@ import {
     externalChannelOrderCreateSuccessSchema,
 } from './compatibility-channel-order.schemas.js';
 import { externalErrorResponseSchema, externalOrderCollectionSchema, listNewOrdersQuerySchema, listOrdersQuerySchema, } from './compatibility-order.schemas.js';
+import {
+    externalCeMutationEnvelopeSchema,
+    externalCeProductCollectionSchema,
+    listProductsByMerchantSkuQuerySchema,
+    merchantProductNoListBodySchema,
+    patchExtraDataBulkBodySchema,
+    postProductsBodySchema,
+    putOfferBodySchema,
+    putOfferStockBodySchema,
+} from './compatibility-catalog.schemas.js';
+import { ValidationError } from '../../../shared/errors/index.js';
 
 async function enforceReadRateLimit(deps) {
     const actor = requireActorContext();
@@ -668,6 +679,254 @@ const compatibilityRoutes = async (app, deps) => {
                 principalFingerprint: actorFingerprint(actor),
             });
             return reply.status(201).send(body);
+        });
+        typed.get('/api/v2/products', {
+            schema: {
+                tags: ['Compatibility (v2) — Catalog'],
+                summary: 'List products by merchant product number',
+                description: 'Implements CE GET /products?merchantProductNoList=.... Returns only SKUs that exist for the tenant; missing SKUs are omitted.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                querystring: listProductsByMerchantSkuQuerySchema,
+                response: {
+                    200: externalCeProductCollectionSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request) => {
+            await enforceReadRateLimit(deps);
+            const actor = requireActorContext();
+            if (request.query.merchantProductNos.length === 0) {
+                throw new ValidationError('merchantProductNoList is required');
+            }
+            return deps.catalogCompatibilityQuery.listProductsByMerchantProductNos({
+                tenantId: actor.tenantId,
+                actorPermissions: actor.permissions,
+                merchantProductNos: request.query.merchantProductNos,
+            });
+        });
+        typed.post('/api/v2/products', {
+            schema: {
+                tags: ['Compatibility (v2) — Catalog'],
+                summary: 'Create or update products (CE batch)',
+                description: 'Maps CE product payloads to Nexora product + content upserts. Supports batch partial success semantics.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                body: postProductsBodySchema,
+                response: {
+                    200: externalCeMutationEnvelopeSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const body = await deps.catalogCompatibilityCommand.upsertProducts({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(200).send(body);
+        });
+        typed.post('/api/v2/products/freeze', {
+            schema: {
+                tags: ['Compatibility (v2) — Catalog'],
+                summary: 'Freeze products (deactivate or suspend channel offer)',
+                description: 'When channel context is present, suspends the channel offer; otherwise deactivates the product.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                body: merchantProductNoListBodySchema,
+                response: {
+                    200: externalCeMutationEnvelopeSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const channelReferenceHeader = request.headers['x-channel-reference'];
+            const body = await deps.catalogCompatibilityCommand.freezeProducts({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                apiKeyChannelId: actor.apiKeyChannelId,
+                channelExternalReference: typeof channelReferenceHeader === 'string' ? channelReferenceHeader : undefined,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(200).send(body);
+        });
+        typed.post('/api/v2/products/bulkdelete', {
+            schema: {
+                tags: ['Compatibility (v2) — Catalog'],
+                summary: 'Bulk deactivate products',
+                description: 'Soft-deactivates products (does not physically delete records or order history).',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                body: merchantProductNoListBodySchema,
+                response: {
+                    200: externalCeMutationEnvelopeSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const body = await deps.catalogCompatibilityCommand.bulkDeleteProducts({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(200).send(body);
+        });
+        typed.patch('/api/v2/products/extra-data/bulk', {
+            schema: {
+                tags: ['Compatibility (v2) — Catalog'],
+                summary: 'Bulk update CE ExtraData on products',
+                description: 'Merges CE ExtraData into product content attributes under `ceExtraData`.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                body: patchExtraDataBulkBodySchema,
+                response: {
+                    200: externalCeMutationEnvelopeSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const body = await deps.catalogCompatibilityCommand.patchExtraDataBulk({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(200).send(body);
+        });
+        typed.put('/api/v2/offer', {
+            schema: {
+                tags: ['Compatibility (v2) — Catalog'],
+                summary: 'Update offer price',
+                description: 'Requires channel context (channel-scoped API key, X-Channel-Reference, or body ChannelId). Creates offer and price when missing.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                body: putOfferBodySchema,
+                response: {
+                    200: externalCeMutationEnvelopeSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    404: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const channelReferenceHeader = request.headers['x-channel-reference'];
+            const body = await deps.catalogCompatibilityCommand.updateOfferPrice({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                apiKeyChannelId: actor.apiKeyChannelId,
+                channelExternalReference: typeof channelReferenceHeader === 'string' ? channelReferenceHeader : undefined,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(200).send(body);
+        });
+        typed.put('/api/v2/offer/stock', {
+            schema: {
+                tags: ['Compatibility (v2) — Catalog'],
+                summary: 'Update offer stock',
+                description: 'Sets absolute available stock at the channel stock location via inventory adjust.',
+                security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
+                body: putOfferStockBodySchema,
+                response: {
+                    200: externalCeMutationEnvelopeSchema,
+                    400: externalErrorResponseSchema,
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    404: externalErrorResponseSchema,
+                    409: externalErrorResponseSchema,
+                    422: externalErrorResponseSchema,
+                    429: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceMutationRateLimit(deps);
+            const actor = requireActorContext();
+            const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
+            const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
+            const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
+            const channelReferenceHeader = request.headers['x-channel-reference'];
+            const body = await deps.catalogCompatibilityCommand.updateOfferStock({
+                tenantId: actor.tenantId,
+                actorId,
+                actorKind,
+                actorPermissions: actor.permissions,
+                apiKeyChannelId: actor.apiKeyChannelId,
+                channelExternalReference: typeof channelReferenceHeader === 'string' ? channelReferenceHeader : undefined,
+                body: request.body,
+                idempotencyKey,
+                principalFingerprint: actorFingerprint(actor),
+            });
+            return reply.status(200).send(body);
         });
     });
     await Promise.resolve();

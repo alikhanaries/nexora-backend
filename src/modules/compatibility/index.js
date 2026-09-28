@@ -1,3 +1,5 @@
+import { CatalogCompatibilityCommand } from './application/catalog-compatibility-command.js';
+import { CatalogCompatibilityQuery } from './application/catalog-compatibility-query.js';
 import { CancellationCompatibilityCommand } from './application/cancellation-compatibility-command.js';
 import { CancellationCompatibilityQuery } from './application/cancellation-compatibility-query.js';
 import { ReturnCompatibilityCommand } from './application/return-compatibility-command.js';
@@ -13,6 +15,9 @@ import { StockConnectCeOrderCompatibilityQuery } from './application/stockconnec
 /**
  * @param {object} deps
  * @param {import('./application/core-contracts.js').CompatibilityCoreContracts} deps.coreContracts
+ * @param {import('../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
+ * @param {import('../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
+ * @param {import('./application/catalog-compatibility-contracts.js').CompatibilityCatalogCommands} deps.catalogCommands
  * @param {import('../../infrastructure/redis/redis-rate-limiter.js').RedisRateLimiter} deps.rateLimiter
  */
 export function createCompatibilityModule(deps) {
@@ -80,6 +85,8 @@ export function createCompatibilityModule(deps) {
             cancellationCompatibilityQuery,
             returnCompatibilityCommand,
             returnCompatibilityQuery,
+            catalogCompatibilityCommand,
+            catalogCompatibilityQuery,
             rateLimiter: deps.rateLimiter,
         },
         coreContracts: deps.coreContracts,
