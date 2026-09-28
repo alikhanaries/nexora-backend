@@ -69,6 +69,21 @@ export function createCompatibilityModule(deps) {
         channelQueryService: deps.coreContracts.channelQueryService,
         externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
+    const catalogCompatibilityCommand = new CatalogCompatibilityCommand({
+        authorization: deps.authorization,
+        idempotency: deps.idempotency,
+        productQueryService: deps.coreContracts.productQueryService,
+        channelQueryService: deps.coreContracts.channelQueryService,
+        inventoryService: deps.coreContracts.inventoryService,
+        pricingService: deps.coreContracts.pricingService,
+        offerQueryService: deps.coreContracts.offerQueryService,
+        ...deps.catalogCommands,
+    });
+    const catalogCompatibilityQuery = new CatalogCompatibilityQuery({
+        productQueryService: deps.coreContracts.productQueryService,
+        getProductContent: deps.catalogCommands.getProductContent,
+        authorization: deps.authorization,
+    });
     const registerCompatibilityRoutes = async (app, routeDeps) => {
         await compatibilityRoutes(app, routeDeps);
         await stockconnectCeRoutes(app, routeDeps);

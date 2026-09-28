@@ -4,6 +4,7 @@ import { IngestNormalizedMarketplaceOrder } from './application/ingest-normalize
 import { MarketplaceOrderIngestionService } from './application/marketplace-order-ingestion-service.js';
 import { MarketplaceOrderLifecycleService } from './application/marketplace-order-lifecycle-service.js';
 import { ProcessMarketplaceLifecyclePayload } from './application/process-marketplace-lifecycle-payload.js';
+import { EnsureMarketplaceOrderIngestedFromLifecycle } from './application/ensure-marketplace-order-ingested-from-lifecycle.js';
 import { MarketplaceOrderAdapterRegistry } from './public/marketplace-order-adapter-registry.js';
 
 /**
@@ -84,6 +85,18 @@ export function createMarketplaceOrderIngestionModule(deps) {
             logger: deps.logger,
         })
         : undefined;
+    const ensureMarketplaceOrderIngestedFromLifecycle = lifecycleEnabled
+        ? new EnsureMarketplaceOrderIngestedFromLifecycle({
+            ingestNormalizedMarketplaceOrder,
+            orderAdapterRegistry,
+            channelQueryService: deps.channelQueryService,
+            orders: deps.orders,
+            database: deps.database,
+            ...(deps.marketplaceAdapterRuntimeFactory === undefined
+                ? {}
+                : { marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory }),
+        })
+        : undefined;
     const processMarketplaceLifecyclePayload = lifecycleService === undefined
         ? undefined
         : new ProcessMarketplaceLifecyclePayload({
@@ -91,6 +104,9 @@ export function createMarketplaceOrderIngestionModule(deps) {
             orderAdapterRegistry,
             channelQueryService: deps.channelQueryService,
             database: deps.database,
+            ...(ensureMarketplaceOrderIngestedFromLifecycle === undefined
+                ? {}
+                : { ensureMarketplaceOrderIngestedFromLifecycle }),
             ...(deps.marketplaceAdapterRuntimeFactory === undefined
                 ? {}
                 : { marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory }),

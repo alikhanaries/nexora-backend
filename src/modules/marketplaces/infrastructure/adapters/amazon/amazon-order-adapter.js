@@ -4,6 +4,7 @@ import { AMAZON_MARKETPLACE_KEY } from './amazon-catalog-adapter.js';
 import { amazonOrderLifecycleCapabilities } from './amazon-order-lifecycle-capabilities.js';
 import { normalizeAmazonLifecyclePayload } from './map-amazon-order-change-to-lifecycle-command.js';
 import { mapAmazonSpApiOrderToLifecycleCommand } from './map-amazon-sp-api-order-to-lifecycle-command.js';
+import { mapAmazonOrderToNormalizedMarketplaceOrder } from './map-amazon-order-to-normalized-marketplace-order.js';
 import { AmazonSpApiClient } from './amazon-sp-api-client.js';
 
 export class AmazonOrderAdapter extends BaseMarketplaceOrderAdapter {
@@ -80,4 +81,79 @@ export class AmazonOrderAdapter extends BaseMarketplaceOrderAdapter {
             });
         });
     }
+
+    /**
+     * @param {unknown} payload
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
+     * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderLifecycleContext} context
+     */
+    async normalizeOrderFromLifecyclePayload(payload, runtime, context) {
+        return this.runWithResult(async () => {
+            if (typeof context.stockLocationId !== 'string') {
+                throw new MarketplaceValidationError('stockLocationId is required for Amazon order ingestion');
+            }
+            const mappedFromNotification = tryMapAmazonNotificationPayload(payload, context);
+            if (mappedFromNotification !== null) {
+                return mappedFromNotification;
+            }
+            this.assertRuntime(runtime, 'normalizeOrderFromLifecyclePayload');
+            const amazonOrderId = context.externalOrderId?.trim()
+                ?? extractAmazonOrderIdFromPayload(payload);
+            if (amazonOrderId === null || amazonOrderId.length === 0) {
+                throw new MarketplaceValidationError('Amazon lifecycle payload is missing AmazonOrderId');
+            }
+            const [orderResponse, itemsResponse] = await Promise.all([
+                this.spApi.getOrder(runtime, amazonOrderId),
+                this.spApi.getOrderItems(runtime, amazonOrderId),
+            ]);
+            return mapAmazonOrderToNormalizedMarketplaceOrder({
+                payload: {
+                    Order: orderResponse.json?.payload?.Order ?? orderResponse.json?.Order,
+                    OrderItems: itemsResponse.json?.payload?.OrderItems ?? itemsResponse.json?.OrderItems,
+                },
+            }, {
+                marketplaceKey: context.marketplaceKey,
+                stockLocationId: context.stockLocationId,
+            });
+        });
+    }
+}
+
+/**
+ * @param {unknown} payload
+ * @param {object} context
+ * @param {string} context.marketplaceKey
+ * @param {string} context.stockLocationId
+ */
+function tryMapAmazonNotificationPayload(payload, context) {
+    if (payload === null || typeof payload !== 'object') {
+        return null;
+    }
+    const notification = 'notification' in payload ? payload.notification : payload;
+    try {
+        return mapAmazonOrderToNormalizedMarketplaceOrder({ notification }, context);
+    }
+    catch {
+        return null;
+    }
+}
+
+/**
+ * @param {unknown} payload
+ */
+function extractAmazonOrderIdFromPayload(payload) {
+    if (payload === null || typeof payload !== 'object') {
+        return null;
+    }
+    if (typeof payload.amazonOrderId === 'string') {
+        return payload.amazonOrderId.trim();
+    }
+    const notification = payload.notification;
+    if (notification !== null && typeof notification === 'object') {
+        const change = notification.Payload?.OrderChangeNotification;
+        if (typeof change?.AmazonOrderId === 'string') {
+            return change.AmazonOrderId.trim();
+        }
+    }
+    return null;
 }

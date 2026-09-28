@@ -4,6 +4,7 @@ import { gracefulShutdown } from '../app/bootstrap/shutdown.js';
 import { createWorkerReadinessProbes, ReadinessService, } from '../app/observability/readiness.js';
 import { AesSecretEncryptor } from '../infrastructure/auth/aes-secret-encryptor.js';
 import { createWebhookDeliveryService, createWebhookDispatchService } from '../modules/webhooks/index.js';
+import { wireStockConnectCeWebhookDelivery } from './bootstrap/wire-stockconnect-ce-webhook-delivery.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
 import { createIntegrationEventConsumers } from './create-integration-event-consumers.js';
 import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
@@ -21,15 +22,6 @@ async function main() {
         database: infra.database,
         queue: infra.queue,
     });
-    const webhookDeliveryService = createWebhookDeliveryService({
-        database: infra.database,
-        outbox: infra.outbox,
-        httpClient: infra.httpClient,
-        secretEncryptor,
-        logger: infra.logger,
-        metrics: infra.metrics,
-        config,
-    });
     const { channelCatalogSyncService, catalogSyncReconciliationService } = wireChannelCatalogSync({
         database: infra.database,
         queue: infra.queue,
@@ -43,7 +35,27 @@ async function main() {
     const catalogSyncReconciliationLockTtlSeconds = Math.max(300, Math.ceil(config.catalogSyncReconciliation.intervalMs / 1_000));
     const catalogSyncReconciliationScheduler = new CatalogSyncReconciliationScheduler(catalogSyncReconciliationService, infra.lock, config.catalogSyncReconciliation, infra.logger, catalogSyncReconciliationLockTtlSeconds);
     const catalogSyncEnqueueHandler = new CatalogSyncEnqueueHandler(channelCatalogSyncService);
-    const { marketplaceOrderIngestion, executeOutboundMarketplaceOrderLifecycle } = createWorkerMarketplaceCommerceDeps(infra, secretEncryptor);
+    const {
+        marketplaceOrderIngestion,
+        executeOutboundMarketplaceOrderLifecycle,
+        orderQueryService,
+        channelQueryService,
+        externalIntegerIdMappingQueryService,
+    } = createWorkerMarketplaceCommerceDeps(infra, secretEncryptor);
+    const webhookDeliveryService = createWebhookDeliveryService({
+        database: infra.database,
+        outbox: infra.outbox,
+        httpClient: infra.httpClient,
+        secretEncryptor,
+        logger: infra.logger,
+        metrics: infra.metrics,
+        config,
+        stockConnectCeWebhookBodyBuilder: wireStockConnectCeWebhookDelivery({
+            orderQueryService,
+            channelQueryService,
+            externalIntegerIdMappingQueryService,
+        }),
+    });
     const { executeMarketplaceLifecycleJob } = wireMarketplaceLifecycleWorker({
         database: infra.database,
         queue: infra.queue,

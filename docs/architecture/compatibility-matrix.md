@@ -39,6 +39,19 @@ StockConnect-specific ChannelEngine-style routes live under **`/api/v2/ce/*`**. 
 
 StockConnect should set `CHANNEL_ENGINE_BASE_URL` to include the `/api/v2/ce/` path prefix (e.g. `https://host/api/v2/ce/`).
 
+### StockConnect CE order webhook bridge (Phase 46)
+
+Configure a tenant webhook subscription pointing at StockConnect `POST /orders/channelengine-webhook`:
+
+| Setting | Value |
+| ------- | ----- |
+| `description` | `stockconnect-ce-bridge` (exact match) |
+| `url` | StockConnect base URL + `/orders/channelengine-webhook` |
+| `eventTypes` | `order.created`, `order.confirmed`, `order.status_changed`, `order.cancelled` (subset allowed) |
+| Authentication | Standard Nexora webhook HMAC (`X-Nexora-Signature`) on the UTF-8 JSON body |
+
+Delivery uses the existing webhook queue (retry, idempotency per subscription+event, tenant isolation). The worker maps matching events to `{ Content: [ CE order ] }` via `mapStockConnectCeOrder`; marketplace-created orders remain visible through GET `/api/v2/ce/orders` after ingestion.
+
 | External contract | External endpoint | Nexora route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |
 | Merchant | GET /v2/orders | GET /api/v2/orders | Initial Phase 5 | OrderQueryService.listOrders | **Implemented** — see filter notes below |

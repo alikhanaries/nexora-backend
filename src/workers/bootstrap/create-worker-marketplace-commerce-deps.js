@@ -159,5 +159,8 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
         marketplaceOrderIngestion,
         executeOutboundMarketplaceOrderLifecycle,
         marketplaceAdapterRuntimeFactory,
+        orderQueryService: orders.orderQueryService,
+        channelQueryService: channels.channelQueryService,
+        externalIntegerIdMappingQueryService: externalIdMapping.externalIntegerIdMappingQueryService,
     };
 }

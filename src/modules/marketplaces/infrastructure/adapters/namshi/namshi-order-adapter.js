@@ -7,6 +7,7 @@ import {
     mapNamshiFbpiOrderToLifecycleCommand,
     normalizeNamshiLifecyclePayload,
 } from './map-namshi-fbpi-order-to-lifecycle-command.js';
+import { mapFbpiOrderPayloadToNormalizedMarketplaceOrder } from '../shared/map-fbpi-order-payload-to-normalized.js';
 import { namshiOrderLifecycleCapabilities } from './namshi-order-lifecycle-capabilities.js';
 import { parseNamshiFbpiWebhookEvent } from './parse-namshi-fbpi-webhook-event.js';
 
@@ -103,6 +104,42 @@ export class NamshiOrderAdapter extends BaseMarketplaceOrderAdapter {
                 marketplaceKey: context.marketplaceKey,
                 orderPayload: response.json,
                 externalEventId,
+            });
+        });
+    }
+
+    /**
+     * @param {unknown} payload
+     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
+     * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderLifecycleContext} context
+     */
+    async normalizeOrderFromLifecyclePayload(payload, runtime, context) {
+        return this.runWithResult(async () => {
+            if (typeof context.stockLocationId !== 'string') {
+                throw new MarketplaceValidationError('stockLocationId is required for Namshi order ingestion');
+            }
+            let orderPayload;
+            if (payload !== null && typeof payload === 'object' && payload.source === 'fbpi_order_sync') {
+                this.assertRuntime(runtime, 'normalizeOrderFromLifecyclePayload');
+                if (payload.orderPayload !== undefined) {
+                    orderPayload = payload.orderPayload;
+                }
+                else {
+                    const parsed = parseNamshiFbpiWebhookEvent(payload.event);
+                    const response = await this.api.getFbpiOrder(runtime, parsed.orderNr);
+                    orderPayload = response.json;
+                }
+            }
+            else if (payload !== null && typeof payload === 'object' && payload.orderPayload !== undefined) {
+                orderPayload = payload.orderPayload;
+            }
+            else {
+                throw new MarketplaceValidationError('Namshi lifecycle payload cannot be mapped to an ingest order');
+            }
+            return mapFbpiOrderPayloadToNormalizedMarketplaceOrder({
+                marketplaceKey: context.marketplaceKey,
+                orderPayload,
+                stockLocationId: context.stockLocationId,
             });
         });
     }

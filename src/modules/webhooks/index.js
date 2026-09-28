@@ -81,6 +81,9 @@ export function createWebhookDeliveryService(deps) {
         logger: deps.logger,
         metrics: deps.metrics,
         ssrfValidator: deps.ssrfValidator ?? validateOutboundWebhookUrl,
+        ...(deps.stockConnectCeWebhookBodyBuilder === undefined
+            ? {}
+            : { stockConnectCeWebhookBodyBuilder: deps.stockConnectCeWebhookBodyBuilder }),
         config: {
             timeoutMs: deps.config.webhooks.deliveryTimeoutMs,
             leaseSeconds: deps.config.webhooks.deliveryLeaseSeconds,
