@@ -8,11 +8,7 @@ import {
     MarketplaceWebhookUnsupportedError,
 } from './marketplace-webhook-errors.js';
 import { normalizedMarketplaceWebhookEventSchema } from './normalized-marketplace-webhook-event.schema.js';
-import {
-    MarketplaceOrderIngestionPermanentError,
-    MarketplaceOrderIngestionRetryError,
-} from '../../marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
-import { MarketplaceOrderLifecycleRetryError } from '../../marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
+import { ServiceUnavailableError } from '../../../shared/errors/index.js';
 
 const ROUTE_ID = 'POST /api/v1/inbound/marketplace-webhooks/:ingressToken';
 
@@ -23,7 +19,7 @@ export class ReceiveMarketplaceWebhook {
      * @param {object} deps
      * @param {import('./resolve-marketplace-webhook-connection.js').ResolveMarketplaceWebhookConnection} deps.resolveConnection
      * @param {import('../public/marketplace-webhook-adapter-registry.js').MarketplaceWebhookAdapterRegistry} deps.webhookAdapterRegistry
-     * @param {import('./marketplace-order-lifecycle-processor.js').MarketplaceOrderLifecycleProcessor} deps.orderLifecycleProcessor
+     * @param {import('../../marketplace-order-ingestion/application/marketplace-lifecycle-enqueue-service.js').MarketplaceLifecycleEnqueueService} deps.lifecycleEnqueueService
      * @param {import('../../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
@@ -107,15 +103,16 @@ export class ReceiveMarketplaceWebhook {
         });
         try {
             const idempotent = await this.deps.idempotency.execute(idempotencyKey, fingerprint, async () => {
-                const result = await this.deps.orderLifecycleProcessor.process({
+                const enqueued = await this.deps.lifecycleEnqueueService.enqueueFromWebhook({
                     event,
                     tenantId: connection.tenantId,
                     channelId: connection.channelId,
                     ...(input.correlationId === undefined ? {} : { correlationId: input.correlationId }),
                 });
                 return {
-                    outcome: result.outcome ?? 'processed',
-                    externalOrderReference: result.externalOrderReference ?? null,
+                    outcome: 'enqueued',
+                    externalOrderReference: null,
+                    queueJobId: enqueued.id,
                 };
             }, (value) => ({
                 statusCode: 200,
@@ -125,7 +122,7 @@ export class ReceiveMarketplaceWebhook {
                 recordMarketplaceWebhookOutcome(this.deps.metrics, 'duplicate', metricBase);
             }
             else {
-                recordMarketplaceWebhookOutcome(this.deps.metrics, idempotent.value.outcome === 'duplicate' ? 'duplicate' : 'processed', metricBase);
+                recordMarketplaceWebhookOutcome(this.deps.metrics, 'enqueued', metricBase);
             }
             this.deps.logger?.info({
                 tenantId: connection.tenantId,
@@ -140,15 +137,9 @@ export class ReceiveMarketplaceWebhook {
             };
         }
         catch (error) {
-            if (error instanceof MarketplaceOrderIngestionRetryError || error instanceof MarketplaceOrderLifecycleRetryError) {
+            if (error instanceof ServiceUnavailableError) {
                 recordMarketplaceWebhookOutcome(this.deps.metrics, 'retryable_failure', metricBase);
-                throw new MarketplaceWebhookRetryableError(error.message, {
-                    retryAfterSeconds: error.retryDelayMs === null ? null : Math.ceil(error.retryDelayMs / 1_000),
-                });
-            }
-            if (error instanceof MarketplaceOrderIngestionPermanentError) {
-                recordMarketplaceWebhookOutcome(this.deps.metrics, 'permanent_failure', metricBase);
-                throw new MarketplaceWebhookPermanentError(error.message, error.safeDetails);
+                throw new MarketplaceWebhookRetryableError(error.message);
             }
             if (error instanceof MarketplaceWebhookPermanentError || error instanceof MarketplaceWebhookUnsupportedError) {
                 recordMarketplaceWebhookOutcome(this.deps.metrics, 'permanent_failure', metricBase);

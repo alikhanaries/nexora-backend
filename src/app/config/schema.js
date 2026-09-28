@@ -91,4 +91,7 @@ export const configSchema = z.object({
     AUTH_PASSWORD_MAX_LENGTH: envInteger({ default: 128, min: 12, max: 256 }),
     SHOPIFY_ADMIN_API_VERSION: envOptionalString(),
     AMAZON_LWA_TOKEN_URL: envOptionalString(),
+    MARKETPLACE_LIFECYCLE_QUEUE_NAME: envString('marketplace-order-lifecycle'),
+    MARKETPLACE_LIFECYCLE_JOB_ATTEMPTS: envInteger({ default: 0, min: 0, max: 50 }),
+    MARKETPLACE_LIFECYCLE_BACKOFF_MS: envInteger({ default: 0, min: 0, max: 600_000 }),
 });

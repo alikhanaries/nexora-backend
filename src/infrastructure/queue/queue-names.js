@@ -11,6 +11,8 @@ export const QueueName = {
     WEBHOOK_DELIVERIES: 'webhook-deliveries',
     /** Outbound channel/marketplace catalog synchronization jobs. */
     CHANNEL_CATALOG_SYNC: 'channel-catalog-sync',
+    /** Inbound/outbound marketplace order lifecycle jobs (webhook, polling, outbound). */
+    MARKETPLACE_ORDER_LIFECYCLE: 'marketplace-order-lifecycle',
 };
 /** Job names within {@link QueueName.INTEGRATION_EVENTS}. */
 export const JobName = {
@@ -19,4 +21,6 @@ export const JobName = {
     DELIVER_WEBHOOK: 'deliver-webhook',
     /** Execute a planned channel catalog sync unit of work. */
     RUN_CATALOG_SYNC: 'run-catalog-sync',
+    /** Apply a normalized marketplace lifecycle job (webhook, polling, or outbound). */
+    PROCESS_MARKETPLACE_LIFECYCLE: 'process-marketplace-lifecycle',
 };

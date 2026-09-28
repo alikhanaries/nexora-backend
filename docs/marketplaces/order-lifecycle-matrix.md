@@ -1,4 +1,4 @@
-# Marketplace order lifecycle matrix (Phases 31–42)
+# Marketplace order lifecycle matrix (Phases 31–43)
 
 Authoritative summary of **implemented** lifecycle behavior. Legend:
 
@@ -15,6 +15,10 @@ Authoritative summary of **implemented** lifecycle behavior. Legend:
 | Shopify | — | Both | — | Out | Out | — | In |
 | Noon | — | In | — | — | Out | — | In |
 | Namshi | — | In | — | — | Out | — | In |
+
+## Worker delivery (Phase 43)
+
+Webhook ingress enqueues BullMQ jobs on `marketplace-order-lifecycle`; the worker process runs `ExecuteMarketplaceLifecycleJob`, which delegates to the same generic services as synchronous tests (`MarketplaceOrderLifecycleProcessor`, `MarketplaceOrderLifecycleService`, optional `ExecuteOutboundMarketplaceOrderLifecycleCommand`). Polling uses `FetchAndEnqueueMarketplaceOrderLifecycle` → same queue. Postgres idempotency routes are unchanged.
 
 ## Outbound detail (Phase 39)
 

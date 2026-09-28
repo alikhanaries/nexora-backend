@@ -10,10 +10,13 @@ import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
 import { CatalogSyncEnqueueHandler } from './handlers/catalog-sync-enqueue.handler.js';
 import { CatalogSyncReconciliationScheduler } from '../modules/channel-catalog-sync/application/catalog-sync-reconciliation-scheduler.js';
 import { wireChannelCatalogSync } from './bootstrap/wire-channel-catalog-sync.js';
+import { wireMarketplaceLifecycleWorker } from './bootstrap/wire-marketplace-lifecycle-worker.js';
+import { createWorkerMarketplaceCommerceDeps } from './bootstrap/create-worker-marketplace-commerce-deps.js';
 import { createWorkerObservabilityHttpServer } from './observability/create-worker-observability-http-server.js';
 async function main() {
     const config = loadConfigFromEnvironment();
     const infra = await createInfrastructure(config, { processKind: 'worker' });
+    const secretEncryptor = new AesSecretEncryptor(config.auth.mfaEncryptionKey);
     const webhookDispatchService = createWebhookDispatchService({
         database: infra.database,
         queue: infra.queue,
@@ -27,7 +30,6 @@ async function main() {
         metrics: infra.metrics,
         config,
     });
-    const secretEncryptor = new AesSecretEncryptor(config.auth.mfaEncryptionKey);
     const { channelCatalogSyncService, catalogSyncReconciliationService } = wireChannelCatalogSync({
         database: infra.database,
         queue: infra.queue,
@@ -41,6 +43,22 @@ async function main() {
     const catalogSyncReconciliationLockTtlSeconds = Math.max(300, Math.ceil(config.catalogSyncReconciliation.intervalMs / 1_000));
     const catalogSyncReconciliationScheduler = new CatalogSyncReconciliationScheduler(catalogSyncReconciliationService, infra.lock, config.catalogSyncReconciliation, infra.logger, catalogSyncReconciliationLockTtlSeconds);
     const catalogSyncEnqueueHandler = new CatalogSyncEnqueueHandler(channelCatalogSyncService);
+    const { marketplaceOrderIngestion, executeOutboundMarketplaceOrderLifecycle } = createWorkerMarketplaceCommerceDeps(infra, secretEncryptor);
+    const { executeMarketplaceLifecycleJob } = wireMarketplaceLifecycleWorker({
+        database: infra.database,
+        queue: infra.queue,
+        metrics: infra.metrics,
+        logger: infra.logger,
+        config,
+        ingestNormalizedMarketplaceOrder: marketplaceOrderIngestion.ingestNormalizedMarketplaceOrder,
+        lifecycleService: marketplaceOrderIngestion.lifecycleService,
+        processMarketplaceLifecyclePayload: marketplaceOrderIngestion.processMarketplaceLifecyclePayload,
+        executeOutboundMarketplaceOrderLifecycle,
+        orderAdapterRegistry: marketplaceOrderIngestion.orderAdapterRegistry,
+        marketplaceAdapterRuntimeFactory: marketplaceOrderIngestion.marketplaceAdapterRuntimeFactory,
+        channelQueryService: marketplaceOrderIngestion.channelQueryService,
+        marketplaceLookup: marketplaceOrderIngestion.marketplaceLookup,
+    });
     const { integrationEventRouter } = createIntegrationEventConsumers({
         database: infra.database,
         inbox: infra.inbox,
@@ -53,6 +71,8 @@ async function main() {
         integrationEventRouter,
         webhookDeliveryService,
         channelCatalogSyncService,
+        executeMarketplaceLifecycleJob,
+        marketplaceLifecycleQueueName: config.marketplaceLifecycle.queueName,
     });
     const readiness = new ReadinessService(createWorkerReadinessProbes({
         database: infra.database,

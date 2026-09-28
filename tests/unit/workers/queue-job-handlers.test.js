@@ -19,6 +19,8 @@ describe('queue job handlers', () => {
             integrationEventRouter: { route: vi.fn() },
             webhookDeliveryService,
             channelCatalogSyncService: { processSyncJob: vi.fn() },
+            executeMarketplaceLifecycleJob: { execute: vi.fn() },
+            marketplaceLifecycleQueueName: 'marketplace-order-lifecycle',
         });
         const handler = handlers.get('webhook-deliveries');
         expect(handler).toBeTypeOf('function');
