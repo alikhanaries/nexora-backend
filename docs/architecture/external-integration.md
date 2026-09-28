@@ -56,6 +56,65 @@ Integration is **data-driven**:
 
 Nexora does not require consumer-specific environment variables for core operation.
 
+## Production deployment readiness (Phase 60)
+
+Nexora production readiness is **platform-level**. It does not require an external consumer to be online.
+
+### Environment variables (application)
+
+All variables are loaded only via `src/app/config` (see `.env.example`). Classifications:
+
+| Area | Examples | Classification |
+| ---- | -------- | -------------- |
+| Runtime | `NODE_ENV`, `APP_NAME`, `APP_INSTANCE_NAMESPACE` | **REQUIRED** |
+| HTTP | `SERVER_*` | **REQUIRED** (defaults in dev) |
+| PostgreSQL | `DATABASE_URL`, pool/timeouts, optional `DATABASE_MIGRATION_URL` | **REQUIRED** / **SECRET** (credentials in URL) |
+| Redis / queue | `REDIS_URL`, `QUEUE_REDIS_URL`, `QUEUE_*` | **REQUIRED** for API + workers |
+| Object storage | `STORAGE_*` | **REQUIRED** for features using storage; readiness probe checks connectivity |
+| Auth | `AUTH_JWT_*`, `AUTH_MFA_ENCRYPTION_KEY` | **REQUIRED** / **SECRET** |
+| Webhooks worker | `WEBHOOK_DELIVERY_*` | **REQUIRED** when running delivery workers |
+| Observability | `LOG_*`, `METRICS_*`, `OTEL_*` | **OPTIONAL** (tracing off by default) |
+| Retention / catalog reconciliation | `*_RETENTION_*`, `CATALOG_SYNC_*` | **OPTIONAL** (commented defaults) |
+
+No `STOCKCONNECT_*` or consumer-specific Nexora variables exist. Tenant integration (API keys, webhook URLs/secrets, channels) is **data-driven** in PostgreSQL.
+
+### Health and readiness
+
+| Endpoint | Purpose |
+| -------- | ------- |
+| `GET /health/live` | Process accepting traffic |
+| `GET /health/ready` | Infrastructure + wiring checks |
+
+Readiness probes (API process):
+
+- `postgres`, `redis`, `queue`, `storage` — infrastructure connectivity
+- `external_compat_ce_routes` — `/api/v2/ce/*` handlers wired at composition root (**no outbound HTTP**)
+- `stockconnect_ce_compat` — legacy alias for the same wiring check (dashboard compatibility)
+
+Readiness answers **“Can Nexora serve this capability?”**, not **“Is an external ERP reachable?”**.
+
+Worker process exposes separate observability HTTP (`WORKER_OBSERVABILITY_*`) with postgres/redis/queue/worker registration checks.
+
+### Security checklist (verified in code/tests)
+
+- API key → tenant → authorization → domain service → tenant-scoped persistence
+- CE routes: query `apiKey` / `apikey` / header `X-CE-KEY` isolated to `/api/v2/ce/*`
+- Webhook HMAC, SSRF URL validation, sanitized destination logging, encrypted secrets
+- Idempotency and webhook deliveries tenant-scoped
+- External error responses do not leak stack traces or connection strings (see compatibility error mapper tests)
+
+### Operational validation (environment — not application defects)
+
+Before claiming production cutover for any external consumer:
+
+1. Deploy Nexora API + worker with secrets and infra from `.env.example`.
+2. Run migrations (`npm run migrate`).
+3. Confirm `/health/ready` checks pass.
+4. Configure tenant API keys and webhooks via Nexora APIs (no hardcoded IDs in code).
+5. Run controlled E2E against the consumer’s staging environment.
+
+Engineering status (Phases 57–59): **BUILD COMPLETE** for the established external contract; remaining work is **environment / deployment / E2E validation**.
+
 ## Related
 
 - [platform-independence.md](platform-independence.md)

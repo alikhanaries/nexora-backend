@@ -19,6 +19,6 @@ describe('StockConnect CE readiness', () => {
         expect(() => assertStockConnectCeCompatibilityWired(null)).toThrow(/missing/);
         expect(() => assertStockConnectCeCompatibilityWired({
             stockConnectCeOrderCompatibilityQuery: {},
-        })).toThrow(/stockConnectCeCatalogCommand/);
+        })).toThrow(/External compatibility handler/);
     });
 });

@@ -1,7 +1,7 @@
 # Compatibility Matrix
 
 **Status:** Phase 5 — scope locked ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md))  
-**Last updated:** 2026-09-28 (Phase 57 final StockConnect CE build audit)
+**Last updated:** 2026-09-28 (Phase 60 Nexora external integration production readiness)
 
 This matrix tracks external contract support in Nexora's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
 
@@ -363,6 +363,33 @@ These are **environment/deployment/validation tasks** and **do not represent mis
 10. Validate Amazon / Noon / Namshi order visibility.
 11. Confirm the actual acknowledgement `MerchantOrderNo` behavior against the live client.
 12. Complete production authorization and cutover only after staging passes.
+
+## Phase 60 — Nexora external integration production readiness (2026-09-28)
+
+**Base:** `origin/dev` at `ebac017` (#74 generic external integration boundary).
+
+**Scope:** Nexora platform deployment readiness — **not** new external consumer features.
+
+### Audit summary
+
+| Area | Status | Notes |
+| ---- | ------ | ----- |
+| Configuration | **READY** | `.env.example` documents infra; no consumer-specific Nexora env vars |
+| Startup validation | **READY** | Config parsed/validated in `src/app/config`; secrets not logged at startup |
+| Readiness | **READY** | `external_compat_ce_routes` + legacy `stockconnect_ce_compat` wiring probes; no outbound consumer HTTP |
+| Auth / tenant isolation | **VERIFIED** (automated) | CE foundation + external-consumer boundary integration tests |
+| Idempotency | **VERIFIED** (automated) | CE + merchant compatibility idempotency conventions |
+| Webhooks | **READY** | Phase 59 payload strategies; generic delivery unchanged |
+| Workers | **READY** | Separate worker readiness HTTP; graceful shutdown in bootstrap |
+| Migrations / persistence | **READY** | Tenant-scoped integration tables; `npm run migrate` |
+| Observability | **READY** | Structured logs, request context, sanitized webhook destinations |
+| Core consumer coupling | **NONE** | Phase 58/59 architecture tests enforced |
+
+**Automated verification (Phase 60):** `npm test` **622+** unit tests **PASS**; targeted CE + external integration integration suites **PASS**; `npm run arch:check` **0 errors**.
+
+**Environment gaps:** staging/production deploy, secrets provisioning, real external consumer E2E — **not application engineering defects**.
+
+**Final status:** **NEXORA PRODUCTION-READY FOR CONTROLLED DEPLOYMENT** (platform). External consumer cutover remains **environment / E2E** gated.
 
 | External contract | External endpoint | Nexora route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |
