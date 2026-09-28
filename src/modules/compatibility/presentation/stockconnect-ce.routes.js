@@ -111,6 +111,37 @@ const stockconnectCeRoutes = async (app, deps) => {
         });
         const typed = ceApp.withTypeProvider();
 
+        typed.get('/api/v2/ce/orders/:merchantOrderNo/invoice', {
+            schema: {
+                tags: ['StockConnect CE compatibility'],
+                summary: 'Download order invoice PDF (StockConnect CE)',
+                description: 'ChannelEngine-compatible sales tax invoice PDF for ParseInvoice and invoice upload flows.',
+                params: z.object({
+                    merchantOrderNo: z.string().min(1).max(250),
+                }),
+                querystring: stockConnectCeApiKeyQuerySchema,
+                response: {
+                    401: externalErrorResponseSchema,
+                    403: externalErrorResponseSchema,
+                    404: externalErrorResponseSchema,
+                    500: externalErrorResponseSchema,
+                },
+            },
+        }, async (request, reply) => {
+            await enforceReadRateLimit(deps);
+            const actor = requireActorContext();
+            const invoice = await deps.stockConnectCeOrderInvoiceQuery.getOrderInvoice({
+                tenantId: actor.tenantId,
+                actorPermissions: actor.permissions,
+                merchantOrderNo: request.params.merchantOrderNo,
+            });
+            reply.serializer((payload) => payload);
+            return reply
+                .header('content-type', invoice.contentType)
+                .header('content-disposition', `inline; filename="invoice-${request.params.merchantOrderNo}.pdf"`)
+                .send(invoice.body);
+        });
+
         typed.get('/api/v2/ce/orders', {
             schema: {
                 tags: ['StockConnect CE compatibility'],

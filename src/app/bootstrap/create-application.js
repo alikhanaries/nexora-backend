@@ -290,7 +290,7 @@ export async function createApplication(infra) {
     });
     const compatibility = createCompatibilityModule({
         rateLimiter: infra.rateLimiter,
-        authorization,
+        authorization: authorization.authorizationService,
         idempotency: infra.idempotency,
         coreContracts: {
             productQueryService: products.productQueryService,
