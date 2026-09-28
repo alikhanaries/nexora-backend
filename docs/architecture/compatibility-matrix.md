@@ -1,7 +1,7 @@
 # Compatibility Matrix
 
 **Status:** Phase 5 — scope locked ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md))  
-**Last updated:** 2026-09-22
+**Last updated:** 2026-09-28 (Phase 52 production readiness)
 
 This matrix tracks external contract support in Nexora's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
 
@@ -99,30 +99,27 @@ Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites).
 | Marketplace bridge / webhook | Yes | Yes (Phase 46 on `dev`) | Unit + integration; live webhook **NEEDS CONTROLLED STAGING TEST** |
 | CE async job / queue admin | No | N/A | **NOT REQUIRED** |
 
-## Phase 50 — Live StockConnect staging cutover (2026-09-28)
+## Phase 52 — StockConnect CE production readiness (2026-09-28)
 
-**`origin/dev` status:** Phase 46 merged (#63). Phase 48 merged (#64). Phase 47 **not yet on `origin/dev`** — present on branch `feat/phase-50-stockconnect-staging-cutover` pending PR. Phase 49 authorization fix (`authorization.authorizationService` in bootstrap) **required on `dev`** — applied on Phase 50 branch.
+See also [stockconnect-ce-operations.md](./stockconnect-ce-operations.md).
 
-**Live staging:** Not executed from this environment. All StockConnect-client flows remain **NEEDS CONTROLLED STAGING TEST** until ops runs StockConnect against Nexora staging with `CHANNEL_ENGINE_BASE_URL=https://<nexora-staging-host>/api/v2/ce/`.
+| Area | Engineering status | Environment status |
+| ---- | ------------------ | ------------------ |
+| `/api/v2/ce/*` route inventory | **IMPLEMENTED**, **TESTED LOCALLY** | **BLOCKED BY ENVIRONMENT** (live StockConnect) |
+| Query `apiKey` / `apikey` / `X-CE-KEY` auth | **IMPLEMENTED**, **TESTED LOCALLY** | **BLOCKED BY ENVIRONMENT** |
+| Tenant isolation (orders, catalog, invoice) | **IMPLEMENTED**, **TESTED LOCALLY** | **BLOCKED BY ENVIRONMENT** |
+| Stable CE order integer `Id` on repeat poll | **IMPLEMENTED**, **TESTED LOCALLY** (Phase 52) | **BLOCKED BY ENVIRONMENT** |
+| Numeric channel `external_reference` → `ChannelId` | **IMPLEMENTED**, **TESTED LOCALLY** | **BLOCKED BY ENVIRONMENT** |
+| Webhook bridge + HMAC + idempotency | **IMPLEMENTED**, **TESTED LOCALLY** | **BLOCKED BY ENVIRONMENT** |
+| Readiness probe `stockconnect_ce_compat` | **IMPLEMENTED**, **TESTED LOCALLY** | N/A |
+| Live staging cutover | — | **STAGING NOT AVAILABLE** (not executed from this repo) |
+| Production cutover | — | **Not verified in Phase 52** |
 
-| Cutover step | Staging result |
-| ------------ | -------------- |
-| Orders poll / ack | **NEEDS CONTROLLED STAGING TEST** |
-| Marketplace ingestion (Amazon / Noon / Namshi) | **NEEDS CONTROLLED STAGING TEST** |
-| Catalog sync | **NEEDS CONTROLLED STAGING TEST** |
-| Shipments / returns | **NEEDS CONTROLLED STAGING TEST** |
-| Invoice ParseInvoice | **NEEDS CONTROLLED STAGING TEST** |
-| CE webhook `stockconnect-ce-bridge` | **NEEDS CONTROLLED STAGING TEST** |
+**Assessment:** **READY FOR CONTROLLED STAGING** (engineering); staging/production verification requires ops-run StockConnect traffic.
 
-### Staging cutover checklist (ops)
+## Phase 50 — Live StockConnect staging cutover (historical)
 
-| Item | Status |
-| ---- | ------ |
-| Phase 46 on `dev` | Done (#63) |
-| Phase 47 on `dev` | Pending PR from Phase 50 branch |
-| Authorization bootstrap fix on `dev` | Pending (Phase 50 commit) |
-| `CHANNEL_ENGINE_BASE_URL` | Configure in StockConnect staging only |
-| API key / tenant / numeric channel refs / order Id backfill | **NEEDS ENVIRONMENT VERIFICATION** |
+Phases 44–50 merged on `origin/dev` (#60–#66). Live StockConnect staging was **not** executed from the engineering environment; status remains **STAGING NOT AVAILABLE** until ops validates.
 
 | External contract | External endpoint | Nexora route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |
