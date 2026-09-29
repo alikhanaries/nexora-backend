@@ -68,6 +68,8 @@ export async function createHttpServer(deps) {
             configuration: { spec: { url: '/openapi.json' } },
         });
         app.get('/openapi.json', () => app.swagger());
+        app.get('/api-docs.json', () => app.swagger());
+        app.get('/api-docs', async (_request, reply) => reply.redirect('/docs'));
     }
     await app.register(healthRoutes, { readiness: deps.readiness });
     if (deps.config.observability.metricsEnabled) {
