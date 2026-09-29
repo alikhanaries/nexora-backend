@@ -1,0 +1,21 @@
+{
+  "name": "nexora-docs-tooling",
+  "version": "1.0.0",
+  "description": "Documentation build tooling for the Nexora backend technical documentation PDF. Not part of the backend runtime and not referenced by src/.",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "pdf": "node generate-technical-documentation-pdf.mjs",
+    "pdf:validate": "node validate-technical-documentation-pdf.mjs",
+    "pdf:review": "node validate-technical-documentation-pdf.mjs --contact-sheet",
+    "pdf:pages": "node validate-technical-documentation-pdf.mjs --render"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.9",
+    "marked": "^18.0.14",
+    "mermaid": "^12.0.0",
+    "pdfjs-dist": "^6.3.289",
+    "puppeteer-core": "^25.12.0"
+  }
+}
