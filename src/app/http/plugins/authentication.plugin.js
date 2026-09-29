@@ -11,6 +11,8 @@ const PUBLIC_ROUTE_PATTERNS = [
     /^\/internal\/metrics$/,
     /^\/docs(?:\/|$)/,
     /^\/openapi\.json$/,
+    /^\/api-docs\.json$/,
+    /^\/api-docs$/,
     /^\/api\/v1\/foundation\//,
     /^\/api\/v1\/auth\/login$/,
     /^\/api\/v1\/auth\/refresh$/,

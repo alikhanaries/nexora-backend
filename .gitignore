@@ -144,3 +144,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Local OpenAPI snapshot (docs:openapi-coverage)
+docs/.openapi-snapshot.json
