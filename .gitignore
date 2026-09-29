@@ -147,3 +147,7 @@ vite.config.ts.timestamp-*
 
 # Local OpenAPI snapshot (docs:openapi-coverage)
 docs/.openapi-snapshot.json
+
+# Documentation PDF build artefacts
+docs/.pdf-pages/
+docs/Nexora_Backend_Technical_Documentation.html
