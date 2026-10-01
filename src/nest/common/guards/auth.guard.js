@@ -3,6 +3,11 @@ import { Reflector } from '@nestjs/core';
 import { enrichRequestContext } from '../../../shared/context/request-context.js';
 import { AuthenticationError } from '../../../shared/errors/index.js';
 import { CORE_DOMAIN } from '../../domain/core-domain.tokens.js';
+import { isMerchantCompatQueryAuthPath } from '../../../shared/auth/merchant-compat-route-prefix.js';
+import {
+  readMerchantCompatCeKeyHeader,
+  readMerchantCompatQueryApiKey,
+} from '../../../shared/auth/read-merchant-compat-query-api-key.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import { isPublicRoute } from '../auth/public-route.js';
 
@@ -50,7 +55,12 @@ class AuthGuard {
     }
 
     const bearer = readBearerToken(request.headers.authorization);
-    const apiKey = readApiKey(request.headers);
+    let apiKey = readApiKey(request.headers);
+    if (apiKey === null && isMerchantCompatQueryAuthPath(path)) {
+      apiKey =
+        readMerchantCompatQueryApiKey(request.query)
+        ?? readMerchantCompatCeKeyHeader(request.headers);
+    }
 
     if (bearer !== null && apiKey !== null) {
       throw new AuthenticationError('Provide either Bearer token or API key, not both');

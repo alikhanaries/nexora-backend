@@ -17,6 +17,7 @@ import { CancellationsModule } from './cancellations/cancellations.module.js';
 import { ShipmentsModule } from './shipments/shipments.module.js';
 import { ReturnsModule } from './returns/returns.module.js';
 import { LegacyOrdersModule } from './legacy-orders/legacy-orders.module.js';
+import { LegacyCompatibilityModule } from './legacy-compatibility/legacy-compatibility.module.js';
 import { NexoraConfigModule } from './config/config.module.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { AuthGuard } from './common/guards/auth.guard.js';
@@ -59,6 +60,7 @@ export function buildAppModule(infra, coreDomain = null) {
       ShipmentsModule,
       ReturnsModule,
       LegacyOrdersModule,
+      LegacyCompatibilityModule,
     );
     providers.push({
       provide: APP_GUARD,
