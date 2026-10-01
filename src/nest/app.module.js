@@ -13,6 +13,9 @@ import { ChannelsModule } from './channels/channels.module.js';
 import { MarketplacesModule } from './marketplaces/marketplaces.module.js';
 import { WebhooksModule } from './webhooks/webhooks.module.js';
 import { OrdersModule } from './orders/orders.module.js';
+import { CancellationsModule } from './cancellations/cancellations.module.js';
+import { ShipmentsModule } from './shipments/shipments.module.js';
+import { ReturnsModule } from './returns/returns.module.js';
 import { NexoraConfigModule } from './config/config.module.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { AuthGuard } from './common/guards/auth.guard.js';
@@ -51,6 +54,9 @@ export function buildAppModule(infra, coreDomain = null) {
       MarketplacesModule,
       WebhooksModule,
       OrdersModule,
+      CancellationsModule,
+      ShipmentsModule,
+      ReturnsModule,
     );
     providers.push({
       provide: APP_GUARD,
