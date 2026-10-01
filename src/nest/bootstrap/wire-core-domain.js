@@ -18,13 +18,14 @@ import { createOffersModule } from '../../modules/offers/index.js';
 import { createPricingModule } from '../../modules/pricing/index.js';
 import { createProductsModule } from '../../modules/products/index.js';
 import { PostgresOutboxRepository } from '../../infrastructure/postgres/outbox-repository.js';
+import { wireMarketplaceWebhookIngestion } from './wire-marketplace-webhook-ingestion.js';
 
 /**
  * Wire core domain modules using the same factories as the Fastify application.
  *
  * @param {ReturnType<import('../../app/config/index.js').loadConfigFromEnvironment>} config
  * @param {NonNullable<Awaited<ReturnType<import('./create-nest-infrastructure.js').createNestInfrastructure>>['database']>} database
- * @param {{ rateLimiter?: object | null, metrics: object }} deps
+ * @param {{ rateLimiter?: object | null, metrics: object, logger: object, idempotency: object, queue: object }} deps
  */
 export async function wireCoreDomain(config, database, deps) {
   const audit = createAuditModule({ database });
@@ -146,6 +147,17 @@ export async function wireCoreDomain(config, database, deps) {
     auditRecorder: audit.auditRecorder,
   });
 
+  const marketplaceWebhookIngestion = wireMarketplaceWebhookIngestion({
+    config,
+    database,
+    logger: deps.logger,
+    metrics: deps.metrics,
+    queue: deps.queue,
+    idempotency: deps.idempotency,
+    identity,
+    channels,
+  });
+
   return {
     identity,
     tenants,
@@ -160,6 +172,7 @@ export async function wireCoreDomain(config, database, deps) {
     channels,
     marketplaces,
     channelRouteDeps,
+    marketplaceWebhookIngestion,
     authenticateAccessToken,
     verifyApiKey: apiKeys.useCases.verifyApiKey,
     metrics: deps.metrics,
