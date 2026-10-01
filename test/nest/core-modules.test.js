@@ -1,32 +1,7 @@
 import request from 'supertest';
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
-import { noopMetricsRecorder } from '../../src/shared/metrics/index.js';
 import { createTestNestApp } from './helpers/create-test-nest-app.js';
-
-function createMockCoreDomain() {
-  return {
-    identity: {
-      useCases: {
-        login: { execute: jest.fn() },
-        refreshToken: { execute: jest.fn() },
-        logout: { execute: jest.fn() },
-        getCurrentUser: { execute: jest.fn() },
-      },
-    },
-    tenants: {
-      useCases: {
-        createTenant: { execute: jest.fn() },
-        getTenant: { execute: jest.fn() },
-        suspendTenant: { execute: jest.fn() },
-        reactivateTenant: { execute: jest.fn() },
-        closeTenant: { execute: jest.fn() },
-      },
-    },
-    authenticateAccessToken: { execute: jest.fn() },
-    verifyApiKey: { execute: jest.fn() },
-    metrics: noopMetricsRecorder,
-  };
-}
+import { createMockCoreDomain } from './helpers/mock-core-domain.js';
 
 describe('Nest core modules (auth + tenants)', () => {
   /** @type {import('@nestjs/common').INestApplication | undefined} */
