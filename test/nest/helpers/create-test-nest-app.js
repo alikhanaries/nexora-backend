@@ -8,7 +8,7 @@ import { createPinoLogger } from '../../../src/infrastructure/observability/pino
 import { noopMetricsRecorder } from '../../../src/shared/metrics/index.js';
 
 /**
- * @param {{ extraControllers?: unknown[], connectDatabase?: boolean }} [options]
+ * @param {{ extraControllers?: unknown[], connectDatabase?: boolean, coreDomain?: object | null }} [options]
  */
 export async function createTestNestApp(options = {}) {
   const config = loadConfigFromEnvironment();
@@ -21,7 +21,8 @@ export async function createTestNestApp(options = {}) {
     database: null,
   };
 
-  const AppModule = buildAppModule(infra);
+  const coreDomain = options.coreDomain ?? null;
+  const AppModule = buildAppModule(infra, coreDomain);
 
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule],
