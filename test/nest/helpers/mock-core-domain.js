@@ -93,6 +93,30 @@ export function createMockCoreDomain(overrides = {}) {
         deactivateOffer: { execute: jest.fn() },
       },
     },
+    channelRouteDeps: {
+      listChannels: { execute: jest.fn().mockResolvedValue({ channels: [] }) },
+      createChannel: { execute: jest.fn() },
+      getChannel: { execute: jest.fn() },
+      updateChannel: { execute: jest.fn() },
+      activateChannel: { execute: jest.fn() },
+      deactivateChannel: { execute: jest.fn() },
+      suspendChannel: { execute: jest.fn() },
+      upsertMarketplaceConnection: { execute: jest.fn() },
+      getMarketplaceConnection: { execute: jest.fn() },
+      patchMarketplaceConnection: { execute: jest.fn() },
+      deleteMarketplaceConnection: { execute: jest.fn() },
+      testMarketplaceConnection: { execute: jest.fn() },
+    },
+    marketplaces: {
+      useCases: {
+        listMarketplaces: { execute: jest.fn().mockResolvedValue({ marketplaces: [] }) },
+        createMarketplace: { execute: jest.fn() },
+        getMarketplace: { execute: jest.fn() },
+        updateMarketplace: { execute: jest.fn() },
+        activateMarketplace: { execute: jest.fn() },
+        deactivateMarketplace: { execute: jest.fn() },
+      },
+    },
     inventory: {
       useCases: {
         listStockLocations: { execute: jest.fn().mockResolvedValue({ locations: [] }) },
@@ -103,6 +127,14 @@ export function createMockCoreDomain(overrides = {}) {
         receiveInventory: { execute: jest.fn() },
         reserveInventory: { execute: jest.fn() },
         releaseInventory: { execute: jest.fn() },
+      },
+    },
+    marketplaceWebhookIngestion: {
+      receiveMarketplaceWebhook: {
+        execute: jest.fn().mockResolvedValue({
+          data: { outcome: 'enqueued', externalOrderReference: 'order-1' },
+          replayed: false,
+        }),
       },
     },
     authenticateAccessToken: { execute: jest.fn() },

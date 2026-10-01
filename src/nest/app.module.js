@@ -9,6 +9,9 @@ import { ProductsModule } from './products/products.module.js';
 import { PricingModule } from './pricing/pricing.module.js';
 import { OffersModule } from './offers/offers.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
+import { ChannelsModule } from './channels/channels.module.js';
+import { MarketplacesModule } from './marketplaces/marketplaces.module.js';
+import { WebhooksModule } from './webhooks/webhooks.module.js';
 import { NexoraConfigModule } from './config/config.module.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { AuthGuard } from './common/guards/auth.guard.js';
@@ -43,6 +46,9 @@ export function buildAppModule(infra, coreDomain = null) {
       PricingModule,
       OffersModule,
       InventoryModule,
+      ChannelsModule,
+      MarketplacesModule,
+      WebhooksModule,
     );
     providers.push({
       provide: APP_GUARD,
