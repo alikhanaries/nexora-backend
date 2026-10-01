@@ -17,6 +17,9 @@ async function bootstrap() {
     coreDomain = await wireCoreDomain(config, infra.database, {
       rateLimiter: infra.rateLimiter,
       metrics: infra.metrics,
+      logger: infra.logger,
+      idempotency: infra.idempotency,
+      queue: infra.queue,
     });
   }
   const app = await createNestApplication(config, infra, coreDomain);
@@ -44,6 +47,9 @@ async function bootstrap() {
       // ignore
     }
 
+    if (infra.queue !== null && infra.queue !== undefined) {
+      await infra.queue.close().catch(() => {});
+    }
     if (infra.redis !== null) {
       await infra.redis.close();
     }

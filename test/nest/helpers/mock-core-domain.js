@@ -129,6 +129,14 @@ export function createMockCoreDomain(overrides = {}) {
         releaseInventory: { execute: jest.fn() },
       },
     },
+    marketplaceWebhookIngestion: {
+      receiveMarketplaceWebhook: {
+        execute: jest.fn().mockResolvedValue({
+          data: { outcome: 'enqueued', externalOrderReference: 'order-1' },
+          replayed: false,
+        }),
+      },
+    },
     authenticateAccessToken: { execute: jest.fn() },
     verifyApiKey: { execute: jest.fn() },
     metrics: noopMetricsRecorder,
