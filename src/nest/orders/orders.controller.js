@@ -14,13 +14,19 @@ import {
   listOrdersQuerySchema,
   orderIdParamsSchema,
 } from '../../modules/orders/presentation/order.schemas.js';
+import { cancelOrderBodySchema } from '../../modules/cancellations/presentation/cancellation.schemas.js';
 import { parseOrThrow } from '../../shared/validation/index.js';
+import { CancellationsService } from '../cancellations/cancellations.service.js';
 import { OrdersService } from './orders.service.js';
 
 export @Controller()
 class OrdersController {
-  constructor(@Inject(OrdersService) ordersService) {
+  constructor(
+    @Inject(OrdersService) ordersService,
+    @Inject(CancellationsService) cancellationsService,
+  ) {
     this.ordersService = ordersService;
+    this.cancellationsService = cancellationsService;
   }
 
   @Post('/api/v1/orders')
@@ -50,6 +56,15 @@ class OrdersController {
   async confirm(@Param() params) {
     const { orderId } = parseOrThrow(orderIdParamsSchema, params, 'order params');
     const data = await this.ordersService.confirmOrder(orderId);
+    return { success: true, data };
+  }
+
+  @Post('/api/v1/orders/:orderId/cancel')
+  @HttpCode(201)
+  async cancel(@Param() params, @Body() body) {
+    const { orderId } = parseOrThrow(orderIdParamsSchema, params, 'order params');
+    const parsed = parseOrThrow(cancelOrderBodySchema, body ?? {}, 'cancel order');
+    const data = await this.cancellationsService.cancelOrder(orderId, parsed);
     return { success: true, data };
   }
 }

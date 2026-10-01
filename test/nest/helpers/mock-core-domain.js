@@ -145,6 +145,59 @@ export function createMockCoreDomain(overrides = {}) {
         },
       },
     },
+    cancellations: {
+      useCases: {
+        listCancellations: {
+          execute: jest.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
+        },
+        createCancellation: { execute: jest.fn() },
+        getCancellation: { execute: jest.fn() },
+        idempotency: {
+          execute: jest.fn(async (_key, _fp, operation) => {
+            const value = await operation({});
+            return { kind: 'executed', value };
+          }),
+        },
+      },
+    },
+    shipments: {
+      useCases: {
+        createShipment: { execute: jest.fn() },
+        listShipments: {
+          execute: jest.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
+        },
+        getShipment: { execute: jest.fn() },
+        shipShipment: { execute: jest.fn() },
+        deliverShipment: { execute: jest.fn() },
+        cancelShipment: { execute: jest.fn() },
+        idempotency: {
+          execute: jest.fn(async (_key, _fp, operation) => {
+            const value = await operation({});
+            return { kind: 'executed', value };
+          }),
+        },
+      },
+    },
+    returns: {
+      useCases: {
+        createReturn: { execute: jest.fn() },
+        listReturns: {
+          execute: jest.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
+        },
+        getReturn: { execute: jest.fn() },
+        approveReturn: { execute: jest.fn() },
+        receiveReturn: { execute: jest.fn() },
+        completeReturn: { execute: jest.fn() },
+        rejectReturn: { execute: jest.fn() },
+        cancelReturn: { execute: jest.fn() },
+        idempotency: {
+          execute: jest.fn(async (_key, _fp, operation) => {
+            const value = await operation({});
+            return { kind: 'executed', value };
+          }),
+        },
+      },
+    },
     marketplaceWebhookIngestion: {
       receiveMarketplaceWebhook: {
         execute: jest.fn().mockResolvedValue({

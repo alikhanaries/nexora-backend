@@ -14,8 +14,11 @@ import {
   createMarketplaceConnectionServices,
   createMarketplacesModule,
 } from '../../modules/marketplaces/index.js';
+import { createCancellationsModule } from '../../modules/cancellations/index.js';
 import { createOffersModule } from '../../modules/offers/index.js';
 import { createOrdersModule } from '../../modules/orders/index.js';
+import { createReturnsModule } from '../../modules/returns/index.js';
+import { createShipmentsModule } from '../../modules/shipments/index.js';
 import { createPricingModule } from '../../modules/pricing/index.js';
 import { createProductsModule } from '../../modules/products/index.js';
 import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
@@ -167,6 +170,38 @@ export async function wireCoreDomain(config, database, deps) {
     externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
   });
 
+  const cancellations = createCancellationsModule({
+    database,
+    orderQueryService: orders.orderQueryService,
+    orderFulfillmentService: orders.orderFulfillmentService,
+    inventoryService: inventory.inventoryService,
+    eventRecorder,
+    idempotency: deps.idempotency,
+    auditRecorder: audit.auditRecorder,
+    externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
+  });
+
+  const shipments = createShipmentsModule({
+    database,
+    orderFulfillmentService: orders.orderFulfillmentService,
+    orderQueryService: orders.orderQueryService,
+    inventoryService: inventory.inventoryService,
+    eventRecorder,
+    idempotency: deps.idempotency,
+    auditRecorder: audit.auditRecorder,
+    externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
+  });
+
+  const returns = createReturnsModule({
+    database,
+    orderReturnGateway: orders.orderReturnGateway,
+    inventoryService: inventory.inventoryService,
+    eventRecorder,
+    idempotency: deps.idempotency,
+    auditRecorder: audit.auditRecorder,
+    externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
+  });
+
   const marketplaceWebhookIngestion = wireMarketplaceWebhookIngestion({
     config,
     database,
@@ -190,6 +225,9 @@ export async function wireCoreDomain(config, database, deps) {
     offers,
     inventory,
     orders,
+    cancellations,
+    shipments,
+    returns,
     channels,
     marketplaces,
     channelRouteDeps,
