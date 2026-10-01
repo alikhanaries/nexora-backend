@@ -1,21 +1,24 @@
 import { loadConfigFromEnvironment } from '../app/config/index.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
+import { NEST_READINESS } from './health/readiness.provider.js';
+import { createNestInfrastructure } from './bootstrap/create-nest-infrastructure.js';
 import {
   createNestApplication,
   resolveNestListenPort,
 } from './bootstrap/create-nest-application.js';
-
 async function bootstrap() {
   const config = loadConfigFromEnvironment();
   const nestPort = resolveNestListenPort(config);
 
-  const app = await createNestApplication(config);
+  const infra = await createNestInfrastructure(config);
+  const app = await createNestApplication(config, infra);
   const host = config.server.host;
 
   await app.listen(nestPort, host);
 
-  process.stdout.write(
-    `Nexora Nest (Express, Phase 2) listening on http://${host === '0.0.0.0' ? 'localhost' : host}:${nestPort}\n`,
+  infra.logger.info(
+    { host, port: nestPort, postgres: infra.database !== null },
+    'Nexora Nest (Express) listening',
   );
 
   let shuttingDown = false;
@@ -24,8 +27,22 @@ async function bootstrap() {
       return;
     }
     shuttingDown = true;
-    process.stdout.write(`${JSON.stringify({ msg: 'Nest shutdown signal received', signal })}\n`);
+    infra.logger.info({ signal }, 'Nest shutdown signal received');
+
+    try {
+      const readiness = app.get(NEST_READINESS);
+      readiness.markNotReady();
+    } catch {
+      // ignore
+    }
+
+    if (infra.database !== null) {
+      await infra.database.close();
+    }
+
     await app.close();
+
+    await infra.logger.flush();
     process.exit(0);
   };
 
