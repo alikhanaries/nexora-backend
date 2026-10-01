@@ -4,6 +4,8 @@ import { PrometheusMetrics } from '../../infrastructure/observability/prometheus
 import { RedisConnection } from '../../infrastructure/redis/redis-client.js';
 import { RedisKeyBuilder } from '../../infrastructure/redis/redis-keys.js';
 import { RedisRateLimiter } from '../../infrastructure/redis/redis-rate-limiter.js';
+import { BullMqJobQueue, createQueueRedisConnection } from '../../infrastructure/queue/bullmq-job-queue.js';
+import { PostgresIdempotencyService } from '../../infrastructure/postgres/idempotency-service.js';
 import { noopMetricsRecorder } from '../../shared/metrics/index.js';
 import { describeErrorForLog } from '../../shared/errors/index.js';
 
@@ -25,7 +27,16 @@ export async function createNestInfrastructure(config, options = {}) {
 
   if (!connectDatabase) {
     logger.info({}, 'Nest infrastructure: database connection skipped');
-    return { logger, metrics, database: null, redis: null, rateLimiter: null };
+    return {
+      logger,
+      metrics,
+      database: null,
+      redis: null,
+      rateLimiter: null,
+      idempotency: null,
+      queue: null,
+      queueConnection: null,
+    };
   }
 
   const database = new PostgresDatabase({
@@ -36,6 +47,9 @@ export async function createNestInfrastructure(config, options = {}) {
 
   let redis = null;
   let rateLimiter = null;
+  let idempotency = null;
+  let queue = null;
+  let queueConnection = null;
 
   try {
     if (runMigrations) {
@@ -46,6 +60,11 @@ export async function createNestInfrastructure(config, options = {}) {
     }
     await database.healthCheck();
     logger.info({}, 'Nest infrastructure: PostgreSQL ready');
+
+    idempotency = new PostgresIdempotencyService(database, config.idempotency);
+    queueConnection = createQueueRedisConnection(config.queue);
+    queue = new BullMqJobQueue(queueConnection, config.queue, logger, metrics);
+    logger.info({}, 'Nest infrastructure: job queue ready');
 
     if (connectRedis) {
       redis = new RedisConnection({ config: config.redis, logger, metrics });
@@ -62,5 +81,5 @@ export async function createNestInfrastructure(config, options = {}) {
     throw error;
   }
 
-  return { logger, metrics, database, redis, rateLimiter };
+  return { logger, metrics, database, redis, rateLimiter, idempotency, queue, queueConnection };
 }
