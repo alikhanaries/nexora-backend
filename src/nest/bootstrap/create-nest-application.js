@@ -2,29 +2,32 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
-import { AppModule } from '../app.module.js';
+import { buildAppModule } from '../app.module.js';
 import { configureExpress } from './configure-express.js';
 import { NEXORA_CONFIG } from '../config/config.module.js';
+import { NestLoggerService } from '../common/nest-logger.service.js';
 
 /**
  * @param {ReturnType<import('../../app/config/index.js').loadConfigFromEnvironment>} config
+ * @param {{ logger: object, metrics: object, database: object | null }} infra
  */
-export async function createNestApplication(config) {
+export async function createNestApplication(config, infra) {
   const expressApp = express();
   configureExpress(expressApp, config);
 
+  const AppModule = buildAppModule(infra);
+
   const nestApp = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
-    logger: ['error', 'warn', 'log'],
+    logger: false,
     bodyParser: false,
   });
 
+  nestApp.useLogger(new NestLoggerService(infra.logger));
   nestApp.enableShutdownHooks();
   return nestApp;
 }
 
 /**
- * Load config from Nest DI after the app is created (same object as legacy).
- *
  * @param {import('@nestjs/common').INestApplication} nestApp
  */
 export function getNestConfig(nestApp) {
