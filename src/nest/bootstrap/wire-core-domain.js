@@ -24,6 +24,7 @@ import { createProductsModule } from '../../modules/products/index.js';
 import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
 import { PostgresOutboxRepository } from '../../infrastructure/postgres/outbox-repository.js';
 import { wireMarketplaceWebhookIngestion } from './wire-marketplace-webhook-ingestion.js';
+import { wireCompatibility } from './wire-compatibility.js';
 
 /**
  * Wire core domain modules using the same factories as the Fastify application.
@@ -202,6 +203,27 @@ export async function wireCoreDomain(config, database, deps) {
     externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
   });
 
+  orders.wireChannelFulfilledOrder({
+    createShipment: shipments.useCases.createShipment,
+    shipShipment: shipments.useCases.shipShipment,
+    listShipmentsForOrder: shipments.listShipmentsForOrder,
+  });
+
+  const compatibility = wireCompatibility({
+    rateLimiter: deps.rateLimiter,
+    idempotency: deps.idempotency,
+    products,
+    channels,
+    inventory,
+    pricing,
+    offers,
+    orders,
+    shipments,
+    cancellations,
+    returns,
+    externalIdMapping,
+  });
+
   const marketplaceWebhookIngestion = wireMarketplaceWebhookIngestion({
     config,
     database,
@@ -228,6 +250,7 @@ export async function wireCoreDomain(config, database, deps) {
     cancellations,
     shipments,
     returns,
+    compatibility,
     channels,
     marketplaces,
     channelRouteDeps,
