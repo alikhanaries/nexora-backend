@@ -10,12 +10,13 @@ import { NestLoggerService } from '../common/nest-logger.service.js';
 /**
  * @param {ReturnType<import('../../app/config/index.js').loadConfigFromEnvironment>} config
  * @param {{ logger: object, metrics: object, database: object | null }} infra
+ * @param {object | null} [coreDomain]
  */
-export async function createNestApplication(config, infra) {
+export async function createNestApplication(config, infra, coreDomain = null) {
   const expressApp = express();
   configureExpress(expressApp, config);
 
-  const AppModule = buildAppModule(infra);
+  const AppModule = buildAppModule(infra, coreDomain);
 
   const nestApp = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
     logger: false,

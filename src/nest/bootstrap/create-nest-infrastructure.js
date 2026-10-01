@@ -1,17 +1,21 @@
 import { PostgresDatabase } from '../../infrastructure/postgres/postgres-database.js';
 import { createPinoLogger } from '../../infrastructure/observability/pino-logger.js';
 import { PrometheusMetrics } from '../../infrastructure/observability/prometheus-metrics.js';
+import { RedisConnection } from '../../infrastructure/redis/redis-client.js';
+import { RedisKeyBuilder } from '../../infrastructure/redis/redis-keys.js';
+import { RedisRateLimiter } from '../../infrastructure/redis/redis-rate-limiter.js';
 import { noopMetricsRecorder } from '../../shared/metrics/index.js';
 import { describeErrorForLog } from '../../shared/errors/index.js';
 
 /**
- * Minimal Nest infrastructure (Phase 3): logger + metrics + Postgres — same building blocks as Fastify bootstrap.
+ * Nest infrastructure: logger, metrics, Postgres, Redis rate limiter (auth login).
  *
  * @param {ReturnType<import('../../app/config/index.js').loadConfigFromEnvironment>} config
- * @param {{ connectDatabase?: boolean, runMigrations?: boolean }} [options]
+ * @param {{ connectDatabase?: boolean, connectRedis?: boolean, runMigrations?: boolean }} [options]
  */
 export async function createNestInfrastructure(config, options = {}) {
   const connectDatabase = options.connectDatabase ?? true;
+  const connectRedis = options.connectRedis ?? connectDatabase;
   const runMigrations = options.runMigrations ?? true;
 
   const logger = createPinoLogger(config);
@@ -21,7 +25,7 @@ export async function createNestInfrastructure(config, options = {}) {
 
   if (!connectDatabase) {
     logger.info({}, 'Nest infrastructure: database connection skipped');
-    return { logger, metrics, database: null };
+    return { logger, metrics, database: null, redis: null, rateLimiter: null };
   }
 
   const database = new PostgresDatabase({
@@ -29,6 +33,9 @@ export async function createNestInfrastructure(config, options = {}) {
     logger,
     metrics,
   });
+
+  let redis = null;
+  let rateLimiter = null;
 
   try {
     if (runMigrations) {
@@ -39,10 +46,21 @@ export async function createNestInfrastructure(config, options = {}) {
     }
     await database.healthCheck();
     logger.info({}, 'Nest infrastructure: PostgreSQL ready');
+
+    if (connectRedis) {
+      redis = new RedisConnection({ config: config.redis, logger, metrics });
+      await redis.connect();
+      const redisKeys = new RedisKeyBuilder(config.redis.keyPrefix, config.instanceNamespace);
+      rateLimiter = new RedisRateLimiter(redis, redisKeys, metrics, logger);
+      logger.info({}, 'Nest infrastructure: Redis ready');
+    }
   } catch (error) {
-    logger.error({ err: describeErrorForLog(error) }, 'Nest infrastructure: PostgreSQL failed');
+    logger.error({ err: describeErrorForLog(error) }, 'Nest infrastructure startup failed');
+    if (redis !== null) {
+      await redis.close().catch(() => {});
+    }
     throw error;
   }
 
-  return { logger, metrics, database };
+  return { logger, metrics, database, redis, rateLimiter };
 }

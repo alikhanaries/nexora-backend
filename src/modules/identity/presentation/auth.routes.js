@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { AuthenticationError } from '../../../shared/errors/index.js';
-const loginBodySchema = z.object({
+export const loginBodySchema = z.object({
     tenantSlug: z.string().min(1).max(64),
     email: z.string().email().max(320),
     password: z.string().min(1).max(128),
 });
-const refreshBodySchema = z.object({
+export const refreshBodySchema = z.object({
     refreshToken: z.string().min(1).max(256),
 });
-const logoutBodySchema = z.object({
+export const logoutBodySchema = z.object({
     refreshToken: z.string().min(1).max(256),
 });
 const tokenResponseSchema = z.object({

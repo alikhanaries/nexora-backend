@@ -2,6 +2,7 @@ import { loadConfigFromEnvironment } from '../app/config/index.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
 import { NEST_READINESS } from './health/readiness.provider.js';
 import { createNestInfrastructure } from './bootstrap/create-nest-infrastructure.js';
+import { wireCoreDomain } from './bootstrap/wire-core-domain.js';
 import {
   createNestApplication,
   resolveNestListenPort,
@@ -11,7 +12,14 @@ async function bootstrap() {
   const nestPort = resolveNestListenPort(config);
 
   const infra = await createNestInfrastructure(config);
-  const app = await createNestApplication(config, infra);
+  let coreDomain = null;
+  if (infra.database !== null) {
+    coreDomain = await wireCoreDomain(config, infra.database, {
+      rateLimiter: infra.rateLimiter,
+      metrics: infra.metrics,
+    });
+  }
+  const app = await createNestApplication(config, infra, coreDomain);
   const host = config.server.host;
 
   await app.listen(nestPort, host);
@@ -36,6 +44,9 @@ async function bootstrap() {
       // ignore
     }
 
+    if (infra.redis !== null) {
+      await infra.redis.close();
+    }
     if (infra.database !== null) {
       await infra.database.close();
     }
