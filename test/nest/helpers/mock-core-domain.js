@@ -198,6 +198,64 @@ export function createMockCoreDomain(overrides = {}) {
         },
       },
     },
+    compatibility: {
+      routeDeps: {
+        rateLimiter: {
+          consume: jest.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+        },
+        orderCompatibilityQuery: {
+          listOrders: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+            Count: 0,
+            TotalCount: 0,
+            ItemsPerPage: 50,
+          }),
+          listNewOrders: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+            Count: 0,
+            TotalCount: 0,
+            ItemsPerPage: 50,
+          }),
+        },
+        orderCompatibilityCommand: {
+          createChannelOrder: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 201,
+            Content: { MerchantOrderNo: 'ORD-1' },
+          }),
+          createChannelFulfilledOrder: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 201,
+            Content: { MerchantOrderNo: 'ORD-2' },
+          }),
+          acknowledgeOrder: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 201,
+            Content: { MerchantOrderNo: 'ORD-1' },
+          }),
+        },
+        stockConnectCeOrderCompatibilityQuery: {
+          listOrdersForStockConnectPoll: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+            Count: 0,
+            TotalCount: 0,
+            ItemsPerPage: 50,
+          }),
+        },
+        stockConnectCeOrderInvoiceQuery: {
+          getOrderInvoice: jest.fn().mockResolvedValue({
+            contentType: 'application/pdf',
+            body: Buffer.from('%PDF'),
+          }),
+        },
+      },
+    },
     marketplaceWebhookIngestion: {
       receiveMarketplaceWebhook: {
         execute: jest.fn().mockResolvedValue({
