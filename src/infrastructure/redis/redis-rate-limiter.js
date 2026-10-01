@@ -21,6 +21,7 @@
  *   ARGV[1] = limit (requests per period)
  *   ARGV[2] = period in milliseconds
  *   ARGV[3] = cost (0 to peek without consuming)
+ *   ARGV[4] = current time in milliseconds (caller clock; required on Redis 7+ where TIME+SET in one script is rejected)
  * Returns: { allowed, remaining, retryAfterMs, resetMs }
  */
 const GCRA_SCRIPT = `
@@ -28,9 +29,7 @@ local key    = KEYS[1]
 local limit  = tonumber(ARGV[1])
 local period = tonumber(ARGV[2])
 local cost   = tonumber(ARGV[3])
-
-local time = redis.call('TIME')
-local now  = (tonumber(time[1]) * 1000) + (tonumber(time[2]) / 1000)
+local now    = tonumber(ARGV[4])
 
 local emission = period / limit
 local tat = tonumber(redis.call('GET', key))
@@ -107,7 +106,8 @@ export class RedisRateLimiter {
         if (limit <= 0 || windowSeconds <= 0) {
             throw new Error(`Rate limit policy "${key.policy.name}" must have positive limit and window`);
         }
-        const reply = await this.connection.run('ratelimit.consume', () => this.connection.client.eval(GCRA_SCRIPT, 1, this.keys.rateLimit(key.policy.name, key.subject), limit, windowSeconds * 1_000, cost));
+        const nowMs = Date.now();
+        const reply = await this.connection.run('ratelimit.consume', () => this.connection.client.eval(GCRA_SCRIPT, 1, this.keys.rateLimit(key.policy.name, key.subject), limit, windowSeconds * 1_000, cost, nowMs));
         return { limit, ...parseScriptReply(reply, limit) };
     }
 }
