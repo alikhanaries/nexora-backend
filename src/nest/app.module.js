@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ApiKeysModule } from './api-keys/api-keys.module.js';
+import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { AuthorizationModule } from './authorization/authorization.module.js';
+import { MfaModule } from './mfa/mfa.module.js';
 import { NexoraConfigModule } from './config/config.module.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { AuthGuard } from './common/guards/auth.guard.js';
@@ -23,7 +27,15 @@ export function buildAppModule(infra, coreDomain = null) {
   ];
 
   if (coreDomain !== null) {
-    imports.push(CoreDomainModule.register(coreDomain), AuthModule, TenantsModule);
+    imports.push(
+      CoreDomainModule.register(coreDomain),
+      AuthModule,
+      TenantsModule,
+      AuthorizationModule,
+      AuditModule,
+      ApiKeysModule,
+      MfaModule,
+    );
     providers.push({
       provide: APP_GUARD,
       useClass: AuthGuard,

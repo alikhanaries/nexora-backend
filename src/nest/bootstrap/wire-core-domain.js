@@ -5,10 +5,11 @@ import { PostgresMembershipRoleRepository } from '../../modules/authorization/in
 import { createIdentityModule } from '../../modules/identity/index.js';
 import { AuthenticateAccessTokenUseCase } from '../../modules/identity/application/authenticate-access-token.js';
 import { createApiKeysModule } from '../../modules/api-keys/index.js';
+import { createMfaModule } from '../../modules/mfa/index.js';
 import { createTenantsModule } from '../../modules/tenants/index.js';
 
 /**
- * Wire identity + tenants using the same module factories as the Fastify application.
+ * Wire core domain modules using the same factories as the Fastify application.
  *
  * @param {ReturnType<import('../../app/config/index.js').loadConfigFromEnvironment>} config
  * @param {NonNullable<Awaited<ReturnType<import('./create-nest-infrastructure.js').createNestInfrastructure>>['database']>} database
@@ -28,16 +29,24 @@ export async function wireCoreDomain(config, database, deps) {
     membershipPermissionResolver: membershipPermissions,
   });
 
-  const tenants = createTenantsModule({
-    queryable: database,
-    transactionManager: database,
+  const mfa = createMfaModule({
+    database,
+    config,
+    secretEncryptor: identity.auth.secretEncryptor,
+    rateLimiter: deps.rateLimiter ?? undefined,
+    auditRecorder: audit.auditRecorder,
   });
 
   const apiKeys = createApiKeysModule({
     database,
-    ...(deps.rateLimiter === null || deps.rateLimiter === undefined
-      ? {}
-      : { rateLimiter: deps.rateLimiter }),
+    rateLimiter: deps.rateLimiter ?? undefined,
+    stepUpVerifier: mfa.stepUpService,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const tenants = createTenantsModule({
+    queryable: database,
+    transactionManager: database,
   });
 
   const authenticateAccessToken = new AuthenticateAccessTokenUseCase({
@@ -51,6 +60,10 @@ export async function wireCoreDomain(config, database, deps) {
   return {
     identity,
     tenants,
+    authorization,
+    audit,
+    apiKeys,
+    mfa,
     authenticateAccessToken,
     verifyApiKey: apiKeys.useCases.verifyApiKey,
     metrics: deps.metrics,
