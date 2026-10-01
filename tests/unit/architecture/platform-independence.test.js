@@ -79,6 +79,7 @@ describe('platform independence', () => {
             if (
                 rel.startsWith('src/nest/bootstrap/')
                 || rel.startsWith('src/nest/legacy-orders/')
+                || rel.startsWith('src/nest/legacy-compatibility/')
                 || rel === 'src/nest/common/filters/compatibility-exception.filter.js'
             ) {
                 continue;

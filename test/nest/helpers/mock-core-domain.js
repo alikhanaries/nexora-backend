@@ -254,6 +254,196 @@ export function createMockCoreDomain(overrides = {}) {
             body: Buffer.from('%PDF'),
           }),
         },
+        shipmentCompatibilityQuery: {
+          listMerchantShipments: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+            Count: 0,
+            TotalCount: 0,
+            ItemsPerPage: 50,
+          }),
+        },
+        shipmentCompatibilityCommand: {
+          createShipment: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 201,
+            Content: { MerchantShipmentNo: 'SHP-1' },
+          }),
+          updateShipmentTracking: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: { MerchantShipmentNo: 'SHP-1' },
+          }),
+        },
+        cancellationCompatibilityQuery: {
+          listMerchantCancellations: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+            Count: 0,
+            TotalCount: 0,
+            ItemsPerPage: 50,
+          }),
+        },
+        cancellationCompatibilityCommand: {
+          createCancellation: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 201,
+            Content: { MerchantCancellationNo: 'CAN-1' },
+          }),
+        },
+        returnCompatibilityQuery: {
+          listNewMerchantReturns: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+            Count: 0,
+            TotalCount: 0,
+            ItemsPerPage: 50,
+          }),
+          listReturnsByMerchantOrderNo: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+          }),
+          listMerchantReturns: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+            Count: 0,
+            TotalCount: 0,
+            ItemsPerPage: 50,
+          }),
+        },
+        returnCompatibilityCommand: {
+          receiveReturn: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: { MerchantReturnNo: 'RET-1' },
+          }),
+          acknowledgeReturn: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: { MerchantReturnNo: 'RET-1' },
+          }),
+          createReturn: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 201,
+            Content: { MerchantReturnNo: 'RET-1' },
+          }),
+        },
+        catalogCompatibilityQuery: {
+          listProductsByMerchantProductNos: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+          }),
+        },
+        catalogCompatibilityCommand: {
+          upsertProducts: jest.fn().mockResolvedValue({
+            Success: true,
+            Message: null,
+            ValidationErrors: {},
+            Content: [],
+          }),
+          freezeProducts: jest.fn().mockResolvedValue({
+            Success: true,
+            Message: null,
+            ValidationErrors: {},
+            Content: [],
+          }),
+          bulkDeleteProducts: jest.fn().mockResolvedValue({
+            Success: true,
+            Message: null,
+            ValidationErrors: {},
+            Content: [],
+          }),
+          patchExtraDataBulk: jest.fn().mockResolvedValue({
+            Success: true,
+            Message: null,
+            ValidationErrors: {},
+            Content: [],
+          }),
+          updateOfferPrice: jest.fn().mockResolvedValue({
+            Success: true,
+            Message: null,
+            ValidationErrors: {},
+            Content: [],
+          }),
+          updateOfferStock: jest.fn().mockResolvedValue({
+            Success: true,
+            Message: null,
+            ValidationErrors: {},
+            Content: [],
+          }),
+        },
+        stockConnectCeProductsQuery: {
+          listProductsByMerchantProductNos: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+          }),
+        },
+        stockConnectCeChannelProductsQuery: {
+          listChannelProducts: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+            Count: 0,
+            TotalCount: 0,
+            ItemsPerPage: 50,
+          }),
+        },
+        stockConnectCeChannelCompatibilityQuery: {
+          listChannels: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Content: [],
+            Count: 0,
+            TotalCount: 0,
+            ItemsPerPage: 50,
+          }),
+        },
+        stockConnectCeCatalogCommand: {
+          pushProducts: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Message: null,
+          }),
+          updateOfferStock: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Message: null,
+          }),
+          updateOfferPrice: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Message: null,
+          }),
+          freezeProducts: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Message: null,
+          }),
+          bulkDeleteProducts: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Message: null,
+          }),
+          patchExtraData: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Message: null,
+          }),
+        },
+        stockConnectCeShipmentDeliveryCommand: {
+          updateDeliveryState: jest.fn().mockResolvedValue({
+            Success: true,
+            StatusCode: 200,
+            Message: null,
+          }),
+        },
       },
     },
     marketplaceWebhookIngestion: {
