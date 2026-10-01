@@ -11,6 +11,10 @@ function collectJsFiles(dir, files = []) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (entry.name !== 'node_modules' && entry.name !== 'dist') {
+        const parentBase = path.basename(dir);
+        if (entry.name === 'nest' && (parentBase === 'src' || parentBase === 'tests')) {
+          continue;
+        }
         collectJsFiles(fullPath, files);
       }
     } else if (entry.name.endsWith('.js')) {
@@ -25,6 +29,7 @@ const files = [
   ...collectJsFiles('src'),
   ...collectJsFiles('tests'),
   'vitest.config.js',
+  'jest.config.js',
 ].filter((file) => fs.existsSync(file));
 
 for (const file of files) {
