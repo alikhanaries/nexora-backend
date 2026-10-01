@@ -7,6 +7,14 @@ import { AuthenticateAccessTokenUseCase } from '../../modules/identity/applicati
 import { createApiKeysModule } from '../../modules/api-keys/index.js';
 import { createMfaModule } from '../../modules/mfa/index.js';
 import { createTenantsModule } from '../../modules/tenants/index.js';
+import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
+import { createChannelsModule } from '../../modules/channels/index.js';
+import { createInventoryModule } from '../../modules/inventory/index.js';
+import { createMarketplacesModule } from '../../modules/marketplaces/index.js';
+import { createOffersModule } from '../../modules/offers/index.js';
+import { createPricingModule } from '../../modules/pricing/index.js';
+import { createProductsModule } from '../../modules/products/index.js';
+import { PostgresOutboxRepository } from '../../infrastructure/postgres/outbox-repository.js';
 
 /**
  * Wire core domain modules using the same factories as the Fastify application.
@@ -57,6 +65,55 @@ export async function wireCoreDomain(config, database, deps) {
     membershipPermissions,
   });
 
+  const eventRecorder = new PostgresOutboxRepository(database);
+  const defaultAuthorization = new DefaultAuthorizationService();
+
+  const marketplaces = createMarketplacesModule({
+    database,
+    eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const products = createProductsModule({
+    database,
+    authorization: defaultAuthorization,
+    auditRecorder: audit.auditRecorder,
+    eventRecorder,
+  });
+
+  const inventory = createInventoryModule({
+    queryable: database,
+    transactionManager: database,
+    productQueryService: products.productQueryService,
+    eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const channels = createChannelsModule({
+    database,
+    eventRecorder,
+    verifyMarketplaceExists: marketplaces.verifyMarketplaceExists,
+    inventoryService: inventory.inventoryService,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const pricing = createPricingModule({
+    database,
+    productQueryService: products.productQueryService,
+    channelQueryService: channels.channelQueryService,
+    eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
+  const offers = createOffersModule({
+    database,
+    productQueryService: products.productQueryService,
+    channelQueryService: channels.channelQueryService,
+    pricingService: pricing.pricingService,
+    eventRecorder,
+    auditRecorder: audit.auditRecorder,
+  });
+
   return {
     identity,
     tenants,
@@ -64,6 +121,10 @@ export async function wireCoreDomain(config, database, deps) {
     audit,
     apiKeys,
     mfa,
+    products,
+    pricing,
+    offers,
+    inventory,
     authenticateAccessToken,
     verifyApiKey: apiKeys.useCases.verifyApiKey,
     metrics: deps.metrics,
