@@ -1,9 +1,9 @@
 # Nexora NestJS Migration — Final Validation & Cutover Readiness
 
-**Validation date:** 2026-10-01  
-**Validation branch base:** `migration/nest-express-phase-12` (commit `9839a3c`)  
-**PR #89 (Phase 12):** **OPEN — not merged into `dev`** (as of validation run)  
-**Do not merge PR #89 automatically as part of this validation.**
+**Validation date:** 2026-10-01 (static + automated); **runtime follow-up:** 2026-10-01  
+**Reference `dev` commit:** `facd09d` (includes Phase 12 `#89` and validation doc `#90`)  
+**PR #89 (Phase 12):** **MERGED** into `dev` (`18c925a`)  
+**PR #90 (validation doc):** **MERGED** into `dev`
 
 ---
 
@@ -14,7 +14,7 @@
 | Planned migration phases | **12 / 12** (feature migration complete) |
 | Nest stack | NestJS 11 + Express adapter, **JavaScript only** |
 | Fastify | Still registered on main app entry (`src/app/main.js`); **not removed** |
-| Phase 12 on `dev` | **Pending** — `origin/dev` at Phase 11 merge (`7c0bb7f`); Phase 12 awaits PR **#89** |
+| Phase 12 on `dev` | **YES** — commit `18c925a` on `dev` |
 
 ### Phase documentation map
 
@@ -36,9 +36,9 @@
 
 ## Phase A — Merge verification
 
-- **PR #89:** `OPEN`, base `dev`, **not merged**.
-- Validation executed against **`migration/nest-express-phase-12`** (includes Phase 12 Nest routes).
-- **`dev` without #89** lacks Phase 12 Nest controllers; cutover planning must use Phase 12 branch or post-merge `dev`.
+- **PR #89:** **MERGED** (2026-10-01).
+- **`dev` updated:** `git pull origin dev` — Phase 12 Nest controllers present.
+- **Phase 12 present:** **YES** — branch `dev`, commit `18c925a` in history.
 
 ---
 
@@ -160,22 +160,60 @@ Compatibility routes call `enforceCompatibilityRateLimit` with `COMPATIBILITY_RA
 
 ## Phase I — Runtime smoke testing
 
+### Environment check (follow-up run on `dev`)
+
+| Check | Result | Detail |
+|-------|--------|--------|
+| PostgreSQL (`DATABASE_URL`) | **FAIL** | `ECONNREFUSED` — nothing listening (expected local port **5433** per `.env.example`) |
+| Docker Compose (project `docker-compose.yml`) | **FAIL** | Docker Desktop daemon not running — could not start `postgres` service |
+| Redis (`REDIS_URL`) | **PASS** | `PING` OK |
+
+**Runtime validation blocked:**
+
+```text
+PostgreSQL is unavailable.
+```
+
+Do not treat NestJS runtime as validated until Postgres is reachable and smoke tests complete.
+
+### NestJS startup
+
 | Check | Result |
 |-------|--------|
-| Postgres (`DATABASE_URL`) | **FAIL** — `ECONNREFUSED` on validation host |
-| Redis (`REDIS_URL`) | **PASS** — `PING` OK |
-| NestJS startup (`npm run start:nest`) | **FAIL** — bootstrap aborts on Postgres/migrations |
-| Fastify startup | **NOT EXECUTED** (same Postgres dependency expected) |
-| Representative `/api/v1`, `/api/v2`, webhook smoke | **NOT EXECUTED** |
-| Queue initialization on Nest | **NOT VERIFIED** |
+| `npm run dev:nest` / `start:nest` | **FAIL** — `AggregateError [ECONNREFUSED]` during migrations in `createNestInfrastructure` |
+| Listen port | **NOT REACHED** |
+| Queue initialization | **NOT VERIFIED** (startup aborted) |
 | Graceful shutdown | **NOT VERIFIED** |
 
-**Runtime validation: NOT EXECUTED for API smoke tests**  
-**Reason:** PostgreSQL unavailable; Nest bootstrap requires DB/migrations.
+### Live HTTP smoke tests (Steps 6–12)
+
+All **NOT EXECUTED** — Nest did not start. No live Fastify vs Nest comparison was performed.
+
+| API family | Live smoke | Notes |
+|------------|------------|-------|
+| Authentication | **NOT EXECUTED** | |
+| Products | **NOT EXECUTED** | |
+| Inventory | **NOT EXECUTED** | |
+| Pricing | **NOT EXECUTED** | |
+| Offers | **NOT EXECUTED** | |
+| Channels / marketplaces | **NOT EXECUTED** | |
+| Orders | **NOT EXECUTED** | |
+| Cancellations | **NOT EXECUTED** | |
+| Shipments | **NOT EXECUTED** | |
+| Returns | **NOT EXECUTED** | |
+| `/api/v2/*` compatibility | **NOT EXECUTED** | |
+| `/api/v2/ce/*` compatibility | **NOT EXECUTED** | |
+| Marketplace webhooks (inbound) | **NOT EXECUTED** | |
+| Authorization / tenant isolation (live) | **NOT EXECUTED** | |
+| Idempotency (DB-backed, live) | **NOT EXECUTED** | |
+| Error contracts (live invalid requests) | **NOT EXECUTED** | |
+| Fastify side-by-side live diff | **NOT EXECUTED** | |
+
+**Operational note to unblock:** start dependencies (`docker compose up -d postgres redis` or equivalent), confirm `DATABASE_URL`, run migrations if needed, then re-run this checklist.
 
 ---
 
-## Phase J — Automated tests (executed on `migration/nest-express-phase-12`)
+## Phase J — Automated tests (executed on `dev` @ `facd09d`)
 
 | Suite | Command | Result |
 |-------|---------|--------|
@@ -229,17 +267,17 @@ Compatibility routes call `enforceCompatibilityRateLimit` with `COMPATIBILITY_RA
 [ ] Graceful shutdown verified
 [x] No unexplained Nest-only routes
 [x] Fastify fallback still available
-[ ] Phase 12 merged to dev
+[x] Phase 12 merged to dev
 ```
 
 ---
 
 ## Remaining risks
 
-1. **PR #89 not on `dev`** — production cutover branch policy must include Phase 12 merge first.
-2. **14 Fastify-only HTTP routes** — outbound webhooks block claiming full API parity; docs/metrics/foundation v1 may matter for ops.
-3. **No Postgres runtime proof** — migrations, idempotency persistence, and smoke tests unproven on Nest.
-4. **Dual stack** — Fastify and Nest can diverge if only one is updated post-migration.
+1. **No Postgres runtime proof** — Nest bootstrap, migrations, idempotency persistence, and all live smoke tests remain unproven on this host.
+2. **14 Fastify-only HTTP routes** — outbound webhooks; docs/metrics/foundation v1 (intentional, not migration defects).
+3. **Dual stack** — Fastify and Nest can diverge if only one is updated post-migration.
+4. **Cutover without live parity** — Jest/Vitest alone are insufficient for production switch.
 
 ---
 
@@ -247,14 +285,25 @@ Compatibility routes call `enforceCompatibilityRateLimit` with `COMPATIBILITY_RA
 
 **NOT READY FOR CUTOVER**
 
-Blocking / unverified items:
+Concrete blockers:
 
-- Merge **PR #89** into `dev` and re-run validation on `dev`.
-- Start PostgreSQL and complete Nest bootstrap + smoke tests (v1, v2, CE, inbound webhooks).
-- Decide policy for **outbound tenant webhooks** (migrate vs keep Fastify for that surface).
-- Decide policy for **OpenAPI/docs/metrics/foundation v1** on Nest or retain Fastify sidecar for ops.
+1. **PostgreSQL unavailable** on validation host — start Postgres (e.g. project `docker compose up -d postgres`) and confirm connectivity.
+2. **NestJS startup not completed** — blocked by (1).
+3. **Live smoke tests not executed** — all API families, v2/CE, webhooks, authz, idempotency, shutdown.
+4. **Fastify vs Nest live comparison not executed.**
 
-Fastify must remain available until the above are **PASS** at runtime.
+Non-blocking (documented policy, not defects):
+
+- **14 intentional Fastify-only routes** (outbound webhooks, v1 foundation, OpenAPI/docs, `/internal/metrics`).
+
+Fastify must remain primary until runtime items **1–4** are **PASS**.
+
+### When runtime passes — suggested operational cutover steps
+
+1. Deploy Nest alongside Fastify (same DB/Redis), smoke-test in staging with real tokens.
+2. Route new internal/staging traffic to Nest; compare metrics and error rates to Fastify.
+3. Shift production ingress gradually; keep Fastify rollback path until burn-in completes.
+4. Retain Fastify for the 14 routes until explicitly migrated or proxied.
 
 ---
 
