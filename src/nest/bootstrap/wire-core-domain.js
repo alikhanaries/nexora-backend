@@ -10,7 +10,10 @@ import { createTenantsModule } from '../../modules/tenants/index.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { createChannelsModule } from '../../modules/channels/index.js';
 import { createInventoryModule } from '../../modules/inventory/index.js';
-import { createMarketplacesModule } from '../../modules/marketplaces/index.js';
+import {
+  createMarketplaceConnectionServices,
+  createMarketplacesModule,
+} from '../../modules/marketplaces/index.js';
 import { createOffersModule } from '../../modules/offers/index.js';
 import { createPricingModule } from '../../modules/pricing/index.js';
 import { createProductsModule } from '../../modules/products/index.js';
@@ -97,6 +100,35 @@ export async function wireCoreDomain(config, database, deps) {
     auditRecorder: audit.auditRecorder,
   });
 
+  const marketplaceConnections = createMarketplaceConnectionServices({
+    queryable: database,
+    secretEncryptor: identity.auth.secretEncryptor,
+    channelQueryService: channels.channelQueryService,
+    auditRecorder: audit.auditRecorder,
+    amazonLwaTokenUrl: config.marketplace.amazonLwaTokenUrl,
+    noonApiBaseUrl: config.marketplace.noonApiBaseUrl,
+    noonUserAgent: config.marketplace.noonUserAgent,
+  });
+
+  const channelRouteDeps = {
+    ...channels.useCases,
+    upsertMarketplaceConnection: {
+      execute: (input) => marketplaceConnections.commandService.upsertMarketplaceConnection(input),
+    },
+    getMarketplaceConnection: {
+      execute: (input) => marketplaceConnections.queryService.getMarketplaceConnection(input),
+    },
+    patchMarketplaceConnection: {
+      execute: (input) => marketplaceConnections.commandService.patchMarketplaceConnection(input),
+    },
+    deleteMarketplaceConnection: {
+      execute: (input) => marketplaceConnections.commandService.deleteMarketplaceConnection(input),
+    },
+    testMarketplaceConnection: {
+      execute: (input) => marketplaceConnections.commandService.testMarketplaceConnection(input),
+    },
+  };
+
   const pricing = createPricingModule({
     database,
     productQueryService: products.productQueryService,
@@ -125,6 +157,9 @@ export async function wireCoreDomain(config, database, deps) {
     pricing,
     offers,
     inventory,
+    channels,
+    marketplaces,
+    channelRouteDeps,
     authenticateAccessToken,
     verifyApiKey: apiKeys.useCases.verifyApiKey,
     metrics: deps.metrics,
