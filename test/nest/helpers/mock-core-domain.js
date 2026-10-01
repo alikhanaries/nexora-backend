@@ -129,6 +129,22 @@ export function createMockCoreDomain(overrides = {}) {
         releaseInventory: { execute: jest.fn() },
       },
     },
+    orders: {
+      useCases: {
+        createOrder: { execute: jest.fn() },
+        listOrders: {
+          execute: jest.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false }),
+        },
+        getOrder: { execute: jest.fn() },
+        confirmOrder: { execute: jest.fn() },
+        idempotency: {
+          execute: jest.fn(async (_key, _fp, operation) => {
+            const value = await operation({});
+            return { kind: 'executed', value };
+          }),
+        },
+      },
+    },
     marketplaceWebhookIngestion: {
       receiveMarketplaceWebhook: {
         execute: jest.fn().mockResolvedValue({

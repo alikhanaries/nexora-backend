@@ -15,8 +15,10 @@ import {
   createMarketplacesModule,
 } from '../../modules/marketplaces/index.js';
 import { createOffersModule } from '../../modules/offers/index.js';
+import { createOrdersModule } from '../../modules/orders/index.js';
 import { createPricingModule } from '../../modules/pricing/index.js';
 import { createProductsModule } from '../../modules/products/index.js';
+import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
 import { PostgresOutboxRepository } from '../../infrastructure/postgres/outbox-repository.js';
 import { wireMarketplaceWebhookIngestion } from './wire-marketplace-webhook-ingestion.js';
 
@@ -147,6 +149,24 @@ export async function wireCoreDomain(config, database, deps) {
     auditRecorder: audit.auditRecorder,
   });
 
+  const externalIdMapping = createExternalIdMappingModule({
+    database,
+    logger: deps.logger,
+  });
+
+  const orders = createOrdersModule({
+    database,
+    productQueryService: products.productQueryService,
+    channelQueryService: channels.channelQueryService,
+    offerQueryService: offers.offerQueryService,
+    pricingService: pricing.pricingService,
+    inventoryService: inventory.inventoryService,
+    eventRecorder,
+    idempotency: deps.idempotency,
+    auditRecorder: audit.auditRecorder,
+    externalIntegerIdMappingCommandService: externalIdMapping.externalIntegerIdMappingCommandService,
+  });
+
   const marketplaceWebhookIngestion = wireMarketplaceWebhookIngestion({
     config,
     database,
@@ -169,6 +189,7 @@ export async function wireCoreDomain(config, database, deps) {
     pricing,
     offers,
     inventory,
+    orders,
     channels,
     marketplaces,
     channelRouteDeps,
