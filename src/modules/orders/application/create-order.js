@@ -36,12 +36,14 @@ export class CreateOrder {
         }
         await this.deps.channelQueryService.verifyChannelUsable(input.tenantId, input.channelId);
         const orderId = randomUUID();
-        const resolvedLines = await resolveOrderLines(this.deps, {
-            tenantId: input.tenantId,
-            channelId: input.channelId,
-            currency,
-            lines: input.lines,
-        });
+        const resolvedLines = await this.deps.database.withTenant(input.tenantId, (tx) =>
+            resolveOrderLines(this.deps, {
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                currency,
+                lines: input.lines,
+                transaction: tx,
+            }));
         const subtotalMinor = resolvedLines.reduce((sum, line) => sum + line.lineTotalMinor, 0);
         const totalMinor = subtotalMinor - discountMinor + taxMinor + shippingMinor;
         if (totalMinor < 0) {

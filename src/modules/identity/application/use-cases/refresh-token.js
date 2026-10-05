@@ -22,7 +22,7 @@ export class RefreshTokenUseCase {
         }
         const tokenHash = hashSecret(input.refreshToken);
         const now = new Date();
-        const existing = await this.deps.db.execute(async (tx) => this.deps.refreshSessions.findByTokenHash(tx, tokenHash));
+        const existing = await this.deps.db.executeAsOwner(async (tx) => this.deps.refreshSessions.findByTokenHash(tx, tokenHash));
         const outcome = evaluateRefreshSession(existing, now);
         if (outcome.kind === 'invalid') {
             throw new InvalidCredentialsError();

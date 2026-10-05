@@ -18,11 +18,11 @@ export async function findCompatExternalId(app, tenantId, resourceType, resource
 }
 
 export async function findReturnExternalIdByMerchantNo(app, tenantId, merchantReturnNo) {
-    const result = await app.infra.database.query(
+    const result = await app.infra.database.execute(async (tx) => tx.query(
         'SELECT id FROM returns WHERE tenant_id = $1 AND external_reference = $2',
         [tenantId, merchantReturnNo],
         { operation: 'test.find_return_by_external_reference' },
-    );
+    ), { tenantId });
     expect(result.rows).toHaveLength(1);
     return findCompatExternalId(
         app,
@@ -132,11 +132,43 @@ export async function createOrder(server, headers, fixture, externalOrderReferen
 }
 
 export async function setOrderStatus(database, tenantId, orderId, status) {
-    await database.query('UPDATE orders SET status = $3 WHERE tenant_id = $1 AND id = $2', [tenantId, orderId, status], { operation: 'test.set_order_status' });
+    await database.execute(async (tx) => {
+        await tx.query(
+            'UPDATE orders SET status = $3 WHERE tenant_id = $1 AND id = $2',
+            [tenantId, orderId, status],
+            { operation: 'test.set_order_status' },
+        );
+    }, { tenantId });
 }
 
 export async function setOrderToNew(database, tenantId, orderId) {
-    await database.query(`UPDATE orders SET status = 'NEW', confirmed_at = NULL WHERE tenant_id = $1 AND id = $2`, [tenantId, orderId], { operation: 'test.set_order_new' });
+    await database.execute(async (tx) => {
+        await tx.query(
+            `UPDATE orders SET status = 'NEW', confirmed_at = NULL WHERE tenant_id = $1 AND id = $2`,
+            [tenantId, orderId],
+            { operation: 'test.set_order_new' },
+        );
+    }, { tenantId });
+}
+
+export async function setOrderShipped(database, tenantId, orderId) {
+    await database.execute(async (tx) => {
+        await tx.query(
+            `UPDATE orders SET status = 'SHIPPED', shipped_at = now() WHERE tenant_id = $1 AND id = $2`,
+            [tenantId, orderId],
+            { operation: 'test.set_order_shipped' },
+        );
+    }, { tenantId });
+}
+
+export async function setOrderCancelled(database, tenantId, orderId) {
+    await database.execute(async (tx) => {
+        await tx.query(
+            `UPDATE orders SET status = 'CANCELLED', cancelled_at = now() WHERE tenant_id = $1 AND id = $2`,
+            [tenantId, orderId],
+            { operation: 'test.set_order_cancelled' },
+        );
+    }, { tenantId });
 }
 
 export function acknowledgePayload(merchantOrderNo, orderId) {
@@ -307,11 +339,13 @@ export async function createChannelScopedApiKey(app, tenantId, actorId, permissi
         name: 'Channel ingest key',
         scopes,
     });
-    await app.infra.database.query(
-        'UPDATE api_keys SET channel_id = $2 WHERE id = $1',
-        [apiKey.id, channelId],
-        { operation: 'test.bind_api_key_channel' },
-    );
+    await app.infra.database.execute(async (tx) => {
+        await tx.query(
+            'UPDATE api_keys SET channel_id = $2 WHERE tenant_id = $1 AND id = $3',
+            [tenantId, channelId, apiKey.id],
+            { operation: 'test.bind_api_key_channel' },
+        );
+    }, { tenantId });
     return apiKey;
 }
 
@@ -322,12 +356,14 @@ export async function createChannelScopedApiKey(app, tenantId, actorId, permissi
  * @param {string} eventType
  */
 export async function countOutboxEventsForOrder(database, tenantId, orderId, eventType) {
-    const result = await database.query(`SELECT COUNT(*)::int AS count
+    return database.execute(async (tx) => {
+        const result = await tx.query(`SELECT COUNT(*)::int AS count
        FROM outbox_events
        WHERE tenant_id = $1
          AND aggregate_id = $2
          AND event_type = $3`, [tenantId, orderId, eventType], { operation: 'test.count_outbox_events' });
-    return result.rows[0].count;
+        return result.rows[0].count;
+    }, { tenantId });
 }
 
 /**

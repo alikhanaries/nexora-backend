@@ -43,12 +43,7 @@ export class CreateChannelOrder {
             throw new ValidationError('Shipping must be a non-negative integer');
         }
         await this.deps.channelQueryService.verifyChannelUsable(input.tenantId, input.channelId);
-        const resolvedLines = await resolveOrderLines(this.deps, {
-            tenantId: input.tenantId,
-            channelId: input.channelId,
-            currency,
-            lines: input.lines,
-        }, { skuFirst: true });
+        const resolvedLines = await this.resolveOrderLinesInTenantScope(input, currency, { skuFirst: true });
         const subtotalMinor = resolvedLines.reduce((sum, line) => sum + line.lineTotalMinor, 0);
         const totalMinor = subtotalMinor - discountMinor + taxMinor + shippingMinor;
         if (totalMinor < 0) {
@@ -252,6 +247,25 @@ export class CreateChannelOrder {
             lines: lines.map(toOrderLineDto),
             customer: customer === null ? null : toCustomerSnapshotDto(customer),
         };
+    }
+
+    /**
+     * @param {object} input
+     * @param {string} currency
+     * @param {{ skuFirst?: boolean }} [options]
+     */
+    async resolveOrderLinesInTenantScope(input, currency, options = {}) {
+        const payload = {
+            tenantId: input.tenantId,
+            channelId: input.channelId,
+            currency,
+            lines: input.lines,
+        };
+        if (input.transaction !== undefined) {
+            return resolveOrderLines(this.deps, { ...payload, transaction: input.transaction }, options);
+        }
+        return this.deps.database.withTenant(input.tenantId, (tx) =>
+            resolveOrderLines(this.deps, { ...payload, transaction: tx }, options));
     }
 }
 

@@ -29,6 +29,7 @@ export function wireMarketplaceWebhookIngestion(input) {
     idempotency: input.idempotency,
     metrics: input.metrics,
     logger: input.logger,
+    productQueryService: input.products.productQueryService,
     lifecycleEnqueueService,
     registerMarketplaceWebhookAdapters: (registry) =>
       registerMarketplaceWebhookAdapters(registry, {

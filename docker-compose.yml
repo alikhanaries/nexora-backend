@@ -28,7 +28,8 @@ services:
     # BullMQ requires `noeviction`: evicting queue keys silently loses jobs.
     command: ['redis-server', '--maxmemory-policy', 'noeviction', '--appendonly', 'yes']
     ports:
-      - '6379:6379'
+      # Host 6380 avoids conflict with a locally installed Redis 3.x/5.x on 6379 (BullMQ needs Redis >= 5).
+      - '6380:6379'
     volumes:
       - redis-data:/data
     healthcheck:

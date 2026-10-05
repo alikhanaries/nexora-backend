@@ -1,10 +1,13 @@
+import 'reflect-metadata';
 import { config as loadEnv } from 'dotenv';
 loadEnv({ path: '.env', override: false });
 process.env.NODE_ENV ??= 'test';
 // Default matches docker-compose host port 5433. Override via `.env` when using native Postgres on 5432.
 process.env.DATABASE_URL ??= 'postgresql://nexora:nexora@localhost:5433/nexora';
-process.env.REDIS_URL ??= 'redis://localhost:6379';
-process.env.QUEUE_REDIS_URL ??= 'redis://localhost:6379';
+// BullMQ requires Redis >= 5. Compose publishes Redis 7 on host 6380 (see docker-compose.yml).
+const integrationRedisUrl = process.env.NEXORA_INTEGRATION_REDIS_URL ?? 'redis://localhost:6380';
+process.env.REDIS_URL = integrationRedisUrl;
+process.env.QUEUE_REDIS_URL = integrationRedisUrl;
 process.env.STORAGE_ENDPOINT ??= 'http://localhost:9000';
 process.env.STORAGE_BUCKET ??= 'nexora-local';
 process.env.STORAGE_ACCESS_KEY_ID ??= 'nexora';

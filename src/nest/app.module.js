@@ -12,6 +12,7 @@ import { InventoryModule } from './inventory/inventory.module.js';
 import { ChannelsModule } from './channels/channels.module.js';
 import { MarketplacesModule } from './marketplaces/marketplaces.module.js';
 import { WebhooksModule } from './webhooks/webhooks.module.js';
+import { WebhookSubscriptionsModule } from './webhook-subscriptions/webhook-subscriptions.module.js';
 import { OrdersModule } from './orders/orders.module.js';
 import { CancellationsModule } from './cancellations/cancellations.module.js';
 import { ShipmentsModule } from './shipments/shipments.module.js';
@@ -55,6 +56,7 @@ export function buildAppModule(infra, coreDomain = null) {
       ChannelsModule,
       MarketplacesModule,
       WebhooksModule,
+      WebhookSubscriptionsModule,
       OrdersModule,
       CancellationsModule,
       ShipmentsModule,

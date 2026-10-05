@@ -106,6 +106,7 @@ class ChannelEngineCompatibilityController {
   }
 
   @Post('/api/v2/ce/returns/merchant/acknowledge')
+  @HttpCode(200)
   async acknowledgeReturn(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(acknowledgeReturnBodySchema, body, 'acknowledge return');
     return this.legacyCompatibilityService.acknowledgeReturnCe(parsed, idempotencyKey);
@@ -136,36 +137,42 @@ class ChannelEngineCompatibilityController {
   }
 
   @Post('/api/v2/ce/products')
+  @HttpCode(200)
   async pushProducts(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(ceRecordArrayBodySchema, body, 'push products');
     return this.legacyCompatibilityService.pushProductsCe(parsed, idempotencyKey);
   }
 
   @Put('/api/v2/ce/offer/stock')
+  @HttpCode(200)
   async updateOfferStock(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(ceRecordArrayBodySchema, body, 'update offer stock');
     return this.legacyCompatibilityService.updateOfferStockCe(parsed, idempotencyKey);
   }
 
   @Put('/api/v2/ce/offer')
+  @HttpCode(200)
   async updateOfferPrice(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(ceRecordArrayBodySchema, body, 'update offer price');
     return this.legacyCompatibilityService.updateOfferPriceCe(parsed, idempotencyKey);
   }
 
   @Post('/api/v2/ce/products/freeze')
+  @HttpCode(200)
   async freezeProducts(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(ceRecordArrayBodySchema, body, 'freeze products');
     return this.legacyCompatibilityService.freezeProductsCe(parsed, idempotencyKey);
   }
 
   @Post('/api/v2/ce/products/bulkdelete')
+  @HttpCode(200)
   async bulkDeleteProducts(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(ceBulkDeleteBodySchema, body, 'bulk delete products');
     return this.legacyCompatibilityService.bulkDeleteProductsCe(parsed, idempotencyKey);
   }
 
   @Patch('/api/v2/ce/products/extra-data/bulk')
+  @HttpCode(200)
   async patchExtraData(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(ceRecordArrayBodySchema, body, 'patch extra data');
     return this.legacyCompatibilityService.patchExtraDataCe(parsed, idempotencyKey);

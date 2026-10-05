@@ -9,14 +9,18 @@ import { NestLoggerService } from '../common/nest-logger.service.js';
 
 /**
  * @param {ReturnType<import('../../app/config/index.js').loadConfigFromEnvironment>} config
- * @param {{ logger: object, metrics: object, database: object | null }} infra
+ * @param {{ logger: object, metrics: object, database: object | null, readiness?: object }} infra
  * @param {object | null} [coreDomain]
+ * @param {{ readiness?: object }} [options]
  */
-export async function createNestApplication(config, infra, coreDomain = null) {
+export async function createNestApplication(config, infra, coreDomain = null, options = {}) {
   const expressApp = express();
-  configureExpress(expressApp, config);
+  configureExpress(expressApp, config, infra.metrics);
 
-  const AppModule = buildAppModule(infra, coreDomain);
+  const AppModule = buildAppModule(
+    { ...infra, readiness: options.readiness ?? infra.readiness },
+    coreDomain,
+  );
 
   const nestApp = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
     logger: false,
@@ -40,9 +44,5 @@ export function resolveNestListenPort(config) {
   if (fromEnv !== undefined && fromEnv.length > 0) {
     return Number(fromEnv);
   }
-  let port = 3001;
-  if (port === config.server.port) {
-    port = config.server.port + 1;
-  }
-  return port;
+  return config.server.port;
 }

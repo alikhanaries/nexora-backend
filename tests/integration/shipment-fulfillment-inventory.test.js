@@ -47,24 +47,24 @@ describe('shipment fulfillment inventory integration (ADR-027)', () => {
     }
 
     async function reservationForOrder(tenantId, orderId, productId, stockLocationId) {
-        const result = await app.infra.database.query(
+        const result = await app.infra.database.execute(async (tx) => tx.query(
             `SELECT quantity, status FROM inventory_reservations
              WHERE tenant_id = $1 AND reference_type = 'ORDER' AND reference_id = $2
                AND product_id = $3 AND stock_location_id = $4`,
             [tenantId, orderId, productId, stockLocationId],
             { operation: 'test.reservation_for_order' },
-        );
+        ), { tenantId });
         return result.rows[0] ?? null;
     }
 
     async function saleMovementCount(tenantId, shipmentId, shipmentLineId) {
-        const result = await app.infra.database.query(
+        const result = await app.infra.database.execute(async (tx) => tx.query(
             `SELECT COUNT(*)::int AS count FROM inventory_movements
              WHERE tenant_id = $1 AND reference_type = 'SHIPMENT' AND reference_id = $2
                AND movement_type = 'SALE' AND idempotency_key = $3`,
             [tenantId, shipmentId, shipmentLineId],
             { operation: 'test.sale_movement_count' },
-        );
+        ), { tenantId });
         return result.rows[0].count;
     }
 
@@ -262,12 +262,12 @@ describe('shipment fulfillment inventory integration (ADR-027)', () => {
 
     it('rolls back shipment status when inventory fulfillment fails', async () => {
         const { tenantId, headers, fixture, order, orderLineId } = await seedTenantWithOrder(5);
-        await app.infra.database.query(
+        await app.infra.database.execute(async (tx) => tx.query(
             `DELETE FROM inventory_reservations
              WHERE tenant_id = $1 AND reference_type = 'ORDER' AND reference_id = $2`,
             [tenantId, order.id],
             { operation: 'test.delete_reservation' },
-        );
+        ), { tenantId });
 
         const shipment = await createShipmentNative(headers, order.id, orderLineId, 5, `rollback-${Date.now()}`);
         const shipRes = await shipNative(headers, shipment.id);

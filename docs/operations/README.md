@@ -24,7 +24,7 @@ docker compose --profile observability up -d
 | Service        | Port | Credentials (local)    |
 | -------------- | ---- | ---------------------- |
 | PostgreSQL     | 5432 | nexora / nexora        |
-| Redis          | 6379 | none                   |
+| Redis          | 6380 | none (Docker; avoids host Redis on 6379) |
 | MinIO API      | 9000 | nexora / nexora-secret |
 | MinIO Console  | 9001 | same                   |
 | Prometheus     | 9090 | observability profile  |

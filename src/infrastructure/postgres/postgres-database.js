@@ -1,5 +1,6 @@
 import { performance } from 'node:perf_hooks';
 import { Pool } from 'pg';
+import { getRequestContext } from '../../shared/context/request-context.js';
 import { ConfigurationError, DatabaseError } from '../../shared/errors/index.js';
 import { migrateUp } from './migrator.js';
 import { mapPostgresError } from './postgres-errors.js';
@@ -62,6 +63,7 @@ async function runQuery(client, sql, parameters, options, metrics) {
  */
 export class PostgresDatabase {
     pool;
+    ownerPool;
     logger;
     metrics;
     closed = false;
@@ -82,15 +84,60 @@ export class PostgresDatabase {
             ...(config.ssl ? { ssl: { rejectUnauthorized: true } } : {}),
         };
         this.pool = new Pool(poolConfig);
+        const migrationUrl = config.migrationUrl?.trim();
+        const usesDistinctOwnerPool = migrationUrl !== undefined
+            && migrationUrl.length > 0
+            && migrationUrl !== config.url;
+        this.ownerPool = usesDistinctOwnerPool
+            ? new Pool({
+                ...poolConfig,
+                connectionString: migrationUrl,
+                application_name: 'nexora-backend-owner',
+            })
+            : this.pool;
         // An idle client can fail without any query in flight. Without this
         // listener the error becomes an unhandled 'error' event and kills Node.
         this.pool.on('error', (error) => {
             this.logger.error({ err: { name: error.name, message: error.message } }, 'Idle client error');
         });
+        if (this.ownerPool !== this.pool) {
+            this.ownerPool.on('error', (error) => {
+                this.logger.error({ err: { name: error.name, message: error.message } }, 'Idle owner pool client error');
+            });
+        }
     }
     async query(sql, parameters = [], options) {
         this.assertOpen();
-        return runQuery(this.pool, sql, parameters, options, this.metrics);
+        const tenantId = getRequestContext()?.tenantId;
+        if (tenantId === undefined) {
+            return runQuery(this.pool, sql, parameters, options, this.metrics);
+        }
+        return this.execute(async (tx) => tx.query(sql, parameters, options), { tenantId });
+    }
+    /**
+     * Auth lookups (refresh token hash, API key prefix) run before tenant scope
+     * is known. Uses the owner/migration pool when configured so RLS does not
+     * hide credential rows from the restricted runtime role.
+     *
+     * @template T
+     * @param {(tx: PostgresTransaction) => Promise<T>} work
+     */
+    async executeAsOwner(work) {
+        this.assertOpen();
+        const client = await this.connectFromPool(this.ownerPool);
+        try {
+            await client.query('BEGIN');
+            const result = await work(new PostgresTransaction(client, null, this.metrics));
+            await client.query('COMMIT');
+            return result;
+        }
+        catch (error) {
+            await this.rollbackQuietly(client);
+            throw mapPostgresError(error, 'transaction');
+        }
+        finally {
+            client.release();
+        }
     }
     async execute(work, options = {}) {
         this.assertOpen();
@@ -101,6 +148,18 @@ export class PostgresDatabase {
         finally {
             client.release();
         }
+    }
+
+    /**
+     * Runs `work` with a transaction-scoped queryable and `app.tenant_id` set.
+     * Use when domain code passes `tenantId` explicitly but is not on an HTTP request.
+     *
+     * @template T
+     * @param {string} tenantId
+     * @param {(tx: PostgresTransaction) => Promise<T>} work
+     */
+    async withTenant(tenantId, work) {
+        return this.execute(work, { tenantId });
     }
 
     /**
@@ -194,11 +253,17 @@ export class PostgresDatabase {
             return;
         this.closed = true;
         await this.pool.end();
+        if (this.ownerPool !== this.pool) {
+            await this.ownerPool.end();
+        }
         this.logger.info({}, 'PostgreSQL pool closed');
     }
     async connect() {
+        return this.connectFromPool(this.pool);
+    }
+    async connectFromPool(pool) {
         try {
-            return await this.pool.connect();
+            return await pool.connect();
         }
         catch (error) {
             throw new DatabaseError('Could not acquire a database connection', error);

@@ -8,6 +8,7 @@ import {
     MarketplaceWebhookUnsupportedError,
 } from './marketplace-webhook-errors.js';
 import { normalizedMarketplaceWebhookEventSchema } from './normalized-marketplace-webhook-event.schema.js';
+import { MarketplaceWebhookEventKind } from '../domain/marketplace-webhook-event-kind.js';
 import { ServiceUnavailableError } from '../../../shared/errors/index.js';
 
 const ROUTE_ID = 'POST /api/v1/inbound/marketplace-webhooks/:ingressToken';
@@ -23,9 +24,37 @@ export class ReceiveMarketplaceWebhook {
      * @param {import('../../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
+     * @param {import('../../products/public/index.js').DefaultProductQueryService} [deps.productQueryService]
      */
     constructor(deps) {
         this.deps = deps;
+    }
+
+    /**
+     * @param {object} connection
+     * @param {import('./normalized-marketplace-webhook-event.schema.js').NormalizedMarketplaceWebhookEvent} event
+     */
+    async validateWebhookOrderReferences(connection, event) {
+        if (this.deps.productQueryService === undefined) {
+            return;
+        }
+        if (event.eventKind !== MarketplaceWebhookEventKind.ORDER_CREATE || event.resource.type !== 'order') {
+            return;
+        }
+        const order = event.resource.order;
+        for (const line of order.lines) {
+            const merchantSku = line.merchantSku?.trim();
+            if (merchantSku === undefined || merchantSku.length === 0) {
+                continue;
+            }
+            const product = await this.deps.productQueryService.getProductBySku(connection.tenantId, merchantSku);
+            if (product === null) {
+                throw new MarketplaceWebhookPermanentError('Product was not found for merchant SKU', {
+                    tenantId: connection.tenantId,
+                    merchantSku,
+                });
+            }
+        }
     }
 
     /**
@@ -89,6 +118,7 @@ export class ReceiveMarketplaceWebhook {
                 received: event.marketplaceKey,
             });
         }
+        await this.validateWebhookOrderReferences(connection, event);
         const idempotencyKey = {
             tenantId: connection.tenantId,
             principalFingerprint: `marketplace-webhook:${connection.connectionId}`,

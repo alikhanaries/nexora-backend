@@ -294,7 +294,7 @@ export class CatalogCompatibilityCommand {
             principalFingerprint: input.principalFingerprint,
             routeId,
             idempotencyKey: input.idempotencyKey,
-        }, requestFingerprint, async () => operation(), (body) => body);
+        }, requestFingerprint, async () => operation(), (body) => ({ statusCode: 200, body }));
         if (outcome.kind === 'replayed') {
             return outcome.value;
         }

@@ -60,7 +60,11 @@ async function resolveSingleLine(deps, context, line) {
         return { offerId: mapping.nexoraEntityId };
     }
     if (mapping.nexoraEntityType === 'product') {
-        const product = await deps.productQueryService.getProductById(context.tenantId, mapping.nexoraEntityId);
+        const product = await deps.productQueryService.getProductById(
+            context.tenantId,
+            mapping.nexoraEntityId,
+            context.queryable,
+        );
         if (product === null) {
             throw new NotFoundError('Mapped product was not found', {
                 productId: mapping.nexoraEntityId,

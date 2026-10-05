@@ -18,6 +18,7 @@ import {
     createOrder,
     findCompatExternalId,
     seedCommerceFixture,
+    setOrderShipped,
     setOrderToNew,
     snapshotAcknowledgeSideEffects,
 } from './compatibility-helpers.js';
@@ -355,11 +356,7 @@ describe('POST /api/v2/orders/acknowledge integration', () => {
             ExternalIdMappingResourceType.ORDER,
             order.id,
         );
-        await app.infra.database.query(
-            `UPDATE orders SET status = 'SHIPPED', shipped_at = now() WHERE tenant_id = $1 AND id = $2`,
-            [tenantId, order.id],
-            { operation: 'test.set_shipped' },
-        );
+        await setOrderShipped(app.infra.database, tenantId, order.id);
 
         const response = await server.inject({
             method: 'POST',

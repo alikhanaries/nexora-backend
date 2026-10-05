@@ -8,7 +8,7 @@ export class LogoutUseCase {
     async execute(input) {
         const tokenHash = hashSecret(input.refreshToken);
         const now = new Date();
-        await this.deps.db.execute(async (tx) => {
+        await this.deps.db.executeAsOwner(async (tx) => {
             const session = await this.deps.refreshSessions.findByTokenHash(tx, tokenHash);
             if (session === null || session.status !== 'ACTIVE') {
                 throw new InvalidCredentialsError();

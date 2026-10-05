@@ -11,6 +11,7 @@ import {
 } from './auth-helpers.js';
 import {
     cancellationHeaders,
+    
     cancellationPayload,
     createOrder,
     returnHeaders,
@@ -33,11 +34,11 @@ async function findExternalId(queryService, tenantId, resourceType, resourceId) 
 }
 
 async function findResourceIdByExternalReference(database, tenantId, table, externalReference) {
-    const result = await database.query(
+    const result = await database.execute(async (tx) => tx.query(
         `SELECT id FROM ${table} WHERE tenant_id = $1 AND external_reference = $2`,
         [tenantId, externalReference],
         { operation: `test.find_${table}_by_external_reference` },
-    );
+    ), { tenantId });
     return result.rows[0]?.id;
 }
 
@@ -235,11 +236,13 @@ describe('compatibility external ID response enrichment', () => {
         const fixture = await seedCommerceFixture(server, headers);
         const order = await createOrder(server, headers, fixture, 'ext-id-unmapped');
         await setOrderStatus(app.infra.database, tenantId, order.id, 'NEW');
-        await app.infra.database.query(
-            'DELETE FROM external_integer_id_mappings WHERE tenant_id = $1 AND resource_id = $2',
-            [tenantId, order.id],
-            { operation: 'test.delete_order_external_mapping' },
-        );
+        await app.infra.database.execute(async (tx) => {
+            await tx.query(
+                'DELETE FROM external_integer_id_mappings WHERE tenant_id = $1 AND resource_id = $2',
+                [tenantId, order.id],
+                { operation: 'test.delete_order_external_mapping' },
+            );
+        }, { tenantId });
 
         const response = await server.inject({
             method: 'GET',

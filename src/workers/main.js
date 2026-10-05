@@ -99,9 +99,18 @@ async function main() {
             metrics: infra.metrics,
             metricsEnabled: config.observability.metricsEnabled,
         });
-        await workerObservabilityHttp.listen({
-            host: config.workerObservability.host,
-            port: config.workerObservability.port,
+        await new Promise((resolve, reject) => {
+            workerObservabilityHttp.listen(
+                config.workerObservability.port,
+                config.workerObservability.host,
+                (error) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve();
+                },
+            );
         });
         infra.logger.info({
             host: config.workerObservability.host,

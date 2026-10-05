@@ -96,7 +96,7 @@ describe('CE catalog compatibility integration', () => {
     it('returns 403 for catalog read without products.read', async () => {
         const { tenantId, slug } = await createTestTenant(server);
         const admin = await createAuthenticatedUser(app, tenantId, slug);
-        const viewer = await createAuthenticatedUserWithSystemRole(app, tenantId, slug, 'viewer');
+        const viewer = await createAuthenticatedUserWithSystemRole(app, tenantId, slug, 'fulfillment_operator');
         const headers = authHeaders(admin.accessToken);
         const fixture = await seedCommerceFixture(server, headers);
 
@@ -177,11 +177,13 @@ describe('CE catalog compatibility integration', () => {
 
         const invRes = await server.inject({
             method: 'GET',
-            url: `/api/v1/inventory?productId=${fixture.productId}&stockLocationId=${fixture.stockLocationId}`,
+            url: `/api/v1/inventory/${fixture.productId}?stockLocationId=${fixture.stockLocationId}`,
             headers,
         });
         expect(invRes.statusCode).toBe(200);
-        expect(invRes.json().data.available).toBe(42);
+        const balance = invRes.json().data.find((b) => b.stockLocationId === fixture.stockLocationId);
+        expect(balance).toBeDefined();
+        expect(balance.available).toBe(42);
     });
 
     it('replays idempotent POST /api/v2/products', async () => {
