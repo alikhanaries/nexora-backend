@@ -4,10 +4,21 @@ export class DefaultExternalIntegerIdMappingQueryService {
     /**
      * @param {object} deps
      * @param {object} deps.queryable
+     * @param {object} [deps.database]
      * @param {import('../infrastructure/postgres-external-integer-id-mapping-repository.js').PostgresExternalIntegerIdMappingRepository} deps.mappings
      */
     constructor(deps) {
         this.deps = deps;
+    }
+
+    async #withQueryable(tenantId, tx, work) {
+        if (tx !== undefined) {
+            return work(tx);
+        }
+        if (this.deps.database?.withTenant !== undefined) {
+            return this.deps.database.withTenant(tenantId, work);
+        }
+        return work(this.deps.queryable);
     }
 
     /**
@@ -18,14 +29,14 @@ export class DefaultExternalIntegerIdMappingQueryService {
      * @param {object} [tx]
      */
     async findResourceIdByExternalId(tenantId, provider, resourceType, externalId, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        return this.deps.mappings.findResourceIdByExternalId(
-            queryable,
-            tenantId,
-            provider,
-            resourceType,
-            externalId,
-        );
+        return this.#withQueryable(tenantId, tx, (queryable) =>
+            this.deps.mappings.findResourceIdByExternalId(
+                queryable,
+                tenantId,
+                provider,
+                resourceType,
+                externalId,
+            ));
     }
 
     /**
@@ -36,14 +47,14 @@ export class DefaultExternalIntegerIdMappingQueryService {
      * @param {object} [tx]
      */
     async findExternalIdByResourceId(tenantId, provider, resourceType, resourceId, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        return this.deps.mappings.findExternalIdByResourceId(
-            queryable,
-            tenantId,
-            provider,
-            resourceType,
-            resourceId,
-        );
+        return this.#withQueryable(tenantId, tx, (queryable) =>
+            this.deps.mappings.findExternalIdByResourceId(
+                queryable,
+                tenantId,
+                provider,
+                resourceType,
+                resourceId,
+            ));
     }
 
     /**
@@ -54,13 +65,13 @@ export class DefaultExternalIntegerIdMappingQueryService {
      * @param {object} [tx]
      */
     async findExternalIdsByResourceIds(tenantId, provider, resourceType, resourceIds, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        return this.deps.mappings.findExternalIdsByResourceIds(
-            queryable,
-            tenantId,
-            provider,
-            resourceType,
-            resourceIds,
-        );
+        return this.#withQueryable(tenantId, tx, (queryable) =>
+            this.deps.mappings.findExternalIdsByResourceIds(
+                queryable,
+                tenantId,
+                provider,
+                resourceType,
+                resourceIds,
+            ));
     }
 }

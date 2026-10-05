@@ -22,6 +22,7 @@ import { createShipmentsModule } from '../../modules/shipments/index.js';
 import { createPricingModule } from '../../modules/pricing/index.js';
 import { createProductsModule } from '../../modules/products/index.js';
 import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
+import { createWebhooksModule } from '../../modules/webhooks/index.js';
 import { PostgresOutboxRepository } from '../../infrastructure/postgres/outbox-repository.js';
 import { wireMarketplaceWebhookIngestion } from './wire-marketplace-webhook-ingestion.js';
 import { wireCompatibility } from './wire-compatibility.js';
@@ -233,6 +234,15 @@ export async function wireCoreDomain(config, database, deps) {
     idempotency: deps.idempotency,
     identity,
     channels,
+    products,
+  });
+
+  const webhooks = createWebhooksModule({
+    database,
+    secretEncryptor: identity.auth.secretEncryptor,
+    rateLimiter: deps.rateLimiter ?? undefined,
+    stepUpVerifier: mfa.stepUpService,
+    auditRecorder: audit.auditRecorder,
   });
 
   return {
@@ -255,6 +265,7 @@ export async function wireCoreDomain(config, database, deps) {
     marketplaces,
     channelRouteDeps,
     marketplaceWebhookIngestion,
+    webhooks,
     authenticateAccessToken,
     verifyApiKey: apiKeys.useCases.verifyApiKey,
     metrics: deps.metrics,

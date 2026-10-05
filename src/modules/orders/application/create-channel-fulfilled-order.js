@@ -42,12 +42,14 @@ export class CreateChannelFulfilledOrder {
             throw new ValidationError('Shipping must be a non-negative integer');
         }
         await this.deps.channelQueryService.verifyChannelUsable(input.tenantId, input.channelId);
-        const resolvedLines = await resolveOrderLines(this.deps, {
-            tenantId: input.tenantId,
-            channelId: input.channelId,
-            currency,
-            lines: input.lines,
-        }, { skuFirst: true });
+        const resolvedLines = await this.deps.database.withTenant(input.tenantId, (tx) =>
+            resolveOrderLines(this.deps, {
+                tenantId: input.tenantId,
+                channelId: input.channelId,
+                currency,
+                lines: input.lines,
+                transaction: tx,
+            }, { skuFirst: true }));
         const subtotalMinor = resolvedLines.reduce((sum, line) => sum + line.lineTotalMinor, 0);
         const totalMinor = subtotalMinor - discountMinor + taxMinor + shippingMinor;
         if (totalMinor < 0) {

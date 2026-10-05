@@ -7,10 +7,19 @@ import { NEXORA_DATABASE, NEXORA_LOGGER, NEXORA_METRICS } from './database.token
 export { NEXORA_DATABASE, NEXORA_LOGGER, NEXORA_METRICS } from './database.tokens.js';
 
 /**
- * @param {{ logger: object, metrics: object, database: object | null }} infra
+ * @param {{ logger: object, metrics: object, database: object | null, readiness?: object }} infra
  */
 export class DatabaseModule {
   static register(infra) {
+    const readinessProvider =
+      infra.readiness !== undefined && infra.readiness !== null
+        ? { provide: NEST_READINESS, useValue: infra.readiness }
+        : {
+            provide: NEST_READINESS,
+            useFactory: (database) => createNestReadiness(database),
+            inject: [NEXORA_DATABASE],
+          };
+
     return {
       module: DatabaseModule,
       global: true,
@@ -19,11 +28,7 @@ export class DatabaseModule {
         { provide: NEXORA_METRICS, useValue: infra.metrics },
         { provide: NEXORA_DATABASE, useValue: infra.database },
         DatabaseService,
-        {
-          provide: NEST_READINESS,
-          useFactory: (database) => createNestReadiness(database),
-          inject: [NEXORA_DATABASE],
-        },
+        readinessProvider,
       ],
       exports: [
         NEXORA_LOGGER,

@@ -38,7 +38,7 @@ import { ShopifyOrderAdapter } from '../../modules/marketplaces/infrastructure/a
 import { PostgresOrderRepository } from '../../modules/orders/infrastructure/postgres-order-repository.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestion.js';
-import { createHttpServer } from '../http/create-server.js';
+import { createNestHttpServer } from '../http/create-nest-http-server.js';
 import { createDefaultProbes, ReadinessService } from '../observability/readiness.js';
 export async function createApplication(infra) {
     const audit = createAuditModule({ database: infra.database });
@@ -277,6 +277,7 @@ export async function createApplication(infra) {
         idempotency: infra.idempotency,
         metrics: infra.metrics,
         logger: infra.logger,
+        productQueryService: products.productQueryService,
         lifecycleEnqueueService: marketplaceLifecycleEnqueueService,
         ingestNormalizedMarketplaceOrder: marketplaceOrderIngestion.ingestNormalizedMarketplaceOrder,
         ...(marketplaceOrderIngestion.processMarketplaceLifecyclePayload === undefined
@@ -337,19 +338,13 @@ export async function createApplication(infra) {
     });
     readiness.registerProbe(createExternalCompatibilityReadinessProbe(compatibility.routeDeps));
     readiness.registerProbe(createStockConnectCeCompatibilityReadinessProbe(compatibility.routeDeps));
-    const httpServer = await createHttpServer({
-        config: infra.config,
-        logger: infra.logger,
-        metrics: infra.metrics,
-        readiness,
-        tenants,
+    const coreDomain = {
         identity,
+        tenants,
         authorization,
         audit,
         apiKeys,
         mfa,
-        marketplaces,
-        channels: { ...channels, routeDeps: channelRouteDeps },
         products,
         pricing,
         offers,
@@ -358,12 +353,26 @@ export async function createApplication(infra) {
         cancellations,
         shipments,
         returns,
-        webhooks,
-        marketplaceWebhookIngestion,
         compatibility,
+        channels: { ...channels, routeDeps: channelRouteDeps },
+        marketplaces,
+        channelRouteDeps,
+        marketplaceWebhookIngestion,
+        webhooks,
         authenticateAccessToken,
         verifyApiKey: apiKeys.useCases.verifyApiKey,
-    });
+        metrics: infra.metrics,
+    };
+    const httpServer = await createNestHttpServer(
+        infra.config,
+        {
+            logger: infra.logger,
+            metrics: infra.metrics,
+            database: infra.database,
+            readiness,
+        },
+        coreDomain,
+    );
     return {
         infra,
         identity,

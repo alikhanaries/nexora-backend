@@ -1,6 +1,7 @@
 import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
 import { toCustomerSnapshotDto, toOrderDto, toOrderLineDto } from './order-dto.js';
 import { requireOrdersRead } from './order-permissions.js';
+import { withOrderQueryable } from './resolve-order-queryable.js';
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
@@ -27,30 +28,34 @@ export class DefaultOrderQueryService {
         this.deps = deps;
     }
     async getOrderById(tenantId, orderId, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        const order = await this.deps.orders.findById(queryable, tenantId, orderId);
-        if (order === null) {
-            throw new NotFoundError('Order was not found', { tenantId, orderId });
-        }
-        return toOrderDto(order);
+        return withOrderQueryable(this.deps, tenantId, tx, async (queryable) => {
+            const order = await this.deps.orders.findById(queryable, tenantId, orderId);
+            if (order === null) {
+                throw new NotFoundError('Order was not found', { tenantId, orderId });
+            }
+            return toOrderDto(order);
+        });
     }
     async getOrderLines(tenantId, orderId, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        const lines = await this.deps.orders.listOrderLines(queryable, tenantId, orderId);
-        return lines.map(toOrderLineDto);
+        return withOrderQueryable(this.deps, tenantId, tx, async (queryable) => {
+            const lines = await this.deps.orders.listOrderLines(queryable, tenantId, orderId);
+            return lines.map(toOrderLineDto);
+        });
     }
     async verifyOrderBelongsToTenant(tenantId, orderId, tx) {
         return this.getOrderById(tenantId, orderId, tx);
     }
     async findOrderById(tenantId, orderId, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        const order = await this.deps.orders.findById(queryable, tenantId, orderId);
-        return order === null ? null : toOrderDto(order);
+        return withOrderQueryable(this.deps, tenantId, tx, async (queryable) => {
+            const order = await this.deps.orders.findById(queryable, tenantId, orderId);
+            return order === null ? null : toOrderDto(order);
+        });
     }
     async findOrderByOrderNumber(tenantId, orderNumber, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        const order = await this.deps.orders.findByOrderNumber(queryable, tenantId, orderNumber);
-        return order === null ? null : toOrderDto(order);
+        return withOrderQueryable(this.deps, tenantId, tx, async (queryable) => {
+            const order = await this.deps.orders.findByOrderNumber(queryable, tenantId, orderNumber);
+            return order === null ? null : toOrderDto(order);
+        });
     }
     async listOrders(input) {
         requireOrdersRead(this.deps.authorization, input.actorPermissions);
@@ -75,22 +80,24 @@ export class DefaultOrderQueryService {
                 ? {}
                 : { stockLocationId: input.stockLocationId }),
         };
-        const totalCount = await this.deps.orders.count(this.deps.queryable, input.tenantId, filters);
-        const orders = await this.deps.orders.listPage(this.deps.queryable, input.tenantId, filters, page, pageSize);
-        const items = await Promise.all(orders.map(async (order) => {
-            const lines = await this.deps.orders.listOrderLines(this.deps.queryable, input.tenantId, order.id);
-            const customer = await this.deps.orders.findCustomerSnapshot(this.deps.queryable, input.tenantId, order.id);
+        return withOrderQueryable(this.deps, input.tenantId, undefined, async (queryable) => {
+            const totalCount = await this.deps.orders.count(queryable, input.tenantId, filters);
+            const orders = await this.deps.orders.listPage(queryable, input.tenantId, filters, page, pageSize);
+            const items = await Promise.all(orders.map(async (order) => {
+                const lines = await this.deps.orders.listOrderLines(queryable, input.tenantId, order.id);
+                const customer = await this.deps.orders.findCustomerSnapshot(queryable, input.tenantId, order.id);
+                return {
+                    ...toOrderDto(order),
+                    lines: lines.map(toOrderLineDto),
+                    customer: customer === null ? null : toCustomerSnapshotDto(customer),
+                };
+            }));
             return {
-                ...toOrderDto(order),
-                lines: lines.map(toOrderLineDto),
-                customer: customer === null ? null : toCustomerSnapshotDto(customer),
+                items,
+                totalCount,
+                page,
+                pageSize,
             };
-        }));
-        return {
-            items,
-            totalCount,
-            page,
-            pageSize,
-        };
+        });
     }
 }

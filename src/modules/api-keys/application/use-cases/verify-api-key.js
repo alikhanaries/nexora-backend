@@ -14,7 +14,7 @@ export class VerifyApiKeyUseCase {
         }
         const candidateHash = hashApiKeySecret(parsed.secret);
         const now = new Date();
-        const key = await this.deps.db.execute(async (tx) => this.deps.apiKeys.findByPrefix(tx, parsed.prefix));
+        const key = await this.deps.db.executeAsOwner(async (tx) => this.deps.apiKeys.findByPrefix(tx, parsed.prefix));
         if (key === null) {
             throw new AuthenticationError();
         }

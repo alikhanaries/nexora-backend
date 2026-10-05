@@ -31,12 +31,14 @@ async function deleteMappingsForResources(database, tenantId, resourceIds) {
     if (resourceIds.length === 0) {
         return;
     }
-    await database.query(
-        `DELETE FROM external_integer_id_mappings
+    await database.execute(async (tx) => {
+        await tx.query(
+            `DELETE FROM external_integer_id_mappings
      WHERE tenant_id = $1 AND resource_id = ANY($2::uuid[])`,
-        [tenantId, resourceIds],
-        { operation: 'test.delete_external_id_mappings' },
-    );
+            [tenantId, resourceIds],
+            { operation: 'test.delete_external_id_mappings' },
+        );
+    }, { tenantId });
 }
 
 async function findExternalId(queryService, tenantId, resourceType, resourceId) {
@@ -49,40 +51,40 @@ async function findExternalId(queryService, tenantId, resourceType, resourceId) 
 }
 
 async function countMappingsForType(database, tenantId, resourceType) {
-    const result = await database.query(
+    const result = await database.execute(async (tx) => tx.query(
         `SELECT COUNT(*)::int AS count
      FROM external_integer_id_mappings
      WHERE tenant_id = $1 AND provider = $2 AND resource_type = $3`,
         [tenantId, ExternalIdMappingProvider.COMPAT_V2, resourceType],
         { operation: 'test.count_external_id_mappings_by_type' },
-    );
+    ), { tenantId });
     return result.rows[0]?.count ?? 0;
 }
 
 async function findShipmentId(database, tenantId, orderId) {
-    const result = await database.query(
+    const result = await database.execute(async (tx) => tx.query(
         `SELECT id FROM shipments WHERE tenant_id = $1 AND order_id = $2 LIMIT 1`,
         [tenantId, orderId],
         { operation: 'test.find_shipment_for_order' },
-    );
+    ), { tenantId });
     return result.rows[0]?.id ?? null;
 }
 
 async function findCancellationId(database, tenantId, orderId) {
-    const result = await database.query(
+    const result = await database.execute(async (tx) => tx.query(
         `SELECT id FROM cancellations WHERE tenant_id = $1 AND order_id = $2 LIMIT 1`,
         [tenantId, orderId],
         { operation: 'test.find_cancellation_for_order' },
-    );
+    ), { tenantId });
     return result.rows[0]?.id ?? null;
 }
 
 async function findReturnId(database, tenantId, merchantReturnNo) {
-    const result = await database.query(
+    const result = await database.execute(async (tx) => tx.query(
         `SELECT id FROM returns WHERE tenant_id = $1 AND external_reference = $2 LIMIT 1`,
         [tenantId, merchantReturnNo],
         { operation: 'test.find_return_by_reference' },
-    );
+    ), { tenantId });
     return result.rows[0]?.id ?? null;
 }
 
@@ -358,13 +360,13 @@ describe('external integer ID historical backfill', () => {
             backfillB.run({ tenantIds: [tenantId], batchSize: 3 }),
         ]);
 
-        const mappingCount = await infra.database.query(
+        const mappingCount = await infra.database.execute(async (tx) => tx.query(
             `SELECT COUNT(*)::int AS count
        FROM external_integer_id_mappings
        WHERE tenant_id = $1 AND resource_id = $2`,
             [tenantId, order.id],
             { operation: 'test.count_mappings_for_resource' },
-        );
+        ), { tenantId });
         expect(mappingCount.rows[0]?.count).toBe(1);
         expect(await findExternalId(queryService, tenantId, ExternalIdMappingResourceType.ORDER, order.id))
             .toBeGreaterThan(0);

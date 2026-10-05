@@ -1,5 +1,7 @@
 import express from 'express';
+import helmet from 'helmet';
 import { createHmac } from 'node:crypto';
+import { configureApiDocsExpress } from './configure-api-docs-express.js';
 import {
   createRequestContext,
   enterRequestContext,
@@ -77,8 +79,28 @@ export function requestContextExpressMiddleware(config) {
   };
 }
 
-export function configureExpress(expressApp, config) {
+/**
+ * @param {import('express').Express} expressApp
+ * @param {ReturnType<import('../../app/config/index.js').loadConfigFromEnvironment>} config
+ * @param {object} [metrics]
+ */
+export function configureExpress(expressApp, config, metrics) {
   expressApp.set('trust proxy', config.server.trustProxy);
+
+  expressApp.use(helmet({ contentSecurityPolicy: false }));
+  configureApiDocsExpress(expressApp, config);
+
+  if (metrics !== undefined && config.observability.metricsEnabled) {
+    expressApp.get('/internal/metrics', async (_req, res) => {
+      try {
+        const body = await metrics.render();
+        res.setHeader('content-type', metrics.contentType);
+        res.send(body);
+      } catch {
+        res.status(500).send('');
+      }
+    });
+  }
 
   expressApp.use(requestContextExpressMiddleware(config));
   expressApp.use(marketplaceWebhookRawBodyMiddleware());

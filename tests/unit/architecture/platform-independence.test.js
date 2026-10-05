@@ -58,7 +58,7 @@ describe('platform independence', () => {
     it('imports compatibility only from the composition root wiring', () => {
         const allowed = new Set([
             'src/app/bootstrap/create-application.js',
-            'src/app/http/create-server.js',
+            'src/app/http/create-nest-http-server.js',
             'src/workers/bootstrap/wire-external-consumer-webhook-payload-strategies.js',
             'src/workers/bootstrap/wire-stockconnect-ce-webhook-delivery.js',
         ]);

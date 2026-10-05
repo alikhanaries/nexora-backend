@@ -17,13 +17,13 @@ const outPath = process.argv[2] ?? join(dirname(fileURLToPath(import.meta.url)),
 
 const infra = await getTestInfrastructure();
 const app = await createApplication(infra);
-await app.httpServer.ready();
 const res = await app.httpServer.inject({ method: 'GET', url: '/openapi.json' });
 if (res.statusCode !== 200) {
     console.error('Failed to fetch openapi.json', res.statusCode, res.body);
     process.exit(1);
 }
-writeFileSync(outPath, res.payload, 'utf8');
+const payload = typeof res.body === 'string' ? res.body : JSON.stringify(res.json());
+writeFileSync(outPath, payload, 'utf8');
 console.log(`Wrote ${outPath} (${Object.keys(res.json().paths ?? {}).length} paths)`);
 await app.httpServer.close();
 await closeTestInfrastructure();

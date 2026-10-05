@@ -12,6 +12,7 @@ import {
 import {
     createOrder,
     seedCommerceFixture,
+    setOrderCancelled,
     shipmentHeaders,
     shipmentPayload,
 } from './compatibility-helpers.js';
@@ -163,11 +164,7 @@ describe('POST /api/v2/shipments integration', () => {
         const headers = authHeaders(user.accessToken);
         const fixture = await seedCommerceFixture(server, headers);
         const order = await createOrder(server, headers, fixture, 'ship-cancelled', 2);
-        await app.infra.database.query(
-            `UPDATE orders SET status = 'CANCELLED', cancelled_at = now() WHERE tenant_id = $1 AND id = $2`,
-            [tenantId, order.id],
-            { operation: 'test.set_cancelled' },
-        );
+        await setOrderCancelled(app.infra.database, tenantId, order.id);
 
         const response = await server.inject({
             method: 'POST',

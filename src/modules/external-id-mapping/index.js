@@ -34,6 +34,7 @@ export function createExternalIdMappingModule(deps) {
     });
     const externalIntegerIdMappingQueryService = new DefaultExternalIntegerIdMappingQueryService({
         queryable: deps.database,
+        database: deps.database,
         mappings,
     });
     const backfillQueries = new PostgresExternalIdBackfillQueries();

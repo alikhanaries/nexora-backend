@@ -10,27 +10,29 @@ import { BusinessRuleError, NotFoundError, ValidationError, } from '../../../sha
  * @param {string} input.channelId
  * @param {string} input.currency
  * @param {object[]} input.lines
+ * @param {object} [input.transaction]
  * @param {{ skuFirst?: boolean }} [options]
  */
 export async function resolveOrderLines(deps, input, options = {}) {
     const skuFirst = options.skuFirst === true;
+    const tx = input.transaction;
     const resolvedLines = [];
     for (const line of input.lines) {
         if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
             throw new ValidationError('Line quantity must be a positive integer');
         }
         const product = skuFirst
-            ? await resolveChannelLineProduct(deps, input.tenantId, input.channelId, line)
-            : await resolveNativeLineProduct(deps, input.tenantId, line);
+            ? await resolveChannelLineProduct(deps, input.tenantId, input.channelId, line, tx)
+            : await resolveNativeLineProduct(deps, input.tenantId, line, tx);
         if (product.status !== 'ACTIVE') {
             throw new BusinessRuleError('Product is not active', { productId: product.id });
         }
         let offerId = line.offerId ?? null;
         if (offerId !== null) {
-            await deps.offerQueryService.verifyOfferUsable(input.tenantId, offerId);
+            await deps.offerQueryService.verifyOfferUsable(input.tenantId, offerId, tx);
         }
         else {
-            const offer = await deps.offerQueryService.getOfferForProductAndChannel(input.tenantId, product.id, input.channelId);
+            const offer = await deps.offerQueryService.getOfferForProductAndChannel(input.tenantId, product.id, input.channelId, tx);
             if (offer !== null) {
                 if (offer.status !== 'ACTIVE') {
                     throw new BusinessRuleError('Offer is not usable for this product and channel', {
@@ -41,7 +43,7 @@ export async function resolveOrderLines(deps, input, options = {}) {
                 offerId = offer.id;
             }
         }
-        const price = await deps.pricingService.getEffectivePrice(input.tenantId, product.id, input.channelId, input.currency);
+        const price = await deps.pricingService.getEffectivePrice(input.tenantId, product.id, input.channelId, input.currency, new Date(), tx);
         if (price === null) {
             throw new NotFoundError('No effective price found for product and channel', {
                 productId: product.id,
@@ -68,11 +70,11 @@ export async function resolveOrderLines(deps, input, options = {}) {
  * @param {string} tenantId
  * @param {object} line
  */
-async function resolveNativeLineProduct(deps, tenantId, line) {
+async function resolveNativeLineProduct(deps, tenantId, line, tx) {
     if (line.productId === undefined) {
         throw new ValidationError('Line productId is required');
     }
-    const product = await deps.productQueryService.getProductById(tenantId, line.productId);
+    const product = await deps.productQueryService.getProductById(tenantId, line.productId, tx);
     if (product === null) {
         throw new NotFoundError('Product was not found', {
             tenantId,
@@ -88,10 +90,10 @@ async function resolveNativeLineProduct(deps, tenantId, line) {
  * @param {string} channelId
  * @param {object} line
  */
-async function resolveChannelLineProduct(deps, tenantId, channelId, line) {
+async function resolveChannelLineProduct(deps, tenantId, channelId, line, tx) {
     const merchantSku = normalizeOptionalLineReference(line.merchantSku);
     if (merchantSku !== null) {
-        const product = await deps.productQueryService.getProductBySku(tenantId, merchantSku);
+        const product = await deps.productQueryService.getProductBySku(tenantId, merchantSku, tx);
         if (product === null) {
             throw new NotFoundError('Product was not found for merchant SKU', {
                 tenantId,
@@ -102,7 +104,7 @@ async function resolveChannelLineProduct(deps, tenantId, channelId, line) {
     }
     const channelProductNo = normalizeOptionalLineReference(line.channelProductNo);
     if (channelProductNo !== null) {
-        const offer = await deps.offerQueryService.getOfferByExternalReference(tenantId, channelId, channelProductNo);
+        const offer = await deps.offerQueryService.getOfferByExternalReference(tenantId, channelId, channelProductNo, tx);
         if (offer === null) {
             throw new NotFoundError('Offer was not found for channel product reference', {
                 tenantId,
@@ -110,7 +112,7 @@ async function resolveChannelLineProduct(deps, tenantId, channelId, line) {
                 channelProductNo,
             });
         }
-        const product = await deps.productQueryService.getProductById(tenantId, offer.productId);
+        const product = await deps.productQueryService.getProductById(tenantId, offer.productId, tx);
         if (product === null) {
             throw new NotFoundError('Product was not found for channel product reference', {
                 tenantId,
@@ -121,7 +123,7 @@ async function resolveChannelLineProduct(deps, tenantId, channelId, line) {
         return product;
     }
     if (line.productId !== undefined) {
-        const product = await deps.productQueryService.getProductById(tenantId, line.productId);
+        const product = await deps.productQueryService.getProductById(tenantId, line.productId, tx);
         if (product === null) {
             throw new NotFoundError('Product was not found', {
                 tenantId,

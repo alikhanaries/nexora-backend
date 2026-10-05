@@ -13,6 +13,7 @@ import { createMarketplaceWebhookRoutes } from './presentation/marketplace-webho
  * @param {import('../marketplace-order-ingestion/application/marketplace-lifecycle-enqueue-service.js').MarketplaceLifecycleEnqueueService} deps.lifecycleEnqueueService
  * @param {import('../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
  * @param {import('../../shared/logging/logger.port.js').Logger} [deps.logger]
+ * @param {import('../products/public/index.js').DefaultProductQueryService} [deps.productQueryService]
  * @param {(registry: MarketplaceWebhookAdapterRegistry) => void} [deps.registerMarketplaceWebhookAdapters]
  */
 export function createMarketplaceWebhookIngestionModule(deps) {
@@ -26,6 +27,7 @@ export function createMarketplaceWebhookIngestionModule(deps) {
         idempotency: deps.idempotency,
         metrics: deps.metrics,
         logger: deps.logger,
+        ...(deps.productQueryService === undefined ? {} : { productQueryService: deps.productQueryService }),
     });
     const routes = createMarketplaceWebhookRoutes({ receiveMarketplaceWebhook });
     return {

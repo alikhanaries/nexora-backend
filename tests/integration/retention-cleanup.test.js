@@ -165,15 +165,18 @@ describe('retention cleanup integration', { timeout: 120_000 }, () => {
         const slug = `wh-ret-${tenantId.slice(0, 8)}`;
         await infra.database.query(`INSERT INTO tenants (id, slug, name) VALUES ($1, $2, 'Webhook retention test')`, [tenantId, slug], { operation: 'test.retention.webhook_tenant' });
         const subscriptionId = randomUUID();
-        await infra.database.query(`INSERT INTO webhook_subscriptions
+        await infra.database.execute(async (tx) => {
+            await tx.query(`INSERT INTO webhook_subscriptions
        (id, tenant_id, url, secret_ciphertext, event_types, status)
        VALUES ($1, $2, 'https://example.com/hook', 'cipher', ARRAY['order.created'], 'ACTIVE')`, [subscriptionId, tenantId], { operation: 'test.retention.webhook_subscription' });
+        }, { tenantId });
         const oldDeliveredId = randomUUID();
         const recentDeliveredId = randomUUID();
         const deadLetterId = randomUUID();
         const pendingId = randomUUID();
         const failedId = randomUUID();
-        await infra.database.query(`INSERT INTO webhook_deliveries
+        await infra.database.execute(async (tx) => {
+            await tx.query(`INSERT INTO webhook_deliveries
        (id, tenant_id, subscription_id, event_id, event_type, status, attempt_count, delivered_at, created_at)
        VALUES
        ($1, $2, $3, $4, 'order.created', 'DELIVERED', 1, $5, $5),
@@ -181,25 +184,26 @@ describe('retention cleanup integration', { timeout: 120_000 }, () => {
        ($8, $2, $3, $9, 'order.created', 'DEAD_LETTERED', 3, NULL, $10),
        ($11, $2, $3, $12, 'order.created', 'PENDING', 0, NULL, now()),
        ($13, $2, $3, $14, 'order.created', 'FAILED', 1, NULL, now())`, [
-            oldDeliveredId,
-            tenantId,
-            subscriptionId,
-            randomUUID(),
-            daysAgo(45),
-            recentDeliveredId,
-            randomUUID(),
-            deadLetterId,
-            randomUUID(),
-            daysAgo(45),
-            pendingId,
-            randomUUID(),
-            failedId,
-            randomUUID(),
-        ], { operation: 'test.retention.webhook_deliveries_seed' });
+                oldDeliveredId,
+                tenantId,
+                subscriptionId,
+                randomUUID(),
+                daysAgo(45),
+                recentDeliveredId,
+                randomUUID(),
+                deadLetterId,
+                randomUUID(),
+                daysAgo(45),
+                pendingId,
+                randomUUID(),
+                failedId,
+                randomUUID(),
+            ], { operation: 'test.retention.webhook_deliveries_seed' });
+        }, { tenantId });
         const stats = await service.run();
         expect(stats.webhookDeliveriesDeleted).toBeGreaterThanOrEqual(2);
-        const remaining = await infra.database.query(`SELECT id, status FROM webhook_deliveries
-       WHERE tenant_id = $1 AND id = ANY($2::uuid[])`, [tenantId, [oldDeliveredId, recentDeliveredId, deadLetterId, pendingId, failedId]], { operation: 'test.retention.webhook_deliveries_verify' });
+        const remaining = await infra.database.execute(async (tx) => tx.query(`SELECT id, status FROM webhook_deliveries
+       WHERE tenant_id = $1 AND id = ANY($2::uuid[])`, [tenantId, [oldDeliveredId, recentDeliveredId, deadLetterId, pendingId, failedId]], { operation: 'test.retention.webhook_deliveries_verify' }), { tenantId });
         const byId = new Map(remaining.rows.map((row) => [String(row['id']), String(row['status'])]));
         expect(byId.has(oldDeliveredId)).toBe(false);
         expect(byId.has(deadLetterId)).toBe(false);

@@ -22,6 +22,7 @@ export function createOrdersModule(deps) {
     const orderQueryService = new DefaultOrderQueryService({
         authorization,
         queryable: deps.database,
+        database: deps.database,
         orders,
     });
     const orderReturnGateway = new DefaultOrderReturnGateway({ orders });

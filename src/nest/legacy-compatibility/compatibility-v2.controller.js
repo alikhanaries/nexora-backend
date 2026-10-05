@@ -128,6 +128,7 @@ class CompatibilityV2Controller {
   }
 
   @Post('/api/v2/returns/merchant/acknowledge')
+  @HttpCode(200)
   async acknowledgeReturn(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(acknowledgeReturnBodySchema, body, 'acknowledge return');
     return this.legacyCompatibilityService.acknowledgeReturnV2(parsed, idempotencyKey);
@@ -147,12 +148,14 @@ class CompatibilityV2Controller {
   }
 
   @Post('/api/v2/products')
+  @HttpCode(200)
   async upsertProducts(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(postProductsBodySchema, body, 'upsert products');
     return this.legacyCompatibilityService.upsertProductsV2(parsed, idempotencyKey);
   }
 
   @Post('/api/v2/products/freeze')
+  @HttpCode(200)
   async freezeProducts(
     @Body() body,
     @Headers('idempotency-key') idempotencyKey,
@@ -163,18 +166,21 @@ class CompatibilityV2Controller {
   }
 
   @Post('/api/v2/products/bulkdelete')
+  @HttpCode(200)
   async bulkDeleteProducts(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(merchantProductNoListBodySchema, body, 'bulk delete products');
     return this.legacyCompatibilityService.bulkDeleteProductsV2(parsed, idempotencyKey);
   }
 
   @Patch('/api/v2/products/extra-data/bulk')
+  @HttpCode(200)
   async patchExtraDataBulk(@Body() body, @Headers('idempotency-key') idempotencyKey) {
     const parsed = parseOrThrow(patchExtraDataBulkBodySchema, body, 'patch extra data');
     return this.legacyCompatibilityService.patchExtraDataBulkV2(parsed, idempotencyKey);
   }
 
   @Put('/api/v2/offer')
+  @HttpCode(200)
   async updateOfferPrice(
     @Body() body,
     @Headers('idempotency-key') idempotencyKey,
@@ -185,6 +191,7 @@ class CompatibilityV2Controller {
   }
 
   @Put('/api/v2/offer/stock')
+  @HttpCode(200)
   async updateOfferStock(
     @Body() body,
     @Headers('idempotency-key') idempotencyKey,
