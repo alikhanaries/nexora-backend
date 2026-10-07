@@ -26,13 +26,19 @@ import { CoreDomainModule } from './domain/core-domain.module.js';
 import { HealthModule } from './health/health.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { TenantsModule } from './tenants/tenants.module.js';
+import { StockConnectIntegrationModule } from './stock-connect/stock-connect-integration.module.js';
 
 /**
  * @param {{ logger: object, metrics: object, database: object | null }} infra
  * @param {object | null} [coreDomain]
  */
 export function buildAppModule(infra, coreDomain = null) {
-  const imports = [NexoraConfigModule, DatabaseModule.register(infra), HealthModule];
+  const imports = [
+    NexoraConfigModule,
+    DatabaseModule.register(infra),
+    HealthModule,
+    StockConnectIntegrationModule,
+  ];
   const providers = [
     {
       provide: APP_FILTER,
