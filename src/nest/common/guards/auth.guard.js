@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { enrichRequestContext } from '../../../shared/context/request-context.js';
-import { AuthenticationError } from '../../../shared/errors/index.js';
-import { CORE_DOMAIN } from '../../domain/core-domain.tokens.js';
 import { isMerchantCompatQueryAuthPath } from '../../../shared/auth/merchant-compat-route-prefix.js';
 import {
   readMerchantCompatCeKeyHeader,
   readMerchantCompatQueryApiKey,
 } from '../../../shared/auth/read-merchant-compat-query-api-key.js';
+import { enrichRequestContext } from '../../../shared/context/request-context.js';
+import { AuthenticationError, AuthorizationError } from '../../../shared/errors/index.js';
+import { CORE_DOMAIN } from '../../domain/core-domain.tokens.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import { isPublicRoute } from '../auth/public-route.js';
 
@@ -17,6 +17,10 @@ function readBearerToken(authorization) {
   }
   const match = /^Bearer\s+(\S+)$/i.exec(authorization);
   return match?.[1] ?? null;
+}
+
+function isNexoraApiKeyBearer(token) {
+  return typeof token === 'string' && token.startsWith('nxk_');
 }
 
 function readApiKey(headers) {
@@ -30,6 +34,26 @@ function readApiKey(headers) {
   }
   const apiKeyMatch = /^ApiKey\s+(\S+)$/i.exec(authorization);
   return apiKeyMatch?.[1] ?? null;
+}
+
+function readTenantIdHeader(headers) {
+  const raw = headers['x-tenant-id'];
+  if (typeof raw === 'string' && raw.trim().length > 0) {
+    return raw.trim();
+  }
+  return null;
+}
+
+function assertTenantHeaderMatchesPrincipal(headers, tenantId) {
+  const requestedTenantId = readTenantIdHeader(headers);
+  if (requestedTenantId === null) {
+    return;
+  }
+  if (requestedTenantId !== tenantId) {
+    throw new AuthorizationError('X-Tenant-Id does not match authenticated tenant', {
+      requestedTenantId,
+    });
+  }
 }
 
 export @Injectable()
@@ -56,22 +80,29 @@ class AuthGuard {
 
     const bearer = readBearerToken(request.headers.authorization);
     let apiKey = readApiKey(request.headers);
+    if (apiKey === null && bearer !== null && isNexoraApiKeyBearer(bearer)) {
+      apiKey = bearer;
+    }
     if (apiKey === null && isMerchantCompatQueryAuthPath(path)) {
       apiKey =
         readMerchantCompatQueryApiKey(request.query)
         ?? readMerchantCompatCeKeyHeader(request.headers);
     }
 
-    if (bearer !== null && apiKey !== null) {
+    const jwtBearer =
+      bearer !== null && !isNexoraApiKeyBearer(bearer) ? bearer : null;
+
+    if (jwtBearer !== null && apiKey !== null) {
       throw new AuthenticationError('Provide either Bearer token or API key, not both');
     }
 
     try {
-      if (bearer !== null) {
+      if (jwtBearer !== null) {
         const principal = await this.coreDomain.authenticateAccessToken.execute({
-          accessToken: bearer,
+          accessToken: jwtBearer,
           authenticationMethod: 'password',
         });
+        assertTenantHeaderMatchesPrincipal(request.headers, principal.tenantId);
         enrichRequestContext({
           tenantId: principal.tenantId,
           userId: principal.id,
@@ -82,6 +113,7 @@ class AuthGuard {
       }
       if (apiKey !== null) {
         const verified = await this.coreDomain.verifyApiKey.execute({ rawKey: apiKey });
+        assertTenantHeaderMatchesPrincipal(request.headers, verified.tenantId);
         const principal = {
           kind: 'api-key',
           id: verified.apiKeyId,

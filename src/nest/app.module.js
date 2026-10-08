@@ -69,6 +69,7 @@ export function buildAppModule(infra, coreDomain = null) {
       ReturnsModule,
       LegacyOrdersModule,
       LegacyCompatibilityModule,
+      StockConnectIntegrationModule,
     );
     providers.push({
       provide: APP_GUARD,
