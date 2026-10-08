@@ -1,0 +1,335 @@
+
+--- PAGE 1 ---
+PROGRAM ROADMAP  ·  2026-09-24
+Build our own
+marketplace hub
+Replace Channel Engine in Stock Connect
+Executive project plan — scoped only to CE capabilities Stock Connect uses today. 20 content slides + this 
+cover.
+10–12 months  ·  8 milestones  ·  ~36 person-months
+Internal planning document.
+
+--- PAGE 2 ---
+Slide 1
+Purpose of this plan
+Stock Connect uses Channel Engine (CE) as the hub to marketplaces: catalog, stock, price, orders, shipments, returns, 
+channels, and invoices flow through the CE Merchant API and our Redis/BullMQ queue layer. This plan defines an in- 
+house Marketplace Hub that replaces CE for those flows only — ERP connectors, UI, and seller workflows in Stock 
+Connect stay unchanged; we swap the integration target.
+Management decision frame
+We are not cloning all of ChannelEngine (1,300+ plugins, repricing, settlements UI). We rebuild what our backend 
+already calls — eight business domains and thirteen queued operation types — plus marketplace adapters for channels 
+our sellers use (Noon, Namshi, Amazon, and others live in production).
+
+--- PAGE 3 ---
+Slide 2
+What Stock Connect uses CE for today
+Domain Capability Stock Connect usage
+Catalog Product lifecycle Push by channel, freeze, bulk delete, extra-data
+Offers Stock & price Sync after ERP or manual updates
+Orders Intake & status Pull, acknowledge, cancel; CE webhooks
+Shipments Fulfillment Create, delivery state, import merchant shipments
+Returns Reverse logistics Sync, merchant create/ack, accept/reject
+Channels Onboarding List CE channels; map sellers in MongoDB
+Invoices Compliance Fetch order invoice for upload flows
+Operations Reliability Queues, rate limits, admin queue APIs
+Based on Stock Connect codebase audit — Channel Engine integration inventory.
+
+--- PAGE 4 ---
+Slide 3
+Explicitly out of scope
+•  ChannelEngine UI, branding, or full global connector catalogue.
+•  CE add-ons never called from Stock Connect (repricing suites, settlement dashboards, affiliate networks).
+•  Rewriting ERP modules (Sentos, Shopify, UniCommerce, Kip, etc.) — only the downstream hub changes.
+Additional marketplaces or features can follow after parity for the current seller base.
+
+--- PAGE 5 ---
+Slide 4
+Target architecture (conceptual)
+A Marketplace Hub (internal product) exposes operations matching what Stock Connect already performs against CE. 
+Stock Connect enqueues work as today; the hub runs marketplace adapters (Noon Partner API, Amazon SP-API, etc.).
+•  Hub: sellers, channel registry, jobs, audit, rate limits.
+•  Adapters: plug-in per marketplace family.
+•  Events: marketplace webhooks normalized to what Stock Connect order webhooks expect.
+•  Migration: shadow compare !’ pilot sellers !’ full rollout; CE fallback until 30-day stable KPIs.
+
+--- PAGE 6 ---
+Slide 5
+Planning assumptions
+Assumption Value
+Team 1 Tech Lead, 4 Backend, 1 QA, 0.5 DevOps, 0.5 PM
+Marketplaces wave 1 Noon, Namshi, Amazon SA
+Marketplaces wave 2 6thStreet, Styli, other prod CE channels
+Stock Connect change Config endpoint swap; minimal controller change
+Delivery 2-week sprints; milestone sign-off
+Smaller team (~2 engineers): multiply calendar time by ~2×. Each extra wave-1 marketplace: +3–5 weeks.
+
+--- PAGE 7 ---
+Slide 6
+Milestone overview (M0–M8)
+# Milestone Weeks Calendar
+M0 Charter & sign-off 2 1–2
+M1 Hub foundation & registry 6 3–8
+M2 Catalog module 8 9–16
+M3 Offers (stock + price) 5 17–21
+M4 Orders + webhooks 6 22–27
+M5 Shipments 5 28–32
+M6 Returns 4 33–36
+M7 Invoices, channels, ops 3 37–39
+M8 Shadow, migration, CE off 6 40–45
+Total ~45 weeks !’ plan 10–12 months including QA buffer and API churn.
+
+--- PAGE 8 ---
+Slide 7
+M0 — Program charter (2 weeks)
+•  Align stakeholders: product, engineering, ops, finance (CE cost baseline).
+•  Deliverables: signed scope, RACI, KPIs (publish %, order lag, queue SLA).
+•  Prioritized marketplace list from production CE configuration.
+•  Risk register: API limits, marketplace agreements, compliance.
+Exit: management approval to fund M1–M8 with team and budget.
+
+--- PAGE 9 ---
+Slide 8
+M1 — Hub foundation (6 weeks)
+Platform skeleton for all later modules.
+•  Seller & channel models aligned with Stock Connect.
+•  Job orchestration: rate limits, retries, dead-letter, ops list/stats (parity with today).
+•  Credential vault, API security, audit logs.
+•  Dev/staging + synthetic test channels.
+Exit: test job runs end-to-end; wave-1 channels registered.
+
+--- PAGE 10 ---
+Slide 9
+M2 — Catalog module (8 weeks)
+•  Product push by channel (batched).
+•  Freeze / unfreeze, bulk delete, extra-data bulk update.
+•  Read-back by SKU for reconciliation.
+•  Wave-1 adapters: Noon, Namshi, Amazon publish/update.
+Exit: pilot seller "e99% SKU parity vs CE in staging; ops runbooks.
+
+--- PAGE 11 ---
+Slide 10
+M3 — Offers: stock & price (5 weeks)
+•  Stock sync (offer stock) — same triggers as ERP cron / manual API today.
+•  Price sync (offer price) including CSV import batches.
+•  Marketplace quota-aware batching and rate limits.
+Exit: 24h soak — ERP !’ Stock Connect !’ Hub !’ marketplace matches CE tolerance.
+
+--- PAGE 12 ---
+Slide 11
+M4 — Orders (6 weeks)
+•  Paginated order download (replaces CE GET orders).
+•  Acknowledge orders (idempotent if already ack’d).
+•  Merchant cancellation to marketplace APIs.
+•  Inbound webhooks !’ Stock Connect order handler contract.
+Exit: shadow mode order match for pilot seller; webhook latency within SLA.
+
+--- PAGE 13 ---
+Slide 12
+M5 — Shipments (5 weeks)
+•  Create shipment in hub / marketplaces.
+•  Delivery state updates.
+•  Import merchant shipments (replace CE merchant fetch).
+•  Carriers (AyMakan, Omniful) unchanged; hub updates marketplace-facing status.
+Exit: sandbox order !’ shipment !’ delivery visible on marketplace.
+
+--- PAGE 14 ---
+Slide 13
+M6 — Returns (4 weeks)
+•  Pull returns from marketplaces.
+•  Merchant return create and acknowledge.
+•  Accept / reject lines — same behaviour as CE path today.
+Exit: pilot channel returns flow; ops/finance sign-off on samples.
+
+--- PAGE 15 ---
+Slide 14
+M7 — Invoices, channels, operations (3 weeks)
+•  Channel list API (replace CE GET channels).
+•  Order invoice retrieval for invoice upload.
+•  Ops API parity with /api/channel-engine-queue for support.
+Exit: support diagnoses hub jobs without CE; staging onboarding works.
+
+--- PAGE 16 ---
+Slide 15
+M8 — Shadow, migration, decommission (6 weeks)
+Stage Activity Duration
+8a Shadow / dual compare 2 weeks
+8b Pilot 1–2 sellers 2 weeks
+8c Full rollout 1–2 weeks
+8d CE decommission 1 week
+•  Rollback plan weekly until M8c sign-off.
+Exit: 30 days zero Hub-related P1; CE subscription cancelled or read-only emergency.
+
+--- PAGE 17 ---
+Slide 16
+Effort summary (~36 person-months)
+Milestone Person-months
+M0 1.5
+M1 5
+M2 7
+M3 4
+M4 5
+M5 4
+M6 3
+M7 2
+M8 + buffer 4
+Total 35.5
+4 FTE engineers "H 9 months dev + 1–2 months buffer !’ 10–12 months to cutover.
+
+--- PAGE 18 ---
+Slide 17
+Risks and mitigations
+Risk Impact Mitigation
+Marketplace API change High Version pins, monitoring, vendor relations
+Hidden CE behaviour Medium Shadow diffs, parity tests per operation
+Cutover volume High Phased sellers; CE fallback
+Scope creep High This plan as contract; change control
+Key person risk Medium Pairing, runbooks, ownership matrix
+
+--- PAGE 19 ---
+Slide 18
+KPIs for steering committee
+•  Catalog publish success "e 99.5%.
+•  Stock/price p95 latency "d CE baseline + 10%.
+•  Order sync p95 "d agreed SLA (e.g. 15 min).
+•  Failed job MTTR "d 30 minutes.
+•  CE cost vs hub run cost — break-even by M8.
+
+--- PAGE 20 ---
+Slide 19
+Next steps this quarter
+•  Approve M0 and team allocation.
+•  Export prod CE channel list + seller mapping.
+•  Legal: direct marketplace API agreements.
+•  M1 kickoff: Hub API contract workshop with Stock Connect lead.
+•  Monthly steering: milestone demo + KPI dashboard.
+
+--- PAGE 21 ---
+Slide 20
+Summary for leadership
+Recommendation
+In 10–12 months with a 4–5 person squad, replace Channel Engine for Stock Connect by building a Marketplace Hub 
+covering only the eight domains we use today — direct Noon/Namshi/Amazon (and other live) adapters, not a full 
+ChannelEngine clone.
+Eight milestones, ~36 person-months, shadow mode and seller-by-seller cutover to limit revenue risk. Stock Connect 
+ERP and frontend remain; we gain control, cost transparency, and faster fixes for our sellers.
+
+--- PAGE 22 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 23 ---
+Page 1 of 20
+
+--- PAGE 24 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 25 ---
+Page 2 of 20
+
+--- PAGE 26 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 27 ---
+Page 3 of 20
+
+--- PAGE 28 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 29 ---
+Page 4 of 20
+
+--- PAGE 30 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 31 ---
+Page 5 of 20
+
+--- PAGE 32 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 33 ---
+Page 6 of 20
+
+--- PAGE 34 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 35 ---
+Page 7 of 20
+
+--- PAGE 36 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 37 ---
+Page 8 of 20
+
+--- PAGE 38 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 39 ---
+Page 9 of 20
+
+--- PAGE 40 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 41 ---
+Page 10 of 20
+
+--- PAGE 42 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 43 ---
+Page 11 of 20
+
+--- PAGE 44 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 45 ---
+Page 12 of 20
+
+--- PAGE 46 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 47 ---
+Page 13 of 20
+
+--- PAGE 48 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 49 ---
+Page 14 of 20
+
+--- PAGE 50 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 51 ---
+Page 15 of 20
+
+--- PAGE 52 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 53 ---
+Page 16 of 20
+
+--- PAGE 54 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 55 ---
+Page 17 of 20
+
+--- PAGE 56 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 57 ---
+Page 18 of 20
+
+--- PAGE 58 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 59 ---
+Page 19 of 20
+
+--- PAGE 60 ---
+Stock Connect — Replace Channel Engine (scoped plan)
+
+--- PAGE 61 ---
+Page 20 of 20

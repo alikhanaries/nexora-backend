@@ -33,12 +33,7 @@ import { StockConnectIntegrationModule } from './stock-connect/stock-connect-int
  * @param {object | null} [coreDomain]
  */
 export function buildAppModule(infra, coreDomain = null) {
-  const imports = [
-    NexoraConfigModule,
-    DatabaseModule.register(infra),
-    HealthModule,
-    StockConnectIntegrationModule,
-  ];
+  const imports = [NexoraConfigModule, DatabaseModule.register(infra), HealthModule];
   const providers = [
     {
       provide: APP_FILTER,
@@ -69,6 +64,7 @@ export function buildAppModule(infra, coreDomain = null) {
       ReturnsModule,
       LegacyOrdersModule,
       LegacyCompatibilityModule,
+      StockConnectIntegrationModule,
     );
     providers.push({
       provide: APP_GUARD,
