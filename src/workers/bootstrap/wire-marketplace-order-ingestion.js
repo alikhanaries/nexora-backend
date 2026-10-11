@@ -38,7 +38,10 @@ export function wireMarketplaceOrderIngestion(deps) {
         }));
     const channelRepository = new PostgresChannelRepository();
     const channelQueryService = new DefaultChannelQueryService({
+        // Same as createChannelsModule: `database.withTenant` sets the RLS tenant
+        // from the validated job tenant, not from the webhook body.
         queryable: deps.database,
+        database: deps.database,
         getChannelById: (tenantId, channelId, queryable) => channelRepository.findById(queryable, tenantId, channelId),
         getChannelByExternalReference: (tenantId, externalReference, queryable) => channelRepository.findByExternalReference(queryable, tenantId, externalReference),
         listChannels: (tenantId, filters, queryable) => channelRepository.list(queryable, tenantId, filters),
