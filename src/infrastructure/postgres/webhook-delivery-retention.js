@@ -20,16 +20,26 @@ export class WebhookDeliveryRetention {
         if (limit === 0) {
             return 0;
         }
-        const tenants = await this.database.query(`SELECT id FROM tenants ORDER BY id`, [], {
-            operation: 'webhook_deliveries.retention.list_tenants',
-        });
+        const eligibleTenants = await this.database.executeAsOwner(async (tx) => tx.query(`SELECT DISTINCT tenant_id
+       FROM webhook_deliveries
+       WHERE (
+         status = 'DELIVERED'
+         AND COALESCE(delivered_at, created_at) < $1
+       ) OR (
+         status = 'DEAD_LETTERED'
+         AND created_at < $1
+       )
+       ORDER BY tenant_id`, [cutoff], { operation: 'webhook_deliveries.retention.list_eligible_tenants' }));
+        if (eligibleTenants.rows.length === 0) {
+            return 0;
+        }
         let remaining = limit;
         let total = 0;
-        for (const row of tenants.rows) {
+        for (const row of eligibleTenants.rows) {
             if (remaining === 0) {
                 break;
             }
-            const tenantId = String(row['id']);
+            const tenantId = String(row['tenant_id']);
             const deleted = await this.database.execute(async (tx) => {
                 const result = await tx.query(`DELETE FROM webhook_deliveries
            WHERE id IN (

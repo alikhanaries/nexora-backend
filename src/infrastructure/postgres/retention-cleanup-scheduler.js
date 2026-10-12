@@ -1,4 +1,5 @@
-import { toErrorMessage } from '../../shared/errors/index.js';
+import { describeErrorForLog, toErrorMessage } from '../../shared/errors/index.js';
+import { RetentionCleanupError } from './retention-cleanup-service.js';
 /**
  * Interval-driven retention sweeper.
  *
@@ -25,9 +26,9 @@ export class RetentionCleanupScheduler {
         if (this.timer !== undefined)
             return;
         this.timer = setInterval(() => {
-            void this.tick();
+            void this.runScheduledTick();
         }, this.config.intervalMs);
-        void this.tick();
+        void this.runScheduledTick();
         this.logger.info({ intervalMs: this.config.intervalMs }, 'Retention cleanup scheduler started');
     }
     async stop() {
@@ -54,12 +55,32 @@ export class RetentionCleanupScheduler {
             return result;
         }
         catch (error) {
-            this.logger.error({ reason: toErrorMessage(error) }, 'Retention cleanup tick failed');
-            throw error;
+            this.logTickFailure(error);
+            return undefined;
         }
         finally {
             this.running = false;
         }
+    }
+    /** Interval driver: never rejects; failures are logged for observability. */
+    async runScheduledTick() {
+        try {
+            await this.tick();
+        }
+        catch (error) {
+            this.logTickFailure(error);
+        }
+    }
+    logTickFailure(error) {
+        const payload = {
+            reason: toErrorMessage(error),
+            err: describeErrorForLog(error),
+        };
+        if (error instanceof RetentionCleanupError) {
+            payload.failures = error.failures;
+            payload.stats = error.stats;
+        }
+        this.logger.error(payload, 'Retention cleanup tick failed');
     }
 }
 function sleep(ms) {
