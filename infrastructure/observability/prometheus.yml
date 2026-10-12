@@ -16,6 +16,6 @@ scrape_configs:
   - job_name: nexora-worker
     metrics_path: /internal/metrics
     static_configs:
-      - targets: ['host.docker.internal:3001']
+      - targets: ['host.docker.internal:3002']
         labels:
           component: worker
