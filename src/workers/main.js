@@ -1,5 +1,6 @@
 import { loadConfigFromEnvironment } from '../app/config/index.js';
 import { createInfrastructure } from '../app/create-infrastructure.js';
+import { disposeInfrastructureResources } from '../app/dispose-infrastructure.js';
 import { gracefulShutdown } from '../app/shutdown.js';
 import { createWorkerReadinessProbes, ReadinessService, } from '../app/observability/readiness.js';
 import { AesSecretEncryptor } from '../infrastructure/auth/aes-secret-encryptor.js';
@@ -17,94 +18,120 @@ import { startWorkerObservabilityHttp } from './observability/start-worker-obser
 async function main() {
     const config = loadConfigFromEnvironment();
     const infra = await createInfrastructure(config, { processKind: 'worker' });
-    const secretEncryptor = new AesSecretEncryptor(config.auth.mfaEncryptionKey);
-    const webhookDispatchService = createWebhookDispatchService({
-        database: infra.database,
-        queue: infra.queue,
-    });
-    const { channelCatalogSyncService, catalogSyncReconciliationService } = wireIntegrationCatalogSync({
-        database: infra.database,
-        queue: infra.queue,
-        rateLimiter: infra.rateLimiter,
-        metrics: infra.metrics,
-        logger: infra.logger,
-        catalogSyncReconciliation: config.catalogSyncReconciliation,
-        secretEncryptor,
-        shopifyAdminApiVersion: config.marketplace.shopifyAdminApiVersion,
-    });
-    const catalogSyncReconciliationLockTtlSeconds = Math.max(300, Math.ceil(config.catalogSyncReconciliation.intervalMs / 1_000));
-    const catalogSyncReconciliationScheduler = new CatalogSyncReconciliationScheduler(catalogSyncReconciliationService, infra.lock, config.catalogSyncReconciliation, infra.logger, catalogSyncReconciliationLockTtlSeconds);
-    const catalogSyncEnqueueHandler = new CatalogSyncEnqueueHandler(channelCatalogSyncService);
-    const {
-        marketplaceOrderIngestion,
-        executeOutboundMarketplaceOrderLifecycle,
-        orderQueryService,
-        commerceIntegrationQueryService,
-        externalIntegerIdMappingQueryService,
-    } = createWorkerMarketplaceCommerceDeps(infra, secretEncryptor);
-    const webhookDeliveryService = createWebhookDeliveryService({
-        database: infra.database,
-        outbox: infra.outbox,
-        httpClient: infra.httpClient,
-        secretEncryptor,
-        logger: infra.logger,
-        metrics: infra.metrics,
-        config,
-        webhookPayloadStrategies: wireExternalConsumerWebhookPayloadStrategies({
+    /** @type {InstanceType<typeof ReadinessService> | undefined} */
+    let readiness;
+    /** @type {{ close: () => Promise<void> } | undefined} */
+    let workerObservabilityHttp;
+    /** @type {InstanceType<typeof CatalogSyncReconciliationScheduler> | undefined} */
+    let catalogSyncReconciliationScheduler;
+    /** @type {ReturnType<typeof setInterval> | undefined} */
+    let poolMetricsTimer;
+    try {
+        const secretEncryptor = new AesSecretEncryptor(config.auth.mfaEncryptionKey);
+        const webhookDispatchService = createWebhookDispatchService({
+            database: infra.database,
+            queue: infra.queue,
+        });
+        const { channelCatalogSyncService, catalogSyncReconciliationService } = wireIntegrationCatalogSync({
+            database: infra.database,
+            queue: infra.queue,
+            rateLimiter: infra.rateLimiter,
+            metrics: infra.metrics,
+            logger: infra.logger,
+            catalogSyncReconciliation: config.catalogSyncReconciliation,
+            secretEncryptor,
+            shopifyAdminApiVersion: config.marketplace.shopifyAdminApiVersion,
+        });
+        const catalogSyncReconciliationLockTtlSeconds = Math.max(300, Math.ceil(config.catalogSyncReconciliation.intervalMs / 1_000));
+        catalogSyncReconciliationScheduler = new CatalogSyncReconciliationScheduler(catalogSyncReconciliationService, infra.lock, config.catalogSyncReconciliation, infra.logger, catalogSyncReconciliationLockTtlSeconds);
+        const catalogSyncEnqueueHandler = new CatalogSyncEnqueueHandler(channelCatalogSyncService);
+        const {
+            marketplaceOrderIngestion,
+            executeOutboundMarketplaceOrderLifecycle,
             orderQueryService,
             commerceIntegrationQueryService,
             externalIntegerIdMappingQueryService,
-        }),
-    });
-    const { executeMarketplaceLifecycleJob } = wireMarketplaceLifecycleWorker({
-        database: infra.database,
-        queue: infra.queue,
-        metrics: infra.metrics,
-        logger: infra.logger,
-        config,
-        ingestNormalizedMarketplaceOrder: marketplaceOrderIngestion.ingestNormalizedMarketplaceOrder,
-        lifecycleService: marketplaceOrderIngestion.lifecycleService,
-        processMarketplaceLifecyclePayload: marketplaceOrderIngestion.processMarketplaceLifecyclePayload,
-        executeOutboundMarketplaceOrderLifecycle,
-        orderAdapterRegistry: marketplaceOrderIngestion.orderAdapterRegistry,
-        marketplaceAdapterRuntimeFactory: marketplaceOrderIngestion.marketplaceAdapterRuntimeFactory,
-        commerceIntegrationQueryService: marketplaceOrderIngestion.commerceIntegrationQueryService,
-        marketplaceLookup: marketplaceOrderIngestion.marketplaceLookup,
-    });
-    const { integrationEventRouter } = createIntegrationEventConsumers({
-        database: infra.database,
-        inbox: infra.inbox,
-        logger: infra.logger,
-        webhookDispatchService,
-        catalogSyncEnqueueHandler,
-    });
-    registerWorkerHandlers({
-        workerRuntime: infra.workerRuntime,
-        integrationEventRouter,
-        webhookDeliveryService,
-        channelCatalogSyncService,
-        executeMarketplaceLifecycleJob,
-        marketplaceLifecycleQueueName: config.marketplaceLifecycle.queueName,
-    });
-    const readiness = new ReadinessService(createWorkerReadinessProbes({
-        database: infra.database,
-        redis: infra.redis,
-        queue: infra.queue,
-        workerRuntime: infra.workerRuntime,
-    }));
-    const workerObservabilityHttp = await startWorkerObservabilityHttp({
-        workerObservability: config.workerObservability,
-        serverPort: config.server.port,
-        readiness,
-        metrics: infra.metrics,
-        metricsEnabled: config.observability.metricsEnabled,
-        logger: infra.logger,
-    });
-    infra.retentionCleanupScheduler.start();
-    catalogSyncReconciliationScheduler.start();
-    const poolMetricsTimer = setInterval(() => {
-        infra.database.reportPoolMetrics();
-    }, 5_000);
+        } = createWorkerMarketplaceCommerceDeps(infra, secretEncryptor);
+        const webhookDeliveryService = createWebhookDeliveryService({
+            database: infra.database,
+            outbox: infra.outbox,
+            httpClient: infra.httpClient,
+            secretEncryptor,
+            logger: infra.logger,
+            metrics: infra.metrics,
+            config,
+            webhookPayloadStrategies: wireExternalConsumerWebhookPayloadStrategies({
+                orderQueryService,
+                commerceIntegrationQueryService,
+                externalIntegerIdMappingQueryService,
+            }),
+        });
+        const { executeMarketplaceLifecycleJob } = wireMarketplaceLifecycleWorker({
+            database: infra.database,
+            queue: infra.queue,
+            metrics: infra.metrics,
+            logger: infra.logger,
+            config,
+            ingestNormalizedMarketplaceOrder: marketplaceOrderIngestion.ingestNormalizedMarketplaceOrder,
+            lifecycleService: marketplaceOrderIngestion.lifecycleService,
+            processMarketplaceLifecyclePayload: marketplaceOrderIngestion.processMarketplaceLifecyclePayload,
+            executeOutboundMarketplaceOrderLifecycle,
+            orderAdapterRegistry: marketplaceOrderIngestion.orderAdapterRegistry,
+            marketplaceAdapterRuntimeFactory: marketplaceOrderIngestion.marketplaceAdapterRuntimeFactory,
+            commerceIntegrationQueryService: marketplaceOrderIngestion.commerceIntegrationQueryService,
+            marketplaceLookup: marketplaceOrderIngestion.marketplaceLookup,
+        });
+        const { integrationEventRouter } = createIntegrationEventConsumers({
+            database: infra.database,
+            inbox: infra.inbox,
+            logger: infra.logger,
+            webhookDispatchService,
+            catalogSyncEnqueueHandler,
+        });
+        registerWorkerHandlers({
+            workerRuntime: infra.workerRuntime,
+            integrationEventRouter,
+            webhookDeliveryService,
+            channelCatalogSyncService,
+            executeMarketplaceLifecycleJob,
+            marketplaceLifecycleQueueName: config.marketplaceLifecycle.queueName,
+        });
+        readiness = new ReadinessService(createWorkerReadinessProbes({
+            database: infra.database,
+            redis: infra.redis,
+            queue: infra.queue,
+            workerRuntime: infra.workerRuntime,
+        }));
+        workerObservabilityHttp = await startWorkerObservabilityHttp({
+            workerObservability: config.workerObservability,
+            serverPort: config.server.port,
+            readiness,
+            metrics: infra.metrics,
+            metricsEnabled: config.observability.metricsEnabled,
+            logger: infra.logger,
+        });
+        infra.retentionCleanupScheduler.start();
+        catalogSyncReconciliationScheduler.start();
+        poolMetricsTimer = setInterval(() => {
+            infra.database.reportPoolMetrics();
+        }, 5_000);
+    }
+    catch (error) {
+        if (poolMetricsTimer !== undefined) {
+            clearInterval(poolMetricsTimer);
+        }
+        await disposeInfrastructureResources({
+            workerObservabilityHttp,
+            retentionCleanupScheduler: infra.retentionCleanupScheduler,
+            catalogSyncReconciliationScheduler,
+            workerRuntime: infra.workerRuntime,
+            queue: infra.queue,
+            redis: infra.redis,
+            database: infra.database,
+            tracing: infra.tracing,
+        }, { logger: infra.logger });
+        throw error;
+    }
     infra.logger.info({}, 'Worker started');
     let shuttingDown = false;
     const shutdown = async (signal) => {
@@ -137,5 +164,6 @@ async function main() {
 }
 main().catch((error) => {
     process.stderr.write(`${JSON.stringify({ msg: 'Worker startup failed', err: describeErrorForLog(error) })}\n`);
-    process.exitCode = 1;
+    // Force exit so open handles from a partial start cannot keep the process alive.
+    process.exit(1);
 });

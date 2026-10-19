@@ -12,7 +12,7 @@ export function createCreateTenant(deps) {
      * @param {{ name: string, slug: string }} input
      */
     async function execute(input) {
-        const name = input.name.trim();
+        const name = typeof input?.name === 'string' ? input.name.trim() : '';
         if (name.length === 0) {
             throw new ValidationError('Tenant name is required');
         }

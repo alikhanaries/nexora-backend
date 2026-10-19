@@ -81,17 +81,23 @@ describe('createRedisKeyBuilder', () => {
         expect(tenantA).not.toBe(tenantB);
     });
 
-    it('rejects empty segments', () => {
+    it('rejects empty or non-string segments', () => {
         expect(() => createRedisKeyBuilder({ prefix: '', namespace: DEFAULT_NAMESPACE })).toThrow(
-            'Redis key segment must not be empty',
+            'Redis key segment must be a non-empty string',
         );
         expect(() => createRedisKeyBuilder({ prefix: DEFAULT_PREFIX, namespace: '' })).toThrow(
-            'Redis key segment must not be empty',
+            'Redis key segment must be a non-empty string',
+        );
+        expect(() => createRedisKeyBuilder({ namespace: DEFAULT_NAMESPACE })).toThrow(
+            'Redis key segment must be a non-empty string',
+        );
+        expect(() => createRedisKeyBuilder({ prefix: DEFAULT_PREFIX, namespace: undefined })).toThrow(
+            'Redis key segment must be a non-empty string',
         );
         const keys = defaultBuilder();
-        expect(() => keys.cache('', 'abc')).toThrow('Redis key segment must not be empty');
-        expect(() => keys.cache('tenant-settings', '')).toThrow('Redis key segment must not be empty');
-        expect(() => keys.lock('')).toThrow('Redis key segment must not be empty');
+        expect(() => keys.cache('', 'abc')).toThrow('Redis key segment must be a non-empty string');
+        expect(() => keys.cache('tenant-settings', '')).toThrow('Redis key segment must be a non-empty string');
+        expect(() => keys.lock('')).toThrow('Redis key segment must be a non-empty string');
     });
 
     it('rejects reserved characters in segments without rewriting them', () => {

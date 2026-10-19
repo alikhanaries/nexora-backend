@@ -589,4 +589,11 @@ describe('FetchHttpClient compatibility wrapper', () => {
         ).rejects.toBeInstanceOf(ExternalServiceTimeoutError);
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
+
+    it('fails fast when config.timeoutMs or logger.child is missing', () => {
+        expect(() => createFetchHttpClient({})).toThrow('createFetchHttpClient requires config.timeoutMs');
+        expect(() => createFetchHttpClient({
+            config: { timeoutMs: 1_000 },
+        })).toThrow('createFetchHttpClient requires logger with child()');
+    });
 });

@@ -22,11 +22,17 @@ const webhookDeliveryPayloadSchema = z.object({
     eventType: z.string(),
 });
 export function registerWorkerHandlers(deps) {
-    if (deps.channelCatalogSyncService === undefined) {
-        throw new Error('channelCatalogSyncService is required for worker handlers');
-    }
-    if (deps.executeMarketplaceLifecycleJob === undefined) {
-        throw new Error('executeMarketplaceLifecycleJob is required for worker handlers');
+    for (const name of [
+        'workerRuntime',
+        'integrationEventRouter',
+        'webhookDeliveryService',
+        'channelCatalogSyncService',
+        'executeMarketplaceLifecycleJob',
+        'marketplaceLifecycleQueueName',
+    ]) {
+        if (deps?.[name] === undefined || deps?.[name] === null) {
+            throw new Error(`${name} is required for worker handlers`);
+        }
     }
     const publishHandler = async (payload, context) => {
         if (context.name !== JobName.PUBLISH_INTEGRATION_EVENT) {

@@ -18,7 +18,10 @@ import { RedisDistributedLock } from '../infrastructure/redis/redis-distributed-
 import { createRedisKeyBuilder } from '../infrastructure/redis/redis-keys.js';
 import { RedisRateLimiter } from '../infrastructure/redis/redis-rate-limiter.js';
 import { S3StorageProvider } from '../infrastructure/storage/s3-storage-provider.js';
+import { describeErrorForLog } from '../shared/errors/index.js';
 import { noopMetricsRecorder } from '../shared/metrics/index.js';
+import { disposeInfrastructureResources } from './dispose-infrastructure.js';
+
 export async function createInfrastructure(config, options = {}) {
     const processKind = options.processKind ?? 'api';
     const metricsServiceName = processKind === 'worker'
@@ -28,56 +31,84 @@ export async function createInfrastructure(config, options = {}) {
     const metrics = config.observability.metricsEnabled
         ? new PrometheusMetrics(metricsServiceName)
         : noopMetricsRecorder;
-    const tracing = startTracing(config, logger, { serviceName: metricsServiceName });
-    const database = new PostgresDatabase({ config: config.database, logger, metrics });
-    await database.runMigrations({
-        migrationUrl: config.database.migrationUrl,
-        runtimeUrl: config.database.url,
-    });
-    const redis = new RedisConnection({ config: config.redis, logger, metrics });
-    await redis.connect();
-    const redisKeys = createRedisKeyBuilder({
-        prefix: config.redis.keyPrefix,
-        namespace: config.instanceNamespace,
-    });
-    const cache = new RedisCache(redis, redisKeys, logger);
-    const lock = new RedisDistributedLock(redis, redisKeys);
-    const rateLimiter = new RedisRateLimiter(redis, redisKeys, metrics, logger);
-    const queueConnection = createQueueRedisConnection(config.queue);
-    const queue = new BullMqJobQueue(queueConnection, config.queue, logger, metrics);
-    const workerRuntime = new BullMqWorkerRuntime(queueConnection, config.queue, logger, metrics);
-    const storage = new S3StorageProvider(config.storage, logger);
-    const httpClient = createFetchHttpClient({ config: config.httpClient, logger });
-    const outbox = new PostgresOutboxRepository(database);
-    const outboxPublisher = new OutboxPublisher(outbox, queue, config.outbox, logger);
-    const inbox = new PostgresInboxRepository(database);
-    const idempotency = new PostgresIdempotencyService(database, config.idempotency);
-    const webhookDeliveryRetention = new WebhookDeliveryRetention(database);
-    const retentionCleanupService = new RetentionCleanupService(outbox, inbox, idempotency, webhookDeliveryRetention, config.retention, logger, metrics);
-    const retentionCleanupLockTtlSeconds = Math.max(300, Math.ceil(config.retention.intervalMs / 1_000));
-    const retentionCleanupScheduler = new RetentionCleanupScheduler(retentionCleanupService, lock, config.retention, logger, retentionCleanupLockTtlSeconds);
-    return {
-        config,
-        logger,
-        metrics,
-        tracing,
-        database,
-        redis,
-        redisKeys,
-        cache,
-        lock,
-        rateLimiter,
-        queue,
-        queueConnection,
-        workerRuntime,
-        storage,
-        httpClient,
-        outbox,
-        outboxPublisher,
-        inbox,
-        idempotency,
-        retentionCleanupService,
-        retentionCleanupScheduler,
-        eventRecorder: outbox,
-    };
+
+    /** @type {ReturnType<typeof startTracing> | undefined} */
+    let tracing;
+    /** @type {InstanceType<typeof PostgresDatabase> | undefined} */
+    let database;
+    /** @type {InstanceType<typeof RedisConnection> | undefined} */
+    let redis;
+    /** @type {ReturnType<typeof createQueueRedisConnection> | undefined} */
+    let queueConnection;
+    /** @type {InstanceType<typeof BullMqJobQueue> | undefined} */
+    let queue;
+    /** @type {InstanceType<typeof BullMqWorkerRuntime> | undefined} */
+    let workerRuntime;
+
+    try {
+        tracing = startTracing(config, logger, { serviceName: metricsServiceName });
+        database = new PostgresDatabase({ config: config.database, logger, metrics });
+        await database.runMigrations({
+            migrationUrl: config.database.migrationUrl,
+            runtimeUrl: config.database.url,
+        });
+        redis = new RedisConnection({ config: config.redis, logger, metrics });
+        await redis.connect();
+        const redisKeys = createRedisKeyBuilder({
+            prefix: config.redis.keyPrefix,
+            namespace: config.instanceNamespace,
+        });
+        const cache = new RedisCache(redis, redisKeys, logger);
+        const lock = new RedisDistributedLock(redis, redisKeys);
+        const rateLimiter = new RedisRateLimiter(redis, redisKeys, metrics, logger);
+        queueConnection = createQueueRedisConnection(config.queue);
+        queue = new BullMqJobQueue(queueConnection, config.queue, logger, metrics);
+        workerRuntime = new BullMqWorkerRuntime(queueConnection, config.queue, logger, metrics);
+        const storage = new S3StorageProvider(config.storage, logger);
+        const httpClient = createFetchHttpClient({ config: config.httpClient, logger });
+        const outbox = new PostgresOutboxRepository(database);
+        const outboxPublisher = new OutboxPublisher(outbox, queue, config.outbox, logger);
+        const inbox = new PostgresInboxRepository(database);
+        const idempotency = new PostgresIdempotencyService(database, config.idempotency);
+        const webhookDeliveryRetention = new WebhookDeliveryRetention(database);
+        const retentionCleanupService = new RetentionCleanupService(outbox, inbox, idempotency, webhookDeliveryRetention, config.retention, logger, metrics);
+        const retentionCleanupLockTtlSeconds = Math.max(300, Math.ceil(config.retention.intervalMs / 1_000));
+        const retentionCleanupScheduler = new RetentionCleanupScheduler(retentionCleanupService, lock, config.retention, logger, retentionCleanupLockTtlSeconds);
+        return {
+            config,
+            logger,
+            metrics,
+            tracing,
+            database,
+            redis,
+            redisKeys,
+            cache,
+            lock,
+            rateLimiter,
+            queue,
+            queueConnection,
+            workerRuntime,
+            storage,
+            httpClient,
+            outbox,
+            outboxPublisher,
+            inbox,
+            idempotency,
+            retentionCleanupService,
+            retentionCleanupScheduler,
+            eventRecorder: outbox,
+        };
+    }
+    catch (error) {
+        logger.error({ err: describeErrorForLog(error) }, 'Infrastructure startup failed');
+        await disposeInfrastructureResources({
+            workerRuntime,
+            queue,
+            queueConnection,
+            redis,
+            database,
+            tracing,
+        }, { logger });
+        throw error;
+    }
 }

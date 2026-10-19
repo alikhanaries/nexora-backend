@@ -85,8 +85,8 @@ function encodeRateLimitSubject(subject) {
     return Buffer.from(subject, 'utf8').toString('base64url');
 }
 function sanitise(segment) {
-    if (segment.length === 0) {
-        throw new Error('Redis key segment must not be empty');
+    if (typeof segment !== 'string' || segment.length === 0) {
+        throw new Error('Redis key segment must be a non-empty string');
     }
     if (FORBIDDEN_SEGMENT.test(segment)) {
         throw new Error(`Redis key segment contains a reserved character: "${segment}"`);

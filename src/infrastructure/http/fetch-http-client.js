@@ -21,6 +21,12 @@ const IDEMPOTENT_METHODS = new Set(['GET', 'HEAD', 'PUT', 'DELETE']);
  */
 export function createFetchHttpClient(dependencies = {}) {
     const { config, logger: rootLogger } = dependencies;
+    if (config === undefined || typeof config.timeoutMs !== 'number') {
+        throw new Error('createFetchHttpClient requires config.timeoutMs');
+    }
+    if (rootLogger === undefined || typeof rootLogger.child !== 'function') {
+        throw new Error('createFetchHttpClient requires logger with child()');
+    }
     const logger = rootLogger.child({ component: 'http-client' });
     const defaultTimeoutMs = config.timeoutMs;
 

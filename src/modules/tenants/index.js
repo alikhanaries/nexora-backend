@@ -10,6 +10,7 @@ import { PostgresTenantRepository } from './repositories/index.js';
 import tenantRoutes, {} from './views/tenant.routes.js';
 
 export function createTenantsModule(deps) {
+    requireTenantsModuleDeps(deps);
     const repository = new PostgresTenantRepository();
     const authorization = deps.authorization ?? new DefaultAuthorizationService();
     const useCases = {
@@ -43,3 +44,20 @@ export function createTenantsModule(deps) {
     };
 }
 export { Tenant, TenantStatus } from './models/index.js';
+
+/**
+ * Fail at wiring time when required collaborators are missing rather than on
+ * the first tenant request with a cryptic property-access TypeError.
+ *
+ * @param {object} deps
+ */
+function requireTenantsModuleDeps(deps) {
+    if (deps === undefined || deps === null || typeof deps !== 'object') {
+        throw new Error('createTenantsModule requires a deps object');
+    }
+    for (const name of ['transactionManager', 'queryable']) {
+        if (deps[name] === undefined || deps[name] === null) {
+            throw new Error(`createTenantsModule requires deps.${name}`);
+        }
+    }
+}

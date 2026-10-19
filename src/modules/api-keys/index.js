@@ -7,6 +7,7 @@ import { PostgresApiKeyRepository } from './repositories/postgres-api-key-reposi
 import apiKeyRoutes from './views/api-key.routes.js';
 
 export function createApiKeysModule(deps) {
+    requireApiKeysModuleDeps(deps);
     const apiKeys = new PostgresApiKeyRepository();
     const createApiKey = createCreateApiKey({
         db: deps.database,
@@ -52,4 +53,21 @@ export function createApiKeysModule(deps) {
             },
         },
     };
+}
+
+/**
+ * Fail at wiring time when required collaborators are missing rather than on
+ * the first authenticated request with a cryptic property-access TypeError.
+ *
+ * @param {object} deps
+ */
+function requireApiKeysModuleDeps(deps) {
+    if (deps === undefined || deps === null || typeof deps !== 'object') {
+        throw new Error('createApiKeysModule requires a deps object');
+    }
+    for (const name of ['database', 'rateLimiter', 'stepUpVerifier']) {
+        if (deps[name] === undefined || deps[name] === null) {
+            throw new Error(`createApiKeysModule requires deps.${name}`);
+        }
+    }
 }

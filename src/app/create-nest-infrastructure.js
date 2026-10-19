@@ -79,9 +79,15 @@ export async function createNestInfrastructure(config, options = {}) {
     }
   } catch (error) {
     logger.error({ err: describeErrorForLog(error) }, 'Nest infrastructure startup failed');
+    if (queue !== null) {
+      await queue.close().catch(() => {});
+    } else if (queueConnection !== null) {
+      await queueConnection.quit().catch(() => queueConnection.disconnect());
+    }
     if (redis !== null) {
       await redis.close().catch(() => {});
     }
+    await database.close().catch(() => {});
     throw error;
   }
 

@@ -12,7 +12,12 @@ export function createVerifyApiKey(deps) {
      * @param {object} input
      */
     async function execute(input) {
-        const parsed = parseApiKey(input.rawKey.trim());
+        // Missing/non-string credentials must authenticate-fail, not throw TypeError.
+        const rawKey = typeof input?.rawKey === 'string' ? input.rawKey.trim() : '';
+        if (rawKey.length === 0) {
+            throw new AuthenticationError();
+        }
+        const parsed = parseApiKey(rawKey);
         if (parsed === null) {
             throw new AuthenticationError();
         }
