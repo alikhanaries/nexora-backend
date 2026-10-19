@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapExternalStatusesToNexoraStatuses, mapOrderPageToExternalCollection, } from '../../../src/modules/compatibility/application/mappers/compatibility-order.mapper.js';
+import { mapExternalStatusesToPlatformStatuses, mapOrderPageToExternalCollection, } from '../../../src/modules/compatibility/application/mappers/compatibility-order.mapper.js';
 
 function buildOrder(overrides = {}) {
     const createdAt = new Date('2026-01-15T10:00:00.000Z');
@@ -63,23 +63,23 @@ function buildOrder(overrides = {}) {
     };
 }
 
-describe('mapExternalStatusesToNexoraStatuses', () => {
-    it('maps external IN_PROGRESS to multiple Nexora fulfillment statuses', () => {
-        const statuses = mapExternalStatusesToNexoraStatuses(['IN_PROGRESS']);
+describe('mapExternalStatusesToPlatformStatuses', () => {
+    it('maps external IN_PROGRESS to multiple Wasl fulfillment statuses', () => {
+        const statuses = mapExternalStatusesToPlatformStatuses(['IN_PROGRESS']);
         expect(statuses).toEqual(expect.arrayContaining(['CONFIRMED', 'PROCESSING', 'READY_TO_SHIP']));
         expect(statuses).toHaveLength(3);
     });
     it('maps external NEW without including CONFIRMED', () => {
-        expect(mapExternalStatusesToNexoraStatuses(['NEW'])).toEqual(['NEW']);
+        expect(mapExternalStatusesToPlatformStatuses(['NEW'])).toEqual(['NEW']);
     });
-    it('maps external CANCELED to Nexora CANCELLED', () => {
-        expect(mapExternalStatusesToNexoraStatuses(['CANCELED'])).toEqual(['CANCELLED']);
+    it('maps external CANCELED to Wasl CANCELLED', () => {
+        expect(mapExternalStatusesToPlatformStatuses(['CANCELED'])).toEqual(['CANCELLED']);
     });
     it('returns empty when only unmapped external statuses are requested', () => {
-        expect(mapExternalStatusesToNexoraStatuses(['AWAITING_PAYMENT'])).toEqual([]);
+        expect(mapExternalStatusesToPlatformStatuses(['AWAITING_PAYMENT'])).toEqual([]);
     });
     it('combines mapped statuses from multiple external filters', () => {
-        const statuses = mapExternalStatusesToNexoraStatuses(['NEW', 'SHIPPED']);
+        const statuses = mapExternalStatusesToPlatformStatuses(['NEW', 'SHIPPED']);
         expect(statuses).toEqual(expect.arrayContaining(['NEW', 'SHIPPED']));
         expect(statuses).toHaveLength(2);
     });

@@ -1,16 +1,16 @@
 import { Global, Module } from '@nestjs/common';
 import { loadConfigFromEnvironment } from '../../app/config/index.js';
 
-export const NEXORA_CONFIG = Symbol('NEXORA_CONFIG');
+export const WASL_CONFIG = Symbol('WASL_CONFIG');
 
 export @Global()
 @Module({
   providers: [
     {
-      provide: NEXORA_CONFIG,
+      provide: WASL_CONFIG,
       useFactory: () => loadConfigFromEnvironment(),
     },
   ],
-  exports: [NEXORA_CONFIG],
+  exports: [WASL_CONFIG],
 })
-class NexoraConfigModule {}
+class WaslConfigModule {}

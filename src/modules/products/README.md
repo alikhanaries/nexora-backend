@@ -1,6 +1,6 @@
 # Products module
 
-Tenant-owned product catalog for Nexora. Products and localized content are scoped by `tenant_id` with PostgreSQL row-level security (migration `0014_products.sql`).
+Tenant-owned product catalog for Wasl. Products and localized content are scoped by `tenant_id` with PostgreSQL row-level security (migration `0014_products.sql`).
 
 ## Lifecycle
 

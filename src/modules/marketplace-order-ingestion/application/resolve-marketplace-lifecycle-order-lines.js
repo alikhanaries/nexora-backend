@@ -1,10 +1,10 @@
 import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
 
 /**
- * Maps normalized lifecycle line hints to Nexora order line ids.
+ * Maps normalized lifecycle line hints to Wasl order line ids.
  *
  * @param {object} deps
- * @param {import('../../orders/infrastructure/postgres-order-repository.js').PostgresOrderRepository} deps.orders
+ * @param {import('../../orders/repositories/postgres-order-repository.js').PostgresOrderRepository} deps.orders
  * @param {import('../../products/public/index.js').ProductQueryService} deps.productQueryService
  * @param {object} input
  * @param {string} input.tenantId

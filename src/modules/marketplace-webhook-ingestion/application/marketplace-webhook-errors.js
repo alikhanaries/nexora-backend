@@ -28,7 +28,7 @@ export class MarketplaceWebhookPermanentError extends BusinessRuleError {
     }
 }
 
-/** Transient failure; marketplace or Nexora may retry delivery. */
+/** Transient failure; marketplace or Wasl may retry delivery. */
 export class MarketplaceWebhookRetryableError extends ServiceUnavailableError {
     /**
      * @param {string} [message]

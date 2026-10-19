@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/channel-catalog-sync/public/marketplace-catalog-adapter-registry.js';
+import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/integration-catalog-sync/public/marketplace-catalog-adapter-registry.js';
 import { registerMarketplaceCatalogAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-catalog-adapters.js';
 import { SHOPIFY_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-catalog-adapter.js';
 import { AMAZON_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-catalog-adapter.js';
@@ -8,12 +8,12 @@ import { NAMSHI_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infras
 import { createEmptyMarketplaceCapabilities } from '../../../src/modules/marketplaces/domain/marketplace-capabilities.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
-} from '../../../src/modules/channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+} from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
 
 const CAPABILITY_KEYS = Object.keys(createEmptyMarketplaceCapabilities());
 
 /**
- * @param {import('../../../src/modules/channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceCatalogAdapter} adapter
+ * @param {import('../../../src/modules/integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceCatalogAdapter} adapter
  * @param {string} marketplaceKey
  */
 export function runMarketplaceAdapterContractTests(adapter, marketplaceKey) {

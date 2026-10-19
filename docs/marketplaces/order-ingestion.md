@@ -30,7 +30,7 @@ Defined in `normalized-marketplace-order.schema.js`. Derived from existing chann
 | `customer` | Immutable `CustomerSnapshot` |
 | `lines` | SKU / offer / marketplace entity mapping resolution |
 
-Line prices from the marketplace are informational; Nexora effective pricing applies at ingest (same as Channel API).
+Line prices from the marketplace are informational; Wasl effective pricing applies at ingest (same as Channel API).
 
 ## Idempotency
 
@@ -76,7 +76,7 @@ Page size is clamped to Shopify’s documented `first` limit (1–250). Optional
 
 Reuses the existing Shopify marketplace connection (`shopDomain`, `accessToken`, optional `apiVersion`, `shopifyLocationId` for catalog). Order reads use the same encrypted credentials and `ShopifyGraphqlClient` as catalog sync.
 
-**OAuth scopes:** Shopify apps must include permission to read orders (for example `read_orders` on custom apps, or the orders access scope appropriate to your app type). Nexora does not grant scopes automatically; configure them in the Shopify app / token used for the connection.
+**OAuth scopes:** Shopify apps must include permission to read orders (for example `read_orders` on custom apps, or the orders access scope appropriate to your app type). Wasl does not grant scopes automatically; configure them in the Shopify app / token used for the connection.
 
 ### Mapping
 
@@ -106,7 +106,7 @@ Metric `marketplace_order_ingestion_total` labels: `outcome`, `marketplace`, `op
 
 Phase 31 adds a **provider-neutral lifecycle engine** alongside ingestion. Adapters may expose `getOrderLifecycleCapabilities()` and optional `normalizeLifecycleCommand()`; they do **not** perform outbound marketplace HTTP in this layer.
 
-| Operation | Normalized command | Nexora behavior (initial) |
+| Operation | Normalized command | Wasl behavior (initial) |
 | --------- | ------------------ | ------------------------- |
 | `status_sync` | `targetStatus` | `confirmed` → `ConfirmOrder`; `cancelled` → `CreateCancellation` |
 | `cancel_order` | optional line hints | `CreateCancellation` with idempotent `externalReference` = `externalEventId` |
@@ -150,3 +150,4 @@ See [noon/README.md](../../src/modules/marketplaces/infrastructure/adapters/noon
 - Provider-specific lifecycle normalization (Shopify/Namshi remaining gaps)
 - Outbound lifecycle sync to marketplaces
 - Scheduled order polling workers (Phase 30 when merged)
+

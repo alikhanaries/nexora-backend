@@ -16,7 +16,7 @@ ADR-018 deferred **Channel API** order ingestion to a separate future scope. The
 
 The compatibility layer (`src/modules/compatibility/`) already implements Merchant routes. Channel routes are documented in [compatibility.md](../architecture/compatibility.md) and [compatibility-matrix.md](../architecture/compatibility-matrix.md) but not yet implemented.
 
-**Product gap (documented):** Native `POST /api/v1/orders` creates orders in `CONFIRMED` status (`Order.create()` default in `src/modules/orders/domain/order.js`). Merchant `GET /api/v2/orders/new` returns only Nexora `NEW` orders. Without a Channel ingestion path, the Merchant poll/acknowledge loop has no data source for channel-imported orders.
+**Product gap (documented):** Native `POST /api/v1/orders` creates orders in `CONFIRMED` status (`Order.create()` default in `src/modules/orders/domain/order.js`). Merchant `GET /api/v2/orders/new` returns only Wasl `NEW` orders. Without a Channel ingestion path, the Merchant poll/acknowledge loop has no data source for channel-imported orders.
 
 Phase 7.0 resolves design questions **OQ-7-01** through **OQ-7-06** before any implementation (7.1–7.5).
 
@@ -40,7 +40,7 @@ Phase 7 implements **Channel & Marketplace Inbound Connectivity** in sub-phases 
 
 **Decision:** Channel inbound routes use the **verified Channel API paths** on the existing `/api/v2` prefix:
 
-| Method | Nexora route                       | Contract                                  |
+| Method | Wasl route                       | Contract                                  |
 | ------ | ---------------------------------- | ----------------------------------------- |
 | POST   | `/api/v2/orders`                   | Channel API — order ingestion             |
 | POST   | `/api/v2/orders/channel-fulfilled` | Channel API — channel-fulfilled ingestion |
@@ -70,7 +70,7 @@ Phase 7 implements **Channel & Marketplace Inbound Connectivity** in sub-phases 
 **Rationale:**
 
 - ADR-017 documents native creation landing in `CONFIRMED` with inventory reserved in the same transaction. Changing native behavior would break existing `/api/v1` clients and tests.
-- Merchant `GET /api/v2/orders/new` maps external `NEW` ↔ Nexora `OrderStatus.NEW` only ([compatibility-matrix.md](../architecture/compatibility-matrix.md)). Channel ingest must create `NEW` orders to feed this endpoint.
+- Merchant `GET /api/v2/orders/new` maps external `NEW` ↔ Wasl `OrderStatus.NEW` only ([compatibility-matrix.md](../architecture/compatibility-matrix.md)). Channel ingest must create `NEW` orders to feed this endpoint.
 - `ConfirmOrder` / `AcknowledgeOrder` already supports `NEW → CONFIRMED` (idempotent when already `CONFIRMED`) and emits `order.status_changed` + `order.confirmed`.
 
 **Phase 7.1 implementation note:** Extend the public `OrderCommandService.createOrder` contract with an explicit `initialStatus` (or a dedicated `createChannelOrder` method) so Channel ingest can create `NEW` without altering native defaults. Native `/api/v1/orders` remains unchanged.
@@ -85,14 +85,14 @@ Phase 7 implements **Channel & Marketplace Inbound Connectivity** in sub-phases 
 | -------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1        | Channel identifier           | `ChannelQueryService`                                                                                        | See gap below                                                                                                                                       |
 | 2        | `MerchantProductNo`          | `ProductQueryService.getProductBySku(tenantId, sku)`                                                         | Primary product lookup — matches existing Merchant mapper convention                                                                                |
-| 3        | `ChannelProductNo`           | `ProductQueryService.getProductBySku` **first**; if no match, resolve via offer external reference (see gap) | Nexora order lines snapshot `merchantSku` only; no separate channel SKU column ([compatibility-matrix.md](../architecture/compatibility-matrix.md)) |
+| 3        | `ChannelProductNo`           | `ProductQueryService.getProductBySku` **first**; if no match, resolve via offer external reference (see gap) | Wasl order lines snapshot `merchantSku` only; no separate channel SKU column ([compatibility-matrix.md](../architecture/compatibility-matrix.md)) |
 | 4        | (implicit)                   | `OfferQueryService.getOfferForProductAndChannel(tenantId, productId, channelId)`                             | After product + channel resolved                                                                                                                    |
 | 5        | (implicit)                   | `PricingService.getEffectivePrice(...)`                                                                      | Same as native `CreateOrder`                                                                                                                        |
 | 6        | Stock location               | See gap below                                                                                                | Required by `CreateOrderLineCommand.stockLocationId`                                                                                                |
 
 **Channel resolution:**
 
-- External Channel API uses integer `ChannelId`. Nexora channels use UUID primary keys with optional `channels.external_reference` (text).
+- External Channel API uses integer `ChannelId`. Wasl channels use UUID primary keys with optional `channels.external_reference` (text).
 - **Gap (7.1):** `ChannelQueryService` exposes `getChannelById(tenantId, uuid)` only — no `findByExternalReference`. Phase 7.1 must add a **public** method such as `getChannelByExternalReference(tenantId, externalReference)` (or map via a documented tenant configuration convention). Do not bypass the public port from compatibility.
 
 **Offer / channel SKU resolution:**
@@ -104,9 +104,9 @@ Phase 7 implements **Channel & Marketplace Inbound Connectivity** in sub-phases 
 
 - Native create requires `stockLocationId` (UUID) per line (`order.schemas.js`).
 - Channels store `configurationReference` (opaque string) but no structured default stock location.
-- **Gap (7.2):** Resolve stock location from (in order): explicit Channel API request field mapped to Nexora UUID via `configurationReference` convention, tenant-configured default on the channel record (may require a future migration), or reject with `422` when unambiguous resolution is impossible. Document the chosen rule in the compatibility-matrix during 7.2.
+- **Gap (7.2):** Resolve stock location from (in order): explicit Channel API request field mapped to Wasl UUID via `configurationReference` convention, tenant-configured default on the channel record (may require a future migration), or reject with `422` when unambiguous resolution is impossible. Document the chosen rule in the compatibility-matrix during 7.2.
 
-**Rejected:** Accepting Nexora UUID `productId` on the external Channel API — external contracts use merchant/channel product numbers, not Nexora internal IDs.
+**Rejected:** Accepting Wasl UUID `productId` on the external Channel API — external contracts use merchant/channel product numbers, not Wasl internal IDs.
 
 ---
 
@@ -186,7 +186,7 @@ Phase 7 implements **Channel & Marketplace Inbound Connectivity** in sub-phases 
 | Endpoint                                               | Response pattern                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Merchant mutations (acknowledge, ship, cancel, return) | `{ Success: true, StatusCode: 201, Message: null }` — no entity body ([compatibility-acknowledge.schemas.js](../../src/modules/compatibility/presentation/compatibility-acknowledge.schemas.js))                                                                                                                                                                                                           |
-| **`POST /api/v2/orders`** (Channel create)             | **Mapped external order summary** — HTTP `201` with a Channel API-aligned body containing at minimum: external status (`NEW`), `MerchantOrderNo` (Nexora `order_number`), and channel order reference (`ChannelOrderNo` / `external_order_reference`). **Omit** fabricated integer `Id` / `ChannelId` per existing identifier policy ([compatibility-matrix.md](../architecture/compatibility-matrix.md)). |
+| **`POST /api/v2/orders`** (Channel create)             | **Mapped external order summary** — HTTP `201` with a Channel API-aligned body containing at minimum: external status (`NEW`), `MerchantOrderNo` (Wasl `order_number`), and channel order reference (`ChannelOrderNo` / `external_order_reference`). **Omit** fabricated integer `Id` / `ChannelId` per existing identifier policy ([compatibility-matrix.md](../architecture/compatibility-matrix.md)). |
 | **`POST /api/v2/orders/channel-fulfilled`**            | Same family — mapped summary including order + shipment references (e.g. merchant order number, merchant shipment number when provided). Exact fields validated against verified Channel OpenAPI during **7.2/7.3** implementation.                                                                                                                                                                        |
 
 **Rationale:**
@@ -200,7 +200,7 @@ Phase 7 implements **Channel & Marketplace Inbound Connectivity** in sub-phases 
 
 ## Idempotency and deduplication
 
-1. **HTTP idempotency** — Required `Idempotency-Key` header on both Channel POST routes ([compatibility-idempotency.md](../architecture/compatibility-idempotency.md)). Use `PostgresIdempotencyService` with `useTransaction: true` and `routeId` set to the Nexora route (e.g. `POST /api/v2/orders`).
+1. **HTTP idempotency** — Required `Idempotency-Key` header on both Channel POST routes ([compatibility-idempotency.md](../architecture/compatibility-idempotency.md)). Use `PostgresIdempotencyService` with `useTransaction: true` and `routeId` set to the Wasl route (e.g. `POST /api/v2/orders`).
 2. **Business deduplication** — Partial unique index `orders_tenant_channel_external_ref_unique` on `(tenant_id, channel_id, external_order_reference)` prevents duplicate channel orders. A repeat ingest with different idempotency key but same channel order reference must return the existing order (idempotent `201`), not create a duplicate.
 3. **Fingerprint** — Hash the mapped **core command input**, not the raw external body (existing convention).
 4. **Shipment external reference** — Channel-fulfilled shipments use the same `external_reference` uniqueness pattern as Merchant shipments (`shipments_tenant_external_reference_unique`).
@@ -334,3 +334,4 @@ Explicitly **out of Phase 7** unless promoted during implementation:
 - [compatibility-matrix.md](../architecture/compatibility-matrix.md)
 - [compatibility-idempotency.md](../architecture/compatibility-idempotency.md)
 - [events.md](../architecture/events.md)
+

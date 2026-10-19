@@ -6,7 +6,7 @@
 
 ## 1. Context
 
-Nexora is a **provider-neutral modular monolith** ([ADR-001](ADR-001-modular-monolith.md), [platform-independence.md](../architecture/platform-independence.md)). PostgreSQL is the **system of record** for products, offers, prices, inventory, channels, and marketplaces.
+Wasl is a **provider-neutral modular monolith** ([ADR-001](ADR-001-modular-monolith.md), [platform-independence.md](../architecture/platform-independence.md)). PostgreSQL is the **system of record** for products, offers, prices, inventory, channels, and marketplaces.
 
 Completed related phases:
 
@@ -27,7 +27,7 @@ Completed related phases:
 
 There is **no** outbound catalog synchronization code today. Integration events (`product.*`, `offer.*`, `price.*`, `inventory.*`) are emitted to the outbox and may be delivered to **tenant webhook URLs** — that is **not** marketplace API synchronization.
 
-External Merchant/Channel **compatibility** (`/api/v2`) translates HTTP to Nexora public contracts; it does **not** call marketplace product/inventory/price APIs ([compatibility-matrix.md](../architecture/compatibility-matrix.md)).
+External Merchant/Channel **compatibility** (`/api/v2`) translates HTTP to Wasl public contracts; it does **not** call marketplace product/inventory/price APIs ([compatibility-matrix.md](../architecture/compatibility-matrix.md)).
 
 ## 2. Existing capabilities (evidence-based)
 
@@ -92,7 +92,7 @@ Compatibility integer IDs are for `/api/v2` **response enrichment**, not marketp
 
 ## 3. Problem statement
 
-Tenants operating sales channels need Nexora **sellable catalog state** (product/offer identity, price, stock) to appear on external marketplaces **after** changes in Nexora, with controlled retries and without compromising tenant isolation or core module boundaries.
+Tenants operating sales channels need Wasl **sellable catalog state** (product/offer identity, price, stock) to appear on external marketplaces **after** changes in Wasl, with controlled retries and without compromising tenant isolation or core module boundaries.
 
 Today:
 
@@ -125,30 +125,30 @@ Today:
 
 | Domain | Authoritative system | Direction (default) | Notes |
 | ------ | -------------------- | ------------------- | ----- |
-| Product master data | **Nexora** (`products`, content in object storage) | Nexora → channel | No variant table; SKU = `merchantSku` |
-| Offer (product × channel) | **Nexora** (`offers`) | Nexora → channel | One offer per `(tenant, product, channel)` |
-| Price | **Nexora** (`prices` + ADR-014 resolution) | Nexora → channel | Effective price from `PricingService.getEffectivePrice` at sync time |
-| Inventory quantity | **Nexora** (`inventory_balances` per location) | Nexora → channel | Quantity semantics in §8 |
-| Orders / fulfillment | **Nexora** (inbound via compat/channel API) | Inbound already implemented | Out of scope for catalog sync |
+| Product master data | **Wasl** (`products`, content in object storage) | Wasl → channel | No variant table; SKU = `merchantSku` |
+| Offer (product × channel) | **Wasl** (`offers`) | Wasl → channel | One offer per `(tenant, product, channel)` |
+| Price | **Wasl** (`prices` + ADR-014 resolution) | Wasl → channel | Effective price from `PricingService.getEffectivePrice` at sync time |
+| Inventory quantity | **Wasl** (`inventory_balances` per location) | Wasl → channel | Quantity semantics in §8 |
+| Orders / fulfillment | **Wasl** (inbound via compat/channel API) | Inbound already implemented | Out of scope for catalog sync |
 
 **Hard stop (product input required):** If a tenant requires **marketplace-authored** product or price truth, that is **out of model** until a separate ADR defines inbound catalog ownership.
 
 ## 7. Product synchronization architecture
 
-### 7.1 Nexora → external channel
+### 7.1 Wasl → external channel
 
 **Detection:** Subscribe to `product.created`, `product.updated`, `product.status_changed`, and (for channel listings) `offer.*` via a dedicated inbox consumer (new worker handler — future phase).
 
 **Fields in scope (minimum viable):**
 
-| Nexora field | Sync note |
+| Wasl field | Sync note |
 | ------------ | --------- |
 | `merchantSku` | Primary external SKU key unless offer mapping overrides |
 | `productType`, `status` | Map to adapter-specific listing lifecycle |
 | `externalReference` | Optional tenant-level reference; not marketplace ID |
 | Product content | **Deferred** — binary/text in object storage; adapter may need separate media sync phase |
 
-**Variants:** Not modeled. Adapters treat one Nexora product as one listing SKU unless product adds variants later.
+**Variants:** Not modeled. Adapters treat one Wasl product as one listing SKU unless product adds variants later.
 
 **External product IDs:**
 
@@ -163,7 +163,7 @@ Today:
 
 **Channel-specific transforms:** Only inside **marketplace adapter** implementation (e.g. map `STANDARD` product type). Core emits provider-neutral events.
 
-### 7.2 External channel → Nexora (product)
+### 7.2 External channel → Wasl (product)
 
 **Default decision:** **Not required** for initial sync waves. Channel order ingest already resolves **existing** products by SKU ([ADR-020](ADR-020-phase-7-channel-inbound-integration.md)).
 
@@ -181,13 +181,13 @@ publishQuantity = available at L = on_hand - reserved
 
 **Rationale (from existing semantics):**
 
-- Marketplaces must not sell stock already **reserved** for open Nexora orders ([ADR-013](ADR-013-inventory-concurrency.md), ADR-017, ADR-027).
+- Marketplaces must not sell stock already **reserved** for open Wasl orders ([ADR-013](ADR-013-inventory-concurrency.md), ADR-017, ADR-027).
 - Publishing `on_hand` would oversell when `reserved > 0`.
 - Publishing only fulfillment deltas would miss receipt/adjustment/reserve/release paths; `inventory.inventory_changed` and reserve/release events already carry post-mutation balances.
 
 **Payload source:** Prefer `inventory.inventory_changed` payload `balance.available` when `stockLocationId === L`. For `inventory.inventory_reserved` / `inventory_released`, re-read via `InventoryService.getAvailability` in the sync worker if payload is insufficient.
 
-**Hard stop (product input):** Marketplaces that mandate **`on_hand`** or **allocated** semantics different from Nexora must be handled per **adapter capability flag** — not by changing core inventory ([ADR-027](../decisions/ADR-027-phase-14-shipment-fulfillment-inventory.md) forbids allocated model).
+**Hard stop (product input):** Marketplaces that mandate **`on_hand`** or **allocated** semantics different from Wasl must be handled per **adapter capability flag** — not by changing core inventory ([ADR-027](../decisions/ADR-027-phase-14-shipment-fulfillment-inventory.md) forbids allocated model).
 
 ### 8.2 Stock locations and channels
 
@@ -376,7 +376,7 @@ Webhook Retry-After infrastructure is **not** reused directly (different queue, 
 | ----- | --------- |
 | Event consumption | Inbox PK `(consumer_name, event_id)` — existing |
 | Sync HTTP attempt | **`channel_sync_attempts`** table (future migration): unique `(tenant_id, channel_id, sync_kind, idempotency_key)`; stores outcome + external reference |
-| Adapter | Marketplace-specific keys (SKU, listing ID) derived from Nexora IDs |
+| Adapter | Marketplace-specific keys (SKU, listing ID) derived from Wasl IDs |
 
 **Do not** add a generic platform-wide idempotency framework beyond this table + BullMQ job keys.
 
@@ -385,7 +385,7 @@ Webhook Retry-After infrastructure is **not** reused directly (different queue, 
 ### 16.1 Incremental (primary)
 
 ```text
-Nexora mutation → outbox → integration-events → sync enqueue → channel-catalog-sync → adapter → marketplace
+Wasl mutation → outbox → integration-events → sync enqueue → channel-catalog-sync → adapter → marketplace
 ```
 
 ### 16.2 Full reconciliation (secondary)
@@ -393,11 +393,11 @@ Nexora mutation → outbox → integration-events → sync enqueue → channel-c
 ```text
 Scheduled job → for each (tenant, channel) with sync enabled:
   load ACTIVE offers + default stock location
-  for each offer: compare Nexora (price, available) vs marketplace read API (if adapter supports getListing)
+  for each offer: compare Wasl (price, available) vs marketplace read API (if adapter supports getListing)
   enqueue repair jobs for mismatches
 ```
 
-**Authoritative:** Nexora wins on conflict unless product defines otherwise (§25).
+**Authoritative:** Wasl wins on conflict unless product defines otherwise (§25).
 
 **Large catalogs:** Paginate offers; checkpoint cursor in job state.
 
@@ -495,7 +495,7 @@ Channels without `default_stock_location_id` (and no legacy UUID) **skip invento
 | ID | Question | Why blocked |
 | -- | -------- | ----------- |
 | D-15-01 | First marketplace adapter target (`marketplaces.key` value) | Implementation prioritization |
-| D-15-02 | Inbound catalog sync (marketplace → Nexora product create) | No current product requirement |
+| D-15-02 | Inbound catalog sync (marketplace → Wasl product create) | No current product requirement |
 | D-15-03 | Channel-specific SKU distinct from `merchantSku` | Schema/API impact |
 | D-15-04 | Multi-location inventory aggregation per channel | No data model |
 | D-15-05 | Product media/content sync scope | Object storage + adapter complexity |
@@ -519,3 +519,4 @@ Channels without `default_stock_location_id` (and no legacy UUID) **skip invento
 - [ADR-019](ADR-019-phase-6-webhooks-events.md), [ADR-020](ADR-020-phase-7-channel-inbound-integration.md), [ADR-022](ADR-022-phase-9-channel-default-stock-location.md)
 - [module-boundaries.md](../architecture/module-boundaries.md), [events.md](../architecture/events.md)
 - [src/modules/inventory/README.md](../../src/modules/inventory/README.md)
+

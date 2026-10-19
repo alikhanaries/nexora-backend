@@ -35,7 +35,7 @@ Credentials (encrypted JSON): `keyId` / `key_id`, `privateKey` / `private_key`, 
 | `configuration.countryCode` | yes | `ae`, `sa`, or `eg` |
 | `configuration.warehouseCode` | yes | Warehouse for stock updates |
 | `configuration.apiBaseUrl` | no | Default `https://noon-api-gateway.noon.partners` |
-| `configuration.userAgent` | no | Default `Nexora/1.0` or deployment `NOON_USER_AGENT` |
+| `configuration.userAgent` | no | Default `Wasl/1.0` or deployment `NOON_USER_AGENT` |
 
 Deployment defaults for the shared gateway may use `NOON_API_BASE_URL` and `NOON_USER_AGENT` (see root `.env.example`).
 
@@ -70,7 +70,7 @@ Namshi orders use the shared [FBPI](https://noon-docs.noonpartners.dev/docs/fbpi
 
 ### Webhooks
 
-Event Notifications deliver `FBPI::ORDER_SYNC` with `payload.order_nr` only. Nexora marketplace webhook ingress (opaque ingress token per connection) routes `marketplaceKey = namshi` to `NamshiWebhookAdapter`, then `ProcessMarketplaceLifecyclePayload` fetches full order details.
+Event Notifications deliver `FBPI::ORDER_SYNC` with `payload.order_nr` only. Wasl marketplace webhook ingress (opaque ingress token per connection) routes `marketplaceKey = namshi` to `NamshiWebhookAdapter`, then `ProcessMarketplaceLifecyclePayload` fetches full order details.
 
 `metadata.message_id` is the preferred lifecycle `externalEventId`; fallback: `FBPI::ORDER_SYNC:{order_nr}:{published_at}`.
 
@@ -82,8 +82,8 @@ Authentication reuses Namshi catalog session cookies (`NamshiAuthSessionProvider
 
 ## Limitations
 
-- **Product/catalog create** not implemented in Nexora.
-- **MSRP** not synced on local pricing upsert (only `price` from effective Nexora amount).
+- **Product/catalog create** not implemented in Wasl.
+- **MSRP** not synced on local pricing upsert (only `price` from effective Wasl amount).
 - **Activate** does not push stock; run inventory sync to restock.
 - **Catalog** async batch jobs only; order webhooks use Event Notifications (separate from catalog batch responses).
 - **Outbound** `UpdateOrder` (OOS) and shipment query/cancel APIs not wired to generic lifecycle.

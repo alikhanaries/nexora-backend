@@ -1,6 +1,6 @@
 # Operations Guide
 
-Running Nexora Backend in development and preparing for production deployment.
+Running Wasl Backend in development and preparing for production deployment.
 
 ## Processes
 
@@ -97,7 +97,7 @@ Key metrics to watch (as domain modules add instrumentation):
 
 Set `TRACING_ENABLED=true` and `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces` with the observability profile.
 
-Service name: `OTEL_SERVICE_NAME` (default `nexora-backend`).
+Service name: `OTEL_SERVICE_NAME` (default `wasl-backend`).
 
 ## Migrations
 
@@ -143,3 +143,4 @@ Critical production overrides:
 - [infrastructure/README.md](../../infrastructure/README.md) — observability configs
 - [Scalability](../architecture/scalability.md)
 - [Database guide](../database/README.md)
+

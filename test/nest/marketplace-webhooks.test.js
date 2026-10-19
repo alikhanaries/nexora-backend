@@ -153,7 +153,7 @@ describe('Marketplace webhook provider registration (existing adapters)', () => 
     const registry = new MarketplaceWebhookAdapterRegistry();
     registerMarketplaceWebhookAdapters(registry, {
       marketplaceAdapterRuntimeFactory: {},
-      channelQueryService: {},
+      commerceIntegrationQueryService: {},
       database: {},
       shopifyOrderAdapter: {},
     });

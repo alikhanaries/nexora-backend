@@ -1,16 +1,16 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { CancelShipment } from './application/cancel-shipment.js';
-import { CreateShipment } from './application/create-shipment.js';
-import { DeliverShipment } from './application/deliver-shipment.js';
-import { GetShipment } from './application/get-shipment.js';
-import { ListShipments } from './application/list-shipments.js';
-import { ShipShipment } from './application/ship-shipment.js';
-import { toShipmentDetailDto } from './application/shipment-dto.js';
-import { UpdateShipmentTracking } from './application/update-shipment-tracking.js';
+import { CancelShipment } from './services/cancel-shipment.js';
+import { CreateShipment } from './services/create-shipment.js';
+import { DeliverShipment } from './services/deliver-shipment.js';
+import { GetShipment } from './services/get-shipment.js';
+import { ListShipments } from './services/list-shipments.js';
+import { ShipShipment } from './services/ship-shipment.js';
+import { toShipmentDetailDto } from './views/shipment-dto.js';
+import { UpdateShipmentTracking } from './services/update-shipment-tracking.js';
 import { DefaultShipmentCommandService } from './public/shipment-command-service.js';
 import { DefaultShipmentQueryService } from './public/shipment-query-service.js';
-import { PostgresShipmentRepository } from './infrastructure/index.js';
-import shipmentRoutes, {} from './presentation/shipment.routes.js';
+import { PostgresShipmentRepository } from './repositories/index.js';
+import shipmentRoutes, {} from './controllers/shipment.routes.js';
 export function createShipmentsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const shipments = new PostgresShipmentRepository();
@@ -72,5 +72,5 @@ export function createShipmentsModule(deps) {
         routes: shipmentRoutes,
     };
 }
-export { Shipment } from './domain/shipment.js';
-export { ShipmentStatus } from './domain/shipment-status.js';
+export { Shipment } from './models/shipment.js';
+export { ShipmentStatus } from './models/shipment-status.js';

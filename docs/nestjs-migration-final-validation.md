@@ -1,4 +1,4 @@
-# Nexora NestJS Migration — Final Validation & Cutover Readiness
+# Wasl NestJS Migration — Final Validation & Cutover Readiness
 
 **Validation date:** 2026-10-01 (static + automated); **runtime follow-up:** 2026-10-01  
 **Live runtime smoke (local):** 2026-10-01 — branch `fix/final-nest-runtime-validation`  
@@ -329,3 +329,4 @@ Fastify must remain available for rollback and Fastify-only routes until staging
 node scripts/compare-nest-fastify-routes.mjs
 NEST_BASE_URL=http://127.0.0.1:3010 FASTIFY_BASE_URL=http://127.0.0.1:3000 node scripts/local-runtime-smoke.mjs
 ```
+

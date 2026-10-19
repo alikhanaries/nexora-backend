@@ -1,12 +1,14 @@
+import { WASL_NAMING } from '../../shared/config/wasl-naming.config.js';
+
 /**
- * Fans out catalog-related integration events into channel-catalog-sync jobs.
+ * Fans out catalog-related integration events into integration catalog sync jobs.
  */
 export class CatalogSyncEnqueueHandler {
     channelCatalogSyncService;
-    consumerName = 'channel-catalog-sync.enqueue';
+    consumerName = WASL_NAMING.infrastructure.queue.inboxConsumers.catalogSyncEnqueue;
 
     /**
-     * @param {import('../../modules/channel-catalog-sync/application/channel-catalog-sync-service.js').ChannelCatalogSyncService} channelCatalogSyncService
+     * @param {import('../../modules/integration-catalog-sync/application/integration-catalog-sync-service.js').IntegrationCatalogSyncService} channelCatalogSyncService
      */
     constructor(channelCatalogSyncService) {
         this.channelCatalogSyncService = channelCatalogSyncService;

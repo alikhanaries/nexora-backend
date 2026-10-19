@@ -22,7 +22,7 @@ describe('StockConnect CE production readiness (Phase 52)', () => {
         const response = await server.inject({ method: 'GET', url: '/health/ready' });
         const checks = response.json().checks;
         expect(checks.external_compat_ce_routes).toBe('ok');
-        expect(checks.stockconnect_ce_compat).toBe('ok');
+        expect(checks.compat_v2_surface).toBe('ok');
     });
 
     it('does not expose internal details for unexpected CE errors', () => {

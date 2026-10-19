@@ -34,9 +34,9 @@ Optional connection `configuration`:
 
 Adapter-defined external types (stored in `marketplace_entity_mappings`):
 
-- `shopify_product` — Nexora product → Shopify product GID
-- `shopify_product_variant` — Nexora offer → variant GID
-- `shopify_inventory_item` — Nexora product → inventory item GID (from variant lookup)
+- `shopify_product` — Wasl product → Shopify product GID
+- `shopify_product_variant` — Wasl offer → variant GID
+- `shopify_inventory_item` — Wasl product → inventory item GID (from variant lookup)
 
 Mapping hints are returned only after Shopify confirms identifiers in GraphQL responses.
 
@@ -46,7 +46,7 @@ Inbound orders use the same connection and `ShopifyGraphqlClient` as catalog syn
 
 ## Limitations
 
-- Nexora has no generic variant model. **`offer.externalReference` must hold the Shopify variant id** (numeric or GID) for outbound sync. The adapter does not create new Shopify products when that reference is missing.
+- Wasl has no generic variant model. **`offer.externalReference` must hold the Shopify variant id** (numeric or GID) for outbound sync. The adapter does not create new Shopify products when that reference is missing.
 - Product titles and rich content are not synced in Phase 23 because the catalog sync port does not expose localized product content.
 - One variant per offer is assumed (1:1 with merchant SKU).
 

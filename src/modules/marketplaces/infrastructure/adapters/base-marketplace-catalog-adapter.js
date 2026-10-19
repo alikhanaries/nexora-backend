@@ -2,7 +2,7 @@ import { mapMarketplaceErrorToAdapterError } from '../../application/map-marketp
 import { MarketplaceUnsupportedError } from '../../domain/marketplace-errors.js';
 
 /**
- * @typedef {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} MarketplaceAdapterRuntime
+ * @typedef {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} MarketplaceAdapterRuntime
  */
 
 export class BaseMarketplaceCatalogAdapter {

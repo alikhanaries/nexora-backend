@@ -174,7 +174,7 @@ lines.push('');
 
 lines.push('## Notes');
 lines.push('');
-lines.push('- Nexora uses **Fastify + `@fastify/swagger` + Zod** (`fastify-type-provider-zod`), not Express/Swagger-JSDoc.');
+lines.push('- Wasl uses **Fastify + `@fastify/swagger` + Zod** (`fastify-type-provider-zod`), not Express/Swagger-JSDoc.');
 lines.push('- Worker observability routes are inventory-only (separate HTTP listener).');
 lines.push('- Per-route request/response detail lives in route Zod schemas under each module’s `presentation/*.schemas.js`.');
 lines.push('');

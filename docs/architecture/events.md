@@ -1,6 +1,6 @@
 # Events Architecture
 
-Nexora uses **integration events** for cross-module and cross-system communication. Phase 1 implements the transport plumbing; domain events arrive with business modules.
+Wasl uses **integration events** for cross-module and cross-system communication. Phase 1 implements the transport plumbing; domain events arrive with business modules.
 
 ## Delivery guarantee: at-least-once
 
@@ -276,3 +276,4 @@ These tables are global infrastructure maintenance tables and are purged through
 - Full JSON Schema / Avro event registry (OQ-032)
 - Kafka / NATS alternative transports
 - Saga orchestration
+

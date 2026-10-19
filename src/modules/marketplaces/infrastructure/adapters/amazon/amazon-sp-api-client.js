@@ -26,7 +26,7 @@ export class AmazonSpApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      */
     async getMarketplaceParticipations(runtime) {
         const host = resolveAmazonSpApiHost(runtime.configuration ?? {});
@@ -37,12 +37,12 @@ export class AmazonSpApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} sku
      * @param {object[]} patches
      */
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} amazonOrderId
      */
     async getOrder(runtime, amazonOrderId) {
@@ -55,7 +55,7 @@ export class AmazonSpApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} amazonOrderId
      */
     async getOrderItems(runtime, amazonOrderId) {
@@ -70,7 +70,7 @@ export class AmazonSpApiClient {
     /**
      * Merchant-fulfilled shipment confirmation (Orders API v0).
      *
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} amazonOrderId
      * @param {object} body
      */
@@ -100,7 +100,7 @@ export class AmazonSpApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {import('../../http/marketplace-request-signer.port.js').MarketplaceSignableRequest} request
      */
     async signedRequest(runtime, request) {

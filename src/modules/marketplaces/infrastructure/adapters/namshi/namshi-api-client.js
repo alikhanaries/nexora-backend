@@ -32,7 +32,7 @@ export class NamshiApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      */
     async whoami(runtime) {
         return this.authenticatedRequest(runtime, {
@@ -42,7 +42,7 @@ export class NamshiApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} partnerSku
      * @param {number} quantity
      */
@@ -66,7 +66,7 @@ export class NamshiApiClient {
     /**
      * Namshi local pricing upsert (verified: POST /pricing/v1/local/upsert).
      *
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} partnerSku
      * @param {number} price
      */
@@ -88,7 +88,7 @@ export class NamshiApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} partnerSku
      */
     async getProductOffers(runtime, partnerSku) {
@@ -101,7 +101,7 @@ export class NamshiApiClient {
     /**
      * FBPI order details (verified: GET /fbpi/v1/fbpi-order/{fbpi_order_nr}/get).
      *
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} fbpiOrderNr
      */
     async getFbpiOrder(runtime, fbpiOrderNr) {
@@ -118,7 +118,7 @@ export class NamshiApiClient {
     /**
      * FBPI CreateShipment — register seller shipment with AWB (Phase 42 outbound fulfill).
      *
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {object} body
      */
     async createFbpiShipment(runtime, body) {
@@ -130,7 +130,7 @@ export class NamshiApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {{ path: string, method?: string, body?: unknown }} request
      */
     async authenticatedRequest(runtime, request) {

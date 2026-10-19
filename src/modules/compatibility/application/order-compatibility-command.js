@@ -27,7 +27,7 @@ export class OrderCompatibilityCommand {
      * @param {object} deps
      * @param {import('../../orders/public/order-command-service.js').DefaultOrderCommandService} deps.orderCommandService
      * @param {import('../../orders/public/order-query-service.js').DefaultOrderQueryService} deps.orderQueryService
-     * @param {import('../../channels/public/channel-query-service.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../commerce-integrations/public/commerce-integration-query-service.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} deps.externalIntegerIdMappingQueryService
      */
     constructor(deps) {
@@ -46,14 +46,14 @@ export class OrderCompatibilityCommand {
      * @param {string} input.idempotencyKey
      * @param {string} input.principalFingerprint
      */
-    async createChannelOrder(input) {
+    async createIntegrationOrder(input) {
         const channel = await this.resolveChannelContext(input);
         const stockLocationId = resolveChannelStockLocationId(channel);
         const mapped = mapExternalChannelOrderRequest(input.body, {
             channelId: channel.id,
             stockLocationId,
         });
-        const { order } = await this.deps.orderCommandService.createChannelOrder({
+        const { order } = await this.deps.orderCommandService.createIntegrationOrder({
             tenantId: input.tenantId,
             actorId: input.actorId,
             actorKind: input.actorKind,
@@ -89,14 +89,14 @@ export class OrderCompatibilityCommand {
      * @param {string} input.idempotencyKey
      * @param {string} input.principalFingerprint
      */
-    async createChannelFulfilledOrder(input) {
+    async createIntegrationFulfilledOrder(input) {
         const channel = await this.resolveChannelContext(input);
         const stockLocationId = resolveChannelStockLocationId(channel);
         const mapped = mapExternalChannelFulfilledOrderRequest(input.body, {
             channelId: channel.id,
             stockLocationId,
         });
-        const result = await this.deps.orderCommandService.createChannelFulfilledOrder({
+        const result = await this.deps.orderCommandService.createIntegrationFulfilledOrder({
             tenantId: input.tenantId,
             actorId: input.actorId,
             actorKind: input.actorKind,
@@ -129,15 +129,15 @@ export class OrderCompatibilityCommand {
      */
     async resolveChannelContext(input) {
         if (input.apiKeyChannelId !== undefined) {
-            return this.deps.channelQueryService.verifyChannelUsable(input.tenantId, input.apiKeyChannelId);
+            return this.deps.commerceIntegrationQueryService.verifyChannelUsable(input.tenantId, input.apiKeyChannelId);
         }
         const channelExternalReference = input.channelExternalReference?.trim();
         if (channelExternalReference !== undefined && channelExternalReference.length > 0) {
-            const channel = await this.deps.channelQueryService.getChannelByExternalReference(
+            const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationByExternalReference(
                 input.tenantId,
                 channelExternalReference,
             );
-            return this.deps.channelQueryService.verifyChannelUsable(input.tenantId, channel.id);
+            return this.deps.commerceIntegrationQueryService.verifyChannelUsable(input.tenantId, channel.id);
         }
         throw new BusinessRuleError('Channel context is required for channel order ingestion');
     }

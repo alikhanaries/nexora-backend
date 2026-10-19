@@ -11,8 +11,8 @@ import { randomUUID } from 'node:crypto';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const INVENTORY_MD = join(ROOT, 'docs/API_ROUTE_INVENTORY.md');
 const OPENAPI_PATH = join(ROOT, 'docs/.openapi-snapshot.json');
-const OUT_COLLECTION = join(ROOT, 'postman/Nexora_Backend_API.postman_collection.json');
-const OUT_ENV = join(ROOT, 'postman/Nexora_Local.postman_environment.json');
+const OUT_COLLECTION = join(ROOT, 'postman/Wasl_Backend_API.postman_collection.json');
+const OUT_ENV = join(ROOT, 'postman/Wasl_Local.postman_environment.json');
 const OUT_INVENTORY = join(ROOT, 'docs/POSTMAN_API_INVENTORY.md');
 
 const WORKER_ROUTES = [
@@ -415,7 +415,7 @@ function buildWorkerFolder() {
 function buildEnvironment() {
     return {
         id: randomUUID(),
-        name: 'Nexora Local',
+        name: 'Wasl Local',
         values: [
             { key: 'baseUrl', value: 'http://localhost:3000', type: 'default', enabled: true },
             { key: 'workerBaseUrl', value: 'http://127.0.0.1:3001', type: 'default', enabled: true },
@@ -493,9 +493,9 @@ function main() {
     const collection = {
         info: {
             _postman_id: randomUUID(),
-            name: 'Nexora Backend API',
+            name: 'Wasl Backend API',
             description:
-                'Complete Nexora Fastify API (main server + worker observability). Generated from verified route inventory and OpenAPI. Do not use production credentials.',
+                'Complete Wasl Fastify API (main server + worker observability). Generated from verified route inventory and OpenAPI. Do not use production credentials.',
             schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
         },
         auth: {

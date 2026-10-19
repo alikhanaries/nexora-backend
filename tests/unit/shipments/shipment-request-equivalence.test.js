@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEquivalentShipmentRequest } from '../../../src/modules/shipments/application/shipment-request-equivalence.js';
+import { isEquivalentShipmentRequest } from '../../../src/modules/shipments/services/shipment-request-equivalence.js';
 
 describe('shipment request equivalence', () => {
     it('matches equivalent shipment requests', () => {

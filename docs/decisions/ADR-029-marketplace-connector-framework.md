@@ -18,9 +18,9 @@ Production operation requires **tenant-scoped marketplace connections**, encrypt
 - **Capability discovery** per adapter (`getCapabilities()`)
 - **Provider-specific HTTP** isolated under `marketplaces/infrastructure/adapters/`
 - **Normalized marketplace errors** mapped to existing catalog sync retry/permanent semantics
-- **Provider rate limits** handled inside adapters (respect `Retry-After`); Nexora `catalog-sync` rate limit unchanged
+- **Provider rate limits** handled inside adapters (respect `Retry-After`); Wasl `catalog-sync` rate limit unchanged
 - **Tenant isolation** + RLS on connection and entity mapping tables
-- **Idempotent sync** via Nexora job coalescing + provider upsert/patch semantics where verified
+- **Idempotent sync** via Wasl job coalescing + provider upsert/patch semantics where verified
 - **Extensibility:** marketplace #N = new adapter + registration + contract tests
 
 ## 3. Non-goals (Phase 21)
@@ -104,3 +104,4 @@ See [order-ingestion.md](../marketplaces/order-ingestion.md).
 - [ADR-028](ADR-028-phase-15-catalog-sync-architecture.md)
 - [platform-independence.md](../architecture/platform-independence.md)
 - [module-boundaries.md](../architecture/module-boundaries.md)
+

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { WASL_NAMING } from './naming.config.js';
 import { envBoolean, envInteger, envOptionalString, envString, envStringList, envUrl, } from './env-parsers.js';
 export const NODE_ENVIRONMENTS = ['development', 'test', 'production'];
 export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'];
@@ -13,8 +14,8 @@ export const configSchema = z.object({
         .optional()
         .transform((value) => value?.trim() ?? 'development')
         .pipe(z.enum(NODE_ENVIRONMENTS)),
-    APP_NAME: envString('nexora-backend'),
-    APP_INSTANCE_NAMESPACE: envString('local'),
+    APP_NAME: envString(WASL_NAMING.backendServiceId),
+    APP_INSTANCE_NAMESPACE: envString(WASL_NAMING.defaultInstanceNamespace),
     SERVER_HOST: envString('0.0.0.0'),
     SERVER_PORT: envInteger({ default: 3000, min: 1, max: 65_535 }),
     SERVER_SHUTDOWN_TIMEOUT_MS: envInteger({ default: 15_000, min: 0, max: 300_000 }),
@@ -32,11 +33,11 @@ export const configSchema = z.object({
     DATABASE_QUERY_TIMEOUT_MS: envInteger({ default: 15_000, min: 100, max: 600_000 }),
     DATABASE_SSL: envBoolean(false),
     REDIS_URL: envUrl(),
-    REDIS_KEY_PREFIX: envString('nexora'),
+    REDIS_KEY_PREFIX: envString(WASL_NAMING.defaultRedisKeyPrefix),
     REDIS_CONNECT_TIMEOUT_MS: envInteger({ default: 5_000, min: 100, max: 120_000 }),
     REDIS_COMMAND_TIMEOUT_MS: envInteger({ default: 5_000, min: 100, max: 120_000 }),
     QUEUE_REDIS_URL: envOptionalString(),
-    QUEUE_PREFIX: envString('nexora-queue'),
+    QUEUE_PREFIX: envString(WASL_NAMING.defaultQueuePrefix),
     QUEUE_DEFAULT_ATTEMPTS: envInteger({ default: 5, min: 1, max: 50 }),
     QUEUE_BACKOFF_BASE_MS: envInteger({ default: 1_000, min: 10, max: 600_000 }),
     QUEUE_WORKER_CONCURRENCY: envInteger({ default: 5, min: 1, max: 500 }),
@@ -70,7 +71,7 @@ export const configSchema = z.object({
     METRICS_ENABLED: envBoolean(true),
     TRACING_ENABLED: envBoolean(false),
     OTEL_EXPORTER_OTLP_ENDPOINT: envOptionalString(),
-    OTEL_SERVICE_NAME: envString('nexora-backend'),
+    OTEL_SERVICE_NAME: envString(WASL_NAMING.defaultOtelServiceName),
     WORKER_OBSERVABILITY_HTTP_ENABLED: envBoolean(true),
     WORKER_OBSERVABILITY_HOST: envString('127.0.0.1'),
     WORKER_OBSERVABILITY_PORT: envInteger({ default: 3002, min: 1, max: 65_535 }),
@@ -91,7 +92,13 @@ export const configSchema = z.object({
     AUTH_PASSWORD_MAX_LENGTH: envInteger({ default: 128, min: 12, max: 256 }),
     SHOPIFY_ADMIN_API_VERSION: envOptionalString(),
     AMAZON_LWA_TOKEN_URL: envOptionalString(),
+    /** Deployment-wide Noon gateway default; per-connection `configuration.apiBaseUrl` overrides. */
+    NOON_API_BASE_URL: envOptionalString(),
+    NOON_USER_AGENT: envOptionalString(),
     MARKETPLACE_LIFECYCLE_QUEUE_NAME: envString('marketplace-order-lifecycle'),
     MARKETPLACE_LIFECYCLE_JOB_ATTEMPTS: envInteger({ default: 0, min: 0, max: 50 }),
     MARKETPLACE_LIFECYCLE_BACKOFF_MS: envInteger({ default: 0, min: 0, max: 600_000 }),
+    STOCK_CONNECT_INTEGRATION_ENABLED: envBoolean(true),
+    STOCK_CONNECT_BASE_URL: envOptionalString(),
+    STOCK_CONNECT_SERVICE_TOKEN: envOptionalString(),
 });

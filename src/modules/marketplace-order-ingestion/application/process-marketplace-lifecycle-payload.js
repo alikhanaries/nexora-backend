@@ -10,8 +10,8 @@ export class ProcessMarketplaceLifecyclePayload {
      * @param {object} deps
      * @param {import('./marketplace-order-lifecycle-service.js').MarketplaceOrderLifecycleService} deps.lifecycleService
      * @param {import('../public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
-     * @param {import('../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
-     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
+     * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
      * @param {import('./ensure-marketplace-order-ingested-from-lifecycle.js').EnsureMarketplaceOrderIngestedFromLifecycle} [deps.ensureMarketplaceOrderIngestedFromLifecycle]
      */

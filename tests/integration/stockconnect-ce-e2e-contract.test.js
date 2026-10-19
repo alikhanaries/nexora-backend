@@ -93,7 +93,7 @@ describe('StockConnect CE end-to-end contract verification', () => {
         expect(body.Content[0].MerchantProductNo).toBe(fixture.merchantSku);
     });
 
-    it('GET /api/v2/ce/channels/:channelId/products returns MerchantProductNo and ChannelStatus', async () => {
+    it('GET /api/v2/ce/channels/:channelId/products returns MerchantProductNo and IntegrationStatus', async () => {
         const { tenantId, slug } = await createTestTenant(server);
         const user = await createAuthenticatedUser(app, tenantId, slug);
         const headers = authHeaders(user.accessToken);
@@ -126,7 +126,7 @@ describe('StockConnect CE end-to-end contract verification', () => {
         expect(typeof body.Count).toBe('number');
         const item = body.Content.find((row) => row.MerchantProductNo === fixture.merchantSku);
         expect(item).toBeDefined();
-        expect(typeof item.ChannelStatus).toBe('string');
+        expect(typeof item.IntegrationStatus).toBe('string');
     });
 
     it('POST /api/v2/ce/orders/acknowledge accepts StockConnect payload without Idempotency-Key', async () => {

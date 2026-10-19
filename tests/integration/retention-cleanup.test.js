@@ -47,16 +47,21 @@ describe('retention cleanup integration', { timeout: 120_000 }, () => {
     it('respects outbox batch size and eventually deletes all eligible rows', async () => {
         const infra = await getTestInfrastructure();
         const service = createService(infra, { outboxDays: 10, inboxDays: 30, idempotencyDays: 7, batchSize: 2 });
+        const marker = `test.retention.batch.${randomUUID()}`;
         const ids = [randomUUID(), randomUUID(), randomUUID()];
         for (const id of ids) {
             await infra.database.query(`INSERT INTO outbox_events
          (id, event_type, event_version, aggregate_type, aggregate_id, payload, published_at, occurred_at)
-         VALUES ($1, 'test.batch', 1, 'test', 'batch-item', '{}'::jsonb, $2, $2)`, [id, daysAgo(20)], { operation: 'test.retention.outbox_batch_seed' });
+         VALUES ($1, $2, 1, 'test', 'batch-item', '{}'::jsonb, $3, $3)`, [id, marker, daysAgo(20)], { operation: 'test.retention.outbox_batch_seed' });
         }
+        const before = await infra.database.query(`SELECT count(*)::int AS count FROM outbox_events WHERE event_type = $1`, [marker], { operation: 'test.retention.outbox_batch_before' });
+        expect(before.rows[0]?.count).toBe(3);
         const stats = await service.run();
-        expect(stats.outboxDeleted).toBe(3);
+        expect(stats.outboxDeleted).toBeGreaterThanOrEqual(3);
         const remaining = await infra.database.query(`SELECT count(*)::int AS count FROM outbox_events WHERE id = ANY($1::uuid[])`, [ids], { operation: 'test.retention.outbox_batch_verify' });
         expect(remaining.rows[0]?.count).toBe(0);
+        const afterMarker = await infra.database.query(`SELECT count(*)::int AS count FROM outbox_events WHERE event_type = $1`, [marker], { operation: 'test.retention.outbox_batch_after' });
+        expect(afterMarker.rows[0]?.count).toBe(0);
     });
     it('deletes old processed inbox rows and preserves active rows', async () => {
         const infra = await getTestInfrastructure();

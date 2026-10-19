@@ -10,7 +10,7 @@ export class DefaultMarketplaceEntityMappingRecorder {
     }
 
     /**
-     * @param {import('../../channel-catalog-sync/public/marketplace-entity-mapping-recorder.port.js').MarketplaceCatalogSyncMappingHint[]} input.mappings
+     * @param {import('../../integration-catalog-sync/public/marketplace-entity-mapping-recorder.port.js').MarketplaceCatalogSyncMappingHint[]} input.mappings
      */
     async recordMappings(input) {
         if (input.mappings.length === 0) {

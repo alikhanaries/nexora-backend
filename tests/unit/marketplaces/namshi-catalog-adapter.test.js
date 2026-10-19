@@ -7,7 +7,7 @@ import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/infrast
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
-} from '../../../src/modules/channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+} from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
 
 const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const privateKeyPem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
@@ -23,7 +23,7 @@ const runtime = {
     configuration: {
         countryCode: 'ae',
         warehouseCode: 'WH-NAM-01',
-        userAgent: 'Nexora-Test/1.0',
+        userAgent: 'Wasl-Test/1.0',
     },
 };
 

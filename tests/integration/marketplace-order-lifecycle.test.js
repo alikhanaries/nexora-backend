@@ -8,7 +8,7 @@ import { MarketplaceOrderLifecycleUnsupportedError } from '../../src/modules/mar
 import { DefaultMarketplaceEntityMappingLookup } from '../../src/modules/marketplaces/public/index.js';
 import { PostgresMarketplaceEntityMappingRepository } from '../../src/modules/marketplaces/infrastructure/postgres-marketplace-entity-mapping-repository.js';
 import { PostgresMarketplaceRepository } from '../../src/modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
-import { PostgresOrderRepository } from '../../src/modules/orders/infrastructure/postgres-order-repository.js';
+import { PostgresOrderRepository } from '../../src/modules/orders/repositories/postgres-order-repository.js';
 import { DefaultProductQueryService } from '../../src/modules/products/public/index.js';
 import { PostgresProductRepository } from '../../src/modules/products/infrastructure/postgres-product-repository.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
@@ -103,9 +103,9 @@ describe('marketplace order lifecycle integration', () => {
         });
         module = createMarketplaceOrderIngestionModule({
             database: infra.database,
-            channelQueryService: app.channels.channelQueryService,
+            commerceIntegrationQueryService: app.channels.commerceIntegrationQueryService,
             marketplaceLookup,
-            createChannelOrder: app.orders.createChannelOrder,
+            createIntegrationOrder: app.orders.createIntegrationOrder,
             marketplaceEntityMappingLookup: new DefaultMarketplaceEntityMappingLookup({
                 mappings: new PostgresMarketplaceEntityMappingRepository(),
                 queryable: infra.database,

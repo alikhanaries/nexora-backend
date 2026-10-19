@@ -36,7 +36,7 @@ function cancellableQuantity(orderLine) {
 }
 
 /**
- * Maps external cancellation lines to Nexora order line allocations.
+ * Maps external cancellation lines to platform order line allocations.
  *
  * `MerchantProductNo` maps to the order line's snapshotted `merchantSku`.
  * When `resolvedOrderLineId` is present, the line is allocated directly to that order line.
@@ -106,7 +106,7 @@ export function mapExternalCancellationLinesToOrderLines(externalLines, orderLin
 }
 
 /**
- * `MerchantCancellationNo` maps to Nexora `Cancellation.externalReference` (tenant-unique when set).
+ * `MerchantCancellationNo` maps to platform `Cancellation.externalReference` (tenant-unique when set).
  *
  * @param {{
  *   MerchantCancellationNo: string,

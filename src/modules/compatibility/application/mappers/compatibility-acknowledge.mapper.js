@@ -1,7 +1,7 @@
 /**
- * Maps an external acknowledge request to the Nexora order command input.
+ * Maps an external acknowledge request to the platform order command input.
  *
- * Order lookup uses `MerchantOrderNo` → Nexora `orderNumber`.
+ * Order lookup uses `MerchantOrderNo` → platform `orderNumber`.
  * External integer `OrderId` is resolved in the compatibility command layer.
  *
  * @param {{ MerchantOrderNo: string, OrderId: string|number }} body
@@ -24,7 +24,7 @@ export function mapAcknowledgeResultToExternalResponse(_result) {
 }
 
 /**
- * Fingerprint input for idempotency — uses mapped Nexora order number only.
+ * Fingerprint input for idempotency — uses mapped platform order number only.
  *
  * @param {{ orderNumber: string }} mapped
  */

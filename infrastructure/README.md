@@ -28,6 +28,10 @@ docker compose --profile observability up -d
 | OTel Collector | 4318 (OTLP HTTP) | `observability/otel-collector.yaml` |
 | Prometheus     | 9090             | `observability/prometheus.yml`      |
 
+## Docker Compose project name
+
+The repository root `docker-compose.yml` uses project name **`wasl`**. PostgreSQL credentials in that file remain **`nexora` / `nexora_app`** where required by deployed migrations (RLS role from `0030_rls_hardening.sql`). Redis and queue prefixes in your `.env` may still use `nexora` for existing local volumes; schema defaults are `wasl` / `wasl-queue` (see `WASL_NAMING`).
+
 ## Enabling tracing in the app
 
 With the observability profile running:
@@ -35,14 +39,14 @@ With the observability profile running:
 ```env
 TRACING_ENABLED=true
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces
-OTEL_SERVICE_NAME=nexora-backend
+OTEL_SERVICE_NAME=wasl-backend
 ```
 
 Restart the API after changing environment variables.
 
 ## Prometheus
 
-Default config scrapes the Nexora metrics endpoint. With API running and `METRICS_ENABLED=true`:
+Default config scrapes the Wasl metrics endpoint. With API running and `METRICS_ENABLED=true`:
 
 - Metrics URL: http://localhost:3000/metrics
 - Prometheus UI: http://localhost:9090
@@ -58,3 +62,4 @@ These files are **development references**. Production deployments should use ma
 - [docker-compose.yml](../docker-compose.yml)
 - [docs/operations/README.md](../docs/operations/README.md)
 - [src/infrastructure/observability/](../src/infrastructure/observability/) — application tracing and metrics code
+

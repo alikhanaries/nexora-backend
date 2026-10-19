@@ -116,7 +116,7 @@ describe('worker observability HTTP', () => {
     });
     it('serves Prometheus metrics from the existing registry', async () => {
         const { readiness } = createDeps();
-        const metrics = new PrometheusMetrics('nexora-backend-worker');
+        const metrics = new PrometheusMetrics('wasl-backend-worker');
         metrics.recordQueueJob({
             queue: 'integration-events',
             jobName: 'publish-integration-event',
@@ -131,7 +131,7 @@ describe('worker observability HTTP', () => {
         const response = await app.inject({ method: 'GET', url: '/internal/metrics' });
         expect(response.statusCode).toBe(200);
         expect(response.body).toContain('queue_jobs_total');
-        expect(response.body).toContain('service="nexora-backend-worker"');
+        expect(response.body).toContain('service="wasl-backend-worker"');
         await app.close();
     });
     it('returns 404 for metrics when disabled', async () => {

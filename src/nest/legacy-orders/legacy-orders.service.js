@@ -5,9 +5,9 @@ import { actorFingerprint } from '../../shared/http/actor-fingerprint.js';
 import { requireIdempotencyKey } from '../../shared/idempotency/index.js';
 import { enforceCompatibilityRateLimit } from '../../modules/compatibility/application/enforce-compatibility-rate-limit.js';
 import {
-  resolveStockConnectCeIdempotencyKey,
+  resolveCompatV2IdempotencyKey,
   stableIdempotencyFingerprint,
-} from '../../modules/compatibility/application/resolve-stockconnect-ce-idempotency-key.js';
+} from '../../modules/compatibility/application/resolve-compat-v2-idempotency-key.js';
 import { commerceActorFields } from '../common/commerce-actor.js';
 import { CORE_DOMAIN } from '../domain/core-domain.tokens.js';
 
@@ -79,16 +79,16 @@ class LegacyOrdersService {
   }
 
   /**
-   * @param {import('zod').infer<typeof import('../../modules/compatibility/presentation/compatibility-channel-order.schemas.js').createChannelOrderBodySchema>} body
+   * @param {import('zod').infer<typeof import('../../modules/compatibility/presentation/compatibility-channel-order.schemas.js').createIntegrationOrderBodySchema>} body
    * @param {string | string[] | undefined} idempotencyKeyHeader
    * @param {string | string[] | undefined} channelReferenceHeader
    */
-  async createChannelOrderV2(body, idempotencyKeyHeader, channelReferenceHeader) {
+  async createIntegrationOrderV2(body, idempotencyKeyHeader, channelReferenceHeader) {
     await this.enforceMutationRateLimit();
     const actor = requireActorContext();
     const { actorId, actorKind } = commerceActorFields(actor);
     const idempotencyKey = requireIdempotencyKey(idempotencyKeyHeader);
-    return this.routeDeps.orderCompatibilityCommand.createChannelOrder({
+    return this.routeDeps.orderCompatibilityCommand.createIntegrationOrder({
       tenantId: actor.tenantId,
       actorId,
       actorKind,
@@ -102,12 +102,12 @@ class LegacyOrdersService {
     });
   }
 
-  async createChannelFulfilledOrderV2(body, idempotencyKeyHeader, channelReferenceHeader) {
+  async createIntegrationFulfilledOrderV2(body, idempotencyKeyHeader, channelReferenceHeader) {
     await this.enforceMutationRateLimit();
     const actor = requireActorContext();
     const { actorId, actorKind } = commerceActorFields(actor);
     const idempotencyKey = requireIdempotencyKey(idempotencyKeyHeader);
-    return this.routeDeps.orderCompatibilityCommand.createChannelFulfilledOrder({
+    return this.routeDeps.orderCompatibilityCommand.createIntegrationFulfilledOrder({
       tenantId: actor.tenantId,
       actorId,
       actorKind,
@@ -147,7 +147,7 @@ class LegacyOrdersService {
   async listCeOrders(query) {
     await this.enforceReadRateLimit();
     const actor = requireActorContext();
-    return this.routeDeps.stockConnectCeOrderCompatibilityQuery.listOrdersForStockConnectPoll({
+    return this.routeDeps.compatV2OrderQuery.listOrdersForCompatV2Poll({
       tenantId: actor.tenantId,
       actorPermissions: actor.permissions,
       page: query.page,
@@ -158,7 +158,7 @@ class LegacyOrdersService {
   async getCeOrderInvoice(merchantOrderNo) {
     await this.enforceReadRateLimit();
     const actor = requireActorContext();
-    return this.routeDeps.stockConnectCeOrderInvoiceQuery.getOrderInvoice({
+    return this.routeDeps.compatV2OrderInvoiceQuery.getOrderInvoice({
       tenantId: actor.tenantId,
       actorPermissions: actor.permissions,
       merchantOrderNo,
@@ -174,7 +174,7 @@ class LegacyOrdersService {
     const actor = requireActorContext();
     const { actorId, actorKind } = commerceActorFields(actor);
     const routeId = 'POST /api/v2/ce/orders/acknowledge';
-    const idempotencyKey = resolveStockConnectCeIdempotencyKey({
+    const idempotencyKey = resolveCompatV2IdempotencyKey({
       header: idempotencyKeyHeader,
       tenantId: actor.tenantId,
       routeId,

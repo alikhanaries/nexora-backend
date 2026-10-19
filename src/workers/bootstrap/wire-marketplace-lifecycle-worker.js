@@ -16,8 +16,8 @@ import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../../modules/m
  * @param {import('../../modules/marketplace-order-ingestion/application/process-marketplace-lifecycle-payload.js').ProcessMarketplaceLifecyclePayload} [deps.processMarketplaceLifecyclePayload]
  * @param {import('../../modules/marketplaces/application/execute-outbound-marketplace-order-lifecycle-command.js').ExecuteOutboundMarketplaceOrderLifecycleCommand} [deps.executeOutboundMarketplaceOrderLifecycle]
  * @param {import('../../modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
- * @param {import('../../modules/channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
- * @param {import('../../modules/channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+ * @param {import('../../modules/integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
+ * @param {import('../../modules/commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
  * @param {import('../../modules/marketplace-order-ingestion/public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} deps.marketplaceLookup
  */
 export function wireMarketplaceLifecycleWorker(deps) {
@@ -36,7 +36,7 @@ export function wireMarketplaceLifecycleWorker(deps) {
     const executeMarketplaceLifecycleJob = new ExecuteMarketplaceLifecycleJob({
         orderLifecycleProcessor,
         lifecycleService: deps.lifecycleService,
-        channelQueryService: deps.channelQueryService,
+        commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         marketplaceLookup: deps.marketplaceLookup,
         metrics: deps.metrics,
         logger: deps.logger,
@@ -48,7 +48,7 @@ export function wireMarketplaceLifecycleWorker(deps) {
         lifecycleEnqueueService,
         orderAdapterRegistry: deps.orderAdapterRegistry,
         marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory,
-        channelQueryService: deps.channelQueryService,
+        commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         database: deps.database,
     });
     const enqueueOutboundMarketplaceOrderLifecycle = new EnqueueOutboundMarketplaceOrderLifecycleCommand({

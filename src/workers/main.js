@@ -9,8 +9,8 @@ import { describeErrorForLog } from '../shared/errors/index.js';
 import { createIntegrationEventConsumers } from './create-integration-event-consumers.js';
 import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
 import { CatalogSyncEnqueueHandler } from './handlers/catalog-sync-enqueue.handler.js';
-import { CatalogSyncReconciliationScheduler } from '../modules/channel-catalog-sync/application/catalog-sync-reconciliation-scheduler.js';
-import { wireChannelCatalogSync } from './bootstrap/wire-channel-catalog-sync.js';
+import { CatalogSyncReconciliationScheduler } from '../modules/integration-catalog-sync/application/catalog-sync-reconciliation-scheduler.js';
+import { wireIntegrationCatalogSync } from './bootstrap/wire-integration-catalog-sync.js';
 import { wireMarketplaceLifecycleWorker } from './bootstrap/wire-marketplace-lifecycle-worker.js';
 import { createWorkerMarketplaceCommerceDeps } from './bootstrap/create-worker-marketplace-commerce-deps.js';
 import { startWorkerObservabilityHttp } from './observability/start-worker-observability-http.js';
@@ -22,7 +22,7 @@ async function main() {
         database: infra.database,
         queue: infra.queue,
     });
-    const { channelCatalogSyncService, catalogSyncReconciliationService } = wireChannelCatalogSync({
+    const { channelCatalogSyncService, catalogSyncReconciliationService } = wireIntegrationCatalogSync({
         database: infra.database,
         queue: infra.queue,
         rateLimiter: infra.rateLimiter,
@@ -39,7 +39,7 @@ async function main() {
         marketplaceOrderIngestion,
         executeOutboundMarketplaceOrderLifecycle,
         orderQueryService,
-        channelQueryService,
+        commerceIntegrationQueryService,
         externalIntegerIdMappingQueryService,
     } = createWorkerMarketplaceCommerceDeps(infra, secretEncryptor);
     const webhookDeliveryService = createWebhookDeliveryService({
@@ -52,7 +52,7 @@ async function main() {
         config,
         webhookPayloadStrategies: wireExternalConsumerWebhookPayloadStrategies({
             orderQueryService,
-            channelQueryService,
+            commerceIntegrationQueryService,
             externalIntegerIdMappingQueryService,
         }),
     });
@@ -68,7 +68,7 @@ async function main() {
         executeOutboundMarketplaceOrderLifecycle,
         orderAdapterRegistry: marketplaceOrderIngestion.orderAdapterRegistry,
         marketplaceAdapterRuntimeFactory: marketplaceOrderIngestion.marketplaceAdapterRuntimeFactory,
-        channelQueryService: marketplaceOrderIngestion.channelQueryService,
+        commerceIntegrationQueryService: marketplaceOrderIngestion.commerceIntegrationQueryService,
         marketplaceLookup: marketplaceOrderIngestion.marketplaceLookup,
     });
     const { integrationEventRouter } = createIntegrationEventConsumers({

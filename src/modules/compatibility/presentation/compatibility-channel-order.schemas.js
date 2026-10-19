@@ -32,7 +32,7 @@ const channelOrderLineRequestSchema = z.object({
     ExtraData: z.record(z.string()).nullable().optional(),
 });
 
-export const createChannelOrderBodySchema = z.object({
+export const createIntegrationOrderBodySchema = z.object({
     BillingAddress: channelAddressSchema,
     ShippingAddress: channelShippingAddressSchema,
     ChannelOrderNo: z.string().min(1).max(60),

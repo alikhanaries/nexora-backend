@@ -1,5 +1,5 @@
 import { ValidationError } from '../../../shared/errors/index.js';
-import { isMarketplaceNexoraEntityType } from '../domain/marketplace-nexora-entity-type.js';
+import { isMarketplaceIntegrationEntityType } from '../domain/marketplace-integration-entity-type.js';
 import { toMarketplaceEntityMappingDto } from './marketplace-entity-mapping-dto.js';
 
 export class MarketplaceEntityMappingService {
@@ -25,8 +25,8 @@ export class MarketplaceEntityMappingService {
     /**
      * @param {object} input
      */
-    async getByNexoraEntity(input) {
-        const row = await this.deps.mappings.findByNexoraEntity(
+    async getByWaslEntity(input) {
+        const row = await this.deps.mappings.findByWaslEntity(
             input.queryable,
             input.tenantId,
             input.channelId,
@@ -45,8 +45,8 @@ export class MarketplaceEntityMappingService {
  * @param {object} input
  */
 function assertMappingInput(input) {
-    if (!isMarketplaceNexoraEntityType(input.nexoraEntityType)) {
-        throw new ValidationError('Invalid Nexora entity type for marketplace mapping');
+    if (!isMarketplaceIntegrationEntityType(input.nexoraEntityType)) {
+        throw new ValidationError('Invalid commerce entity type for marketplace mapping');
     }
     if (typeof input.externalEntityType !== 'string' || input.externalEntityType.trim().length === 0) {
         throw new ValidationError('External entity type is required');

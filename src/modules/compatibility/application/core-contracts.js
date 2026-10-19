@@ -1,12 +1,12 @@
 /**
  * Core public contracts injected into the compatibility module at the composition root.
  *
- * Compatibility integrates with Nexora only through these ports — never via repositories,
+ * Compatibility integrates with the platform core only through these ports — never via repositories,
  * use cases, domain types, or SQL.
  *
  * @typedef {object} CompatibilityCoreContracts
  * @property {import('../../products/public/product-query-service.js').DefaultProductQueryService} productQueryService
- * @property {import('../../channels/public/channel-query-service.js').DefaultChannelQueryService} channelQueryService
+ * @property {import('../../commerce-integrations/public/commerce-integration-query-service.js').CommerceIntegrationQueryService} commerceIntegrationQueryService
  * @property {import('../../inventory/public/inventory-service.js').DefaultInventoryService} inventoryService
  * @property {import('../../pricing/public/pricing-service.js').DefaultPricingService} pricingService
  * @property {import('../../offers/public/offer-query-service.js').DefaultOfferQueryService} offerQueryService
@@ -22,7 +22,7 @@
  *   Command port for order mutations (Merchant acknowledge; Channel ingestion in separate future scope).
  * @property {import('../../external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} externalIntegerIdMappingQueryService
  * @property {{ execute: Function }} [createProduct]
- *   Optional CreateProduct use case for StockConnect CE catalog push.
+ *   Optional CreateProduct use case for compat v2 catalog push.
  * @property {{ execute: Function }} [archiveProduct]
  * @property {{ execute: Function }} [deactivateProduct]
  * @property {{ execute: Function }} [upsertProductContent]

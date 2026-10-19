@@ -19,7 +19,7 @@ function buildCommand(overrides = {}) {
         authorization,
         idempotency,
         productQueryService,
-        channelQueryService: {},
+        commerceIntegrationQueryService: {},
         inventoryService: {},
         pricingService: {},
         offerQueryService: {},

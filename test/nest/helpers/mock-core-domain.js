@@ -94,13 +94,13 @@ export function createMockCoreDomain(overrides = {}) {
       },
     },
     channelRouteDeps: {
-      listChannels: { execute: jest.fn().mockResolvedValue({ channels: [] }) },
-      createChannel: { execute: jest.fn() },
-      getChannel: { execute: jest.fn() },
-      updateChannel: { execute: jest.fn() },
-      activateChannel: { execute: jest.fn() },
-      deactivateChannel: { execute: jest.fn() },
-      suspendChannel: { execute: jest.fn() },
+      listCommerceIntegrations: { execute: jest.fn().mockResolvedValue({ channels: [] }) },
+      createCommerceIntegration: { execute: jest.fn() },
+      getCommerceIntegration: { execute: jest.fn() },
+      updateCommerceIntegration: { execute: jest.fn() },
+      activateCommerceIntegration: { execute: jest.fn() },
+      deactivateCommerceIntegration: { execute: jest.fn() },
+      suspendCommerceIntegration: { execute: jest.fn() },
       upsertMarketplaceConnection: { execute: jest.fn() },
       getMarketplaceConnection: { execute: jest.fn() },
       patchMarketplaceConnection: { execute: jest.fn() },
@@ -222,12 +222,12 @@ export function createMockCoreDomain(overrides = {}) {
           }),
         },
         orderCompatibilityCommand: {
-          createChannelOrder: jest.fn().mockResolvedValue({
+          createIntegrationOrder: jest.fn().mockResolvedValue({
             Success: true,
             StatusCode: 201,
             Content: { MerchantOrderNo: 'ORD-1' },
           }),
-          createChannelFulfilledOrder: jest.fn().mockResolvedValue({
+          createIntegrationFulfilledOrder: jest.fn().mockResolvedValue({
             Success: true,
             StatusCode: 201,
             Content: { MerchantOrderNo: 'ORD-2' },
@@ -238,8 +238,8 @@ export function createMockCoreDomain(overrides = {}) {
             Content: { MerchantOrderNo: 'ORD-1' },
           }),
         },
-        stockConnectCeOrderCompatibilityQuery: {
-          listOrdersForStockConnectPoll: jest.fn().mockResolvedValue({
+        compatV2OrderQuery: {
+          listOrdersForCompatV2Poll: jest.fn().mockResolvedValue({
             Success: true,
             StatusCode: 200,
             Content: [],
@@ -248,7 +248,7 @@ export function createMockCoreDomain(overrides = {}) {
             ItemsPerPage: 50,
           }),
         },
-        stockConnectCeOrderInvoiceQuery: {
+        compatV2OrderInvoiceQuery: {
           getOrderInvoice: jest.fn().mockResolvedValue({
             contentType: 'application/pdf',
             body: Buffer.from('%PDF'),
@@ -378,14 +378,14 @@ export function createMockCoreDomain(overrides = {}) {
             Content: [],
           }),
         },
-        stockConnectCeProductsQuery: {
+        compatV2ProductsQuery: {
           listProductsByMerchantProductNos: jest.fn().mockResolvedValue({
             Success: true,
             StatusCode: 200,
             Content: [],
           }),
         },
-        stockConnectCeChannelProductsQuery: {
+        compatV2IntegrationProductsQuery: {
           listChannelProducts: jest.fn().mockResolvedValue({
             Success: true,
             StatusCode: 200,
@@ -395,8 +395,8 @@ export function createMockCoreDomain(overrides = {}) {
             ItemsPerPage: 50,
           }),
         },
-        stockConnectCeChannelCompatibilityQuery: {
-          listChannels: jest.fn().mockResolvedValue({
+        compatV2IntegrationListQuery: {
+          listCommerceIntegrations: jest.fn().mockResolvedValue({
             Success: true,
             StatusCode: 200,
             Content: [],
@@ -405,7 +405,7 @@ export function createMockCoreDomain(overrides = {}) {
             ItemsPerPage: 50,
           }),
         },
-        stockConnectCeCatalogCommand: {
+        compatV2CatalogCommand: {
           pushProducts: jest.fn().mockResolvedValue({
             Success: true,
             StatusCode: 200,
@@ -437,7 +437,7 @@ export function createMockCoreDomain(overrides = {}) {
             Message: null,
           }),
         },
-        stockConnectCeShipmentDeliveryCommand: {
+        compatV2ShipmentDeliveryCommand: {
           updateDeliveryState: jest.fn().mockResolvedValue({
             Success: true,
             StatusCode: 200,

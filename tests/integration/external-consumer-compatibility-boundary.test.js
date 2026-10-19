@@ -5,7 +5,7 @@ import { createOrder, seedCommerceFixture, setOrderStatus } from './compatibilit
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 
 /**
- * Proves an external consumer can read Nexora orders through the merchant compatibility
+ * Proves an external consumer can read Wasl orders through the merchant compatibility
  * boundary without consumer-specific domain logic (generic tenant fixture).
  */
 describe('external consumer compatibility boundary', () => {
@@ -23,7 +23,7 @@ describe('external consumer compatibility boundary', () => {
         await closeTestInfrastructure();
     });
 
-    it('maps a Nexora order to the merchant external contract via /api/v2/orders/new', async () => {
+    it('maps a Wasl order to the merchant external contract via /api/v2/orders/new', async () => {
         const { tenantId, slug } = await createTestTenant(server, `erp-alpha-${Date.now()}`);
         const user = await createAuthenticatedUser(app, tenantId, slug);
         const headers = authHeaders(user.accessToken);

@@ -9,8 +9,8 @@ const NEST_BASE = process.env.NEST_BASE_URL ?? 'http://127.0.0.1:3010';
 const FASTIFY_BASE = process.env.FASTIFY_BASE_URL ?? '';
 
 const LOGIN = {
-  tenantSlug: process.env.SMOKE_TENANT_SLUG ?? 'nexora-dev',
-  email: process.env.SMOKE_USER_EMAIL ?? 'admin@nexora.dev',
+  tenantSlug: process.env.SMOKE_TENANT_SLUG ?? 'wasl-dev',
+  email: process.env.SMOKE_USER_EMAIL ?? 'admin@wasl.dev',
   password: process.env.SMOKE_USER_PASSWORD ?? 'SecurePassword123!',
 };
 

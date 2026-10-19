@@ -36,7 +36,7 @@ function shippableQuantity(orderLine) {
 }
 
 /**
- * Maps external shipment lines to Nexora order line allocations.
+ * Maps external shipment lines to platform order line allocations.
  *
  * `MerchantProductNo` maps to the order line's snapshotted `merchantSku`.
  * When `resolvedOrderLineId` is present, the line is allocated directly to that order line.
@@ -106,7 +106,7 @@ export function mapExternalShipmentLinesToOrderLines(externalLines, orderLines) 
 }
 
 /**
- * `MerchantShipmentNo` maps to Nexora `Shipment.externalReference` (tenant-unique when set).
+ * `MerchantShipmentNo` maps to platform `Shipment.externalReference` (tenant-unique when set).
  *
  * @param {{
  *   MerchantShipmentNo: string,

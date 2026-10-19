@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { applyMarketplaceSyncMappings } from '../../src/modules/channel-catalog-sync/application/apply-marketplace-sync-mappings.js';
+import { applyMarketplaceSyncMappings } from '../../src/modules/integration-catalog-sync/application/apply-marketplace-sync-mappings.js';
 import { ShopifyCatalogAdapter } from '../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-catalog-adapter.js';
 import { ShopifyGraphqlClient } from '../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-graphql-client.js';
 import { createMarketplaceEntityMappingRecorder } from '../../src/modules/marketplaces/application/create-marketplace-entity-mapping-recorder.js';

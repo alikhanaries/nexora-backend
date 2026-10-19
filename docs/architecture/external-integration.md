@@ -1,6 +1,6 @@
 # External integration and ERP consumers
 
-Nexora is a **consumer-neutral commerce platform**. External ERPs, OMS tools, and migration clients integrate through explicit **compatibility boundaries** — not by embedding consumer-specific logic in core modules.
+Wasl is a **consumer-neutral commerce platform**. External ERPs, OMS tools, and migration clients integrate through explicit **compatibility boundaries** — not by embedding consumer-specific logic in core modules.
 
 ## Layering
 
@@ -11,7 +11,7 @@ External consumer (ERP A, ERP B, migration client, …)
 Compatibility / adapter layer (`src/modules/compatibility/`, worker wiring)
         │
         ▼
-Nexora public application services (orders, products, inventory, …)
+Wasl public application services (orders, products, inventory, …)
         │
         ▼
 Domain + PostgreSQL
@@ -23,7 +23,7 @@ Core modules (`orders`, `products`, `shipments`, `returns`, `marketplaces`, …)
 
 | Surface | Prefix | Role |
 | ------- | ------ | ---- |
-| Native API | `/api/v1` | Primary Nexora product API |
+| Native API | `/api/v1` | Primary Wasl product API |
 | Merchant-compatible | `/api/v2` | External merchant poll/ack/fulfil contract |
 | Additional consumer contract | `/api/v2/ce/*` | Legacy-shaped routes for one current migration consumer; same adapter rules as `/api/v2` |
 
@@ -35,7 +35,7 @@ Generic webhook delivery (subscription lookup, HMAC signing, retries, idempotenc
 
 **Payload formatting** is pluggable via `WebhookPayloadStrategy` (`webhook-payload-strategy.js`):
 
-- Default: standard Nexora integration-event JSON envelope.
+- Default: standard Wasl integration-event JSON envelope.
 - Optional strategies: registered at the **worker composition root** (`wire-external-consumer-webhook-payload-strategies.js`) when a subscription profile requires an alternate body shape.
 
 Adding a future ERP webhook format means registering another strategy — not changing order or shipment domain logic.
@@ -54,11 +54,11 @@ Integration is **data-driven**:
 - Webhook subscriptions (URL, secret, event types, optional description/profile)
 - Channels, marketplaces, credentials in tenant configuration
 
-Nexora does not require consumer-specific environment variables for core operation.
+Wasl does not require consumer-specific environment variables for core operation.
 
 ## Production deployment readiness (Phase 60)
 
-Nexora production readiness is **platform-level**. It does not require an external consumer to be online.
+Wasl production readiness is **platform-level**. It does not require an external consumer to be online.
 
 ### Environment variables (application)
 
@@ -76,7 +76,7 @@ All variables are loaded only via `src/app/config` (see `.env.example`). Classif
 | Observability | `LOG_*`, `METRICS_*`, `OTEL_*` | **OPTIONAL** (tracing off by default) |
 | Retention / catalog reconciliation | `*_RETENTION_*`, `CATALOG_SYNC_*` | **OPTIONAL** (commented defaults) |
 
-No `STOCKCONNECT_*` or consumer-specific Nexora variables exist. Tenant integration (API keys, webhook URLs/secrets, channels) is **data-driven** in PostgreSQL.
+No `STOCKCONNECT_*` or consumer-specific Wasl variables exist. Tenant integration (API keys, webhook URLs/secrets, channels) is **data-driven** in PostgreSQL.
 
 ### Health and readiness
 
@@ -91,7 +91,7 @@ Readiness probes (API process):
 - `external_compat_ce_routes` — `/api/v2/ce/*` handlers wired at composition root (**no outbound HTTP**)
 - `stockconnect_ce_compat` — legacy alias for the same wiring check (dashboard compatibility)
 
-Readiness answers **“Can Nexora serve this capability?”**, not **“Is an external ERP reachable?”**.
+Readiness answers **“Can Wasl serve this capability?”**, not **“Is an external ERP reachable?”**.
 
 Worker process exposes separate observability HTTP (`WORKER_OBSERVABILITY_*`) with postgres/redis/queue/worker registration checks.
 
@@ -107,10 +107,10 @@ Worker process exposes separate observability HTTP (`WORKER_OBSERVABILITY_*`) wi
 
 Before claiming production cutover for any external consumer:
 
-1. Deploy Nexora API + worker with secrets and infra from `.env.example`.
+1. Deploy Wasl API + worker with secrets and infra from `.env.example`.
 2. Run migrations (`npm run migrate`).
 3. Confirm `/health/ready` checks pass.
-4. Configure tenant API keys and webhooks via Nexora APIs (no hardcoded IDs in code).
+4. Configure tenant API keys and webhooks via Wasl APIs (no hardcoded IDs in code).
 5. Run controlled E2E against the consumer’s staging environment.
 
 Engineering status (Phases 57–59): **BUILD COMPLETE** for the established external contract; remaining work is **environment / deployment / E2E validation**.
@@ -120,3 +120,4 @@ Engineering status (Phases 57–59): **BUILD COMPLETE** for the established exte
 - [platform-independence.md](platform-independence.md)
 - [compatibility.md](compatibility.md)
 - [compatibility-matrix.md](compatibility-matrix.md)
+

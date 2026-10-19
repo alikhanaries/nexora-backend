@@ -5,7 +5,7 @@
 
 ## Context
 
-Nexora is a greenfield commerce platform with multiple bounded contexts (orders, products, channels, inventory). Team size and operational maturity do not yet justify running many independently deployed microservices.
+Wasl is a greenfield commerce platform with multiple bounded contexts (orders, products, channels, inventory). Team size and operational maturity do not yet justify running many independently deployed microservices.
 
 We need a structure that:
 
@@ -15,7 +15,7 @@ We need a structure that:
 
 ## Decision
 
-Build Nexora Backend as a **modular monolith**:
+Build Wasl Backend as a **modular monolith**:
 
 - One deployable API and one worker process (Phase 1)
 - Business logic organised in `src/modules/<name>/` with domain, application, infrastructure, and presentation layers
@@ -43,3 +43,4 @@ Build Nexora Backend as a **modular monolith**:
 
 - [module-boundaries.md](../architecture/module-boundaries.md)
 - `.dependency-cruiser.cjs`
+

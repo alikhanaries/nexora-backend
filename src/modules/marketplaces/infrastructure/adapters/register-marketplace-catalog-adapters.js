@@ -4,7 +4,7 @@ import { NoonCatalogAdapter } from './noon/noon-catalog-adapter.js';
 import { ShopifyCatalogAdapter } from './shopify/shopify-catalog-adapter.js';
 
 /**
- * @param {import('../../../channel-catalog-sync/public/marketplace-catalog-adapter-registry.js').MarketplaceCatalogAdapterRegistry} registry
+ * @param {import('../../../integration-catalog-sync/public/marketplace-catalog-adapter-registry.js').MarketplaceCatalogAdapterRegistry} registry
  * @param {{ httpClient?: import('../http/marketplace-http-client.js').MarketplaceHttpClient, amazonLwaTokenUrl?: string | null }} [deps]
  */
 export function registerMarketplaceCatalogAdapters(registry, deps = {}) {

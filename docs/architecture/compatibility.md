@@ -1,11 +1,11 @@
 # External Compatibility Layer (`/api/v2`)
 
-Nexora is an **independent commerce platform**. This document describes the optional **external compatibility boundary** — not a dependency on another platform. See [platform-independence.md](platform-independence.md).
+Wasl is an **independent commerce platform**. This document describes the optional **external compatibility boundary** — not a dependency on another platform. See [platform-independence.md](platform-independence.md).
 
-Compatibility allows clients using a verified **external Merchant-compatible contract** to integrate via `/api/v2` while Nexora owns all business logic and persistence. Implementation path:
+Compatibility allows clients using a verified **external Merchant-compatible contract** to integrate via `/api/v2` while Wasl owns all business logic and persistence. Implementation path:
 
 ```
-External request → compatibility mapper → Nexora public contract → Nexora core → PostgreSQL
+External request → compatibility mapper → Wasl public contract → Wasl core → PostgreSQL
 ```
 
 **Not:**
@@ -22,11 +22,11 @@ The adapter lives at `src/modules/compatibility/` (provider-neutral internally).
 
 | Surface | Prefix | Contract | Purpose |
 | ------- | ------ | -------- | ------- |
-| **Nexora native** | `/api/v1` | Nexora schemas | Primary product API for new integrations |
+| **Wasl native** | `/api/v1` | Wasl schemas | Primary product API for new integrations |
 | **Merchant-compatible** | `/api/v2` | Merchant API OpenAPI | Merchant poll/ack/ship/cancel/return flows |
 | **Channel ingestion** | *Not in Phase 5 initial scope* | Channel API OpenAPI | Marketplace order ingestion — separate future decision |
 
-External platform naming may exist **only** at the `/api/v2` presentation and mapper boundary where required by the verified public contract. Internal Nexora domain and application code must remain provider-neutral.
+External platform naming may exist **only** at the `/api/v2` presentation and mapper boundary where required by the verified public contract. Internal Wasl domain and application code must remain provider-neutral.
 
 ## Merchant API vs Channel API (verified)
 
@@ -48,7 +48,7 @@ Merchant-facing compatibility for integrators that poll and fulfil orders.
 
 | Method | External path | Notes |
 | ------ | ------------- | ----- |
-| POST | `/v2/orders` | **Does not exist** on Merchant API — must not be invented on Nexora `/api/v2` |
+| POST | `/v2/orders` | **Does not exist** on Merchant API — must not be invented on Wasl `/api/v2` |
 
 Other Merchant operations (shipments, cancellations, returns) are documented in the [compatibility matrix](compatibility-matrix.md) as future Merchant scope.
 
@@ -72,7 +72,7 @@ External client (Merchant-compatible contract)
         │
         ▼
 /api/v2/*  (compatibility/presentation)
-        │  map external DTO ↔ Nexora public contract input/output
+        │  map external DTO ↔ Wasl public contract input/output
         ▼
 modules/*/public/*  (query/command services)
         │
@@ -107,7 +107,7 @@ core application → domain → infrastructure
 src/modules/compatibility/
   presentation/     Route handlers for /api/v2 (Merchant-compatible)
   application/
-    mappers/        External ↔ Nexora representation translation
+    mappers/        External ↔ Wasl representation translation
     errors/         Core error → external HTTP mapping
   domain/           External representation models (when needed)
   infrastructure/   Outbound adapters (future)
@@ -176,3 +176,4 @@ Endpoint-by-endpoint status lives in [compatibility-matrix.md](compatibility-mat
 - [ADR-007](../decisions/ADR-007-channelengine-compatibility-layer.md) — original compatibility layer decision
 - [ADR-010](../decisions/ADR-010-api-versioning.md) — URL versioning
 - [module-boundaries.md](module-boundaries.md) — enforceable rules
+

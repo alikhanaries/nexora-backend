@@ -1,6 +1,6 @@
 # StockConnect CE — production cutover readiness (Phase 54)
 
-Operational runbook for a **controlled production cutover** from ChannelEngine to Nexora `/api/v2/ce/*`. This document contains **no secret values**. Actual cutover is an explicit Ops/business action after staging evidence is reviewed.
+Operational runbook for a **controlled production cutover** from ChannelEngine to Wasl `/api/v2/ce/*`. This document contains **no secret values**. Actual cutover is an explicit Ops/business action after staging evidence is reviewed.
 
 **Related:** [compatibility-matrix.md](./compatibility-matrix.md), [stockconnect-ce-operations.md](./stockconnect-ce-operations.md)
 
@@ -9,9 +9,9 @@ Operational runbook for a **controlled production cutover** from ChannelEngine t
 | Label | Meaning |
 | ----- | ------- |
 | **IMPLEMENTED** | Engineering complete on `origin/dev` |
-| **STAGING VERIFIED** | Real StockConnect staging client succeeded against Nexora staging |
+| **STAGING VERIFIED** | Real StockConnect staging client succeeded against Wasl staging |
 | **PRODUCTION CONFIG READY** | Production secrets/URLs mapped in approved stores (not verified by traffic) |
-| **PRODUCTION NOT YET VERIFIED** | No production StockConnect traffic against Nexora CE |
+| **PRODUCTION NOT YET VERIFIED** | No production StockConnect traffic against Wasl CE |
 
 Do **not** label the system “production ready” until production cutover completes and is signed off.
 
@@ -42,7 +42,7 @@ Phase 53 (#67, branch `feat/phase-53-stockconnect-ce-staging-e2e`) recorded **do
 
 Verified from `src/modules/compatibility/presentation/stockconnect-ce.routes.js` and `tests/integration/stockconnect-ce-route-inventory.test.js`.
 
-| Method | Nexora route |
+| Method | Wasl route |
 | ------ | ------------- |
 | GET | `/api/v2/ce/orders` |
 | POST | `/api/v2/ce/orders/acknowledge` |
@@ -73,7 +73,7 @@ Auth for CE routes: query `apiKey` / `apikey` or header `X-CE-KEY` on `/api/v2/c
 
 ## Production configuration checklist
 
-### Nexora platform
+### Wasl platform
 
 | Item | Verify | Status |
 | ---- | ------ | ------ |
@@ -92,18 +92,18 @@ Auth for CE routes: query `apiKey` / `apikey` or header `X-CE-KEY` on `/api/v2/c
 
 | Item | Verify | Status |
 | ---- | ------ | ------ |
-| `CHANNEL_ENGINE_BASE_URL` | Points to Nexora production host with `/api/v2/ce/` prefix | PRODUCTION NOT YET VERIFIED |
+| `CHANNEL_ENGINE_BASE_URL` | Points to Wasl production host with `/api/v2/ce/` prefix | PRODUCTION NOT YET VERIFIED |
 | CE API key | Nexora-issued key for correct tenant; scopes match usage | PRODUCTION NOT YET VERIFIED |
-| Tenant mapping | One key → one Nexora tenant (no shared/fallback tenant) | PRODUCTION NOT YET VERIFIED |
-| Webhook URL | StockConnect `POST /orders/channelengine-webhook` reachable from Nexora workers | PRODUCTION NOT YET VERIFIED |
-| Webhook secret | Stored in Nexora subscription (encrypted); paired with StockConnect | PRODUCTION NOT YET VERIFIED |
+| Tenant mapping | One key → one Wasl tenant (no shared/fallback tenant) | PRODUCTION NOT YET VERIFIED |
+| Webhook URL | StockConnect `POST /orders/channelengine-webhook` reachable from Wasl workers | PRODUCTION NOT YET VERIFIED |
+| Webhook secret | Stored in Wasl subscription (encrypted); paired with StockConnect | PRODUCTION NOT YET VERIFIED |
 
 ### Channel mapping
 
 | Field | Requirement |
 | ----- | ------------- |
 | `channels.external_reference` | Numeric string when StockConnect expects integer `ChannelId` / `GlobalChannelId` |
-| `ChannelName` / `GlobalChannelName` | From Nexora channel name in CE mappers |
+| `ChannelName` / `GlobalChannelName` | From Wasl channel name in CE mappers |
 | Non-numeric `external_reference` | Integer IDs omitted in CE responses (by design) |
 
 ### Order compatibility
@@ -111,11 +111,11 @@ Auth for CE routes: query `apiKey` / `apikey` or header `X-CE-KEY` on `/api/v2/c
 | Item | Requirement |
 | ---- | ----------- |
 | CE integer `Id` | `external_integer_id_mappings` provider `compat_v2`; stable across repeat `GET /api/v2/ce/orders` |
-| `MerchantOrderNo` | Nexora order number |
+| `MerchantOrderNo` | Wasl order number |
 | `ChannelOrderNo` | External/channel order reference on the order |
 | Backfill | Existing production orders may need mappings before CE poll shows `Id`; plan repeat-safe backfill with Ops (no destructive SQL in this repo phase) |
 
-### Webhook bridge (Nexora → StockConnect)
+### Webhook bridge (Wasl → StockConnect)
 
 | Setting | Value |
 | ------- | ----- |
@@ -157,7 +157,7 @@ No change to global idempotency in Phase 54.
 
 ## Pagination / polling sanity
 
-StockConnect uses `page`, `pageSize`; Nexora CE orders return `TotalCount`, `ItemsPerPage`, `Content`. Stable CE `Id` per order across repeated polls is covered by local integration tests — re-verify under staging load parameters.
+StockConnect uses `page`, `pageSize`; Wasl CE orders return `TotalCount`, `ItemsPerPage`, `Content`. Stable CE `Id` per order across repeated polls is covered by local integration tests — re-verify under staging load parameters.
 
 ---
 
@@ -189,7 +189,7 @@ Use existing logs and metrics (no new monitoring product required).
 
 - Invoice route 404 vs 500
 - Non-PDF responses
-- StockConnect ParseInvoice errors (client-side; correlate with Nexora 200 + `application/pdf`)
+- StockConnect ParseInvoice errors (client-side; correlate with Wasl 200 + `application/pdf`)
 
 ### Webhooks
 
@@ -206,11 +206,11 @@ Use existing logs and metrics (no new monitoring product required).
 ## Rollback strategy
 
 1. **Revert StockConnect `CHANNEL_ENGINE_BASE_URL`** to the previous ChannelEngine production base URL (Ops config change).
-2. **Stop Nexora CE traffic** — StockConnect no longer calls Nexora; no Nexora code rollback required for immediate traffic stop.
+2. **Stop Wasl CE traffic** — StockConnect no longer calls Nexora; no Wasl code rollback required for immediate traffic stop.
 3. **In-flight webhooks** — Nexora may still enqueue deliveries until subscription disabled or URL points elsewhere; disable or pause `stockconnect-ce-bridge` subscription before cutover if a clean boundary is required.
 4. **Queued webhook deliveries** — Existing BullMQ jobs drain per worker; dead-letter table retains failed rows for inspection.
-5. **Duplicate events after rollback** — StockConnect should treat CE order state from ChannelEngine as authoritative again; Nexora webhook deliveries after rollback should be disabled to avoid dual ingestion.
-6. **Already acknowledged orders** — Orders acknowledged in Nexora remain in Nexora DB; ChannelEngine may hold different state until reconciled manually per business process.
+5. **Duplicate events after rollback** — StockConnect should treat CE order state from ChannelEngine as authoritative again; Wasl webhook deliveries after rollback should be disabled to avoid dual ingestion.
+6. **Already acknowledged orders** — Orders acknowledged in Wasl remain in Wasl DB; ChannelEngine may hold different state until reconciled manually per business process.
 
 No rollback automation added in Phase 54.
 
@@ -218,7 +218,7 @@ No rollback automation added in Phase 54.
 
 ## Recommended cutover sequence
 
-1. Verify production Nexora deployment (build includes #68+).
+1. Verify production Wasl deployment (build includes #68+).
 2. Verify `GET /health/ready` → `stockconnect_ce_compat` = `ok` (and infra probes as required by Ops).
 3. Verify database, Redis, workers running.
 4. Verify production API key (tenant, scopes) in secret store.
@@ -260,8 +260,8 @@ Only with Ops authorization. Avoid fake shipments, returns, cancellations, bulk 
 
 If Ops designates a production test order:
 
-1. StockConnect ingests/polls order via Nexora CE.
-2. Nexora emits lifecycle event → webhook → StockConnect `channelengine-webhook`.
+1. StockConnect ingests/polls order via Wasl CE.
+2. Wasl emits lifecycle event → webhook → StockConnect `channelengine-webhook`.
 3. Invoice fetched → StockConnect ParseInvoice.
 
 Do not document customer PII in engineering reports.
@@ -287,3 +287,4 @@ Do not document customer PII in engineering reports.
 | Production traffic | **Not executed** |
 
 **Final engineering assessment:** **READY FOR CONTROLLED PRODUCTION CUTOVER** (documentation and code baseline). **Not permission to cut over** — requires staging sign-off and Ops execution.
+

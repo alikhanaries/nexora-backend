@@ -28,8 +28,8 @@ describe('marketplace lifecycle worker integration', () => {
         const executeMarketplaceLifecycleJob = new ExecuteMarketplaceLifecycleJob({
             orderLifecycleProcessor,
             lifecycleService: app.marketplaceOrderIngestion.lifecycleService,
-            channelQueryService: {
-                getChannelById: async () => ({
+            commerceIntegrationQueryService: {
+                getCommerceIntegrationById: async () => ({
                     tenantId,
                     channelId,
                     marketplaceId: '55555555-5555-4555-8555-555555555555',

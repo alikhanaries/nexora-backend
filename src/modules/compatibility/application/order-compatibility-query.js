@@ -1,5 +1,5 @@
 import { loadOrderExternalIdMaps } from './compatibility-external-id-enrichment.js';
-import { mapEmptyOrderPageToExternalCollection, mapExternalStatusesToNexoraStatuses, mapNewOrderStatusFilter, mapOrderPageToExternalCollection, } from './mappers/compatibility-order.mapper.js';
+import { mapEmptyOrderPageToExternalCollection, mapExternalStatusesToPlatformStatuses, mapNewOrderStatusFilter, mapOrderPageToExternalCollection, } from './mappers/compatibility-order.mapper.js';
 
 const DEFAULT_PAGE_SIZE = 50;
 
@@ -33,16 +33,16 @@ export class OrderCompatibilityQuery {
     async listOrders(input) {
         const pageSize = input.pageSize ?? DEFAULT_PAGE_SIZE;
         const page = input.page ?? 1;
-        const nexoraStatuses = input.externalStatuses === undefined
+        const platformStatuses = input.externalStatuses === undefined
             ? undefined
-            : mapExternalStatusesToNexoraStatuses(input.externalStatuses);
-        if (input.externalStatuses !== undefined && nexoraStatuses !== undefined && nexoraStatuses.length === 0) {
+            : mapExternalStatusesToPlatformStatuses(input.externalStatuses);
+        if (input.externalStatuses !== undefined && platformStatuses !== undefined && platformStatuses.length === 0) {
             return mapEmptyOrderPageToExternalCollection(page, pageSize);
         }
         const result = await this.deps.orderQueryService.listOrders({
             tenantId: input.tenantId,
             actorPermissions: input.actorPermissions,
-            ...(nexoraStatuses === undefined ? {} : { statuses: nexoraStatuses }),
+            ...(platformStatuses === undefined ? {} : { statuses: platformStatuses }),
             ...(input.merchantOrderNos === undefined ? {} : { orderNumbers: input.merchantOrderNos }),
             ...(input.channelOrderNos === undefined
                 ? {}
@@ -61,7 +61,7 @@ export class OrderCompatibilityQuery {
         const channelIds = [...new Set(result.items.map((order) => order.channelId))];
         const channelsById = new Map();
         await Promise.all(channelIds.map(async (channelId) => {
-            const channel = await this.deps.channelQueryService.getChannelById(input.tenantId, channelId);
+            const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, channelId);
             channelsById.set(channelId, channel);
         }));
         const externalIdMaps = await loadOrderExternalIdMaps(

@@ -1,6 +1,6 @@
 # Security Guide
 
-Operational security checklist for Nexora Backend developers and operators.
+Operational security checklist for Wasl Backend developers and operators.
 
 ## Development
 
@@ -74,3 +74,4 @@ Recommended edge controls for production:
 
 - [Security architecture](../architecture/security.md)
 - [Audit logging](../architecture/audit-logging.md)
+

@@ -21,7 +21,7 @@ DRAFT ──activate──▶ ACTIVE ──suspend──▶ SUSPENDED
 `ActivateOffer` validates:
 
 - Product exists and is `ACTIVE` (`ProductQueryService`)
-- Channel is usable (`ChannelQueryService.verifyChannelUsable`)
+- Channel is usable (`CommerceIntegrationQueryService.verifyChannelUsable`)
 - Optional pricing resolution via `PricingService.getEffectivePrice` when `resolvePricing: true`
 
 This module depends on products, channels, and pricing public interfaces only — not inventory.

@@ -42,7 +42,7 @@ function buildCommand(deps) {
             execute: vi.fn(async (fn) => fn({})),
         },
         idempotency: deps.idempotency,
-        channelQueryService: deps.channelQueryService,
+        commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         marketplaceLookup: deps.marketplaceLookup,
         ...deps.extra,
     });
@@ -172,7 +172,7 @@ describe('ExecuteOutboundMarketplaceOrderLifecycleCommand', () => {
                 supportsOutboundFulfillment: true,
                 supportsOutboundReturns: false,
             }),
-            createFulfillment: vi.fn(async () => ({ outcome: 'fulfilled', providerReference: 'nexora-abc' })),
+            createFulfillment: vi.fn(async () => ({ outcome: 'fulfilled', providerReference: 'wasl-abc' })),
         };
         const registry = new MarketplaceOutboundOrderLifecycleAdapterRegistry();
         registry.register(noonAdapter);
@@ -334,8 +334,8 @@ describe('ExecuteOutboundMarketplaceOrderLifecycleCommand', () => {
     it('rejects cross-tenant channel access', async () => {
         const command = buildCommand({
             adapter: shopifyAdapter(),
-            channelQueryService: {
-                getChannelById: vi.fn(async () => ({
+            commerceIntegrationQueryService: {
+                getCommerceIntegrationById: vi.fn(async () => ({
                     tenantId: tenantB,
                     marketplaceId: 'mp-1',
                 })),

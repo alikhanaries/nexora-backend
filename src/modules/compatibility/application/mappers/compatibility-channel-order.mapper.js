@@ -1,6 +1,6 @@
 import { ValidationError } from '../../../../shared/errors/index.js';
 import { getCurrencyMinorUnitExponent, parseCurrency } from '../../../../shared/money/index.js';
-import { requireChannelStockLocationId } from '../../../channels/public/index.js';
+import { requireChannelStockLocationId } from '../../../commerce-integrations/public/index.js';
 import { mapExternalOrder } from './compatibility-order.mapper.js';
 
 /**
@@ -64,7 +64,7 @@ export function resolveChannelStockLocationId(channel) {
 }
 
 /**
- * Maps a verified Channel API create-order request to the core createChannelOrder input.
+ * Maps a verified Channel API create-order request to the core createIntegrationOrder input.
  *
  * @param {object} body
  * @param {object} context

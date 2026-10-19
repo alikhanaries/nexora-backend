@@ -4,9 +4,9 @@ import { ValidationError } from '../../shared/errors/index.js';
 import { actorFingerprint } from '../../shared/http/actor-fingerprint.js';
 import { requireIdempotencyKey } from '../../shared/idempotency/index.js';
 import {
-  resolveStockConnectCeIdempotencyKey,
+  resolveCompatV2IdempotencyKey,
   stableIdempotencyFingerprint,
-} from '../../modules/compatibility/application/resolve-stockconnect-ce-idempotency-key.js';
+} from '../../modules/compatibility/application/resolve-compat-v2-idempotency-key.js';
 import { commerceActorFields } from '../common/commerce-actor.js';
 import { CORE_DOMAIN } from '../domain/core-domain.tokens.js';
 import { LegacyOrdersService } from '../legacy-orders/legacy-orders.service.js';
@@ -32,7 +32,7 @@ class LegacyCompatibilityService {
     return this.coreDomain.compatibility.routeDeps;
   }
 
-  stockConnectMutationContext(body, routeId, idempotencyKeyHeader) {
+  compatV2MutationContext(body, routeId, idempotencyKeyHeader) {
     const actor = requireActorContext();
     const actorId = actor.userId ?? actor.apiKeyId ?? actor.tenantId;
     const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
@@ -42,7 +42,7 @@ class LegacyCompatibilityService {
       actorKind,
       actorPermissions: actor.permissions,
       principalFingerprint: actorFingerprint(actor),
-      idempotencyKey: resolveStockConnectCeIdempotencyKey({
+      idempotencyKey: resolveCompatV2IdempotencyKey({
         header: idempotencyKeyHeader,
         tenantId: actor.tenantId,
         routeId,
@@ -356,9 +356,9 @@ class LegacyCompatibilityService {
     });
   }
 
-  async createCancellationCe(body, idempotencyKeyHeader) {
+  async createCancellationForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'POST /api/v2/ce/cancellations',
       idempotencyKeyHeader,
@@ -366,9 +366,9 @@ class LegacyCompatibilityService {
     return this.routeDeps.cancellationCompatibilityCommand.createCancellation(ctx);
   }
 
-  async createShipmentCe(body, idempotencyKeyHeader) {
+  async createShipmentForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'POST /api/v2/ce/shipments',
       idempotencyKeyHeader,
@@ -376,7 +376,7 @@ class LegacyCompatibilityService {
     return this.routeDeps.shipmentCompatibilityCommand.createShipment(ctx);
   }
 
-  async listMerchantShipmentsCe(query) {
+  async listMerchantShipmentsForCompatV2(query) {
     await this.legacyOrdersService.enforceReadRateLimit();
     const actor = requireActorContext();
     return this.routeDeps.shipmentCompatibilityQuery.listMerchantShipments({
@@ -387,7 +387,7 @@ class LegacyCompatibilityService {
     });
   }
 
-  async listReturnsCe(query) {
+  async listReturnsForCompatV2(query) {
     await this.legacyOrdersService.enforceReadRateLimit();
     const actor = requireActorContext();
     return this.routeDeps.returnCompatibilityQuery.listMerchantReturns({
@@ -398,9 +398,9 @@ class LegacyCompatibilityService {
     });
   }
 
-  async createReturnCe(body, idempotencyKeyHeader) {
+  async createReturnForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'POST /api/v2/ce/returns/merchant',
       idempotencyKeyHeader,
@@ -408,9 +408,9 @@ class LegacyCompatibilityService {
     return this.routeDeps.returnCompatibilityCommand.createReturn(ctx);
   }
 
-  async acknowledgeReturnCe(body, idempotencyKeyHeader) {
+  async acknowledgeReturnForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'POST /api/v2/ce/returns/merchant/acknowledge',
       idempotencyKeyHeader,
@@ -418,9 +418,9 @@ class LegacyCompatibilityService {
     return this.routeDeps.returnCompatibilityCommand.acknowledgeReturn(ctx);
   }
 
-  async receiveReturnCe(body, idempotencyKeyHeader) {
+  async receiveReturnForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'PUT /api/v2/ce/returns',
       idempotencyKeyHeader,
@@ -428,24 +428,24 @@ class LegacyCompatibilityService {
     return this.routeDeps.returnCompatibilityCommand.receiveReturn(ctx);
   }
 
-  async listProductsCe(query) {
+  async listProductsForCompatV2(query) {
     await this.legacyOrdersService.enforceReadRateLimit();
     const actor = requireActorContext();
     const merchantProductNos = readMerchantProductNosFromQuery(query);
     if (merchantProductNos.length === 0) {
       throw new ValidationError('merchantProductNoList is required');
     }
-    return this.routeDeps.stockConnectCeProductsQuery.listProductsByMerchantProductNos({
+    return this.routeDeps.compatV2ProductsQuery.listProductsByMerchantProductNos({
       tenantId: actor.tenantId,
       actorPermissions: actor.permissions,
       merchantProductNos,
     });
   }
 
-  async listChannelProductsCe(channelId, query) {
+  async listIntegrationProductsForCompatV2(channelId, query) {
     await this.legacyOrdersService.enforceReadRateLimit();
     const actor = requireActorContext();
-    return this.routeDeps.stockConnectCeChannelProductsQuery.listChannelProducts({
+    return this.routeDeps.compatV2IntegrationProductsQuery.listChannelProducts({
       tenantId: actor.tenantId,
       actorPermissions: actor.permissions,
       ceChannelId: channelId,
@@ -454,82 +454,82 @@ class LegacyCompatibilityService {
     });
   }
 
-  async listChannelsCe() {
+  async listIntegrationsForCompatV2() {
     await this.legacyOrdersService.enforceReadRateLimit();
     const actor = requireActorContext();
-    return this.routeDeps.stockConnectCeChannelCompatibilityQuery.listChannels({
+    return this.routeDeps.compatV2IntegrationListQuery.listCommerceIntegrations({
       tenantId: actor.tenantId,
     });
   }
 
-  async pushProductsCe(body, idempotencyKeyHeader) {
+  async pushProductsForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'POST /api/v2/ce/products',
       idempotencyKeyHeader,
     );
-    return this.routeDeps.stockConnectCeCatalogCommand.pushProducts(ctx);
+    return this.routeDeps.compatV2CatalogCommand.pushProducts(ctx);
   }
 
-  async updateOfferStockCe(body, idempotencyKeyHeader) {
+  async updateOfferStockForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'PUT /api/v2/ce/offer/stock',
       idempotencyKeyHeader,
     );
-    return this.routeDeps.stockConnectCeCatalogCommand.updateOfferStock(ctx);
+    return this.routeDeps.compatV2CatalogCommand.updateOfferStock(ctx);
   }
 
-  async updateOfferPriceCe(body, idempotencyKeyHeader) {
+  async updateOfferPriceForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'PUT /api/v2/ce/offer',
       idempotencyKeyHeader,
     );
-    return this.routeDeps.stockConnectCeCatalogCommand.updateOfferPrice(ctx);
+    return this.routeDeps.compatV2CatalogCommand.updateOfferPrice(ctx);
   }
 
-  async freezeProductsCe(body, idempotencyKeyHeader) {
+  async freezeProductsForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'POST /api/v2/ce/products/freeze',
       idempotencyKeyHeader,
     );
-    return this.routeDeps.stockConnectCeCatalogCommand.freezeProducts(ctx);
+    return this.routeDeps.compatV2CatalogCommand.freezeProducts(ctx);
   }
 
-  async bulkDeleteProductsCe(body, idempotencyKeyHeader) {
+  async bulkDeleteProductsForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'POST /api/v2/ce/products/bulkdelete',
       idempotencyKeyHeader,
     );
-    return this.routeDeps.stockConnectCeCatalogCommand.bulkDeleteProducts(ctx);
+    return this.routeDeps.compatV2CatalogCommand.bulkDeleteProducts(ctx);
   }
 
-  async patchExtraDataCe(body, idempotencyKeyHeader) {
+  async patchExtraDataForCompatV2(body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'PATCH /api/v2/ce/products/extra-data/bulk',
       idempotencyKeyHeader,
     );
-    return this.routeDeps.stockConnectCeCatalogCommand.patchExtraData(ctx);
+    return this.routeDeps.compatV2CatalogCommand.patchExtraData(ctx);
   }
 
-  async updateShipmentDeliveryStateCe(merchantShipmentNo, body, idempotencyKeyHeader) {
+  async updateShipmentDeliveryStateForCompatV2(merchantShipmentNo, body, idempotencyKeyHeader) {
     await this.legacyOrdersService.enforceMutationRateLimit();
-    const ctx = this.stockConnectMutationContext(
+    const ctx = this.compatV2MutationContext(
       body,
       'PUT /api/v2/ce/shipments/:merchantShipmentNo/delivery-state',
       idempotencyKeyHeader,
     );
-    return this.routeDeps.stockConnectCeShipmentDeliveryCommand.updateDeliveryState({
+    return this.routeDeps.compatV2ShipmentDeliveryCommand.updateDeliveryState({
       ...ctx,
       merchantShipmentNo,
     });

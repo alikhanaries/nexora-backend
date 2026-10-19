@@ -7,7 +7,7 @@ export const NormalizedMarketplaceOrderStatus = Object.freeze({
     UNKNOWN: 'unknown',
 });
 
-/** Statuses that Phase 28 ingestion accepts for initial Nexora order creation. */
+/** Statuses that Phase 28 ingestion accepts for initial Wasl order creation. */
 export const INGESTIBLE_MARKETPLACE_ORDER_STATUSES = new Set([
     NormalizedMarketplaceOrderStatus.PENDING,
     NormalizedMarketplaceOrderStatus.CONFIRMED,

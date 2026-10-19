@@ -1,6 +1,6 @@
 # StockConnect CE compatibility — operations
 
-Operational requirements for running Nexora as the ChannelEngine-compatible backend for StockConnect. This document lists **configuration names and data requirements only** — never commit secrets or production URLs.
+Operational requirements for running Wasl as the ChannelEngine-compatible backend for StockConnect. This document lists **configuration names and data requirements only** — never commit secrets or production URLs.
 
 ## Verification status legend
 
@@ -8,7 +8,7 @@ Operational requirements for running Nexora as the ChannelEngine-compatible back
 | ----- | ------- |
 | **IMPLEMENTED** | Code exists on `origin/dev` under `/api/v2/ce/*` |
 | **TESTED LOCALLY** | Automated unit/integration tests pass in CI/local |
-| **INTEGRATION VERIFIED** | Live StockConnect client exercised against Nexora (not claimed by default) |
+| **INTEGRATION VERIFIED** | Live StockConnect client exercised against Wasl (not claimed by default) |
 | **STAGING VERIFIED** | Controlled staging cutover succeeded |
 | **PRODUCTION VERIFIED** | Production cutover succeeded |
 | **BLOCKED BY ENVIRONMENT** | Waiting on infra, credentials, or client configuration |
@@ -19,22 +19,22 @@ Operational requirements for running Nexora as the ChannelEngine-compatible back
 | ------- | ------- |
 | `CHANNEL_ENGINE_BASE_URL` | Must include the CE prefix, e.g. `https://<nexora-host>/api/v2/ce/` |
 
-Nexora does **not** read `CHANNEL_ENGINE_BASE_URL`; it is configured only in StockConnect.
+Wasl does **not** read `CHANNEL_ENGINE_BASE_URL`; it is configured only in StockConnect.
 
-## Nexora tenant configuration (per tenant)
+## Wasl tenant configuration (per tenant)
 
 | Item | Requirement | Status |
 | ---- | ----------- | ------ |
 | API key | StockConnect polls and mutates via query `apiKey` / `apikey` or header `X-CE-KEY` on **`/api/v2/ce/*` only** | IMPLEMENTED, TESTED LOCALLY |
-| Tenant scope | API key is bound to exactly one Nexora tenant | IMPLEMENTED, TESTED LOCALLY |
+| Tenant scope | API key is bound to exactly one Wasl tenant | IMPLEMENTED, TESTED LOCALLY |
 | Channel `external_reference` | Must be a **numeric string** when StockConnect expects integer `ChannelId` / `GlobalChannelId` | IMPLEMENTED — non-numeric refs omit integer IDs (by design) |
 | CE order integer `Id` | Stored in `external_integer_id_mappings` (`compat_v2` provider); stable across repeated GET polls | IMPLEMENTED, TESTED LOCALLY (Phase 52 regression) |
 | Webhook subscription | `description` = `stockconnect-ce-bridge`, URL = StockConnect `POST /orders/channelengine-webhook`, event types for order lifecycle | IMPLEMENTED, TESTED LOCALLY |
 | Webhook secret | Stored encrypted in Nexora; never logged | IMPLEMENTED |
 
-## Nexora application environment
+## Wasl application environment
 
-StockConnect CE compatibility uses existing Nexora infrastructure. No additional `STOCKCONNECT_*` environment variables are required on the Nexora API.
+StockConnect CE compatibility uses existing Wasl infrastructure. No additional `STOCKCONNECT_*` environment variables are required on the Wasl API.
 
 | Dependency | Used for |
 | ---------- | -------- |
@@ -52,11 +52,11 @@ Startup fails fast on invalid **global** config via `src/app/config/schema.js`. 
 ## Out of scope (not CE replacement)
 
 - CE async job / batch / queue admin APIs
-- External StockConnect availability as a Nexora health dependency
+- External StockConnect availability as a Wasl health dependency
 
 ## Staging / production
 
-All live StockConnect flows remain **BLOCKED BY ENVIRONMENT** until ops runs controlled staging with real API keys, numeric channel references, webhook URL/secret, and `CHANNEL_ENGINE_BASE_URL` pointing at Nexora staging.
+All live StockConnect flows remain **BLOCKED BY ENVIRONMENT** until ops runs controlled staging with real API keys, numeric channel references, webhook URL/secret, and `CHANNEL_ENGINE_BASE_URL` pointing at Wasl staging.
 
 ## Production cutover (Phase 54)
 
@@ -69,4 +69,5 @@ Full checklist, monitoring, rollback, smoke test, and cutover sequence: **[stock
 | Production traffic | **PRODUCTION NOT YET VERIFIED** |
 | Production configuration (secrets/URLs) | **PRODUCTION CONFIG READY** (checklist; Ops must populate) |
 
-**Phase 55 (production cutover execution):** Not executed. Do not point StockConnect production at Nexora until Phase 53 staging checklist shows **PASS — VERIFIED AGAINST STOCKCONNECT STAGING** for critical flows, Phase 54 runbook is approved, and change authorization is recorded. After cutover, set `CHANNEL_ENGINE_BASE_URL` to `https://<nexora-production-host>/api/v2/ce/` via StockConnect config only (never commit values). Monitor `stockconnect_ce_compat` on deployed Nexora; it confirms wiring only, not StockConnect compatibility.
+**Phase 55 (production cutover execution):** Not executed. Do not point StockConnect production at Wasl until Phase 53 staging checklist shows **PASS — VERIFIED AGAINST STOCKCONNECT STAGING** for critical flows, Phase 54 runbook is approved, and change authorization is recorded. After cutover, set `CHANNEL_ENGINE_BASE_URL` to `https://<nexora-production-host>/api/v2/ce/` via StockConnect config only (never commit values). Monitor `stockconnect_ce_compat` on deployed Nexora; it confirms wiring only, not StockConnect compatibility.
+

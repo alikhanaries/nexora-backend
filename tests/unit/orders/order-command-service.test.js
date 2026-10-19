@@ -46,7 +46,7 @@ describe('DefaultOrderCommandService', () => {
         };
         const service = new DefaultOrderCommandService({
             createOrder,
-            createChannelOrder: { execute: vi.fn() },
+            createIntegrationOrder: { execute: vi.fn() },
             acknowledgeOrder: { execute: vi.fn() },
         });
 
@@ -74,7 +74,7 @@ describe('DefaultOrderCommandService', () => {
         };
         const service = new DefaultOrderCommandService({
             createOrder,
-            createChannelOrder: { execute: vi.fn() },
+            createIntegrationOrder: { execute: vi.fn() },
             acknowledgeOrder: { execute: vi.fn() },
         });
 
@@ -98,7 +98,7 @@ describe('DefaultOrderCommandService', () => {
         };
         const service = new DefaultOrderCommandService({
             createOrder,
-            createChannelOrder: { execute: vi.fn() },
+            createIntegrationOrder: { execute: vi.fn() },
             idempotency,
         });
 
@@ -127,7 +127,7 @@ describe('DefaultOrderCommandService', () => {
         };
         const service = new DefaultOrderCommandService({
             createOrder,
-            createChannelOrder: { execute: vi.fn() },
+            createIntegrationOrder: { execute: vi.fn() },
             acknowledgeOrder: { execute: vi.fn() },
         });
 
@@ -148,7 +148,7 @@ describe('DefaultOrderCommandService', () => {
         };
         const service = new DefaultOrderCommandService({
             createOrder: { execute: vi.fn() },
-            createChannelOrder: { execute: vi.fn() },
+            createIntegrationOrder: { execute: vi.fn() },
             acknowledgeOrder,
         });
 
@@ -167,17 +167,17 @@ describe('DefaultOrderCommandService', () => {
         expect(result.order.status).toBe('CONFIRMED');
     });
 
-    it('delegates createChannelOrder to the CreateChannelOrder use case', async () => {
-        const createChannelOrder = {
+    it('delegates createIntegrationOrder to the CreateIntegrationOrder use case', async () => {
+        const createIntegrationOrder = {
             execute: vi.fn().mockResolvedValue({ order: { ...orderDetail, status: 'NEW', confirmedAt: null } }),
         };
         const service = new DefaultOrderCommandService({
             createOrder: { execute: vi.fn() },
-            createChannelOrder,
+            createIntegrationOrder,
             acknowledgeOrder: { execute: vi.fn() },
         });
 
-        const result = await service.createChannelOrder({
+        const result = await service.createIntegrationOrder({
             ...baseCommand,
             externalOrderReference: 'EXT-001',
             lines: [{
@@ -187,7 +187,7 @@ describe('DefaultOrderCommandService', () => {
             }],
         });
 
-        expect(createChannelOrder.execute).toHaveBeenCalledWith(expect.objectContaining({
+        expect(createIntegrationOrder.execute).toHaveBeenCalledWith(expect.objectContaining({
             tenantId: 'tenant-1',
             channelId: 'channel-1',
             externalOrderReference: 'EXT-001',
@@ -200,8 +200,8 @@ describe('DefaultOrderCommandService', () => {
         expect(result.order.status).toBe('NEW');
     });
 
-    it('wraps createChannelOrder in idempotency when an idempotency key is provided', async () => {
-        const createChannelOrder = {
+    it('wraps createIntegrationOrder in idempotency when an idempotency key is provided', async () => {
+        const createIntegrationOrder = {
             execute: vi.fn().mockImplementation(async ({ transaction }) => ({
                 order: { ...orderDetail, status: 'NEW', transactionProvided: transaction !== undefined },
             })),
@@ -214,11 +214,11 @@ describe('DefaultOrderCommandService', () => {
         };
         const service = new DefaultOrderCommandService({
             createOrder: { execute: vi.fn() },
-            createChannelOrder,
+            createIntegrationOrder,
             idempotency,
         });
 
-        const result = await service.createChannelOrder({
+        const result = await service.createIntegrationOrder({
             ...baseCommand,
             externalOrderReference: 'EXT-001',
             lines: [{

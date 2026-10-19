@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Nexora Backend is a **modular monolith**: one deployable unit with strict internal module boundaries that can be extracted into services later if justified.
+Wasl Backend is a **modular monolith**: one deployable unit with strict internal module boundaries that can be extracted into services later if justified.
 
 Phase 1 implements the **platform layer** — everything business modules will plug into — without implementing business modules themselves.
 
@@ -8,11 +8,11 @@ Phase 1 implements the **platform layer** — everything business modules will p
 
 ```mermaid
 flowchart LR
-  Client[API Clients] --> API[Nexora API]
+  Client[API Clients] --> API[Wasl API]
   API --> PG[(PostgreSQL)]
   API --> Redis[(Redis)]
   API --> S3[(S3 / MinIO)]
-  Worker[Nexora Worker] --> PG
+  Worker[Wasl Worker] --> PG
   Worker --> Redis
   Worker --> S3
   API --> Queue[BullMQ via Redis]
@@ -80,7 +80,7 @@ Migration `0001` creates `app.current_tenant_id()`, reading a transaction-local 
 
 | Prefix                         | Purpose                            | Phase                               |
 | ------------------------------ | ---------------------------------- | ----------------------------------- |
-| `/api/v1`                      | Native Nexora API                  | Phase 1 (foundation endpoints only) |
+| `/api/v1`                      | Native Wasl API                  | Phase 1 (foundation endpoints only) |
 | `/api/v2`                      | External Merchant-compatible facade | Phase 5 boundary (optional adapter) |
 | `/health`, `/metrics`, `/docs` | Operations                         | Phase 1                             |
 
@@ -102,3 +102,4 @@ See [api-strategy.md](api-strategy.md) for versioning details.
 - [database.md](database.md) — schema and migrations
 - [events.md](events.md) — outbox/inbox deep dive
 - [decisions/README.md](../decisions/README.md) — ADR index
+

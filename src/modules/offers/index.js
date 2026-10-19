@@ -20,7 +20,7 @@ export function createOffersModule(deps) {
         createOffer: new CreateOffer({
             ...lifecycleDeps,
             productQueryService: deps.productQueryService,
-            channelQueryService: deps.channelQueryService,
+            commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         }),
         getOffer: new GetOffer({ authorization, offerQueryService }),
         listOffers: new ListOffers({
@@ -32,7 +32,7 @@ export function createOffersModule(deps) {
         activateOffer: new ActivateOffer({
             ...lifecycleDeps,
             productQueryService: deps.productQueryService,
-            channelQueryService: deps.channelQueryService,
+            commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
             pricingService: deps.pricingService,
         }),
         suspendOffer: new SuspendOffer(lifecycleDeps),

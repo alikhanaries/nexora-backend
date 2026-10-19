@@ -38,7 +38,7 @@ Deployment may set `AMAZON_LWA_TOKEN_URL` in environment config (see `.env.examp
 
 ## Entity mappings
 
-- `amazon_listing` — Nexora product/offer → seller SKU (from `offer.externalReference` or `merchantSku`)
+- `amazon_listing` — Wasl product/offer → seller SKU (from `offer.externalReference` or `merchantSku`)
 
 ## Authentication architecture
 
@@ -61,9 +61,9 @@ Uses the generic marketplace order lifecycle framework (Phase 31) and webhook in
 
 ### Notifications
 
-Amazon delivers SP-API notifications through **SNS**. Nexora’s marketplace webhook endpoint expects the **SNS HTTPS POST body** (Type `Notification`, JSON `Message` containing the SP-API notification). `NotificationMetadata.NotificationId` is the lifecycle/webhook deduplication key.
+Amazon delivers SP-API notifications through **SNS**. Wasl’s marketplace webhook endpoint expects the **SNS HTTPS POST body** (Type `Notification`, JSON `Message` containing the SP-API notification). `NotificationMetadata.NotificationId` is the lifecycle/webhook deduplication key.
 
-SNS subscription confirmation must be completed outside Nexora before events arrive.
+SNS subscription confirmation must be completed outside Wasl before events arrive.
 
 ### Orders API (read / outbound)
 
@@ -97,7 +97,7 @@ Authentication reuses LWA + SigV4 from catalog (`AmazonSpApiClient`).
 ## Limitations
 
 - Does **not** create new Amazon catalog listings or ASINs — SKU must already exist in Seller Central / Listings API.
-- No product title, browse node, variation theme, or attribute catalog sync (not on Nexora catalog sync port).
+- No product title, browse node, variation theme, or attribute catalog sync (not on Wasl catalog sync port).
 - Offer **activate** does not restore stock levels; run inventory sync after activation.
 - Noon/Namshi are separate adapters.
 

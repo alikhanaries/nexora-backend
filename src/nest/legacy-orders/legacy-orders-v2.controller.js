@@ -9,7 +9,7 @@ import {
   Query,
   UseFilters,
 } from '@nestjs/common';
-import { createChannelOrderBodySchema } from '../../modules/compatibility/presentation/compatibility-channel-order.schemas.js';
+import { createIntegrationOrderBodySchema } from '../../modules/compatibility/presentation/compatibility-channel-order.schemas.js';
 import { acknowledgeOrderBodySchema } from '../../modules/compatibility/presentation/compatibility-acknowledge.schemas.js';
 import {
   listNewOrdersQuerySchema,
@@ -45,19 +45,19 @@ class LegacyOrdersV2Controller {
     @Headers('idempotency-key') idempotencyKey,
     @Headers('x-channel-reference') channelReference,
   ) {
-    const parsed = parseOrThrow(createChannelOrderBodySchema, body, 'create channel order');
-    return this.legacyOrdersService.createChannelOrderV2(parsed, idempotencyKey, channelReference);
+    const parsed = parseOrThrow(createIntegrationOrderBodySchema, body, 'create channel order');
+    return this.legacyOrdersService.createIntegrationOrderV2(parsed, idempotencyKey, channelReference);
   }
 
   @Post('/api/v2/orders/channel-fulfilled')
   @HttpCode(201)
-  async createChannelFulfilled(
+  async createCommerceIntegrationFulfilled(
     @Body() body,
     @Headers('idempotency-key') idempotencyKey,
     @Headers('x-channel-reference') channelReference,
   ) {
-    const parsed = parseOrThrow(createChannelOrderBodySchema, body, 'create channel fulfilled order');
-    return this.legacyOrdersService.createChannelFulfilledOrderV2(
+    const parsed = parseOrThrow(createIntegrationOrderBodySchema, body, 'create channel fulfilled order');
+    return this.legacyOrdersService.createIntegrationFulfilledOrderV2(
       parsed,
       idempotencyKey,
       channelReference,

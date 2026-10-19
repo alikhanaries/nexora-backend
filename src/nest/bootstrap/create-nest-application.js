@@ -4,7 +4,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 import { buildAppModule } from '../app.module.js';
 import { configureExpress } from './configure-express.js';
-import { NEXORA_CONFIG } from '../config/config.module.js';
+import { WASL_CONFIG } from '../config/config.module.js';
 import { NestLoggerService } from '../common/nest-logger.service.js';
 
 /**
@@ -36,7 +36,7 @@ export async function createNestApplication(config, infra, coreDomain = null, op
  * @param {import('@nestjs/common').INestApplication} nestApp
  */
 export function getNestConfig(nestApp) {
-  return nestApp.get(NEXORA_CONFIG);
+  return nestApp.get(WASL_CONFIG);
 }
 
 export function resolveNestListenPort(config) {

@@ -1,8 +1,8 @@
-import { requireChannelStockLocationId } from '../../channels/public/index.js';
+import { requireChannelStockLocationId } from '../../commerce-integrations/public/index.js';
 import { MarketplaceOrderLifecyclePermanentError } from './marketplace-order-lifecycle-errors.js';
 
 /**
- * Creates a Nexora order when a lifecycle command references a marketplace order
+ * Creates a Wasl order when a lifecycle command references a marketplace order
  * that is not yet ingested (Amazon/Noon/Namshi first-event path).
  */
 export class EnsureMarketplaceOrderIngestedFromLifecycle {
@@ -12,10 +12,10 @@ export class EnsureMarketplaceOrderIngestedFromLifecycle {
      * @param {object} deps
      * @param {import('./ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
      * @param {import('../public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
-     * @param {import('../../channels/public/channel-query-service.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../commerce-integrations/public/commerce-integration-query-service.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {{ findByChannelAndExternalReference: Function }} deps.orders
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
-     * @param {import('../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
+     * @param {import('../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
      */
     constructor(deps) {
         this.deps = deps;
@@ -43,12 +43,12 @@ export class EnsureMarketplaceOrderIngestedFromLifecycle {
         }
         const adapter = this.deps.orderAdapterRegistry.resolve(input.marketplaceKey);
         if (adapter === null || typeof adapter.normalizeOrderFromLifecyclePayload !== 'function') {
-            throw new MarketplaceOrderLifecyclePermanentError('Marketplace order was not found in Nexora', {
+            throw new MarketplaceOrderLifecyclePermanentError('Marketplace order was not found in Wasl', {
                 externalOrderId: externalOrderReference,
                 channelId: input.channelId,
             });
         }
-        const channel = await this.deps.channelQueryService.getChannelById(input.tenantId, input.channelId);
+        const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.channelId);
         const stockLocationId = requireChannelStockLocationId(channel);
         let runtime;
         if (this.deps.marketplaceAdapterRuntimeFactory !== undefined) {
