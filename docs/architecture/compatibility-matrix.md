@@ -1,7 +1,7 @@
 # Compatibility Matrix
 
 **Status:** Phase 5 — scope locked ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md))  
-**Last updated:** 2026-09-28 (Phase 60 Nexora external integration production readiness)
+**Last updated:** 2026-09-28 (Phase 60 Wasl external integration production readiness)
 
 This matrix tracks external contract support in Nexora's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
 
@@ -21,17 +21,17 @@ This matrix tracks external contract support in Nexora's provider-neutral compat
 | **Initial Phase 5** | In scope for first Merchant-compatible implementation wave |
 | **Future Merchant** | Merchant contract endpoint; later Phase 5+ step |
 | **Separate Channel scope** | Channel API contract; requires explicit future product decision |
-| **N/A** | Not applicable to current Nexora scope |
+| **N/A** | Not applicable to current Wasl scope |
 
 ## Phase 5 endpoint scope (orders and related)
 
-Nexora routes are prefixed `/api/v2/...` (e.g. external `GET /v2/orders/new` → `GET /api/v2/orders/new`).
+Wasl routes are prefixed `/api/v2/...` (e.g. external `GET /v2/orders/new` → `GET /api/v2/orders/new`).
 
 ## StockConnect CE compatibility surface (Phase 44, additive)
 
 StockConnect-specific ChannelEngine-style routes live under **`/api/v2/ce/*`**. They do not replace or alter existing `/api/v2` Merchant routes.
 
-| External (StockConnect) | Nexora route | Notes |
+| External (StockConnect) | Wasl route | Notes |
 | ----------------------- | ------------ | ----- |
 | Query `apiKey` / `apikey` / header `X-CE-KEY` | `/api/v2/ce/*` only | Resolved via existing API key verification; header auth unchanged elsewhere |
 | GET orders poll (`page`, `pageSize`) | GET `/api/v2/ce/orders` | CE-shaped response (`ChannelId` when channel `externalReference` is numeric); not `/api/v2/orders/new` |
@@ -44,7 +44,7 @@ StockConnect-specific ChannelEngine-style routes live under **`/api/v2/ce/*`**. 
 | POST returns/merchant | POST `/api/v2/ce/returns/merchant` | Delegates to existing return create |
 | POST returns/merchant/acknowledge | POST `/api/v2/ce/returns/merchant/acknowledge` | Delegates to existing return acknowledge |
 | PUT returns | PUT `/api/v2/ce/returns` | Accept/reject via existing receive compatibility |
-| GET channels | GET `/api/v2/ce/channels` | Maps Nexora channels to CE nested Content shape |
+| GET channels | GET `/api/v2/ce/channels` | Maps Wasl channels to CE nested Content shape |
 | POST products | POST `/api/v2/ce/products` | Upsert by MerchantProductNo → CreateProduct |
 | POST products/freeze | POST `/api/v2/ce/products/freeze` | FREEZE suspends offers (fallback deactivate product); UNFREEZE activates suspended offers; accepts `X-CE-KEY` |
 | POST products/bulkdelete | POST `/api/v2/ce/products/bulkdelete` | Archives products by MerchantProductNo |
@@ -55,7 +55,7 @@ StockConnect-specific ChannelEngine-style routes live under **`/api/v2/ce/*`**. 
 
 StockConnect should set `CHANNEL_ENGINE_BASE_URL` to include the `/api/v2/ce/` path prefix (e.g. `https://host/api/v2/ce/`).
 
-| External (StockConnect) | Nexora route | Notes |
+| External (StockConnect) | Wasl route | Notes |
 | ----------------------- | ------------ | ----- |
 | GET products?merchantProductNoList= | GET `/api/v2/ce/products` | `ceService.getExistingProductsBySkuFromCE`; `StockConnectCeProductsQuery` |
 | GET channels/{channelId}/products | GET `/api/v2/ce/channels/:channelId/products` | `productSyncService.fetchChannelStatusMap`; numeric path `channelId` = `channels.external_reference` |
@@ -70,27 +70,27 @@ Configure a tenant webhook subscription pointing at StockConnect `POST /orders/c
 | `description` | `stockconnect-ce-bridge` (exact match) |
 | `url` | StockConnect base URL + `/orders/channelengine-webhook` |
 | `eventTypes` | `order.created`, `order.confirmed`, `order.status_changed`, `order.cancelled` (subset allowed) |
-| Authentication | Standard Nexora webhook HMAC (`X-Nexora-Signature`) on the UTF-8 JSON body |
+| Authentication | Standard Wasl webhook HMAC (`X-Nexora-Signature`) on the UTF-8 JSON body |
 
 ### Phase 47 — StockConnect CE invoice (not CE async job API)
 
 StockConnect calls `GET orders/{merchantOrderNo}/invoice` (`invoiceService.js`, `ParseInvoice.js`). It expects **`application/pdf`** (Accept header) or binary image for S3 upload.
 
-Nexora does **not** expose ChannelEngine batch/job/queue admin APIs. StockConnect rate-limits CE HTTP via its **own** BullMQ (`channelEngineClient.js`) and does not poll CE job status endpoints.
+Wasl does **not** expose ChannelEngine batch/job/queue admin APIs. StockConnect rate-limits CE HTTP via its **own** BullMQ (`channelEngineClient.js`) and does not poll CE job status endpoints.
 
-| Capability | StockConnect evidence | Nexora Phase 47 |
+| Capability | StockConnect evidence | Wasl Phase 47 |
 | ---------- | --------------------- | --------------- |
 | Order invoice PDF | `invoiceService.js`, `helpers/ParseInvoice.js` | GET `/api/v2/ce/orders/:merchantOrderNo/invoice` |
 | CE async job IDs / status | Not referenced in CE URL usage | **Not implemented** (not required) |
 | CE Queue Admin | StockConnect `/channel-engine-queue/*` is internal to SC backend | **Not implemented** (not required) |
 
-Invoice PDFs use a compatibility generator with optional `OrderInvoiceDocumentPort` for future marketplace invoice providers. **Staging ParseInvoice** requires live StockConnect against Nexora staging.
+Invoice PDFs use a compatibility generator with optional `OrderInvoiceDocumentPort` for future marketplace invoice providers. **Staging ParseInvoice** requires live StockConnect against Wasl staging.
 
 ## Phase 48 — StockConnect CE contract verification (local / code)
 
 Evidence source: `stock-connect-backend` (`CHANNEL_ENGINE_BASE_URL` call sites). **Local integration** classifications below; live StockConnect staging overrides in Phase 50.
 
-| Capability | StockConnect uses it? | Nexora implemented? | Local verification |
+| Capability | StockConnect uses it? | Wasl implemented? | Local verification |
 | ---------- | --------------------: | ------------------: | ------------------ |
 | Orders poll | Yes | Yes | Integration tests **PASS** |
 | Acknowledge | Yes | Yes | Integration tests **PASS** |
@@ -134,7 +134,7 @@ Runbook: [stockconnect-ce-production-cutover.md](./stockconnect-ce-production-cu
 
 **Code baseline:** `origin/dev` at `fa6fce1` (post #66). Local CE integration suites (**29** tests across 6 files) **PASS** on this baseline. This does **not** substitute for StockConnect-client staging validation.
 
-**Deployment / StockConnect E2E:** Must be executed by ops against Nexora staging + StockConnect staging. This repository phase records checklist status only (no secrets).
+**Deployment / StockConnect E2E:** Must be executed by ops against Wasl staging + StockConnect staging. This repository phase records checklist status only (no secrets).
 
 | Capability | StockConnect staging (real client) | Classification |
 | ---------- | ----------------------------------- | -------------- |
@@ -153,12 +153,12 @@ Runbook: [stockconnect-ce-production-cutover.md](./stockconnect-ce-production-cu
 | Gate | Status |
 | ---- | ------ |
 | Engineering merge (46–52 on `dev`) | **Complete** on `origin/dev` (#63, #64, #66, #68) |
-| Nexora staging deploy at `fa6fce1`+ | **NEEDS ENVIRONMENT VERIFICATION** |
+| Wasl staging deploy at `fa6fce1`+ | **NEEDS ENVIRONMENT VERIFICATION** |
 | StockConnect `CHANNEL_ENGINE_BASE_URL` / API key | **NEEDS ENVIRONMENT VERIFICATION** |
 | Real StockConnect workflows | **Not verified** — see table above |
 | **Sign-off** | **BLOCKED — ENVIRONMENT** until live E2E completes; not **READY FOR STAGING CUTOVER** |
 
-Update this section with **VERIFIED** only after StockConnect’s staging pollers/handlers succeed against Nexora staging (not curl-only checks).
+Update this section with **VERIFIED** only after StockConnect’s staging pollers/handlers succeed against Wasl staging (not curl-only checks).
 
 ## Phase 52 — StockConnect CE production readiness (2026-09-28)
 
@@ -203,7 +203,7 @@ Update this section with **VERIFIED** only after StockConnect’s staging poller
 | Phase 54 production readiness | **PASS on `dev`** — #70 (`c20a733`); see `stockconnect-ce-production-cutover.md` |
 | Production authorization | **NOT OBTAINED** in this environment |
 
-**Production execution:** Not performed. No Nexora production deploy, StockConnect `CHANNEL_ENGINE_BASE_URL` change, or live production traffic from this agent.
+**Production execution:** Not performed. No Wasl production deploy, StockConnect `CHANNEL_ENGINE_BASE_URL` change, or live production traffic from this agent.
 
 | Flow | Production status | Evidence |
 | ---- | ----------------- | -------- |
@@ -225,7 +225,7 @@ Update this section with **VERIFIED** only after StockConnect’s staging poller
 | Phase 52 readiness on `dev` | Done (#68) |
 | Phase 54 runbook on `dev` | Done (#70) |
 | Phase 56 staging E2E | **BLOCKED — ENVIRONMENT** (see Phase 56 section) |
-| Deploy Nexora staging from merged `dev` | Pending ops |
+| Deploy Wasl staging from merged `dev` | Pending ops |
 | `CHANNEL_ENGINE_BASE_URL` → `https://<host>/api/v2/ce/` | Pending ops |
 | API key / tenant / webhook `stockconnect-ce-bridge` | Pending ops |
 | Numeric channel `external_reference` / order Id backfill | **NEEDS ENVIRONMENT VERIFICATION** |
@@ -351,9 +351,9 @@ The full `npm run test:integration` suite showed unrelated/environmental flake/t
 
 These are **environment/deployment/validation tasks** and **do not represent missing StockConnect CE implementation:**
 
-1. Deploy Nexora to staging.
+1. Deploy Wasl to staging.
 2. Configure StockConnect staging.
-3. Configure `CHANNEL_ENGINE_BASE_URL` to the Nexora `/api/v2/ce/` surface.
+3. Configure `CHANNEL_ENGINE_BASE_URL` to the Wasl `/api/v2/ce/` surface.
 4. Configure API credentials.
 5. Configure tenant/channel mapping.
 6. Configure webhook destination and secret.
@@ -364,17 +364,17 @@ These are **environment/deployment/validation tasks** and **do not represent mis
 11. Confirm the actual acknowledgement `MerchantOrderNo` behavior against the live client.
 12. Complete production authorization and cutover only after staging passes.
 
-## Phase 60 — Nexora external integration production readiness (2026-09-28)
+## Phase 60 — Wasl external integration production readiness (2026-09-28)
 
 **Base:** `origin/dev` at `ebac017` (#74 generic external integration boundary).
 
-**Scope:** Nexora platform deployment readiness — **not** new external consumer features.
+**Scope:** Wasl platform deployment readiness — **not** new external consumer features.
 
 ### Audit summary
 
 | Area | Status | Notes |
 | ---- | ------ | ----- |
-| Configuration | **READY** | `.env.example` documents infra; no consumer-specific Nexora env vars |
+| Configuration | **READY** | `.env.example` documents infra; no consumer-specific Wasl env vars |
 | Startup validation | **READY** | Config parsed/validated in `src/app/config`; secrets not logged at startup |
 | Readiness | **READY** | `external_compat_ce_routes` + legacy `stockconnect_ce_compat` wiring probes; no outbound consumer HTTP |
 | Auth / tenant isolation | **VERIFIED** (automated) | CE foundation + external-consumer boundary integration tests |
@@ -391,7 +391,7 @@ These are **environment/deployment/validation tasks** and **do not represent mis
 
 **Final status:** **NEXORA PRODUCTION-READY FOR CONTROLLED DEPLOYMENT** (platform). External consumer cutover remains **environment / E2E** gated.
 
-| External contract | External endpoint | Nexora route | Scope | Core contract | Status |
+| External contract | External endpoint | Wasl route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |
 | Merchant | GET /v2/orders | GET /api/v2/orders | Initial Phase 5 | OrderQueryService.listOrders | **Implemented** — see filter notes below |
 | Merchant | GET /v2/orders/new | GET /api/v2/orders/new | Initial Phase 5 | OrderQueryService.listOrders | **Implemented** — see audit notes below |
@@ -416,7 +416,7 @@ These are **environment/deployment/validation tasks** and **do not represent mis
 
 Routes are additive under `/api/v2`. Mutations require `Idempotency-Key`. Channel context for offer routes: channel-scoped API key, `X-Channel-Reference`, or body `ChannelId` (maps to `channels.external_reference`).
 
-| External (CE) | Nexora route | Core mapping | Status |
+| External (CE) | Wasl route | Core mapping | Status |
 | ------------- | ------------ | ------------ | ------ |
 | POST /products | POST /api/v2/products | CreateProduct + UpsertProductContent (batch partial success) | **Implemented** |
 | POST /products/freeze | POST /api/v2/products/freeze | SuspendOffer (when channel context) or DeactivateProduct | **Implemented** |
@@ -450,27 +450,27 @@ Only documented gaps — no speculative contracts.
 
 | Topic | Gap |
 | ----- | --- |
-| Pagination | Merchant API uses `Page`; Nexora lists use cursor internally — adapter required at compatibility boundary |
-| Order status values | External `OrderStatusViewModel` ≠ Nexora `OrderStatus` enum — mapper required |
-| Identifiers | External integer `Id` vs Nexora UUID — mapper required |
-| Money | External decimal incl. VAT vs Nexora minor units — converted via `shared/money.minorUnitsToDecimal` (ISO 4217 exponents; default 2). **VAT-inclusive labelling** may exceed Nexora tax fields — see audit notes |
-| NEW order semantics | Native `/api/v1/orders` creates `CONFIRMED`; endpoint returns only Nexora `NEW` — see audit notes |
+| Pagination | Merchant API uses `Page`; Wasl lists use cursor internally — adapter required at compatibility boundary |
+| Order status values | External `OrderStatusViewModel` ≠ Wasl `OrderStatus` enum — mapper required |
+| Identifiers | External integer `Id` vs Wasl UUID — mapper required |
+| Money | External decimal incl. VAT vs Wasl minor units — converted via `shared/money.minorUnitsToDecimal` (ISO 4217 exponents; default 2). **VAT-inclusive labelling** may exceed Wasl tax fields — see audit notes |
+| NEW order semantics | Native `/api/v1/orders` creates `CONFIRMED`; endpoint returns only Wasl `NEW` — see audit notes |
 | Integer IDs | External `Id` populated from `external_integer_id_mappings` when a mapping exists; omitted when missing. Integer `ChannelId` not exposed — use `ChannelReference` (string) |
 | ChannelProductNo | Only `merchantSku` on order lines; channel-specific SKU not stored separately |
-| Product references | External `MerchantProductNo` / `ChannelProductNo` vs Nexora UUID `productId` — lookup via ProductQueryService |
+| Product references | External `MerchantProductNo` / `ChannelProductNo` vs Wasl UUID `productId` — lookup via ProductQueryService |
 | `GET /v2/orders/new` data shape | Merchant response includes lines, customer, addresses, channel metadata — OrderQueryService must expose enough data or list contract must return detail DTOs |
 
 ## `GET /api/v2/orders/new` — implemented audit notes (2026-09-21)
 
-**Status mapping:** External `NEW` ↔ Nexora `OrderStatus.NEW` only. This is intentional — mapping `CONFIRMED` to external `NEW` would be semantically incorrect (`CONFIRMED` maps to external `IN_PROGRESS`).
+**Status mapping:** External `NEW` ↔ Wasl `OrderStatus.NEW` only. This is intentional — mapping `CONFIRMED` to external `NEW` would be semantically incorrect (`CONFIRMED` maps to external `IN_PROGRESS`).
 
 **Native order creation gap:** `CreateOrder` / `Order.create()` defaults to `CONFIRMED`. No current API creates orders in `NEW`. Therefore this endpoint returns an empty list for orders created only through `/api/v1/orders` unless they are explicitly placed in `NEW` (e.g. a future import/ingestion flow or manual correction). This is a **product/domain gap**, not a mapper bug.
 
-**Money:** Amounts convert from Nexora integer minor units using ISO 4217 exponents (`shared/money/minorUnitsToDecimal`). Fields labelled `*InclVat` in the external contract are populated from Nexora totals that may not include line-level VAT breakdown — treat as a representation gap until tax modelling matures.
+**Money:** Amounts convert from Wasl integer minor units using ISO 4217 exponents (`shared/money/minorUnitsToDecimal`). Fields labelled `*InclVat` in the external contract are populated from Wasl totals that may not include line-level VAT breakdown — treat as a representation gap until tax modelling matures.
 
 **Identifiers:** External integer `Id` and line `Id` are populated from `external_integer_id_mappings` (`provider = compat_v2`) when mappings exist; omitted when no mapping row exists. Historical gaps can be closed with the Phase 8.5 operational backfill (`npm run backfill:external-ids`). Integer `ChannelId` is not exposed — `ChannelReference` (string) is used. Inbound integer ID resolution (e.g. acknowledge by `OrderId`) is implemented in Phase 8.4.
 
-**Product identifiers:** Both `MerchantProductNo` and `ChannelProductNo` map to the order line's snapshotted `merchantSku`. Nexora does not store a separate channel-specific SKU on the line; `product.externalReference` and `offer.externalReference` exist but are not channel-listing SKUs.
+**Product identifiers:** Both `MerchantProductNo` and `ChannelProductNo` map to the order line's snapshotted `merchantSku`. Wasl does not store a separate channel-specific SKU on the line; `product.externalReference` and `offer.externalReference` exist but are not channel-listing SKUs.
 
 **Pagination:** `Page` and `ItemsPerPage` are supported at the compatibility boundary (not listed in external OpenAPI for `/new`, but required for collection semantics). Native `/api/v1` cursor pagination is unchanged.
 
@@ -478,10 +478,10 @@ Only documented gaps — no speculative contracts.
 
 **Supported query parameters (mapped safely):**
 
-| External parameter | Nexora mapping |
+| External parameter | Wasl mapping |
 | ------------------ | -------------- |
 | `Page`, `ItemsPerPage` | Compatibility pagination → `listOrders` page/pageSize |
-| `Statuses` | External status vocabulary → Nexora status set (see mapper) |
+| `Statuses` | External status vocabulary → Wasl status set (see mapper) |
 | `MerchantOrderNos` | `orderNumbers[]` |
 | `ChannelOrderNos` | `externalOrderReferences[]` |
 | `FromDate`, `ToDate` | `createdAfter` / `createdBefore` (inclusive/exclusive on `created_at`) |
@@ -493,14 +493,14 @@ Only documented gaps — no speculative contracts.
 | External parameter | Reason |
 | ------------------ | ------ |
 | `EmailAddresses` | Requires customer join filter not exposed on `OrderQueryService` |
-| `CommercialOrderNos` | No Nexora field |
-| `ChannelIds`, `StockLocationIds` | External integer IDs vs Nexora UUIDs |
+| `CommercialOrderNos` | No Wasl field |
+| `ChannelIds`, `StockLocationIds` | External integer IDs vs Wasl UUIDs |
 | `ExcludeMarketplaceFulfilledOrdersAndLines`, `FulfillmentType` | No marketplace-fulfillment model |
 | `OnlyWithCancellationRequests` | No acknowledgement/cancellation-request flag on orders |
 | `IsAcknowledged` | No acknowledgement state |
 | `FromAcknowledgedDate`, `ToAcknowledgedDate`, `FromClosedAtDate`, `ToClosedAtDate` | No compatible persisted fields |
 
-External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORDER`, `MANCO`, `IN_COMBI`, `REQUIRES_CORRECTION`) yield an empty collection when requested alone.
+External statuses with **no Wasl equivalent** (`AWAITING_PAYMENT`, `IN_BACKORDER`, `MANCO`, `IN_COMBI`, `REQUIRES_CORRECTION`) yield an empty collection when requested alone.
 
 ## `POST /api/v2/shipments` — implemented notes (2026-09-21)
 
@@ -508,13 +508,13 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 **Request mapping:**
 
-| External field | Nexora mapping |
+| External field | Wasl mapping |
 | -------------- | -------------- |
 | `MerchantOrderNo` | `orders.order_number` (lookup key) |
 | `MerchantShipmentNo` | `shipments.external_reference` (tenant-unique when set) |
 | `Lines[].MerchantProductNo` | Order line `merchantSku` (allocation across matching lines when SKU repeats) |
 | `Lines[].Quantity` | Shipment line quantity (passed to `CreateShipment`; core validates shippable quantity) |
-| `Lines[].OrderLineId` | Accepted but **not used** — Nexora has no external integer order-line ID |
+| `Lines[].OrderLineId` | Accepted but **not used** — Wasl has no external integer order-line ID |
 | `Method` | `shipments.carrier` |
 | `TrackTraceNo` | `shipments.tracking_number` |
 
@@ -522,12 +522,12 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 | External field | Reason |
 | -------------- | ------ |
-| `TrackTraceUrl`, `ReturnTrackTraceNo` | No shipment URL/return-tracking fields in Nexora |
+| `TrackTraceUrl`, `ReturnTrackTraceNo` | No shipment URL/return-tracking fields in Wasl |
 | `ExtraData` | No generic shipment metadata store |
 | `ShippedFromCountryCode` | No shipment origin country field |
-| `ShippedFromStockLocationId` | External integer stock location ID vs Nexora UUID |
+| `ShippedFromStockLocationId` | External integer stock location ID vs Wasl UUID |
 
-**Behavior:** Maps to existing `CreateShipment` → `OrderFulfillmentService.applyShipmentQuantities` + `evaluateOrderShipmentState`. Creates a Nexora shipment in `CREATED` status and increments order-line shipped quantities. Does **not** call `ShipShipment` (external create ≠ separate dispatch transition).
+**Behavior:** Maps to existing `CreateShipment` → `OrderFulfillmentService.applyShipmentQuantities` + `evaluateOrderShipmentState`. Creates a Wasl shipment in `CREATED` status and increments order-line shipped quantities. Does **not** call `ShipShipment` (external create ≠ separate dispatch transition).
 
 **Quantity semantics:** Over-shipment is rejected by core `BusinessRuleError` (422) — quantities are never silently clamped at the compatibility boundary.
 
@@ -557,7 +557,7 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 **Request mapping:**
 
-| External field | Nexora mapping |
+| External field | Wasl mapping |
 | -------------- | -------------- |
 | Path `merchantShipmentNo` | `shipments.external_reference` (tenant-unique lookup key) |
 | `Method` | `shipments.carrier` |
@@ -567,7 +567,7 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 | External field | Reason |
 | -------------- | ------ |
-| `ReturnTrackTraceNo`, `TrackTraceUrl`, `ShippedFromCountryCode`, `ReturnMethod` | No compatible persisted fields on Nexora shipments |
+| `ReturnTrackTraceNo`, `TrackTraceUrl`, `ShippedFromCountryCode`, `ReturnMethod` | No compatible persisted fields on Wasl shipments |
 
 **Behavior:** Maps to `ShipmentCommandService.updateShipmentTracking` → `UpdateShipmentTracking`. Shipments in `CREATED` or `READY_TO_SHIP` transition to `SHIPPED` and emit `shipment.status_changed` + `shipment.shipped`. Already-shipped shipments update carrier/tracking only (no duplicate status events when unchanged).
 
@@ -581,17 +581,17 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 ## `POST /api/v2/returns` — implemented notes (2026-09-22)
 
-**External operation:** `POST /v2/returns/merchant` — marks an order fully or partially returned (single return object). Nexora exposes this as `POST /api/v2/returns`.
+**External operation:** `POST /v2/returns/merchant` — marks an order fully or partially returned (single return object). Wasl exposes this as `POST /api/v2/returns`.
 
 **Request mapping:**
 
-| External field | Nexora mapping |
+| External field | Wasl mapping |
 | -------------- | -------------- |
 | `MerchantOrderNo` | `orders.order_number` (lookup key) |
 | `MerchantReturnNo` | `returns.external_reference` (tenant-unique when set) |
 | `Lines[].MerchantProductNo` | Order line `merchantSku` (allocation across matching lines when SKU repeats) |
 | `Lines[].Quantity` | Return line quantity (passed to `CreateReturn`; core validates eligible shipped quantity) |
-| `Lines[].OrderLineId` | Accepted but **not used** — Nexora has no external integer order-line ID |
+| `Lines[].OrderLineId` | Accepted but **not used** — Wasl has no external integer order-line ID |
 | `MerchantComment` / `CustomerComment` / `Reason` | `returns.reason` (MerchantComment preferred, then CustomerComment, then Reason enum string) |
 
 **Intentionally unsupported (documented gaps):**
@@ -599,12 +599,12 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 | External field | Reason |
 | -------------- | ------ |
 | `Id` | External ChannelEngine integer ID — not persisted or verified |
-| `TrackTraceNo` | No return tracking field on Nexora returns |
+| `TrackTraceNo` | No return tracking field on Wasl returns |
 | `RefundInclVat` / `RefundExclVat` | No refund amount fields on returns |
 | `ReturnDate` | No separate source-created timestamp field |
 | `ExtraData` / line `ExtraData` | No generic return metadata store |
 | `Rma` | No RMA field on returns |
-**Behavior (create):** Maps to existing `CreateReturn`. Creates a Nexora return in `REQUESTED` status. Does **not** receive inventory or increment `returnedQuantity` — use `PUT /api/v2/returns` receive compatibility or native `ReceiveReturn`.
+**Behavior (create):** Maps to existing `CreateReturn`. Creates a Wasl return in `REQUESTED` status. Does **not** receive inventory or increment `returnedQuantity` — use `PUT /api/v2/returns` receive compatibility or native `ReceiveReturn`.
 
 **Quantity semantics:** Eligible quantity = `shippedQuantity - returnedQuantity - pendingReturnQuantity`. Over-return rejected by core `BusinessRuleError` (422). Unshipped orders cannot be returned (422).
 
@@ -634,14 +634,14 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 **Request mapping:**
 
-| External field | Nexora mapping |
+| External field | Wasl mapping |
 | -------------- | -------------- |
 | `ReturnId` | Accepted for contract compliance; **not persisted or used as lookup key** (same integer-ID policy as order acknowledge) |
 | `Lines[].MerchantProductNo` | Order line `merchantSku` for return resolution and validation |
 | `Lines[].AcceptedQuantity` | Full accept path → `ProcessReturnReceive` → `ReceiveReturn` |
 | `Lines[].RejectedQuantity` | Full reject path → `ProcessReturnReceive` → `RejectReturn` |
 
-**Return resolution:** Because Nexora does not persist external integer return IDs, the compatibility layer resolves the target return by matching line SKUs and quantities against a **unique** tenant-scoped return in `REQUESTED` or `APPROVED` status. Ambiguous matches return `409`; no match returns `404`.
+**Return resolution:** Because Wasl does not persist external integer return IDs, the compatibility layer resolves the target return by matching line SKUs and quantities against a **unique** tenant-scoped return in `REQUESTED` or `APPROVED` status. Ambiguous matches return `409`; no match returns `404`.
 
 **Limitations:**
 
@@ -667,7 +667,7 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 **Request mapping:**
 
-| External field | Nexora mapping |
+| External field | Wasl mapping |
 | -------------- | -------------- |
 | `MerchantReturnNo` | `returns.external_reference` (lookup key) |
 | `ReturnId` | Accepted for contract compliance; not persisted or used as lookup key |
@@ -682,7 +682,7 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 **Response:** `{ Success: true, StatusCode: 200, Message: null }`.
 
-**Acknowledgement state:** Nexora has no separate `IsAcknowledged` persisted flag; acknowledgement is represented by `APPROVED` status (or later terminal receive states).
+**Acknowledgement state:** Wasl has no separate `IsAcknowledged` persisted flag; acknowledgement is represented by `APPROVED` status (or later terminal receive states).
 
 ## `POST /api/v2/cancellations` — implemented notes (2026-09-22)
 
@@ -690,23 +690,23 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 **Request mapping:**
 
-| External field | Nexora mapping |
+| External field | Wasl mapping |
 | -------------- | -------------- |
 | `MerchantOrderNo` | `orders.order_number` (lookup key) |
 | `MerchantCancellationNo` | `cancellations.external_reference` (tenant-unique when set) |
 | `Lines[].MerchantProductNo` | Order line `merchantSku` (allocation across matching lines when SKU repeats) |
 | `Lines[].Quantity` | Cancellation line quantity (passed to `CreateCancellation`; core validates cancellable quantity) |
-| `Lines[].OrderLineId` | Accepted but **not used** — Nexora has no external integer order-line ID |
+| `Lines[].OrderLineId` | Accepted but **not used** — Wasl has no external integer order-line ID |
 | `Reason` | `cancellations.reason` |
 
 **Intentionally unsupported (documented gaps):**
 
 | External field | Reason |
 | -------------- | ------ |
-| `ReasonCode` | No structured cancellation reason-code field in Nexora |
+| `ReasonCode` | No structured cancellation reason-code field in Wasl |
 | `IsMerchantCreator` | No creator-origin metadata on cancellations |
 
-**Behavior:** Maps to existing `CreateCancellation` → `OrderFulfillmentService.applyCancellation`. Creates a Nexora cancellation that immediately completes (`REQUESTED → COMPLETED`), increments order-line cancelled quantities, releases inventory, and may transition the order to `CANCELLED` when all lines are fully cancelled.
+**Behavior:** Maps to existing `CreateCancellation` → `OrderFulfillmentService.applyCancellation`. Creates a Wasl cancellation that immediately completes (`REQUESTED → COMPLETED`), increments order-line cancelled quantities, releases inventory, and may transition the order to `CANCELLED` when all lines are fully cancelled.
 
 **Quantity semantics:** Over-cancellation is rejected by core `BusinessRuleError` (422) — quantities are never silently clamped at the compatibility boundary.
 
@@ -736,22 +736,22 @@ External statuses with **no Nexora equivalent** (`AWAITING_PAYMENT`, `IN_BACKORD
 
 **Channel context (not in Channel request body):**
 
-| Source | Nexora mapping |
+| Source | Wasl mapping |
 | ------ | -------------- |
 | Channel-scoped API key | `api_keys.channel_id` → `ChannelQueryService.verifyChannelUsable` |
-| Bearer JWT (Nexora extension) | `X-Channel-Reference` header → `ChannelQueryService.getChannelByExternalReference` |
+| Bearer JWT (Wasl extension) | `X-Channel-Reference` header → `ChannelQueryService.getChannelByExternalReference` |
 
 **Stock location (OQ-7-07):**
 
-| Source | Nexora mapping |
+| Source | Wasl mapping |
 | ------ | -------------- |
-| `channels.configurationReference` | Must contain the Nexora stock location UUID applied to every ingested line |
+| `channels.configurationReference` | Must contain the Wasl stock location UUID applied to every ingested line |
 
 When `configurationReference` is missing or not a UUID, ingest returns `422`. No default stock location is inferred.
 
 **Request mapping (verified Channel OpenAPI):**
 
-| External field | Nexora mapping |
+| External field | Wasl mapping |
 | -------------- | -------------- |
 | `ChannelOrderNo` | `orders.external_order_reference` |
 | `CurrencyCode` | order currency |
@@ -761,7 +761,7 @@ When `configurationReference` is missing or not a UUID, ingest returns `422`. No
 | `Lines[].MerchantProductNo` | SKU-first product resolution (`merchantSku`) |
 | `Lines[].ChannelProductNo` | offer external reference when SKU lookup fails |
 | `Lines[].Quantity` | line quantity |
-| `Lines[].UnitPriceInclVat` | accepted for contract compliance; pricing comes from Nexora `PricingService` |
+| `Lines[].UnitPriceInclVat` | accepted for contract compliance; pricing comes from Wasl `PricingService` |
 
 **Intentionally unsupported / ignored:**
 
@@ -769,7 +769,7 @@ When `configurationReference` is missing or not a UUID, ingest returns `422`. No
 | -------------- | ------ |
 | Integer `ChannelId` in body | Not present on Channel create request; channel comes from auth/context |
 | Per-line stock location | Not in Channel create contract; resolved from channel configuration |
-| `OrderDate`, `CommercialOrderNo`, service lines, fees | No persisted Nexora fields in Phase 7.2 scope |
+| `OrderDate`, `CommercialOrderNo`, service lines, fees | No persisted Wasl fields in Phase 7.2 scope |
 
 **Behavior:** Maps to `OrderCommandService.createChannelOrder` — creates `NEW` orders, reserves inventory in the same transaction, emits `order.created` only (no `order.confirmed`).
 
@@ -787,11 +787,11 @@ When `configurationReference` is missing or not a UUID, ingest returns `422`. No
 
 **Channel context:** Same as `POST /api/v2/orders` — channel-scoped API key or Bearer `X-Channel-Reference`.
 
-**Stock location:** Same as `POST /api/v2/orders` — `channels.configurationReference` must contain the Nexora stock location UUID.
+**Stock location:** Same as `POST /api/v2/orders` — `channels.configurationReference` must contain the Wasl stock location UUID.
 
 **Request mapping:** Reuses the verified Channel create request schema (`ChannelOrderRequestModel`). Shipment metadata is derived from the order request:
 
-| External field | Nexora mapping |
+| External field | Wasl mapping |
 | -------------- | -------------- |
 | `ChannelOrderNo` | `orders.external_order_reference` |
 | `ShippingMethod` | shipment `carrier` |
@@ -816,10 +816,10 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 
 **Request mapping:**
 
-| External field | Nexora mapping |
+| External field | Wasl mapping |
 | -------------- | -------------- |
 | `MerchantOrderNo` | `orders.order_number` (lookup key) |
-| `OrderId` | Accepted because it is required by the external request schema, but Nexora resolves the order by `MerchantOrderNo`/`orderNumber` and does **not** persist or independently verify the external integer `OrderId` |
+| `OrderId` | Accepted because it is required by the external request schema, but Wasl resolves the order by `MerchantOrderNo`/`orderNumber` and does **not** persist or independently verify the external integer `OrderId` |
 
 **Behavior:** Single order per request (external contract is not a batch array). Maps to existing `ConfirmOrder` domain operation via `OrderCommandService.acknowledgeOrder`.
 
@@ -833,7 +833,7 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 
 **Response:** `{ Success: true, StatusCode: 201, Message: null }` — no fabricated integer IDs or order payload in response.
 
-**OrderId limitation:** The external Merchant schema requires both fields on the request. Nexora uses `MerchantOrderNo` as the sole lookup key. `OrderId` is accepted for contract compliance (the external docs note it does not have to be saved) but is not stored, validated against a mapping, or echoed in the response. Clients that require strict `OrderId` correlation must retain it externally; `GET /api/v2/orders/new` does not return integer `OrderId`.
+**OrderId limitation:** The external Merchant schema requires both fields on the request. Wasl uses `MerchantOrderNo` as the sole lookup key. `OrderId` is accepted for contract compliance (the external docs note it does not have to be saved) but is not stored, validated against a mapping, or echoed in the response. Clients that require strict `OrderId` correlation must retain it externally; `GET /api/v2/orders/new` does not return integer `OrderId`.
 
 ## `GET /api/v2/shipments/merchant` — implemented read notes (2026-09-22)
 
@@ -845,7 +845,7 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 
 **Supported filters:**
 
-| External parameter | Nexora mapping |
+| External parameter | Wasl mapping |
 | ------------------ | -------------- |
 | `MerchantShipmentNos` | `externalReferences[]` on shipments |
 | `MerchantOrderNos` | Join `orders.order_number` |
@@ -878,7 +878,7 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 
 **Supported filters:**
 
-| External parameter | Nexora mapping |
+| External parameter | Wasl mapping |
 | ------------------ | -------------- |
 | `MerchantCancellationNos` | `externalReferences[]` |
 | `MerchantOrderNos` | Join `orders.order_number` |
@@ -894,7 +894,7 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 
 **Verified external paths:**
 
-| External | Nexora |
+| External | Wasl |
 | -------- | ------ |
 | `GET /v2/returns/merchant` | `GET /api/v2/returns/merchant` |
 | `GET /v2/returns/merchant/new` | `GET /api/v2/returns/merchant/new` |
@@ -906,11 +906,11 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 
 **Pagination:** `Page` + `ItemsPerPage` on list endpoints; by-order endpoint returns all returns for the order (up to core max page size 100).
 
-**`/merchant/new` semantics:** External docs describe status **In progress** (`ReturnStatus.IN_PROGRESS`). Mapped to Nexora `REQUESTED`, `APPROVED`, and `RECEIVED` — returns not yet terminal/handled. Merchant-created returns start as `REQUESTED` and appear here.
+**`/merchant/new` semantics:** External docs describe status **In progress** (`ReturnStatus.IN_PROGRESS`). Mapped to Wasl `REQUESTED`, `APPROVED`, and `RECEIVED` — returns not yet terminal/handled. Merchant-created returns start as `REQUESTED` and appear here.
 
 **Status mapping (response):**
 
-| Nexora status | External status |
+| Wasl status | External status |
 | ------------- | ----------------- |
 | `REQUESTED`, `APPROVED`, `RECEIVED` | `IN_PROGRESS` |
 | `COMPLETED` | `HANDLED` |
@@ -918,11 +918,11 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 
 **Supported list filters:**
 
-| External parameter | Nexora mapping |
+| External parameter | Wasl mapping |
 | ------------------ | -------------- |
 | `MerchantOrderNos` | Join `orders.order_number` |
 | `ChannelOrderNos` | Join `orders.external_order_reference` |
-| `Statuses` | External → Nexora status set (see mapper) |
+| `Statuses` | External → Wasl status set (see mapper) |
 | `Reasons` | `returns.reason` exact match |
 | `FromDate` / `ToDate` | `created_at` inclusive/exclusive |
 | `FromUpdateDate` / `ToUpdateDate` | `updated_at` inclusive/exclusive |
@@ -934,7 +934,7 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 | `ChannelIds`, `FulfillmentType`, `IsAcknowledged` | No compatible persisted fields |
 | `MerchantReturnNos` on this endpoint | Not present in verified OpenAPI for `GET /v2/returns/merchant` |
 
-**By-order endpoint:** Resolves order by `MerchantOrderNo` (= Nexora `order_number`). Returns `404` when order missing. Cross-tenant order numbers are not accessible.
+**By-order endpoint:** Resolves order by `MerchantOrderNo` (= Wasl `order_number`). Returns `404` when order missing. Cross-tenant order numbers are not accessible.
 
 **Response mapping:** `MerchantReturnNo` ← `externalReference`; `ChannelName` from `ChannelQueryService`. Integer return/line IDs **omitted**.
 
@@ -972,3 +972,4 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 - [module-boundaries.md](module-boundaries.md) — dependency rules
 - [api-strategy.md](api-strategy.md) — versioning policy
 - [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md)
+

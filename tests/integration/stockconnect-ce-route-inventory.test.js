@@ -38,7 +38,7 @@ describe('StockConnect CE route inventory (Phase 50)', () => {
         await app.httpServer.ready();
         const thisDir = dirname(fileURLToPath(import.meta.url));
         routeSource = readFileSync(
-            join(thisDir, '../../src/modules/compatibility/presentation/stockconnect-ce.routes.js'),
+            join(thisDir, '../../src/modules/compatibility/presentation/compat-v2.routes.js'),
             'utf8',
         );
     });
@@ -55,8 +55,8 @@ describe('StockConnect CE route inventory (Phase 50)', () => {
     });
 
     it('mounts StockConnect CE route dependencies on the application', () => {
-        expect(app.compatibility.routeDeps.stockConnectCeOrderInvoiceQuery).toBeDefined();
-        expect(app.compatibility.routeDeps.stockConnectCeProductsQuery).toBeDefined();
-        expect(app.compatibility.routeDeps.stockConnectCeChannelProductsQuery).toBeDefined();
+        expect(app.compatibility.routeDeps.compatV2OrderInvoiceQuery).toBeDefined();
+        expect(app.compatibility.routeDeps.compatV2ProductsQuery).toBeDefined();
+        expect(app.compatibility.routeDeps.compatV2IntegrationProductsQuery).toBeDefined();
     });
 });

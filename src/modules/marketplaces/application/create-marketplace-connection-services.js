@@ -9,7 +9,7 @@ import { PostgresMarketplaceRepository } from '../infrastructure/postgres-market
  * @param {object} deps
  * @param {object} deps.queryable
  * @param {import('../../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
- * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+ * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
  * @param {import('../../audit/public/index.js').AuditRecorderPort} [deps.auditRecorder]
  * @param {string | null | undefined} [deps.amazonLwaTokenUrl]
  * @param {string | null | undefined} [deps.noonApiBaseUrl]
@@ -31,14 +31,14 @@ export function createMarketplaceConnectionServices(deps) {
         secretEncryptor: deps.secretEncryptor,
         adapterRegistry,
         queryable: deps.queryable,
-        channelQueryService: deps.channelQueryService,
+        commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
     const commandService = new MarketplaceConnectionCommandService(shared);
     const queryService = new MarketplaceConnectionQueryService({
         authorization,
         connections,
-        channelQueryService: deps.channelQueryService,
+        commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         queryable: deps.queryable,
     });
     return { commandService, queryService };

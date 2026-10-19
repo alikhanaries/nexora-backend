@@ -12,7 +12,7 @@ import {
     channelOrderPayload,
     configureChannelForIngest,
     countOutboxEventsForOrder,
-    createChannelScopedApiKey,
+    createCommerceIntegrationScopedApiKey,
     seedCommerceFixture,
 } from './compatibility-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
@@ -96,7 +96,7 @@ describe('POST /api/v2/orders/channel-fulfilled integration', () => {
         const fixture = await seedCommerceFixture(server, headers);
         await configureChannelForIngest(server, headers, fixture.channelId, fixture.stockLocationId);
         const permissions = await ownerPermissions(tenantId);
-        const apiKey = await createChannelScopedApiKey(
+        const apiKey = await createCommerceIntegrationScopedApiKey(
             app,
             tenantId,
             user.userId,
@@ -213,7 +213,7 @@ describe('POST /api/v2/orders/channel-fulfilled integration', () => {
         const fixture = await seedCommerceFixture(server, headers);
         await configureChannelForIngest(server, headers, fixture.channelId, fixture.stockLocationId);
         const permissions = await ownerPermissions(tenantId);
-        const apiKey = await createChannelScopedApiKey(
+        const apiKey = await createCommerceIntegrationScopedApiKey(
             app,
             tenantId,
             user.userId,

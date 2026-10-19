@@ -27,7 +27,7 @@ describe('EnsureMarketplaceOrderIngestedFromLifecycle', () => {
         const service = new EnsureMarketplaceOrderIngestedFromLifecycle({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry: { resolve: vi.fn() },
-            channelQueryService: { getChannelById: vi.fn() },
+            commerceIntegrationQueryService: { getCommerceIntegrationById: vi.fn() },
             orders,
             database: { execute: vi.fn(async (work) => work({})) },
         });
@@ -60,8 +60,8 @@ describe('EnsureMarketplaceOrderIngestedFromLifecycle', () => {
         const service = new EnsureMarketplaceOrderIngestedFromLifecycle({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry: { resolve: vi.fn(() => adapter) },
-            channelQueryService: {
-                getChannelById: vi.fn(async () => ({
+            commerceIntegrationQueryService: {
+                getCommerceIntegrationById: vi.fn(async () => ({
                     id: channelId,
                     defaultStockLocationId: randomUUID(),
                 })),
@@ -107,8 +107,8 @@ describe('EnsureMarketplaceOrderIngestedFromLifecycle', () => {
         const service = new EnsureMarketplaceOrderIngestedFromLifecycle({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry: { resolve: vi.fn(() => adapter) },
-            channelQueryService: {
-                getChannelById: vi.fn(async () => ({ id: channelId, defaultStockLocationId: randomUUID() })),
+            commerceIntegrationQueryService: {
+                getCommerceIntegrationById: vi.fn(async () => ({ id: channelId, defaultStockLocationId: randomUUID() })),
             },
             orders,
             database: { execute: vi.fn(async (work) => work({})) },

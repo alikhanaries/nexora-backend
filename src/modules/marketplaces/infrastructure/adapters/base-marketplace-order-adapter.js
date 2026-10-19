@@ -26,7 +26,7 @@ export class BaseMarketplaceOrderAdapter {
     }
 
     /**
-     * @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
+     * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
      * @param {string} operationName
      */
     assertRuntime(runtime, operationName) {

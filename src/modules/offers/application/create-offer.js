@@ -19,7 +19,7 @@ export class CreateOffer {
                 productId: input.productId,
             });
         }
-        await this.deps.channelQueryService.verifyChannelBelongsToTenant(input.tenantId, input.channelId);
+        await this.deps.commerceIntegrationQueryService.verifyChannelBelongsToTenant(input.tenantId, input.channelId);
         const externalReference = input.externalReference === undefined || input.externalReference === null
             ? null
             : input.externalReference.trim() || null;

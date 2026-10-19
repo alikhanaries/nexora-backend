@@ -17,7 +17,7 @@ export class AmazonLwaTokenProvider {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string | null | undefined} [deploymentLwaTokenUrl]
      */
     async getAccessToken(runtime, deploymentLwaTokenUrl) {

@@ -16,7 +16,7 @@ export class NamshiWebhookAdapter {
     }
 
     /**
-     * Ingress token resolves tenant/channel; FBPI events do not carry a separate HMAC in Nexora.
+     * Ingress token resolves tenant/channel; FBPI events do not carry a separate HMAC in Wasl.
      *
      * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} _context
      */

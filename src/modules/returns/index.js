@@ -1,8 +1,8 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { AcknowledgeReturn, ApproveReturn, CancelReturn, CompleteReturn, CreateReturn, DefaultReturnQueryService, GetReturn, ListReturns, ProcessReturnReceive, ReceiveReturn, RejectReturn, } from './application/index.js';
+import { AcknowledgeReturn, ApproveReturn, CancelReturn, CompleteReturn, CreateReturn, DefaultReturnQueryService, GetReturn, ListReturns, ProcessReturnReceive, ReceiveReturn, RejectReturn, } from './services/index.js';
 import { DefaultReturnCommandService } from './public/return-command-service.js';
-import { PostgresReturnRepository } from './infrastructure/index.js';
-import returnRoutes, {} from './presentation/return.routes.js';
+import { PostgresReturnRepository } from './repositories/index.js';
+import returnRoutes, {} from './controllers/return.routes.js';
 export function createReturnsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const returns = new PostgresReturnRepository();
@@ -60,4 +60,4 @@ export function createReturnsModule(deps) {
         routes: returnRoutes,
     };
 }
-export { Return, ReturnLine, ReturnStatus } from './domain/index.js';
+export { Return, ReturnLine, ReturnStatus } from './models/index.js';

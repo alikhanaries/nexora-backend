@@ -9,7 +9,7 @@ import {
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
-} from '../../../src/modules/channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+} from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
 
 describe('mapMarketplaceErrorToAdapterError', () => {
     it('maps rate limits to retry errors with delay', () => {

@@ -9,7 +9,7 @@ import {
     MarketplaceOrderLifecyclePermanentError,
     MarketplaceOrderLifecycleUnsupportedError,
 } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
-import { OrderStatus } from '../../../src/modules/orders/domain/order-status.js';
+import { OrderStatus } from '../../../src/modules/orders/models/order-status.js';
 
 const tenantId = '00000000-0000-4000-8000-000000000001';
 const channelId = '00000000-0000-4000-8000-000000000002';
@@ -47,8 +47,8 @@ function buildService(overrides = {}) {
         database: {
             execute: vi.fn(async (fn) => fn({})),
         },
-        channelQueryService: {
-            getChannelById: vi.fn(async () => ({
+        commerceIntegrationQueryService: {
+            getCommerceIntegrationById: vi.fn(async () => ({
                 tenantId,
                 channelId,
                 marketplaceId: '00000000-0000-4000-8000-000000000010',
@@ -101,7 +101,7 @@ describe('MarketplaceOrderLifecycleService', () => {
         })).rejects.toBeInstanceOf(MarketplaceOrderLifecycleUnsupportedError);
     });
 
-    it('rejects lifecycle for missing Nexora order', async () => {
+    it('rejects lifecycle for missing Wasl order', async () => {
         const { service } = buildService({
             orders: {
                 findByChannelAndExternalReference: vi.fn(async () => null),
@@ -122,8 +122,8 @@ describe('MarketplaceOrderLifecycleService', () => {
 
     it('rejects channel tenant mismatch', async () => {
         const { service } = buildService({
-            channelQueryService: {
-                getChannelById: vi.fn(async () => ({
+            commerceIntegrationQueryService: {
+                getCommerceIntegrationById: vi.fn(async () => ({
                     tenantId: '00000000-0000-4000-8000-000000000099',
                     channelId,
                     marketplaceId: '00000000-0000-4000-8000-000000000010',

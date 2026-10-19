@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { applyMarketplaceSyncMappings } from '../../src/modules/channel-catalog-sync/application/apply-marketplace-sync-mappings.js';
+import { applyMarketplaceSyncMappings } from '../../src/modules/integration-catalog-sync/application/apply-marketplace-sync-mappings.js';
 import { AmazonCatalogAdapter } from '../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-catalog-adapter.js';
 import { createMarketplaceEntityMappingRecorder } from '../../src/modules/marketplaces/application/create-marketplace-entity-mapping-recorder.js';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';

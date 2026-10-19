@@ -1,6 +1,6 @@
 # Marketplaces module
 
-Global marketplace definitions for Nexora. Marketplaces are platform-level records — the `marketplaces` table is **not** tenant-scoped and has no row-level security policy.
+Global marketplace definitions for Wasl. Marketplaces are platform-level records — the `marketplaces` table is **not** tenant-scoped and has no row-level security policy.
 
 ## Lifecycle
 
@@ -47,7 +47,7 @@ Catalog adapters live under `infrastructure/adapters/{shopify,amazon,noon,namshi
 
 ## Entity mappings (Phase 22)
 
-Outbound sync may persist Nexora ↔ marketplace identifiers in `marketplace_entity_mappings` via `MarketplaceEntityMappingService` / `DefaultMarketplaceEntityMappingRecorder`. Adapters return optional mapping hints from sync methods; `channel-catalog-sync` applies them through the `MarketplaceEntityMappingRecorder` port only.
+Outbound sync may persist Wasl ↔ marketplace identifiers in `marketplace_entity_mappings` via `MarketplaceEntityMappingService` / `DefaultMarketplaceEntityMappingRecorder`. Adapters return optional mapping hints from sync methods; `channel-catalog-sync` applies them through the `MarketplaceEntityMappingRecorder` port only.
 
 Connection test outcomes (`lastTestAt`, `lastTestOutcome`, `lastTestError`) are stored on `marketplace_connections` (migration `0046`); errors are sanitized before persistence. Audit events: `MARKETPLACE_CONNECTION_*`. See [ADR-030](../../docs/decisions/ADR-030-marketplace-connection-entity-mapping.md).
 

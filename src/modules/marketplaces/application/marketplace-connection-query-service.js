@@ -8,7 +8,7 @@ export class MarketplaceConnectionQueryService {
      * @param {object} deps
      * @param {import('../../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
      * @param {import('../infrastructure/postgres-marketplace-connection-repository.js').PostgresMarketplaceConnectionRepository} deps.connections
-     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {object} deps.queryable
      */
     constructor(deps) {
@@ -18,7 +18,7 @@ export class MarketplaceConnectionQueryService {
     async getMarketplaceConnection(input) {
         this.deps.authorization.requirePermission(input.actorPermissions, 'channels.read');
         return this.deps.queryable.execute(async (tx) => {
-            const channel = await this.deps.channelQueryService.getChannelById(
+            const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(
                 input.tenantId,
                 input.channelId,
                 tx,

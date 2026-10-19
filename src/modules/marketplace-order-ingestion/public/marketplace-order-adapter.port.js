@@ -3,7 +3,7 @@
  *
  * @typedef {import('./normalized-marketplace-order.schema.js').NormalizedMarketplaceOrder} NormalizedMarketplaceOrder
  * @typedef {import('../application/normalized-marketplace-lifecycle-command.schema.js').normalizedMarketplaceLifecycleCommandSchema['_output']} NormalizedMarketplaceLifecycleCommand
- * @typedef {import('../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} MarketplaceAdapterRuntime
+ * @typedef {import('../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} MarketplaceAdapterRuntime
  *
  * @typedef {object} MarketplaceOrderCapabilities
  * @property {boolean} supportsOrdersInbound

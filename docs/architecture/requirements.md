@@ -1,6 +1,6 @@
 # Phase 1 Requirements
 
-Functional and non-functional requirements for the Nexora Backend **foundation phase**. Business-domain features are explicitly out of scope.
+Functional and non-functional requirements for the Wasl Backend **foundation phase**. Business-domain features are explicitly out of scope.
 
 ## Functional requirements
 
@@ -124,3 +124,4 @@ Phase 1 is complete when:
 4. Worker consumes integration-event jobs and inbox deduplication prevents double processing.
 5. Architecture boundary rules pass with zero errors.
 6. Documentation set (this folder + ADRs) is complete and accurate.
+

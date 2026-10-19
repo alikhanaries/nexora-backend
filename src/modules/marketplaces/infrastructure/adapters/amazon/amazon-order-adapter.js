@@ -34,7 +34,7 @@ export class AmazonOrderAdapter extends BaseMarketplaceOrderAdapter {
 
     /**
      * @param {unknown} payload
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
      * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderLifecycleContext} context
      */
     async normalizeLifecycleCommand(payload, runtime, context) {
@@ -66,7 +66,7 @@ export class AmazonOrderAdapter extends BaseMarketplaceOrderAdapter {
     /**
      * Poll a single Amazon order and return a lifecycle command (status sync).
      *
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderFetchContext} context
      * @param {string} externalEventId
      */
@@ -84,7 +84,7 @@ export class AmazonOrderAdapter extends BaseMarketplaceOrderAdapter {
 
     /**
      * @param {unknown} payload
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime | undefined} runtime
      * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderLifecycleContext} context
      */
     async normalizeOrderFromLifecyclePayload(payload, runtime, context) {

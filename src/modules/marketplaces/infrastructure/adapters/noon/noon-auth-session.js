@@ -31,7 +31,7 @@ export class NoonAuthSessionProvider {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      */
     async getCookieHeader(runtime) {
         const cacheKey = buildSessionCacheKey(runtime);
@@ -48,7 +48,7 @@ export class NoonAuthSessionProvider {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      */
     async login(runtime) {
         const baseUrl = resolveNoonApiBaseUrl(runtime.configuration ?? {}, this.deploymentApiBaseUrl);
@@ -79,7 +79,7 @@ export class NoonAuthSessionProvider {
 }
 
 /**
- * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+ * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
  */
 function buildSessionCacheKey(runtime) {
     const { keyId, projectCode } = readNoonServiceAccount(runtime.credentials, runtime.configuration ?? {});

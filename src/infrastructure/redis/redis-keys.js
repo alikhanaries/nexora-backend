@@ -7,7 +7,7 @@
  * secret in a key (keys appear in `MONITOR`, slow logs and metrics).
  *
  * Layout: `<prefix>:<namespace>:v<schema>:<kind>:<...parts>`
- * for example `nexora:local:v1:cache:tenant-settings:abc`.
+ * for example `wasl:local:v1:cache:tenant-settings:abc` (prefix from `REDIS_KEY_PREFIX` + `APP_INSTANCE_NAMESPACE`).
  */
 /** Bump when a key's value encoding changes incompatibly. */
 const KEY_SCHEMA_VERSION = 1;

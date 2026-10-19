@@ -29,7 +29,7 @@ export function createMoney(currency, amountMinor) {
 }
 
 /**
- * Converts Nexora integer minor units to a decimal amount using ISO 4217 minor-unit exponents.
+ * Converts Wasl integer minor units to a decimal amount using ISO 4217 minor-unit exponents.
  *
  * @param {string} currency
  * @param {number} amountMinor Non-negative integer minor units.

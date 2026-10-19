@@ -1,8 +1,8 @@
-import { requireChannelStockLocationId } from '../../channels/public/index.js';
+import { requireChannelStockLocationId } from '../../commerce-integrations/public/index.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
-} from '../../channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+} from '../../integration-catalog-sync/public/catalog-sync-adapter-errors.js';
 import { mapMarketplaceErrorToAdapterError } from '../../marketplaces/public/index.js';
 import { INGESTIBLE_MARKETPLACE_ORDER_STATUSES } from '../domain/normalized-marketplace-order-status.js';
 import {
@@ -22,8 +22,8 @@ export class FetchAndIngestMarketplaceOrders {
      * @param {object} deps
      * @param {import('./ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
      * @param {import('../public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
-     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
-     * @param {import('../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
+     * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
+     * @param {import('../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
      */
     constructor(deps) {
@@ -55,7 +55,7 @@ export class FetchAndIngestMarketplaceOrders {
                 marketplaceKey: input.marketplaceKey,
             });
         }
-        const channel = await this.deps.channelQueryService.getChannelById(input.tenantId, input.channelId);
+        const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.channelId);
         if (channel.tenantId !== input.tenantId) {
             throw new MarketplaceOrderIngestionPermanentError('Channel tenant mismatch', {
                 channelId: input.channelId,

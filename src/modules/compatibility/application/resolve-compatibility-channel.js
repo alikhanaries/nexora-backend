@@ -1,5 +1,5 @@
 import { ValidationError } from '../../../shared/errors/index.js';
-import { resolveChannelStockLocationId } from '../../channels/public/index.js';
+import { resolveChannelStockLocationId } from '../../commerce-integrations/public/index.js';
 
 /**
  * Resolves channel context for Merchant-compatible catalog/offer calls.
@@ -7,7 +7,7 @@ import { resolveChannelStockLocationId } from '../../channels/public/index.js';
  * Precedence: API-key channel scope → `X-Channel-Reference` → body `ChannelId` (stringified external ref).
  *
  * @param {object} deps
- * @param {import('../../channels/public/channel-query-service.js').DefaultChannelQueryService} deps.channelQueryService
+ * @param {import('../../commerce-integrations/public/commerce-integration-query-service.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
  * @param {object} input
  * @param {string} input.tenantId
  * @param {string|null|undefined} input.apiKeyChannelId
@@ -16,15 +16,15 @@ import { resolveChannelStockLocationId } from '../../channels/public/index.js';
  */
 export async function resolveCompatibilityChannel(deps, input) {
     if (input.apiKeyChannelId !== undefined && input.apiKeyChannelId !== null) {
-        const channel = await deps.channelQueryService.getChannelById(input.tenantId, input.apiKeyChannelId);
+        const channel = await deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.apiKeyChannelId);
         return channel;
     }
     const headerRef = input.channelExternalReference?.trim();
     if (headerRef !== undefined && headerRef.length > 0) {
-        return deps.channelQueryService.getChannelByExternalReference(input.tenantId, headerRef);
+        return deps.commerceIntegrationQueryService.getCommerceIntegrationByExternalReference(input.tenantId, headerRef);
     }
     if (input.bodyChannelId !== undefined && input.bodyChannelId !== null && String(input.bodyChannelId).length > 0) {
-        return deps.channelQueryService.getChannelByExternalReference(
+        return deps.commerceIntegrationQueryService.getCommerceIntegrationByExternalReference(
             input.tenantId,
             String(input.bodyChannelId),
         );

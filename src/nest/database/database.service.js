@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { NEXORA_DATABASE } from './database.tokens.js';
+import { WASL_DATABASE } from './database.tokens.js';
 
 export @Injectable()
 class DatabaseService {
-  constructor(@Inject(NEXORA_DATABASE) database) {
+  constructor(@Inject(WASL_DATABASE) database) {
     this.database = database;
   }
 

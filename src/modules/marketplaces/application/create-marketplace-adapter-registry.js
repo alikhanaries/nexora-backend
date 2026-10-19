@@ -1,4 +1,4 @@
-import { MarketplaceCatalogAdapterRegistry } from '../../channel-catalog-sync/public/marketplace-catalog-adapter-registry.js';
+import { MarketplaceCatalogAdapterRegistry } from '../../integration-catalog-sync/public/marketplace-catalog-adapter-registry.js';
 import { registerMarketplaceCatalogAdapters } from '../infrastructure/adapters/register-marketplace-catalog-adapters.js';
 
 /**

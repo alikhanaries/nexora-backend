@@ -35,7 +35,7 @@ import {
     updateShipmentTrackingBodySchema,
 } from './compatibility-shipment.schemas.js';
 import {
-    createChannelOrderBodySchema,
+    createIntegrationOrderBodySchema,
     externalChannelOrderCreateSuccessSchema,
 } from './compatibility-channel-order.schemas.js';
 import { externalErrorResponseSchema, externalOrderCollectionSchema, listNewOrdersQuerySchema, listOrdersQuerySchema, } from './compatibility-order.schemas.js';
@@ -174,13 +174,13 @@ const compatibilityRoutes = async (app, deps) => {
             schema: {
                 tags: ['Compatibility (v2) — Channel'],
                 summary: 'Create a channel order',
-                description: 'Ingests a channel order into Nexora as status NEW with inventory reservation. '
+                description: 'Ingests a channel order into platform as status NEW with inventory reservation. '
                     + 'Requires channel context from a channel-scoped API key (`api_keys.channel_id`) or the '
-                    + 'Nexora Bearer-auth extension header `X-Channel-Reference` (maps to `channels.external_reference`). '
+                    + 'platform Bearer-auth extension header `X-Channel-Reference` (maps to `channels.external_reference`). '
                     + 'Stock location is resolved from `channels.defaultStockLocationId` when set, otherwise from `channels.configurationReference` (legacy UUID convention). '
                     + 'Requires `orders.ingest` permission and `Idempotency-Key`.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
-                body: createChannelOrderBodySchema,
+                body: createIntegrationOrderBodySchema,
                 response: {
                     201: externalChannelOrderCreateSuccessSchema,
                     400: externalErrorResponseSchema,
@@ -200,7 +200,7 @@ const compatibilityRoutes = async (app, deps) => {
             const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
             const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
             const channelReferenceHeader = request.headers['x-channel-reference'];
-            const body = await deps.orderCompatibilityCommand.createChannelOrder({
+            const body = await deps.orderCompatibilityCommand.createIntegrationOrder({
                 tenantId: actor.tenantId,
                 actorId,
                 actorKind,
@@ -220,11 +220,11 @@ const compatibilityRoutes = async (app, deps) => {
                 description: 'Ingests an order already fulfilled by the external channel. Creates a CONFIRMED order, '
                     + 'auto-creates and ships a shipment, and does not reserve inventory. '
                     + 'Requires channel context from a channel-scoped API key (`api_keys.channel_id`) or the '
-                    + 'Nexora Bearer-auth extension header `X-Channel-Reference` (maps to `channels.external_reference`). '
+                    + 'platform Bearer-auth extension header `X-Channel-Reference` (maps to `channels.external_reference`). '
                     + 'Stock location is resolved from `channels.defaultStockLocationId` when set, otherwise from `channels.configurationReference` (legacy UUID convention). '
                     + 'Requires `orders.ingest_channel_fulfilled` permission and `Idempotency-Key`.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
-                body: createChannelOrderBodySchema,
+                body: createIntegrationOrderBodySchema,
                 response: {
                     201: externalChannelOrderCreateSuccessSchema,
                     400: externalErrorResponseSchema,
@@ -244,7 +244,7 @@ const compatibilityRoutes = async (app, deps) => {
             const actorKind = actor.userId !== undefined ? 'user' : 'api-key';
             const idempotencyKey = requireIdempotencyKey(request.headers['idempotency-key']);
             const channelReferenceHeader = request.headers['x-channel-reference'];
-            const body = await deps.orderCompatibilityCommand.createChannelFulfilledOrder({
+            const body = await deps.orderCompatibilityCommand.createIntegrationFulfilledOrder({
                 tenantId: actor.tenantId,
                 actorId,
                 actorKind,
@@ -261,7 +261,7 @@ const compatibilityRoutes = async (app, deps) => {
             schema: {
                 tags: ['Compatibility (v2)'],
                 summary: 'Acknowledge an order',
-                description: 'Acknowledges a merchant order import. Resolves the order by MerchantOrderNo (Nexora order number) '
+                description: 'Acknowledges a merchant order import. Resolves the order by MerchantOrderNo (platform order number) '
                     + 'and validates external integer OrderId through the compat_v2 mapping table when supplied.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: acknowledgeOrderBodySchema,
@@ -336,7 +336,7 @@ const compatibilityRoutes = async (app, deps) => {
             schema: {
                 tags: ['Compatibility (v2)'],
                 summary: 'Create a merchant shipment',
-                description: 'Marks an order as fully or partially shipped. Resolves the order by MerchantOrderNo (Nexora order number) '
+                description: 'Marks an order as fully or partially shipped. Resolves the order by MerchantOrderNo (platform order number) '
                     + 'and lines by MerchantProductNo (order line merchantSku). MerchantShipmentNo is persisted as the shipment external reference (tenant-unique). '
                     + 'External integer OrderLineId resolves to the order line when supplied. ShippedFromStockLocationId is accepted but not used.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
@@ -375,7 +375,7 @@ const compatibilityRoutes = async (app, deps) => {
                 tags: ['Compatibility (v2)'],
                 summary: 'Update merchant shipment tracking',
                 description: 'Implements external PUT /v2/shipments/{merchantShipmentNo}. Updates carrier and tracking on an existing shipment. '
-                    + 'Resolves the shipment by MerchantShipmentNo (Nexora shipment externalReference). '
+                    + 'Resolves the shipment by MerchantShipmentNo (platform shipment externalReference). '
                     + 'Shipments in CREATED or READY_TO_SHIP transition to SHIPPED. '
                     + 'ReturnTrackTraceNo, TrackTraceUrl, ShippedFromCountryCode, and ReturnMethod are accepted but not persisted.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
@@ -448,7 +448,7 @@ const compatibilityRoutes = async (app, deps) => {
             schema: {
                 tags: ['Compatibility (v2)'],
                 summary: 'Create a merchant cancellation',
-                description: 'Marks an order as fully or partially cancelled. Resolves the order by MerchantOrderNo (Nexora order number) '
+                description: 'Marks an order as fully or partially cancelled. Resolves the order by MerchantOrderNo (platform order number) '
                     + 'and lines by MerchantProductNo (order line merchantSku). MerchantCancellationNo is persisted as the cancellation external reference (tenant-unique). '
                     + 'External integer OrderLineId resolves to the order line when supplied. ReasonCode and IsMerchantCreator are accepted but not used.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
@@ -486,7 +486,7 @@ const compatibilityRoutes = async (app, deps) => {
             schema: {
                 tags: ['Compatibility (v2)'],
                 summary: 'List unhandled merchant returns',
-                description: 'Returns marketplace returns in external IN_PROGRESS status. Maps to Nexora REQUESTED, APPROVED, and RECEIVED — see compatibility matrix.',
+                description: 'Returns marketplace returns in external IN_PROGRESS status. Maps to platform REQUESTED, APPROVED, and RECEIVED — see compatibility matrix.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 querystring: listNewMerchantReturnsQuerySchema,
                 response: {
@@ -511,7 +511,7 @@ const compatibilityRoutes = async (app, deps) => {
             schema: {
                 tags: ['Compatibility (v2)'],
                 summary: 'List returns for a merchant order',
-                description: 'Implements external GET /v2/returns/merchant/{merchantOrderNo}. Returns all returns for the merchant order number (Nexora order number).',
+                description: 'Implements external GET /v2/returns/merchant/{merchantOrderNo}. Returns all returns for the merchant order number (platform order number).',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 params: merchantOrderNoParamsSchema,
                 response: {
@@ -608,7 +608,7 @@ const compatibilityRoutes = async (app, deps) => {
                 tags: ['Compatibility (v2)'],
                 summary: 'Acknowledge a merchant return',
                 description: 'Implements external POST /v2/returns/merchant/acknowledge. Registers a return in the merchant system. '
-                    + 'Resolves the return by MerchantReturnNo (Nexora return externalReference). '
+                    + 'Resolves the return by MerchantReturnNo (platform return externalReference). '
                     + 'External integer ReturnId resolves the return through the compat_v2 mapping table when supplied.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: acknowledgeReturnBodySchema,
@@ -646,7 +646,7 @@ const compatibilityRoutes = async (app, deps) => {
                 tags: ['Compatibility (v2)'],
                 summary: 'Create a merchant return',
                 description: 'Marks an order as fully or partially returned. Implements external POST /v2/returns/merchant. '
-                    + 'Resolves the order by MerchantOrderNo (Nexora order number) and lines by MerchantProductNo (order line merchantSku). '
+                    + 'Resolves the order by MerchantOrderNo (platform order number) and lines by MerchantProductNo (order line merchantSku). '
                     + 'MerchantReturnNo is persisted as the return external reference (tenant-unique). '
                     + 'External integer OrderLineId resolves to the order line when supplied. Id, refund amounts, ReturnDate, ExtraData, Rma, and TrackTraceNo are accepted but not used.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
@@ -711,7 +711,7 @@ const compatibilityRoutes = async (app, deps) => {
             schema: {
                 tags: ['Compatibility (v2) — Catalog'],
                 summary: 'Create or update products (CE batch)',
-                description: 'Maps CE product payloads to Nexora product + content upserts. Supports batch partial success semantics.',
+                description: 'Maps compat v2 product payloads to platform product + content upserts. Supports batch partial success semantics.',
                 security: [{ bearerAuth: [] }, { apiKeyAuth: [] }],
                 body: postProductsBodySchema,
                 response: {

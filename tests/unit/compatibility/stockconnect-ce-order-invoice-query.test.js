@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
-import { StockConnectCeOrderInvoiceQuery } from '../../../src/modules/compatibility/application/stockconnect-ce-order-invoice-query.js';
+import { CompatV2OrderInvoiceQuery } from '../../../src/modules/compatibility/application/compat-v2-order-invoice-query.js';
 
-describe('StockConnectCeOrderInvoiceQuery', () => {
+describe('CompatV2OrderInvoiceQuery', () => {
     it('returns PDF for an order in the tenant', async () => {
         const tenantId = randomUUID();
-        const query = new StockConnectCeOrderInvoiceQuery({
+        const query = new CompatV2OrderInvoiceQuery({
             orderQueryService: {
                 listOrders: vi.fn(async () => ({
                     items: [{
@@ -31,7 +31,7 @@ describe('StockConnectCeOrderInvoiceQuery', () => {
     });
 
     it('throws NotFoundError when merchant order is missing', async () => {
-        const query = new StockConnectCeOrderInvoiceQuery({
+        const query = new CompatV2OrderInvoiceQuery({
             orderQueryService: {
                 listOrders: vi.fn(async () => ({
                     items: [],
@@ -56,7 +56,7 @@ describe('StockConnectCeOrderInvoiceQuery', () => {
             page: 1,
             pageSize: 1,
         }));
-        const query = new StockConnectCeOrderInvoiceQuery({
+        const query = new CompatV2OrderInvoiceQuery({
             orderQueryService: { listOrders },
         });
         await expect(query.getOrderInvoice({

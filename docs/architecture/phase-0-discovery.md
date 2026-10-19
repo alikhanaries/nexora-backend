@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Phase 0 validated product direction, technical constraints, and the decision to build Nexora as a **modular monolith** with PostgreSQL as the system of record, Redis for ephemeral infrastructure, and a deferred ChannelEngine compatibility surface.
+Phase 0 validated product direction, technical constraints, and the decision to build Wasl as a **modular monolith** with PostgreSQL as the system of record, Redis for ephemeral infrastructure, and a deferred ChannelEngine compatibility surface.
 
 This document is a **summary pointer**. Detailed discovery artefacts (stakeholder interviews, competitor analysis, capacity modelling) live outside this repository.
 
@@ -33,3 +33,4 @@ This document is a **summary pointer**. Detailed discovery artefacts (stakeholde
 ## Next phase
 
 Phase 1 (this repository) implements the runtime foundation documented in [requirements.md](requirements.md) and [overview.md](overview.md). Business modules begin in Phase 2 once foundation verification passes.
+

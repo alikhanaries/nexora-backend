@@ -1,7 +1,7 @@
 import { createAuditModule } from '../../modules/audit/index.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { createCancellationsModule } from '../../modules/cancellations/index.js';
-import { createChannelsModule } from '../../modules/channels/index.js';
+import { createCommerceIntegrationsModule } from '../../modules/commerce-integrations/index.js';
 import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
 import { createInventoryModule } from '../../modules/inventory/index.js';
 import { createMarketplacesModule } from '../../modules/marketplaces/index.js';
@@ -13,7 +13,7 @@ import { createReturnsModule } from '../../modules/returns/index.js';
 import { createShipmentsModule } from '../../modules/shipments/index.js';
 import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
 import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
-import { PostgresOrderRepository } from '../../modules/orders/infrastructure/postgres-order-repository.js';
+import { PostgresOrderRepository } from '../../modules/orders/repositories/postgres-order-repository.js';
 import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
 import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../modules/marketplaces/application/marketplace-outbound-order-lifecycle-adapter-registry.js';
 import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/application/execute-outbound-marketplace-order-lifecycle-command.js';
@@ -46,7 +46,7 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
     });
-    const channels = createChannelsModule({
+    const channels = createCommerceIntegrationsModule({
         database: infra.database,
         eventRecorder: infra.eventRecorder,
         verifyMarketplaceExists: marketplaces.verifyMarketplaceExists,
@@ -56,14 +56,14 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
     const pricing = createPricingModule({
         database: infra.database,
         productQueryService: products.productQueryService,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
     });
     const offers = createOffersModule({
         database: infra.database,
         productQueryService: products.productQueryService,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         pricingService: pricing.pricingService,
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
@@ -75,7 +75,7 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
     const orders = createOrdersModule({
         database: infra.database,
         productQueryService: products.productQueryService,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         offerQueryService: offers.offerQueryService,
         pricingService: pricing.pricingService,
         inventoryService: inventory.inventoryService,
@@ -128,7 +128,7 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
         database: infra.database,
         metrics: infra.metrics,
         logger: infra.logger,
-        createChannelOrder: orders.createChannelOrder,
+        createIntegrationOrder: orders.createIntegrationOrder,
         marketplaceAdapterRuntimeFactory,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
@@ -150,7 +150,7 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
         marketplaceAdapterRuntimeFactory,
         database: infra.database,
         idempotency: infra.idempotency,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         marketplaceLookup: marketplaceOrderIngestion.marketplaceLookup,
         metrics: infra.metrics,
         logger: infra.logger,
@@ -160,7 +160,7 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
         executeOutboundMarketplaceOrderLifecycle,
         marketplaceAdapterRuntimeFactory,
         orderQueryService: orders.orderQueryService,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         externalIntegerIdMappingQueryService: externalIdMapping.externalIntegerIdMappingQueryService,
     };
 }

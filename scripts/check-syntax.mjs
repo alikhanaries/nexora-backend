@@ -15,6 +15,9 @@ function collectJsFiles(dir, files = []) {
         if (entry.name === 'nest' && (parentBase === 'src' || parentBase === 'tests')) {
           continue;
         }
+        if (entry.name === 'nest' && parentBase === 'controllers') {
+          continue;
+        }
         collectJsFiles(fullPath, files);
       }
     } else if (entry.name.endsWith('.js')) {

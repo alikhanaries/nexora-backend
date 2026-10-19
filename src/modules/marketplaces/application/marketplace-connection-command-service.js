@@ -4,7 +4,7 @@ import { NotFoundError, ValidationError } from '../../../shared/errors/index.js'
 
 import { auditRequestFields } from '../../audit/public/index.js';
 
-import { UnsupportedMarketplaceAdapterError } from '../../channel-catalog-sync/public/catalog-sync-errors.js';
+import { UnsupportedMarketplaceAdapterError } from '../../integration-catalog-sync/public/catalog-sync-errors.js';
 
 import { MarketplaceConnectionTestOutcome } from '../domain/marketplace-connection-test-outcome.js';
 
@@ -30,13 +30,13 @@ export class MarketplaceConnectionCommandService {
 
      * @param {import('../infrastructure/postgres-marketplace-connection-repository.js').PostgresMarketplaceConnectionRepository} deps.connections
 
-     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
 
      * @param {import('../infrastructure/postgres-marketplace-repository.js').PostgresMarketplaceRepository} deps.marketplaces
 
      * @param {import('../../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
 
-     * @param {import('../../channel-catalog-sync/public/marketplace-catalog-adapter-registry.js').MarketplaceCatalogAdapterRegistry} deps.adapterRegistry
+     * @param {import('../../integration-catalog-sync/public/marketplace-catalog-adapter-registry.js').MarketplaceCatalogAdapterRegistry} deps.adapterRegistry
 
      * @param {object} deps.queryable
 
@@ -60,7 +60,7 @@ export class MarketplaceConnectionCommandService {
 
         return this.deps.queryable.execute(async (tx) => {
 
-            const channel = await this.deps.channelQueryService.getChannelById(
+            const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(
 
                 input.tenantId,
 
@@ -422,7 +422,7 @@ export class MarketplaceConnectionCommandService {
 
         return this.deps.queryable.execute(async (tx) => {
 
-            await this.deps.channelQueryService.getChannelById(tenantId, channelId, tx);
+            await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(tenantId, channelId, tx);
 
             const row = await this.deps.connections.findActiveByChannel(tx, tenantId, channelId);
 

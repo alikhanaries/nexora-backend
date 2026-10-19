@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-This folder describes how Nexora Backend is structured, why it is structured that way, and the constraints every contributor must follow.
+This folder describes how Wasl Backend is structured, why it is structured that way, and the constraints every contributor must follow.
 
 ## Documents
 
@@ -9,7 +9,7 @@ This folder describes how Nexora Backend is structured, why it is structured tha
 | [phase-0-discovery.md](phase-0-discovery.md)                                   | Phase 0 approval pointer and gate status               |
 | [requirements.md](requirements.md)                                             | Functional and non-functional requirements for Phase 1 |
 | [overview.md](overview.md)                                                     | System context, major components, request flow         |
-| [platform-independence.md](platform-independence.md)                           | Nexora as independent platform; optional compatibility |
+| [platform-independence.md](platform-independence.md)                           | Wasl as independent platform; optional compatibility |
 | [module-boundaries.md](module-boundaries.md)                                   | Layering rules and dependency-cruiser enforcement      |
 | [database.md](database.md)                                                     | PostgreSQL schema strategy, migrations, RLS            |
 | [security.md](security.md)                                                     | Security controls available in Phase 1                 |
@@ -21,6 +21,7 @@ This folder describes how Nexora Backend is structured, why it is structured tha
 | [compatibility-matrix.md](compatibility-matrix.md)                             | Endpoint scope and public contract gaps                |
 | [external-integration.md](external-integration.md)                             | ERP/external consumer boundaries and webhook strategies  |
 | [open-questions.md](open-questions.md)                                         | Unresolved design items                                |
+| [function-based-mvc-migration.md](function-based-mvc-migration.md)           | Audit and phased plan for function-based MVC refactor   |
 
 ## Related
 
@@ -33,3 +34,4 @@ This folder describes how Nexora Backend is structured, why it is structured tha
 - Diagrams use Mermaid where helpful; ASCII is fine for simple flows.
 - "Phase 1" means foundation only — do not document unimplemented business behaviour as if it exists.
 - When a decision is final, record it as an ADR rather than duplicating rationale across files.
+

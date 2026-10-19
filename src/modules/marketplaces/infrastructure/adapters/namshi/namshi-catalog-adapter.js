@@ -43,7 +43,7 @@ export class NamshiCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         };
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime */
     async testConnection(runtime) {
         return this.run(async () => {
             this.assertRuntime(runtime, 'testConnection');
@@ -51,7 +51,7 @@ export class NamshiCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         });
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceInventorySyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceInventorySyncInput} input @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncInventory(input, runtime) {
         return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncInventory');
@@ -62,7 +62,7 @@ export class NamshiCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         });
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplacePriceSyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplacePriceSyncInput} input @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncPrice(input, runtime) {
         return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncPrice');
@@ -74,17 +74,17 @@ export class NamshiCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         });
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceProductSyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceProductSyncInput} input @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncProduct(_input, runtime) {
         return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncProduct');
             throw new MarketplaceUnsupportedError(
-                'Namshi product sync is not supported; catalog SKUs must exist in Namshi before Nexora syncs stock and pricing',
+                'Namshi product sync is not supported; catalog SKUs must exist in Namshi before Wasl syncs stock and pricing',
             );
         });
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceOfferSyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceOfferSyncInput} input @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncOffer(input, runtime) {
         return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncOffer');
@@ -150,13 +150,13 @@ function partnerSkuMappingHints(nexoraEntityType, nexoraEntityId, partnerSku, se
 }
 
 /**
- * @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceOfferSyncInput} input
+ * @param {import('../../../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceOfferSyncInput} input
  * @param {string} partnerSku
  * @param {unknown} payload
  * @param {string} countryCode
  */
 function buildOfferMappingHints(input, partnerSku, payload, countryCode) {
-    /** @type {import('../../../../channel-catalog-sync/public/marketplace-entity-mapping-recorder.port.js').MarketplaceEntityMappingHint[]} */
+    /** @type {import('../../../../integration-catalog-sync/public/marketplace-entity-mapping-recorder.port.js').MarketplaceEntityMappingHint[]} */
     const hints = [
         {
             nexoraEntityType: 'offer',

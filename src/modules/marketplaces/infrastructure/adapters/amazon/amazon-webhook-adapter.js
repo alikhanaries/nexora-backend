@@ -19,7 +19,7 @@ export class AmazonWebhookAdapter {
     async authenticateWebhookRequest(context) {
         const parsed = parseAmazonSnsEnvelope(context.rawBody);
         if (parsed.kind === 'subscription_handshake') {
-            throw new MarketplaceWebhookUnsupportedError('Amazon SNS subscription confirmation must be handled outside Nexora', {
+            throw new MarketplaceWebhookUnsupportedError('Amazon SNS subscription confirmation must be handled outside Wasl', {
                 snsType: parsed.envelope.Type,
             });
         }

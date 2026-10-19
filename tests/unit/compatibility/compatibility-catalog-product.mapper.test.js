@@ -34,7 +34,7 @@ describe('compatibility catalog product mapper', () => {
         });
     });
 
-    it('maps Nexora product to CE catalog item', () => {
+    it('maps Wasl product to CE catalog item', () => {
         const item = mapProductToCeCatalogItem(
             { merchantSku: 'SKU-1' },
             {

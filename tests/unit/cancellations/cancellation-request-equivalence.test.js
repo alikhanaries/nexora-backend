@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEquivalentCancellationRequest } from '../../../src/modules/cancellations/application/cancellation-request-equivalence.js';
+import { isEquivalentCancellationRequest } from '../../../src/modules/cancellations/services/cancellation-request-equivalence.js';
 
 describe('cancellation request equivalence', () => {
     const existingCancellation = {

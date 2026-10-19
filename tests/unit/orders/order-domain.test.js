@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Order } from '../../../src/modules/orders/domain/order.js';
-import { OrderStatus } from '../../../src/modules/orders/domain/order-status.js';
+import { Order } from '../../../src/modules/orders/models/order.js';
+import { OrderStatus } from '../../../src/modules/orders/models/order-status.js';
 
 describe('Order domain', () => {
     it('creates CONFIRMED orders with confirmedAt by default', () => {

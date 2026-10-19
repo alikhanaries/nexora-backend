@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEquivalentReturnRequest } from '../../../src/modules/returns/application/return-request-equivalence.js';
+import { isEquivalentReturnRequest } from '../../../src/modules/returns/services/return-request-equivalence.js';
 
 describe('return request equivalence', () => {
     const existingReturn = {

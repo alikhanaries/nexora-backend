@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { JobName, QueueName } from '../../infrastructure/queue/queue-names.js';
 import { WebhookDeliveryRetryError } from '../../modules/webhooks/application/webhook-delivery-errors.js';
-import { CatalogSyncRetryError } from '../../modules/channel-catalog-sync/application/catalog-sync-errors.js';
+import { CatalogSyncRetryError } from '../../modules/integration-catalog-sync/application/catalog-sync-errors.js';
 import { parseOrThrow } from '../../shared/validation/index.js';
 const integrationEventPayloadSchema = z.object({
     eventId: z.string().uuid(),

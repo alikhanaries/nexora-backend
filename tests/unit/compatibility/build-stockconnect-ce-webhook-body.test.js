@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { buildStockConnectCeWebhookBody } from '../../../src/modules/compatibility/application/build-stockconnect-ce-webhook-body.js';
+import { buildCompatV2WebhookBody } from '../../../src/modules/compatibility/application/build-compat-v2-webhook-body.js';
 
-describe('buildStockConnectCeWebhookBody', () => {
+describe('buildCompatV2WebhookBody', () => {
     it('maps order.created to CE Content envelope', async () => {
         const tenantId = randomUUID();
         const orderId = randomUUID();
@@ -32,8 +32,8 @@ describe('buildStockConnectCeWebhookBody', () => {
                 currency: 'SAR',
             }]),
         };
-        const channelQueryService = {
-            getChannelById: vi.fn(async () => ({
+        const commerceIntegrationQueryService = {
+            getCommerceIntegrationById: vi.fn(async () => ({
                 id: channelId,
                 name: 'Noon SA',
                 externalReference: '42',
@@ -42,9 +42,9 @@ describe('buildStockConnectCeWebhookBody', () => {
         const externalIntegerIdMappingQueryService = {
             findExternalIdsByResourceIds: vi.fn(async () => new Map()),
         };
-        const body = await buildStockConnectCeWebhookBody({
+        const body = await buildCompatV2WebhookBody({
             orderQueryService,
-            channelQueryService,
+            commerceIntegrationQueryService,
             externalIntegerIdMappingQueryService,
         }, {
             id: randomUUID(),
@@ -66,9 +66,9 @@ describe('buildStockConnectCeWebhookBody', () => {
     });
 
     it('returns null for unsupported event types', async () => {
-        const body = await buildStockConnectCeWebhookBody({
+        const body = await buildCompatV2WebhookBody({
             orderQueryService: { findOrderById: vi.fn(), getOrderLines: vi.fn() },
-            channelQueryService: { getChannelById: vi.fn() },
+            commerceIntegrationQueryService: { getCommerceIntegrationById: vi.fn() },
             externalIntegerIdMappingQueryService: { findExternalIdsByResourceIds: vi.fn() },
         }, {
             id: randomUUID(),

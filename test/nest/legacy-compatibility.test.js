@@ -184,7 +184,7 @@ describe('Nest legacy compatibility (Phase 12)', () => {
       .expect(200);
 
     expect(
-      coreDomain.compatibility.routeDeps.stockConnectCeChannelCompatibilityQuery.listChannels,
+      coreDomain.compatibility.routeDeps.compatV2IntegrationListQuery.listCommerceIntegrations,
     ).toHaveBeenCalledWith(expect.objectContaining({ tenantId: actor.tenantId }));
   });
 
@@ -230,7 +230,7 @@ describe('Nest legacy compatibility (Phase 12)', () => {
       .expect(200);
 
     expect(
-      coreDomain.compatibility.routeDeps.stockConnectCeShipmentDeliveryCommand.updateDeliveryState,
+      coreDomain.compatibility.routeDeps.compatV2ShipmentDeliveryCommand.updateDeliveryState,
     ).toHaveBeenCalledWith(
       expect.objectContaining({ merchantShipmentNo: 'SHP-1', body: { Status: 'DELIVERED' } }),
     );

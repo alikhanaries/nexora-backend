@@ -60,7 +60,7 @@ describe('platform independence', () => {
             'src/app/bootstrap/create-application.js',
             'src/app/http/create-nest-http-server.js',
             'src/workers/bootstrap/wire-external-consumer-webhook-payload-strategies.js',
-            'src/workers/bootstrap/wire-stockconnect-ce-webhook-delivery.js',
+            'src/workers/bootstrap/wire-compat-v2-webhook-delivery.js',
         ]);
         const offenders = [];
         for (const file of collectJsFiles(join(repoRoot, 'src'))) {

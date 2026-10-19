@@ -120,9 +120,9 @@ describe('marketplace order ingestion integration', () => {
         });
         ingestionModule = createMarketplaceOrderIngestionModule({
             database: infra.database,
-            channelQueryService: app.channels.channelQueryService,
+            commerceIntegrationQueryService: app.channels.commerceIntegrationQueryService,
             marketplaceLookup,
-            createChannelOrder: app.orders.createChannelOrder,
+            createIntegrationOrder: app.orders.createIntegrationOrder,
             marketplaceEntityMappingLookup: new DefaultMarketplaceEntityMappingLookup({
                 mappings: new PostgresMarketplaceEntityMappingRepository(),
                 queryable: infra.database,
@@ -137,7 +137,7 @@ describe('marketplace order ingestion integration', () => {
         await closeTestInfrastructure();
     });
 
-    it('creates one Nexora order on first ingest', async () => {
+    it('creates one Wasl order on first ingest', async () => {
         const { tenantId, slug } = await createTestTenant(server);
         const user = await createAuthenticatedUser(app, tenantId, slug);
         const headers = authHeaders(user.accessToken);

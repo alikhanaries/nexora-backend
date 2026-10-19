@@ -1,18 +1,21 @@
+import { randomBytes } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';
 import { BusinessRuleError } from '../../src/shared/errors/index.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { countOutboxEventsForOrder } from './compatibility-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
+import { expectHttpStatus } from './http-assert.js';
 
 async function seedCommerceFixture(server, headers, options = {}) {
+    const suffix = randomBytes(8).toString('hex');
     const marketplaceRes = await server.inject({
         method: 'POST',
         url: '/api/v1/marketplaces',
         headers,
-        payload: { key: `mp_${Date.now()}`, name: 'Channel Ingest Marketplace' },
+        payload: { key: `mp_${suffix}`, name: 'Channel Ingest Marketplace' },
     });
-    expect(marketplaceRes.statusCode).toBe(201);
+    expectHttpStatus(marketplaceRes, 201, 'create marketplace');
     const marketplaceId = marketplaceRes.json().data.id;
     const channelRes = await server.inject({
         method: 'POST',
@@ -26,16 +29,16 @@ async function seedCommerceFixture(server, headers, options = {}) {
                 : { externalReference: options.channelExternalReference }),
         },
     });
-    expect(channelRes.statusCode).toBe(201);
+    expectHttpStatus(channelRes, 201, 'create channel');
     const channelId = channelRes.json().data.id;
-    const merchantSku = options.merchantSku ?? `SKU-${Date.now()}`;
+    const merchantSku = options.merchantSku ?? `SKU-${suffix}`;
     const productRes = await server.inject({
         method: 'POST',
         url: '/api/v1/products',
         headers,
         payload: { merchantSku, productType: 'STANDARD' },
     });
-    expect(productRes.statusCode).toBe(201);
+    expectHttpStatus(productRes, 201, 'create product');
     const productId = productRes.json().data.id;
     const locationRes = await server.inject({
         method: 'POST',
@@ -43,7 +46,7 @@ async function seedCommerceFixture(server, headers, options = {}) {
         headers,
         payload: { name: 'Channel Ingest Warehouse' },
     });
-    expect(locationRes.statusCode).toBe(201);
+    expectHttpStatus(locationRes, 201, 'create stock location');
     const stockLocationId = locationRes.json().data.id;
     await server.inject({
         method: 'POST',
@@ -54,7 +57,7 @@ async function seedCommerceFixture(server, headers, options = {}) {
             productId,
             quantity: options.stockQuantity ?? 20,
             referenceType: 'TEST',
-            referenceId: `receipt-${Date.now()}`,
+            referenceId: `receipt-${suffix}`,
         },
     });
     await server.inject({
@@ -80,7 +83,7 @@ async function seedCommerceFixture(server, headers, options = {}) {
                 : { externalReference: options.offerExternalReference }),
         },
     });
-    expect(offerRes.statusCode).toBe(201);
+    expectHttpStatus(offerRes, 201, 'create offer');
     const offerId = offerRes.json().data.id;
     await server.inject({
         method: 'POST',
@@ -130,7 +133,7 @@ describe('phase 7.1 channel order ingestion integration', () => {
         const permissions = await ownerPermissions(tenantId);
         const externalOrderReference = `CH-ORDER-${Date.now()}`;
 
-        const result = await app.orders.orderCommandService.createChannelOrder({
+        const result = await app.orders.orderCommandService.createIntegrationOrder({
             tenantId,
             actorId: user.userId,
             actorKind: 'user',
@@ -193,8 +196,8 @@ describe('phase 7.1 channel order ingestion integration', () => {
             }],
         };
 
-        const first = await app.orders.orderCommandService.createChannelOrder(command);
-        const second = await app.orders.orderCommandService.createChannelOrder(command);
+        const first = await app.orders.orderCommandService.createIntegrationOrder(command);
+        const second = await app.orders.orderCommandService.createIntegrationOrder(command);
 
         expect(first.order.id).toBe(second.order.id);
         expect(await countOutboxEventsForOrder(infra.database, tenantId, first.order.id, 'order.created')).toBe(1);
@@ -224,8 +227,8 @@ describe('phase 7.1 channel order ingestion integration', () => {
             requestFingerprint: JSON.stringify({ channelId, merchantSku, quantity: 1 }),
         };
 
-        const first = await app.orders.orderCommandService.createChannelOrder(command);
-        const second = await app.orders.orderCommandService.createChannelOrder(command);
+        const first = await app.orders.orderCommandService.createIntegrationOrder(command);
+        const second = await app.orders.orderCommandService.createIntegrationOrder(command);
 
         expect(first.order.id).toBe(second.order.id);
     });
@@ -240,7 +243,7 @@ describe('phase 7.1 channel order ingestion integration', () => {
         const permissions = await ownerPermissions(tenantId);
         const externalOrderReference = `CH-FAIL-${Date.now()}`;
 
-        await expect(app.orders.orderCommandService.createChannelOrder({
+        await expect(app.orders.orderCommandService.createIntegrationOrder({
             tenantId,
             actorId: user.userId,
             actorKind: 'user',
@@ -274,7 +277,7 @@ describe('phase 7.1 channel order ingestion integration', () => {
         });
         const permissions = await ownerPermissions(tenantId);
 
-        const result = await app.orders.orderCommandService.createChannelOrder({
+        const result = await app.orders.orderCommandService.createIntegrationOrder({
             tenantId,
             actorId: user.userId,
             actorKind: 'user',
@@ -302,7 +305,7 @@ describe('phase 7.1 channel order ingestion integration', () => {
             channelExternalReference,
         });
 
-        const channel = await app.channels.channelQueryService.getChannelByExternalReference(
+        const channel = await app.channels.commerceIntegrationQueryService.getCommerceIntegrationByExternalReference(
             tenantId,
             channelExternalReference,
         );

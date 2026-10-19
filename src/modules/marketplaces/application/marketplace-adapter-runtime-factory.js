@@ -1,5 +1,5 @@
-import { FOUNDATION_STUB_MARKETPLACE_KEY } from '../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js';
-import { CatalogSyncPermanentError } from '../../channel-catalog-sync/public/catalog-sync-errors.js';
+import { FOUNDATION_STUB_MARKETPLACE_KEY } from '../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js';
+import { CatalogSyncPermanentError } from '../../integration-catalog-sync/public/catalog-sync-errors.js';
 
 export class MarketplaceAdapterRuntimeFactory {
     deps;

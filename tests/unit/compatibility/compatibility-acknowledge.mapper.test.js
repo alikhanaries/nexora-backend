@@ -6,7 +6,7 @@ import {
 } from '../../../src/modules/compatibility/application/mappers/compatibility-acknowledge.mapper.js';
 
 describe('compatibility acknowledge mapper', () => {
-    it('maps MerchantOrderNo to Nexora orderNumber', () => {
+    it('maps MerchantOrderNo to Wasl orderNumber', () => {
         expect(mapExternalAcknowledgeRequest({
             MerchantOrderNo: ' ORD-1001 ',
             OrderId: 12345,

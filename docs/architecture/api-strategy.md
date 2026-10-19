@@ -1,12 +1,12 @@
 # API Strategy
 
-Nexora exposes two API surfaces over time. Phase 1 implements only the **native API** foundation.
+Wasl exposes two API surfaces over time. Phase 1 implements only the **native API** foundation.
 
 ## Versioning model
 
 | Prefix    | Audience                                                   | Status                            |
 | --------- | ---------------------------------------------------------- | --------------------------------- |
-| `/api/v1` | Nexora native clients, internal services, new integrations | **Active** (foundation endpoints) |
+| `/api/v1` | Wasl native clients, internal services, new integrations | **Active** (foundation endpoints) |
 | `/api/v2` | Merchant-compatible external clients (migration path)      | **Phase 5 — boundary established** |
 
 Version is in the URL path — not negotiable via headers alone. Breaking changes to `/api/v1` require a new native major version (distinct from the external compatibility prefix `/api/v2`).
@@ -77,3 +77,4 @@ List endpoints will use cursor-based pagination for large collections. Constants
 - Target `/api/v1` for all new integrations.
 - Use `/api/v2` only when migrating from a Merchant-compatible external integration and parity is confirmed in the compatibility matrix.
 - Always send `X-Request-Id` or accept the server-generated one for support correlation.
+

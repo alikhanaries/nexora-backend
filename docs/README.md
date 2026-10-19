@@ -1,6 +1,6 @@
-# Nexora Backend Documentation
+# Wasl Backend Documentation
 
-Documentation for the Nexora commerce platform backend. Phase 1 covers foundation infrastructure only; business domain modules are planned for later phases.
+Documentation for the Wasl commerce platform backend. Phase 1 covers foundation infrastructure only; business domain modules are planned for later phases.
 
 ## Start here
 
@@ -60,3 +60,4 @@ See [ADR index](decisions/README.md) for the full decision log. Recent architect
 | ----- | ------ |
 | 14 — Shipment fulfillment inventory | **Implemented** ([ADR-027](decisions/ADR-027-phase-14-shipment-fulfillment-inventory.md)) |
 | 15 — Catalog sync architecture | **Specification** ([ADR-028](decisions/ADR-028-phase-15-catalog-sync-architecture.md)); implementation phases 16+ |
+

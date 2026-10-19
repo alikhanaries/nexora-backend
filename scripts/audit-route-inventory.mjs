@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Documentation-only route scanner for Nexora HTTP surface.
+ * Documentation-only route scanner for Wasl HTTP surface.
  * Does not start the server or modify application behavior.
  */
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -133,7 +133,7 @@ const workerRoutes = scanFile(workerFile).map((r) => ({
 }));
 
 const lines = [];
-lines.push('# Nexora API Route Inventory');
+lines.push('# Wasl API Route Inventory');
 lines.push('');
 lines.push('**Generated:** documentation audit (static scan of `*.routes.js` and `create-server.js`)');
 lines.push('**Framework:** Fastify 5 + `fastify-type-provider-zod` + `@fastify/swagger` (OpenAPI 3.1)');
@@ -185,7 +185,7 @@ lines.push('');
 lines.push('## Reconciliation notes');
 lines.push('');
 lines.push('- Routes are registered in `src/app/http/create-server.js` via `app.register(moduleRoutes, deps)`.');
-lines.push('- Compatibility registers **both** `compatibility.routes.js` and `stockconnect-ce.routes.js` (`/api/v2/*` and `/api/v2/ce/*`).');
+lines.push('- Compatibility registers **both** `compatibility.routes.js` and `compat-v2.routes.js` (`/api/v2/*` and `/api/v2/ce/*`).');
 lines.push('- `GET /openapi.json`, `GET /api-docs.json`, and `GET /api-docs` (redirect to `/docs`) are registered in `create-server.js` when `DOCS_ENABLED` is true.');
 lines.push('- `GET /docs/*` is served by `@scalar/fastify-api-reference` when docs are enabled.');
 lines.push('- Authentication plugin public routes: see `src/app/http/plugins/authentication.plugin.js` (`PUBLIC_ROUTE_PATTERNS`).');

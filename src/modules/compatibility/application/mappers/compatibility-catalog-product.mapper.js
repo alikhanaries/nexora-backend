@@ -79,7 +79,7 @@ export function mapCeProductItemToUpsertCommands(item) {
 }
 
 /**
- * @param {object} product Nexora product DTO
+ * @param {object} product platform product DTO
  * @param {object|null} content product content DTO
  */
 export function mapProductToCeCatalogItem(product, content) {

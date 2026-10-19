@@ -36,4 +36,4 @@
  * }) => Promise<{ items: object[], totalCount: number, page: number, pageSize: number }>} listOrders
  * Tenant-scoped page-based order listing with optional detail (lines and customer snapshot).
  */
-export { DefaultOrderQueryService } from '../application/order-query-service.js';
+export { createOrderQueryService, DefaultOrderQueryService } from '../services/order-query-service.js';

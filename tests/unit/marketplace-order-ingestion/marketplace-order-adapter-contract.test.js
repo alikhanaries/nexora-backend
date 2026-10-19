@@ -3,7 +3,7 @@ import { MarketplaceOrderAdapterRegistry } from '../../../src/modules/marketplac
 import { MarketplaceOrderIngestionPermanentError } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
 import { registerMarketplaceCatalogAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-catalog-adapters.js';
 import { registerMarketplaceOrderAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-order-adapters.js';
-import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/channel-catalog-sync/public/marketplace-catalog-adapter-registry.js';
+import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/integration-catalog-sync/public/marketplace-catalog-adapter-registry.js';
 import { AmazonOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-order-adapter.js';
 import { NamshiOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-order-adapter.js';
 import { NoonOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-order-adapter.js';
@@ -76,7 +76,7 @@ describe('ingest fetch guard', () => {
         const useCase = new IngestNormalizedMarketplaceOrder({
             ingestionService: { ingest: async () => ({}) },
             orderAdapterRegistry: new MarketplaceOrderAdapterRegistry(),
-            channelQueryService: { getChannelById: async () => ({ tenantId: '00000000-0000-4000-8000-000000000001', stockLocationId: '00000000-0000-4000-8000-000000000099' }) },
+            commerceIntegrationQueryService: { getCommerceIntegrationById: async () => ({ tenantId: '00000000-0000-4000-8000-000000000001', stockLocationId: '00000000-0000-4000-8000-000000000099' }) },
             database: { execute: async (fn) => fn({}) },
         });
         await expect(useCase.execute({

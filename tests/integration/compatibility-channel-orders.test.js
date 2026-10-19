@@ -14,7 +14,7 @@ import {
     channelOrderPayload,
     configureChannelForIngest,
     countOutboxEventsForOrder,
-    createChannelScopedApiKey,
+    createCommerceIntegrationScopedApiKey,
     createOrder,
     seedCommerceFixture,
 } from './compatibility-helpers.js';
@@ -127,7 +127,7 @@ describe('POST /api/v2/orders integration', () => {
         const fixture = await seedCommerceFixture(server, headers);
         await configureChannelForIngest(server, headers, fixture.channelId, fixture.stockLocationId);
         const permissions = await ownerPermissions(tenantId);
-        const apiKey = await createChannelScopedApiKey(
+        const apiKey = await createCommerceIntegrationScopedApiKey(
             app,
             tenantId,
             user.userId,

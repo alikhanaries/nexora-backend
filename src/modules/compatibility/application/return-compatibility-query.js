@@ -3,7 +3,7 @@ import { loadOrdersWithLines } from './compatibility-order-enrichment.js';
 import { loadReturnExternalIdMaps } from './compatibility-external-id-enrichment.js';
 import {
     mapEmptyReturnPageToExternalCollection,
-    mapExternalReturnStatusesToNexoraStatuses,
+    mapExternalReturnStatusesToPlatformStatuses,
     mapNewReturnStatusFilter,
     mapReturnPageToExternalCollection,
     mapSingleOrderReturnCollection,
@@ -51,16 +51,16 @@ export class ReturnCompatibilityQuery {
     async listReturns(input) {
         const pageSize = input.pageSize ?? DEFAULT_PAGE_SIZE;
         const page = input.page ?? 1;
-        const nexoraStatuses = input.externalStatuses === undefined
+        const platformStatuses = input.externalStatuses === undefined
             ? undefined
-            : mapExternalReturnStatusesToNexoraStatuses(input.externalStatuses);
-        if (input.externalStatuses !== undefined && nexoraStatuses !== undefined && nexoraStatuses.length === 0) {
+            : mapExternalReturnStatusesToPlatformStatuses(input.externalStatuses);
+        if (input.externalStatuses !== undefined && platformStatuses !== undefined && platformStatuses.length === 0) {
             return mapEmptyReturnPageToExternalCollection(pageSize);
         }
         const result = await this.deps.returnQueryService.listReturns({
             tenantId: input.tenantId,
             actorPermissions: input.actorPermissions,
-            ...(nexoraStatuses === undefined ? {} : { statuses: nexoraStatuses }),
+            ...(platformStatuses === undefined ? {} : { statuses: platformStatuses }),
             ...(input.merchantOrderNos === undefined ? {} : { orderNumbers: input.merchantOrderNos }),
             ...(input.channelOrderNos === undefined ? {} : { externalOrderReferences: input.channelOrderNos }),
             ...(input.reasons === undefined ? {} : { reasons: input.reasons }),
@@ -75,7 +75,7 @@ export class ReturnCompatibilityQuery {
         const channelIds = [...new Set([...ordersById.values()].map((order) => order.channelId))];
         const channelsById = new Map();
         await Promise.all(channelIds.map(async (channelId) => {
-            const channel = await this.deps.channelQueryService.getChannelById(input.tenantId, channelId);
+            const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, channelId);
             channelsById.set(channelId, channel);
         }));
         const externalIdMaps = await loadReturnExternalIdMaps(

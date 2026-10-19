@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { mapChannelsToStockConnectCeCollection } from '../../../src/modules/compatibility/application/mappers/stockconnect-ce-channel.mapper.js';
+import { mapIntegrationsToCompatV2Collection } from '../../../src/modules/compatibility/application/mappers/compat-v2-integration.mapper.js';
 
-describe('stockconnect-ce-channel.mapper', () => {
+describe('compat-v2-integration.mapper', () => {
     it('maps numeric external reference to ChannelId', () => {
-        const result = mapChannelsToStockConnectCeCollection([{
+        const result = mapIntegrationsToCompatV2Collection([{
             id: 'ch-1',
             name: 'Noon',
             status: 'ACTIVE',
@@ -14,7 +14,7 @@ describe('stockconnect-ce-channel.mapper', () => {
     });
 
     it('omits integer ChannelId when external reference is non-numeric', () => {
-        const result = mapChannelsToStockConnectCeCollection([{
+        const result = mapIntegrationsToCompatV2Collection([{
             id: 'ch-2',
             name: 'Alpha',
             status: 'ACTIVE',
@@ -26,7 +26,7 @@ describe('stockconnect-ce-channel.mapper', () => {
     });
 
     it('handles missing external reference', () => {
-        const result = mapChannelsToStockConnectCeCollection([{
+        const result = mapIntegrationsToCompatV2Collection([{
             id: 'ch-3',
             name: 'Unset',
             status: 'ACTIVE',

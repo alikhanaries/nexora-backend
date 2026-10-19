@@ -36,7 +36,7 @@ function returnEligibleQuantity(orderLine) {
 }
 
 /**
- * Maps external return lines to Nexora order line allocations.
+ * Maps external return lines to platform order line allocations.
  *
  * `MerchantProductNo` maps to the order line's snapshotted `merchantSku`.
  * When `resolvedOrderLineId` is present, the line is allocated directly to that order line.
@@ -106,7 +106,7 @@ export function mapExternalReturnLinesToOrderLines(externalLines, orderLines) {
 }
 
 /**
- * `MerchantReturnNo` maps to Nexora `Return.externalReference` (tenant-unique when set).
+ * `MerchantReturnNo` maps to platform `Return.externalReference` (tenant-unique when set).
  *
  * @param {{
  *   MerchantOrderNo: string,
@@ -296,7 +296,7 @@ export function fingerprintReturnCommand(mapped) {
     });
 }
 
-const EXTERNAL_RETURN_STATUS_BY_NEXORA_STATUS = {
+const EXTERNAL_RETURN_STATUS_BY_PLATFORM_STATUS = {
     REQUESTED: 'IN_PROGRESS',
     APPROVED: 'IN_PROGRESS',
     RECEIVED: 'IN_PROGRESS',
@@ -305,7 +305,7 @@ const EXTERNAL_RETURN_STATUS_BY_NEXORA_STATUS = {
     CANCELLED: 'CANCELLED',
 };
 
-const EXTERNAL_TO_NEXORA_RETURN_STATUSES = {
+const EXTERNAL_TO_PLATFORM_RETURN_STATUSES = {
     NEW: ['REQUESTED'],
     IN_PROGRESS: ['REQUESTED', 'APPROVED', 'RECEIVED'],
     HANDLED: ['COMPLETED'],
@@ -316,20 +316,20 @@ const EXTERNAL_TO_NEXORA_RETURN_STATUSES = {
  * @param {string[]|undefined} externalStatuses
  * @returns {string[]|undefined}
  */
-export function mapExternalReturnStatusesToNexoraStatuses(externalStatuses) {
+export function mapExternalReturnStatusesToPlatformStatuses(externalStatuses) {
     if (externalStatuses === undefined) {
         return undefined;
     }
-    const nexoraStatuses = new Set();
+    const platformStatuses = new Set();
     for (const externalStatus of externalStatuses) {
-        const mapped = EXTERNAL_TO_NEXORA_RETURN_STATUSES[externalStatus];
+        const mapped = EXTERNAL_TO_PLATFORM_RETURN_STATUSES[externalStatus];
         if (mapped !== undefined) {
             for (const status of mapped) {
-                nexoraStatuses.add(status);
+                platformStatuses.add(status);
             }
         }
     }
-    return [...nexoraStatuses];
+    return [...platformStatuses];
 }
 
 export function mapNewReturnStatusFilter() {
@@ -367,7 +367,7 @@ export function mapExternalReturn(returnEntity, order, orderLinesById, channel, 
         CreatedAt: returnEntity.createdAt.toISOString(),
         UpdatedAt: returnEntity.updatedAt.toISOString(),
         MerchantReturnNo: returnEntity.externalReference,
-        Status: EXTERNAL_RETURN_STATUS_BY_NEXORA_STATUS[returnEntity.status] ?? 'IN_PROGRESS',
+        Status: EXTERNAL_RETURN_STATUS_BY_PLATFORM_STATUS[returnEntity.status] ?? 'IN_PROGRESS',
         Reason: returnEntity.reason,
     };
 }
@@ -386,7 +386,7 @@ export function mapExternalSingleOrderReturn(returnEntity, order, orderLinesById
         CreatedAt: returnEntity.createdAt.toISOString(),
         UpdatedAt: returnEntity.updatedAt.toISOString(),
         MerchantReturnNo: returnEntity.externalReference,
-        Status: EXTERNAL_RETURN_STATUS_BY_NEXORA_STATUS[returnEntity.status] ?? 'IN_PROGRESS',
+        Status: EXTERNAL_RETURN_STATUS_BY_PLATFORM_STATUS[returnEntity.status] ?? 'IN_PROGRESS',
     };
 }
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     mapEmptyReturnPageToExternalCollection,
     mapExternalReturn,
-    mapExternalReturnStatusesToNexoraStatuses,
+    mapExternalReturnStatusesToPlatformStatuses,
     mapNewReturnStatusFilter,
     mapReturnPageToExternalCollection,
 } from '../../../src/modules/compatibility/application/mappers/compatibility-return.mapper.js';
@@ -55,9 +55,9 @@ describe('compatibility return read mapper', () => {
         });
     });
 
-    it('maps new return filter to pending Nexora statuses', () => {
+    it('maps new return filter to pending Wasl statuses', () => {
         expect(mapNewReturnStatusFilter()).toEqual(['IN_PROGRESS']);
-        expect(mapExternalReturnStatusesToNexoraStatuses(['IN_PROGRESS'])).toEqual([
+        expect(mapExternalReturnStatusesToPlatformStatuses(['IN_PROGRESS'])).toEqual([
             'REQUESTED',
             'APPROVED',
             'RECEIVED',
@@ -101,7 +101,7 @@ describe('compatibility return read mapper', () => {
     });
 
     it('returns empty page for unmapped external statuses', () => {
-        expect(mapExternalReturnStatusesToNexoraStatuses(['AUTO_CLOSED'])).toEqual([]);
+        expect(mapExternalReturnStatusesToPlatformStatuses(['AUTO_CLOSED'])).toEqual([]);
         expect(mapEmptyReturnPageToExternalCollection(50)).toMatchObject({
             Content: [],
             TotalCount: 0,

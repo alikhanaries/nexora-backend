@@ -200,7 +200,8 @@ Requires `DOCS_ENABLED=true` (default in development/test).
 
 ## Notes
 
-- Nexora uses **Fastify + `@fastify/swagger` + Zod** (`fastify-type-provider-zod`), not Express/Swagger-JSDoc.
+- Wasl uses **Fastify + `@fastify/swagger` + Zod** (`fastify-type-provider-zod`), not Express/Swagger-JSDoc.
 - Worker observability routes are inventory-only (separate HTTP listener).
 - Per-route request/response detail lives in route Zod schemas under each module’s `presentation/*.schemas.js`.
+
 

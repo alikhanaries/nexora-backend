@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEquivalentChannelOrderRequest } from '../../../src/modules/orders/application/channel-order-request-equivalence.js';
+import { isEquivalentChannelOrderRequest } from '../../../src/modules/orders/services/channel-order-request-equivalence.js';
 
 describe('isEquivalentChannelOrderRequest', () => {
     const existingOrder = {

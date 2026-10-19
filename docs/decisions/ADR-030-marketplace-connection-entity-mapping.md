@@ -14,7 +14,7 @@ Phase 22 hardens the **generic foundation** so provider phases (23–26) can foc
 
 - **Connection lifecycle** with audit events, last-test metadata (no secrets), and channel/tenant ownership checks
 - **Entity mapping persistence** with PostgreSQL uniqueness and RLS (already on tables from Phase 21)
-- **Repository boundary** for mappings (find by Nexora entity, find by external entity, upsert, delete)
+- **Repository boundary** for mappings (find by Wasl entity, find by external entity, upsert, delete)
 - **Optional mapping capture** after successful adapter sync when the adapter returns an external identifier (never invented)
 - **Secret redaction** in logs, API responses, audit metadata, and connection test errors
 - **Provider-neutral core** — no marketplace-key branching in commerce or catalog-sync orchestration
@@ -31,26 +31,26 @@ Phase 22 hardens the **generic foundation** so provider phases (23–26) can foc
 | Concern | Rule |
 | ------- | ---- |
 | Scope | One **active** connection per `(tenant_id, channel_id, marketplace_key)` |
-| Channel | Connection always tied to a Nexora channel; marketplace key derived from channel’s marketplace record on create |
+| Channel | Connection always tied to a Wasl channel; marketplace key derived from channel’s marketplace record on create |
 | Credentials | Encrypted via `SecretEncryptorPort`; decrypted only inside adapter runtime at job execution or connection test |
 | HTTP | Generic routes under `/api/v1/channels/:channelId/marketplace-connection` only |
 | Test | `adapter.testConnection(runtime)`; outcome stored as `last_test_outcome` / sanitized `last_test_error` |
 
 ## 5. Entity mapping model
 
-Direction: **Nexora entity → marketplace external identifier** (outbound sync).
+Direction: **Wasl entity → marketplace external identifier** (outbound sync).
 
 | Field | Purpose |
 | ----- | ------- |
 | `tenant_id`, `channel_id`, `marketplace_key` | Isolation (same as connection scope) |
 | `nexora_entity_type` | `product`, `offer`, `stock_location` (extensible via check constraint migration if needed) |
-| `nexora_entity_id` | Nexora UUID |
+| `nexora_entity_id` | Wasl entity UUID (column name unchanged) |
 | `external_entity_type` | Adapter-defined string (e.g. `shopify_product_variant`, `amazon_listing_sku`) |
 | `external_entity_id` | Opaque provider string |
 
-**Uniqueness:** one mapping per Nexora entity per channel/marketplace; one external id per channel/marketplace/external type (prevents duplicate external listings).
+**Uniqueness:** one mapping per Wasl entity per channel/marketplace; one external id per channel/marketplace/external type (prevents duplicate external listings).
 
-**Idempotency:** upsert on conflict updates external ids when the provider returns a new identifier for the same Nexora entity.
+**Idempotency:** upsert on conflict updates external ids when the provider returns a new identifier for the same Wasl entity.
 
 ## 6. Adapter ownership
 
@@ -86,3 +86,4 @@ Connection command service records (when `auditRecorder` configured):
 - [ADR-029](ADR-029-marketplace-connector-framework.md)
 - [ADR-028](ADR-028-phase-15-catalog-sync-architecture.md)
 - [ADR-021](ADR-021-external-id-mapping.md)
+

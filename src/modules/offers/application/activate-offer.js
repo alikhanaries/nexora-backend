@@ -31,7 +31,7 @@ export class ActivateOffer {
                     status: product.status,
                 });
             }
-            await this.deps.channelQueryService.verifyChannelUsable(input.tenantId, existing.channelId, tx);
+            await this.deps.commerceIntegrationQueryService.verifyChannelUsable(input.tenantId, existing.channelId, tx);
             if (input.resolvePricing === true) {
                 if (input.currency === undefined) {
                     throw new BusinessRuleError('currency is required when resolvePricing is true');

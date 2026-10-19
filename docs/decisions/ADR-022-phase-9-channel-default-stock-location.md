@@ -5,7 +5,7 @@
 
 ## Context
 
-Channel order ingest (`POST /api/v2/orders` and channel-fulfilled) must assign each line to a Nexora stock location for inventory reservation. Phase 7.2 introduced an operational convention: store the stock location UUID in `channels.configuration_reference`. That works but is opaque, lacks a foreign key, and was tracked as open question **OQ-7-07**.
+Channel order ingest (`POST /api/v2/orders` and channel-fulfilled) must assign each line to a Wasl stock location for inventory reservation. Phase 7.2 introduced an operational convention: store the stock location UUID in `channels.configuration_reference`. That works but is opaque, lacks a foreign key, and was tracked as open question **OQ-7-07**.
 
 ## Decision
 
@@ -31,3 +31,4 @@ Add nullable `channels.default_stock_location_id` with composite FK `(tenant_id,
 
 - [ADR-020](ADR-020-phase-7-channel-inbound-integration.md)
 - [open-questions.md](../architecture/open-questions.md)
+

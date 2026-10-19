@@ -1,5 +1,5 @@
 /**
- * Central catalog of integration events known to Nexora.
+ * Central catalog of integration events known to Wasl.
  *
  * Phase 6 uses this catalog to decide which events may be delivered externally
  * via webhooks. Catalog metadata is provider-neutral and does not expose domain

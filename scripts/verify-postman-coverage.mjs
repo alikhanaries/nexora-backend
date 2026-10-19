@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const COLLECTION = join(ROOT, 'postman/Nexora_Backend_API.postman_collection.json');
+const COLLECTION = join(ROOT, 'postman/Wasl_Backend_API.postman_collection.json');
 const POSTMAN_INV = join(ROOT, 'docs/POSTMAN_API_INVENTORY.md');
 
 function expressToOpenApiPath(path) {
@@ -173,7 +173,7 @@ function main() {
     const lines = [];
     lines.push('# Postman coverage report');
     lines.push('');
-    lines.push(`**Collection:** \`postman/Nexora_Backend_API.postman_collection.json\``);
+    lines.push(`**Collection:** \`postman/Wasl_Backend_API.postman_collection.json\``);
     lines.push('');
     lines.push('## Summary');
     lines.push('');

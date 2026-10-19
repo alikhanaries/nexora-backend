@@ -3,7 +3,7 @@ import { BusinessRuleError } from '../../../src/shared/errors/index.js';
 import {
     requireChannelStockLocationId,
     resolveChannelStockLocationId,
-} from '../../../src/modules/channels/public/index.js';
+} from '../../../src/modules/commerce-integrations/public/index.js';
 
 const channelId = '22222222-2222-4222-8222-222222222222';
 const stockLocationId = '44444444-4444-4444-8444-444444444444';

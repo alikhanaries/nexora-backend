@@ -12,7 +12,7 @@ export function wireCompatibility(deps) {
     idempotency: deps.idempotency,
     coreContracts: {
       productQueryService: deps.products.productQueryService,
-      channelQueryService: deps.channels.channelQueryService,
+      commerceIntegrationQueryService: deps.channels.commerceIntegrationQueryService,
       inventoryService: deps.inventory.inventoryService,
       pricingService: deps.pricing.pricingService,
       offerQueryService: deps.offers.offerQueryService,

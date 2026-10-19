@@ -3,7 +3,7 @@ import { recordMarketplaceOrderLifecycleOutcome } from '../../../shared/metrics/
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
-} from '../../channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+} from '../../integration-catalog-sync/public/catalog-sync-adapter-errors.js';
 import { MarketplaceOrderLifecycleOperation } from '../../marketplace-order-ingestion/index.js';
 import {
     MarketplaceOrderLifecyclePermanentError,
@@ -15,7 +15,7 @@ import { mapMarketplaceErrorToAdapterError } from '../public/index.js';
 const ROUTE_ID = 'marketplace-order-lifecycle/outbound';
 
 /**
- * Outbound marketplace order lifecycle (provider HTTP via adapter; no Nexora order mutation here).
+ * Outbound marketplace order lifecycle (provider HTTP via adapter; no Wasl order mutation here).
  */
 export class ExecuteOutboundMarketplaceOrderLifecycleCommand {
     deps;
@@ -23,10 +23,10 @@ export class ExecuteOutboundMarketplaceOrderLifecycleCommand {
     /**
      * @param {object} deps
      * @param {import('./marketplace-outbound-order-lifecycle-adapter-registry.js').MarketplaceOutboundOrderLifecycleAdapterRegistry} deps.lifecycleAdapterRegistry
-     * @param {import('../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
+     * @param {import('../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
      * @param {import('../../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} [deps.idempotency]
-     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} [deps.channelQueryService]
+     * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} [deps.commerceIntegrationQueryService]
      * @param {import('../../marketplace-order-ingestion/public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} [deps.marketplaceLookup]
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
@@ -53,7 +53,7 @@ export class ExecuteOutboundMarketplaceOrderLifecycleCommand {
         };
         recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'outbound_received', metricContext);
         try {
-            if (this.deps.channelQueryService !== undefined && this.deps.marketplaceLookup !== undefined) {
+            if (this.deps.commerceIntegrationQueryService !== undefined && this.deps.marketplaceLookup !== undefined) {
                 await this.assertChannelContext(input.tenantId, input.channelId, input.marketplaceKey);
             }
             const capabilityKey = capabilityForOperation(input.operation, input.marketplaceKey);
@@ -138,12 +138,12 @@ export class ExecuteOutboundMarketplaceOrderLifecycleCommand {
      * @param {string} marketplaceKey
      */
     async assertChannelContext(tenantId, channelId, marketplaceKey) {
-        const channelQueryService = this.deps.channelQueryService;
+        const commerceIntegrationQueryService = this.deps.commerceIntegrationQueryService;
         const marketplaceLookup = this.deps.marketplaceLookup;
-        if (channelQueryService === undefined || marketplaceLookup === undefined) {
+        if (commerceIntegrationQueryService === undefined || marketplaceLookup === undefined) {
             return;
         }
-        const channel = await channelQueryService.getChannelById(tenantId, channelId);
+        const channel = await commerceIntegrationQueryService.getCommerceIntegrationById(tenantId, channelId);
         if (channel.tenantId !== tenantId) {
             throw new MarketplaceOrderLifecyclePermanentError('Channel tenant mismatch', { channelId });
         }
@@ -182,7 +182,7 @@ function capabilityForOperation(operation, marketplaceKey) {
 
 /**
  * @param {import('../public/marketplace-outbound-order-lifecycle.port.js').MarketplaceOutboundOrderLifecycleAdapter} adapter
- * @param {import('../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+ * @param {import('../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
  * @param {import('../public/marketplace-outbound-order-lifecycle.port.js').MarketplaceOutboundOrderLifecycleContext} context
  * @param {object} input
  */

@@ -30,7 +30,7 @@ export class NamshiAuthSessionProvider {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      */
     async getCookieHeader(runtime) {
         const cacheKey = buildSessionCacheKey(runtime);
@@ -47,7 +47,7 @@ export class NamshiAuthSessionProvider {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      */
     async login(runtime) {
         const baseUrl = resolveNamshiApiBaseUrl(runtime.configuration ?? {}, this.deploymentApiBaseUrl);
@@ -78,7 +78,7 @@ export class NamshiAuthSessionProvider {
 }
 
 /**
- * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+ * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
  */
 function buildSessionCacheKey(runtime) {
     const { keyId, projectCode } = readNamshiServiceAccount(runtime.credentials, runtime.configuration ?? {});

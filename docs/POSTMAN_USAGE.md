@@ -1,19 +1,19 @@
-# Nexora Postman collection — usage
+# Wasl Postman collection — usage
 
 ## Files
 
 | File | Purpose |
 | ---- | ------- |
-| `postman/Nexora_Backend_API.postman_collection.json` | Full API collection (v2.1) |
-| `postman/Nexora_Local.postman_environment.json` | Local environment template |
+| `postman/Wasl_Backend_API.postman_collection.json` | Full API collection (v2.1) |
+| `postman/Wasl_Local.postman_environment.json` | Local environment template |
 | `docs/POSTMAN_API_INVENTORY.md` | Verified route inventory for Postman |
 | `docs/POSTMAN_COVERAGE_REPORT.md` | Route ID ↔ request mapping |
 
 ## Import into Postman
 
-1. Open Postman → **Import** → select `postman/Nexora_Backend_API.postman_collection.json`.
-2. Import `postman/Nexora_Local.postman_environment.json`.
-3. Select the **Nexora Local** environment in the top-right dropdown.
+1. Open Postman → **Import** → select `postman/Wasl_Backend_API.postman_collection.json`.
+2. Import `postman/Wasl_Local.postman_environment.json`.
+3. Select the **Wasl Local** environment in the top-right dropdown.
 
 ## Configure local API
 
@@ -85,3 +85,4 @@ Optional (if already on `package.json` from Swagger audit): `npm run docs:route-
 - **Response examples** are derived from OpenAPI/Zod schemas, not from live API calls unless you add them manually after testing.
 - **Scalar `/docs`** routes are not duplicated in Postman beyond OpenAPI JSON endpoints where listed in the inventory.
 - Worker endpoints are **not** reachable via `baseUrl`; use `workerBaseUrl` only.
+

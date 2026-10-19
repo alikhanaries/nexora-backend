@@ -10,7 +10,7 @@ Service-account login (documented under Authentication → service accounts):
 2. `POST {apiBaseUrl}/identity/public/v1/api/login` with JSON `{ token, default_project_code }`.
 3. Store session **cookies** from the response; send them on subsequent calls with a mandatory **`User-Agent`** header.
 
-Sessions are cached per connection (hash of key id + project + private key material). Tokens and private keys are never logged or returned from Nexora APIs.
+Sessions are cached per connection (hash of key id + project + private key material). Tokens and private keys are never logged or returned from Wasl APIs.
 
 ## Connection configuration
 
@@ -19,7 +19,7 @@ Sessions are cached per connection (hash of key id + project + private key mater
 | `configuration.countryCode` | yes | Marketplace country: `ae`, `sa`, or `eg` |
 | `configuration.warehouseCode` | yes | Warehouse code for `UpdateStock` |
 | `configuration.apiBaseUrl` | no | Override API host (default `https://noon-api-gateway.noon.partners`) |
-| `configuration.userAgent` | no | Override User-Agent (default `Nexora/1.0` or `NOON_USER_AGENT`) |
+| `configuration.userAgent` | no | Override User-Agent (default `Wasl/1.0` or `NOON_USER_AGENT`) |
 | `configuration.projectCode` | no | Override project when not stored in credentials |
 
 ## Encrypted credentials (JSON)
@@ -36,7 +36,7 @@ Sessions are cached per connection (hash of key id + project + private key mater
 | ---------- | -------- | ----- |
 | Connection test | `GET /identity/v1/whoami` | After login |
 | Inventory sync | `POST /stock/v1/stock-update` | Absolute `qty` per `warehouse_code` + `partner_sku` |
-| Price sync | `POST /pricing/v1/pricing/upsert` | `price` + `country_code`; does not recalculate Nexora pricing |
+| Price sync | `POST /pricing/v1/pricing/upsert` | `price` + `country_code`; does not recalculate Wasl pricing |
 | Offer sync | `GET /offer/v1/product/{partner_sku}` | Mapping hints only when not deactivating |
 | Activate | `POST /pricing/v1/pricing/upsert` | `is_active: true` (does not change price when omitted) |
 | Deactivate | `POST /pricing/v1/pricing/upsert` | `is_active: false` (delist without clearing stock) |
@@ -49,14 +49,14 @@ Generic `deactivate` → BatchUpsertPricing `is_active: false` (not delete, not 
 
 | Type | Source |
 | ---- | ------ |
-| `noon_partner_sku` | Nexora `partner_sku` / offer external reference |
+| `noon_partner_sku` | Wasl `partner_sku` / offer external reference |
 | `noon_offer` | `offer_code` from GetProductOffers when present |
 | `noon_catalog_sku` | noon catalog `sku` field when returned |
 
 ## Inventory and price semantics
 
-- **Inventory:** Nexora `availableQuantity` is sent as the absolute `qty` noon should hold (not a delta).
-- **Price:** Nexora effective price (`amountMinor` / 100) is sent as `price` in local currency for `country_code`. MSRP is not synced (omitted).
+- **Inventory:** Wasl `availableQuantity` is sent as the absolute `qty` noon should hold (not a delta).
+- **Price:** Wasl effective price (`amountMinor` / 100) is sent as `price` in local currency for `country_code`. MSRP is not synced (omitted).
 
 ## Errors, retries, throttling
 
@@ -66,7 +66,7 @@ Pricing rate limits (documented ~1500 req/min) surface as HTTP 429 → retryable
 
 ## Limitations / deferred
 
-- **Product/catalog create** via Catalog API is not wired; Nexora does not yet supply noon catalog content payloads.
+- **Product/catalog create** via Catalog API is not wired; Wasl does not yet supply noon catalog content payloads.
 - **MSRP** and multi-country price rows beyond the configured `countryCode` are not synced.
 - **Namshi** uses overlapping noon gateway patterns but remains a separate adapter (Phase 26).
 
@@ -76,7 +76,7 @@ Noon FBPI order lifecycle uses the generic marketplace lifecycle framework (Phas
 
 ### Event Notifications
 
-| Event | Direction | Nexora handling |
+| Event | Direction | Wasl handling |
 | ----- | --------- | --------------- |
 | `FBPI::ORDER_SYNC` | Inbound webhook | `NoonWebhookAdapter` → `order.update` + `lifecyclePayload.noonEvent`; `GetFbpiOrder` before applying lifecycle |
 
@@ -89,7 +89,7 @@ Webhook envelope: `event_schema_version`, `event_type`, `metadata.message_id` (d
 | Read order | `GET /fbpi/v1/fbpi-order/{fbpi_order_nr}/get` | Yes — status sync / cancel detection |
 | Mark out of stock | `POST` UpdateOrder | **Deferred** (not mapped to generic `update_order`) |
 | Create shipment | `POST /fbpi/v1/shipment/create` | **Yes (Phase 41)** — outbound `fulfill_order` via `NoonOutboundOrderLifecycleAdapter` |
-| Returns / refunds | — | **Unsupported** in Nexora lifecycle |
+| Returns / refunds | — | **Unsupported** in Wasl lifecycle |
 
 ### Lifecycle capabilities
 

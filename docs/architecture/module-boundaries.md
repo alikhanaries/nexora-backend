@@ -1,6 +1,6 @@
 # Module Boundaries
 
-Nexora enforces architecture boundaries with **dependency-cruiser** (`.dependency-cruiser.cjs`). Violations fail CI via `npm run arch:check`.
+Wasl enforces architecture boundaries with **dependency-cruiser** (`.dependency-cruiser.cjs`). Violations fail CI via `npm run arch:check`.
 
 Business modules do not exist yet, but rules are already active so the first module added cannot introduce layering debt.
 
@@ -34,26 +34,26 @@ Use cases orchestrate domain objects and call ports defined in `shared/`. Applic
 Modules communicate through **public interfaces** exported from the module root — never by importing another module's `domain/`, `infrastructure/`, or `presentation/` internals.
 
 ```
-✅  modules/orders/application/create-order.ts
+✅  modules/orders/services/create-order.ts
     → modules/inventory/public/get-stock.ts
 
-❌  modules/orders/application/create-order.ts
+❌  modules/orders/services/create-order.ts
     → modules/inventory/infrastructure/stock-repository.ts
 ```
 
 ### Compatibility module (`/api/v2`)
 
-`src/modules/compatibility/` is a **provider-neutral adapter** that exposes external compatibility APIs at `/api/v2`. Nexora core modules remain provider-neutral; external platform terminology must not leak into domain or application layers.
+`src/modules/compatibility/` is a **provider-neutral adapter** that exposes external compatibility APIs at `/api/v2`. Wasl core modules remain provider-neutral; external platform terminology must not leak into domain or application layers.
 
 #### Three surfaces (do not conflate)
 
 | Surface | Contract | Phase 5 initial scope |
 | ------- | -------- | --------------------- |
-| `/api/v1` | Nexora native | Active — core module presentation |
+| `/api/v1` | Wasl native | Active — core module presentation |
 | `/api/v2` | **Merchant-compatible** | Order reads + acknowledgement (see [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md)) |
 | Channel ingestion | **Channel API** (separate) | **Not** in Phase 5 initial scope — `POST /v2/orders` create exists on Channel API only |
 
-The Merchant API does **not** define `POST /v2/orders` for order creation. Nexora must not invent hybrid semantics on `/api/v2/orders`.
+The Merchant API does **not** define `POST /v2/orders` for order creation. Wasl must not invent hybrid semantics on `/api/v2/orders`.
 
 ```
 external credential → authenticated principal → tenant context → core public contract
@@ -81,18 +81,18 @@ Rules:
 | **No duplicated business logic** | State machines and invariants stay in core modules |
 | **Outbound via outbox** | Core modules never synchronously call external providers; integration uses outbox → BullMQ → handler → adapter |
 
-Native Nexora API remains `/api/v1`. Do not mix v1 and v2 route registration.
+Native Wasl API remains `/api/v1`. Do not mix v1 and v2 route registration.
 
 ### Platform independence
 
-Nexora core must operate without any external commerce platform. See [platform-independence.md](platform-independence.md).
+Wasl core must operate without any external commerce platform. See [platform-independence.md](platform-independence.md).
 
 | Rule | Meaning |
 | ---- | ------- |
-| **Nexora owns business truth** | PostgreSQL + core modules — not an external platform |
+| **Wasl owns business truth** | PostgreSQL + core modules — not an external platform |
 | **No provider names in core** | No provider-specific types, services, or config in core modules |
 | **Compatibility is optional** | Removing `src/modules/compatibility/` must not prevent core modules from functioning |
-| **No external API for core paths** | Native `/api/v1` and compatibility adapters call Nexora public contracts only |
+| **No external API for core paths** | Native `/api/v1` and compatibility adapters call Wasl public contracts only |
 | **Documentation ≠ dependency** | External OpenAPI specs are reference material for contract design |
 
 ## Shared and infrastructure rules
@@ -134,3 +134,4 @@ Rules of note (see config for full list):
 ## Module folder reference
 
 See [src/modules/README.md](../../src/modules/README.md) for naming conventions and file placement examples.
+
