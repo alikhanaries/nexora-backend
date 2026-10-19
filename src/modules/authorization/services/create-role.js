@@ -1,11 +1,18 @@
 import { ConflictError, ValidationError } from '../../../shared/errors/index.js';
-export class CreateRole {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        this.deps.authorization.requirePermission(input.actorPermissions, 'roles.manage');
+import { requireAuthorizationDeps } from './require-deps.js';
+
+/**
+ * @param {{ authorization: object, roles: object, database: object }} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCreateRole(deps) {
+    requireAuthorizationDeps(deps, 'createCreateRole', ['authorization', 'roles', 'database']);
+
+    /**
+     * @param {object} input
+     */
+    async function execute(input) {
+        deps.authorization.requirePermission(input.actorPermissions, 'roles.manage');
         const name = input.name.trim();
         if (name.length === 0) {
             throw new ValidationError('Role name is required');
@@ -13,14 +20,14 @@ export class CreateRole {
         if (input.permissionKeys.length === 0) {
             throw new ValidationError('At least one permission is required');
         }
-        return this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.roles.findByTenantAndName(input.tenantId, name, tx);
+        return deps.database.execute(async (tx) => {
+            const existing = await deps.roles.findByTenantAndName(input.tenantId, name, tx);
             if (existing !== null) {
                 throw new ConflictError('A role with this name already exists in the tenant', {
                     name,
                 });
             }
-            return this.deps.roles.create({
+            return deps.roles.create({
                 tenantId: input.tenantId,
                 name,
                 permissionKeys: input.permissionKeys,
@@ -28,5 +35,17 @@ export class CreateRole {
                 systemKey: null,
             }, tx);
         }, { tenantId: input.tenantId });
+    }
+
+    return { execute };
+}
+
+/** @deprecated Prefer {@link createCreateRole}; kept for existing import sites. */
+export class CreateRole {
+    /**
+     * @param {object} deps
+     */
+    constructor(deps) {
+        return createCreateRole(deps);
     }
 }

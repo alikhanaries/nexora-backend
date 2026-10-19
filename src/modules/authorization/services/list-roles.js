@@ -1,15 +1,22 @@
-export class ListRoles {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        this.deps.authorization.requirePermission(input.actorPermissions, 'roles.read');
-        return this.deps.database.execute(async (tx) => {
-            const roles = await this.deps.roles.listByTenant(input.tenantId, tx);
+import { requireAuthorizationDeps } from './require-deps.js';
+
+/**
+ * @param {{ authorization: object, roles: object, database: object }} deps
+ * @returns {{ execute: Function }}
+ */
+export function createListRoles(deps) {
+    requireAuthorizationDeps(deps, 'createListRoles', ['authorization', 'roles', 'database']);
+
+    /**
+     * @param {object} input
+     */
+    async function execute(input) {
+        deps.authorization.requirePermission(input.actorPermissions, 'roles.read');
+        return deps.database.execute(async (tx) => {
+            const roles = await deps.roles.listByTenant(input.tenantId, tx);
             const withPermissions = [];
             for (const role of roles) {
-                const permissions = await this.deps.roles.listPermissionsForRole(role.id, tx);
+                const permissions = await deps.roles.listPermissionsForRole(role.id, tx);
                 withPermissions.push({
                     ...role,
                     permissionKeys: permissions.map((permission) => permission.key),
@@ -17,5 +24,17 @@ export class ListRoles {
             }
             return withPermissions;
         }, { tenantId: input.tenantId });
+    }
+
+    return { execute };
+}
+
+/** @deprecated Prefer {@link createListRoles}; kept for existing import sites. */
+export class ListRoles {
+    /**
+     * @param {object} deps
+     */
+    constructor(deps) {
+        return createListRoles(deps);
     }
 }
