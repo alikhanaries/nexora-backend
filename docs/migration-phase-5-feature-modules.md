@@ -36,7 +36,7 @@ Migrate **authorization**, **audit**, **API keys**, and **MFA** HTTP endpoints i
 
 ## Architecture
 
-Each feature uses **Module → Controller → Service**. Services call existing use cases via `CORE_DOMAIN` (wired in `wire-core-domain.js`). No new repositories or use-case layers.
+Each feature uses **Module → Controller → Service**. Services call existing use cases via `CORE_SERVICES` (wired in `wire-core-services.js`). No new repositories or use-case layers.
 
 ## Business logic
 
@@ -46,7 +46,7 @@ Reused:
 - Fastify route handlers’ validation schemas (authorization/audit from presentation; small Nest-local schemas for API keys/MFA matching Fastify Zod rules)
 - `requireActorContext`, global `AuthGuard`, `parseOrThrow`
 
-`wire-core-domain.js` now matches Fastify bootstrap order: audit → authorization → identity → MFA → API keys (with step-up) → tenants.
+`wire-core-services.js` now matches Fastify bootstrap order: audit → authorization → identity → MFA → API keys (with step-up) → tenants.
 
 ## Tests
 
@@ -56,9 +56,9 @@ Reused:
 
 ## Files changed (important)
 
-- `src/nest/bootstrap/wire-core-domain.js`
-- `src/nest/app.module.js`
-- `src/nest/authorization/*`, `audit/*`, `api-keys/*`, `mfa/*`
+- `src/app/wire-core-services.js`
+- `src/app/app.module.js`
+- `src/app/authorization/*`, `audit/*`, `api-keys/*`, `mfa/*`
 - `test/nest/feature-modules.test.js`, `helpers/mock-core-domain.js`
 - `test/nest/core-modules.test.js`
 

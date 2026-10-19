@@ -1,7 +1,7 @@
 import { loadConfigFromEnvironment } from './config/index.js';
-import { createApplication } from './bootstrap/create-application.js';
-import { createInfrastructure } from './bootstrap/create-infrastructure.js';
-import { gracefulShutdown } from './bootstrap/shutdown.js';
+import { createApplication } from './create-application.js';
+import { createInfrastructure } from './create-infrastructure.js';
+import { gracefulShutdown } from './shutdown.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
 async function main() {
     const config = loadConfigFromEnvironment();
@@ -15,7 +15,10 @@ async function main() {
         host: config.server.host,
         port: config.server.port,
     });
-    infra.logger.info({ host: config.server.host, port: config.server.port }, 'API server started');
+    infra.logger.info(
+        { host: config.server.host, port: config.server.port },
+        'Wasl API (NestJS + Express) listening',
+    );
     let shuttingDown = false;
     const shutdown = async (signal) => {
         if (shuttingDown)

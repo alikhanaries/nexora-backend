@@ -1,16 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { requireActorContext } from '../../../../shared/context/require-principal.js';
 import { AuthenticationError } from '../../../../shared/errors/index.js';
-import { CORE_DOMAIN } from '../../../../nest/domain/core-domain.tokens.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
 export @Injectable()
 class MfaService {
-  constructor(@Inject(CORE_DOMAIN) coreDomain) {
-    this.coreDomain = coreDomain;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.coreServices = coreServices;
   }
 
   get useCases() {
-    return this.coreDomain.mfa.routes.options;
+    return this.coreServices.mfa.routes.options;
   }
 
   async startTotpEnrollment(body) {

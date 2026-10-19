@@ -6,7 +6,7 @@ export class EnqueueOutboundMarketplaceOrderLifecycleCommand {
 
     /**
      * @param {object} deps
-     * @param {import('../../marketplace-order-ingestion/services/marketplace-lifecycle-enqueue-service.js').MarketplaceLifecycleEnqueueService} deps.lifecycleEnqueueService
+     * @param {import('../../orders/marketplace-ingestion/services/marketplace-lifecycle-enqueue-service.js').MarketplaceLifecycleEnqueueService} deps.lifecycleEnqueueService
      */
     constructor(deps) {
         this.deps = deps;

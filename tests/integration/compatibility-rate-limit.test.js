@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/app/config/config.js';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
-import { createInfrastructure } from '../../src/app/bootstrap/create-infrastructure.js';
+import { createApplication } from '../../src/app/create-application.js';
+import { createInfrastructure } from '../../src/app/create-infrastructure.js';
 import { COMPATIBILITY_RATE_LIMIT_POLICIES } from '../../src/shared/auth/rate-limit-policies.js';
 import { compatibilityRateLimitSubject } from '../../src/shared/auth/compatibility-rate-limit-subject.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';

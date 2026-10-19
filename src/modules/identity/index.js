@@ -1,4 +1,4 @@
-import { Argon2PasswordHasher } from '../../infrastructure/auth/argon2-password-hasher.js';
+import { createArgon2PasswordHasher } from '../../infrastructure/auth/argon2-password-hasher.js';
 import { JoseAccessTokenService } from '../../infrastructure/auth/jose-access-token-service.js';
 import { AesSecretEncryptor } from '../../infrastructure/auth/aes-secret-encryptor.js';
 import { CreateUserUseCase } from './services/use-cases/create-user.js';
@@ -23,7 +23,7 @@ import { PostgresTenantLookup } from './repositories/postgres-tenant-lookup.js';
 import { NoopPasswordResetNotifier } from './repositories/noop-password-reset-notifier.js';
 import { createAuthRoutes } from './views/auth.routes.js';
 export async function createIdentityModule(deps) {
-    const passwordHasher = new Argon2PasswordHasher();
+    const passwordHasher = createArgon2PasswordHasher();
     const accessTokenService = await JoseAccessTokenService.create(deps.config.auth);
     const secretEncryptor = new AesSecretEncryptor(deps.config.auth.mfaEncryptionKey);
     const users = new PostgresUserRepository();

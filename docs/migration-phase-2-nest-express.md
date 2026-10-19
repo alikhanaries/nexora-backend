@@ -42,7 +42,7 @@ Not migrated in Phase 2: `/api/v1/*`, `/api/v2/*`, `/api/v2/ce/*`, metrics, Swag
 
 ## Express foundation (webhooks)
 
-`src/nest/bootstrap/configure-express.js` installs **route-scoped raw body capture** for paths containing `/api/v1/inbound/marketplace-webhooks/`, matching the Fastify `preParsing` behavior required for Shopify HMAC and other signature verification.
+`src/app/http/configure-express.js` installs **route-scoped raw body capture** for paths containing `/api/v1/inbound/marketplace-webhooks/`, matching the Fastify `preParsing` behavior required for Shopify HMAC and other signature verification.
 
 ## Tests
 
@@ -57,7 +57,7 @@ npm run test:jest
 
 ## Code layout
 
-- `src/nest/` — Nest bootstrap, modules, Express configuration
+- `src/app/` — Nest bootstrap, modules, Express configuration
 - `src/app/` — Legacy Fastify application (unchanged default entry)
 - `test/nest/` — Jest foundation tests
 

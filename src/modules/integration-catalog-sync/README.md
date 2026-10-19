@@ -66,7 +66,7 @@ Adapter methods: `syncProduct`, `syncOffer` (foundation stub no-op). No product 
 
 ## Worker wiring
 
-The worker composition root (`src/workers/bootstrap/wire-integration-catalog-sync.js`) supplies query ports and registers the enqueue inbox consumer `channel-catalog-sync.enqueue`.
+The worker composition root (`src/workers/wire-integration-catalog-sync.js`) supplies query ports and registers the enqueue inbox consumer `channel-catalog-sync.enqueue`.
 
 No HTTP routes in this phase.
 

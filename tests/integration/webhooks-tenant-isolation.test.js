@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/app/config/config.js';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { TENANT_SETTING } from '../../src/infrastructure/postgres/postgres-database.js';
 import { createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';

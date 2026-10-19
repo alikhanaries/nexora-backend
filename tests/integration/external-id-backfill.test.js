@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { createExternalIdMappingModule } from '../../src/modules/external-id-mapping/index.js';
 import { BackfillExternalIntegerIdMappings } from '../../src/modules/external-id-mapping/services/backfill-external-integer-id-mappings.js';
 import { PostgresExternalIdBackfillQueries } from '../../src/modules/external-id-mapping/repositories/postgres-external-id-backfill-queries.js';

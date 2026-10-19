@@ -41,8 +41,8 @@ describe('returns module physical MVC layout', () => {
     expect(content).toMatch(/views\/return\.mapper\.js/);
   });
 
-  it('does not leave active implementations under src/nest/returns', () => {
-    const legacy = join(repoRoot, 'src/nest/returns');
+  it('does not leave active implementations under src/app/returns', () => {
+    const legacy = join(repoRoot, 'src/app/returns');
     if (!existsSync(legacy)) return;
     expect(readdirSync(legacy).filter((n) => n.endsWith('.js'))).toEqual([]);
   });

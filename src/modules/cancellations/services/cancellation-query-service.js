@@ -21,33 +21,37 @@ function clampPage(page) {
     return requested;
 }
 
-export class DefaultCancellationQueryService {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async getCancellationById(tenantId, cancellationId, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        const cancellation = await this.deps.cancellations.findById(queryable, tenantId, cancellationId);
+/**
+ * @param {object} deps
+ * @param {import('../../authorization/public/index.js').AuthorizationService} deps.authorization
+ * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresQueryable} deps.queryable
+ * @param {import('../repositories/postgres-cancellation-repository.js').PostgresCancellationRepository} deps.cancellations
+ */
+export function createCancellationQueryService(deps) {
+    async function getCancellationById(tenantId, cancellationId, tx) {
+        const queryable = tx ?? deps.queryable;
+        const cancellation = await deps.cancellations.findById(queryable, tenantId, cancellationId);
         if (cancellation === null) {
             throw new NotFoundError('Cancellation was not found', { tenantId, cancellationId });
         }
-        const lines = await this.deps.cancellations.listLines(queryable, tenantId, cancellationId);
+        const lines = await deps.cancellations.listLines(queryable, tenantId, cancellationId);
         return {
             ...toCancellationDto(cancellation),
             lines: lines.map(toCancellationLineDto),
         };
     }
-    async getCancellationSummaryById(tenantId, cancellationId, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        const cancellation = await this.deps.cancellations.findById(queryable, tenantId, cancellationId);
+
+    async function getCancellationSummaryById(tenantId, cancellationId, tx) {
+        const queryable = tx ?? deps.queryable;
+        const cancellation = await deps.cancellations.findById(queryable, tenantId, cancellationId);
         if (cancellation === null) {
             throw new NotFoundError('Cancellation was not found', { tenantId, cancellationId });
         }
         return toCancellationDto(cancellation);
     }
-    async listCancellations(input) {
-        requireCancellationsRead(this.deps.authorization, input.actorPermissions);
+
+    async function listCancellations(input) {
+        requireCancellationsRead(deps.authorization, input.actorPermissions);
         const page = clampPage(input.page);
         const pageSize = clampPageSize(input.pageSize);
         const filters = {
@@ -62,10 +66,10 @@ export class DefaultCancellationQueryService {
             ...(input.updatedBefore === undefined ? {} : { updatedBefore: input.updatedBefore }),
         };
         const sortDirection = input.sortDirection ?? 'asc';
-        const totalCount = await this.deps.cancellations.count(this.deps.queryable, input.tenantId, filters);
-        const cancellations = await this.deps.cancellations.listPageOffset(this.deps.queryable, input.tenantId, filters, page, pageSize, sortDirection);
+        const totalCount = await deps.cancellations.count(deps.queryable, input.tenantId, filters);
+        const cancellations = await deps.cancellations.listPageOffset(deps.queryable, input.tenantId, filters, page, pageSize, sortDirection);
         const items = await Promise.all(cancellations.map(async (cancellation) => {
-            const lines = await this.deps.cancellations.listLines(this.deps.queryable, input.tenantId, cancellation.id);
+            const lines = await deps.cancellations.listLines(deps.queryable, input.tenantId, cancellation.id);
             return {
                 ...toCancellationDto(cancellation),
                 lines: lines.map(toCancellationLineDto),
@@ -77,5 +81,18 @@ export class DefaultCancellationQueryService {
             page,
             pageSize,
         };
+    }
+
+    return {
+        getCancellationById,
+        getCancellationSummaryById,
+        listCancellations,
+    };
+}
+
+/** @deprecated Prefer {@link createCancellationQueryService}; kept for existing import sites and JSDoc typedefs. */
+export class DefaultCancellationQueryService {
+    constructor(deps) {
+        return createCancellationQueryService(deps);
     }
 }

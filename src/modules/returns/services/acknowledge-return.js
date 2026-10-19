@@ -5,24 +5,22 @@ import { toReturnDetailDto } from '../views/return-dto.js';
 import { returnStatusChangedEvent } from './return-events.js';
 import { requireReturnsUpdate } from './return-permissions.js';
 
-export class AcknowledgeReturn {
-    deps;
-
-    constructor(deps) {
-        this.deps = deps;
-    }
-
-    async execute(input) {
-        requireReturnsUpdate(this.deps.authorization, input.actorPermissions);
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createAcknowledgeReturn(deps) {
+    async function execute(input) {
+        requireReturnsUpdate(deps.authorization, input.actorPermissions);
         const work = async (tx) => {
-            const existing = await this.deps.returns.lockForUpdate(tx, input.tenantId, input.returnId);
+            const existing = await deps.returns.lockForUpdate(tx, input.tenantId, input.returnId);
             if (existing === null) {
                 throw new NotFoundError('Return was not found', {
                     tenantId: input.tenantId,
                     returnId: input.returnId,
                 });
             }
-            const lines = await this.deps.returns.listReturnLines(tx, input.tenantId, input.returnId);
+            const lines = await deps.returns.listReturnLines(tx, input.tenantId, input.returnId);
             if (existing.status === ReturnStatus.APPROVED
                 || existing.status === ReturnStatus.RECEIVED
                 || existing.status === ReturnStatus.COMPLETED) {
@@ -37,11 +35,11 @@ export class AcknowledgeReturn {
             const previousStatus = existing.status;
             const now = new Date();
             const updated = existing.approve(now);
-            await this.deps.returns.updateReturn(tx, updated);
+            await deps.returns.updateReturn(tx, updated);
             const detail = toReturnDetailDto(updated, lines);
             if (previousStatus !== updated.status) {
-                await this.deps.eventRecorder.record(tx, returnStatusChangedEvent(detail, previousStatus));
-                await this.deps.auditRecorder?.record(tx, {
+                await deps.eventRecorder.record(tx, returnStatusChangedEvent(detail, previousStatus));
+                await deps.auditRecorder?.record(tx, {
                     tenantId: input.tenantId,
                     actorKind: input.actorKind,
                     actorId: input.actorId,
@@ -60,7 +58,16 @@ export class AcknowledgeReturn {
         };
         const returnDetail = input.transaction !== undefined
             ? await work(input.transaction)
-            : await this.deps.database.execute(work, { tenantId: input.tenantId });
+            : await deps.database.execute(work, { tenantId: input.tenantId });
         return { return: returnDetail };
+    }
+
+    return { execute };
+}
+
+/** @deprecated Prefer createAcknowledgeReturn */
+export class AcknowledgeReturn {
+    constructor(deps) {
+        return createAcknowledgeReturn(deps);
     }
 }

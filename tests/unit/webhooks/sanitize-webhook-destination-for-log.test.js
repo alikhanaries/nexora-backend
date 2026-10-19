@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeWebhookDestinationForLog } from '../../../src/modules/webhooks/services/sanitize-webhook-destination-for-log.js';
+import { sanitizeWebhookDestinationForLog } from '../../../src/modules/webhooks/outbound/services/sanitize-webhook-destination-for-log.js';
 
 describe('sanitizeWebhookDestinationForLog', () => {
     it('returns host and path without credentials', () => {

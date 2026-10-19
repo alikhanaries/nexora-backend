@@ -17,19 +17,73 @@ const ORDER_REFERENCE_TYPE = 'ORDER';
 const CANCELLATION_IDEMPOTENCY_PREFIX = 'cancellation';
 const EXTERNAL_REFERENCE_UNIQUE_CONSTRAINT = 'cancellations_tenant_external_reference_unique';
 
-export class CreateCancellation {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCreateCancellation(deps) {
+    /**
+     * @param {object} tx
+     * @param {object} input
+     * @param {import('../models/cancellation.js').Cancellation} existing
+     * @param {Map<string, number>} requestedByLine
+     * @param {string|null} reason
+     */
+    async function resolveExistingExternalReferenceCancellation(tx, input, existing, requestedByLine, reason) {
+        if (existing.orderId !== input.orderId) {
+            throw new ConflictError('Cancellation external reference belongs to a different order', {
+                externalReference: existing.externalReference,
+                orderId: input.orderId,
+                existingOrderId: existing.orderId,
+            });
+        }
+        const existingLines = await deps.cancellations.listLines(tx, input.tenantId, existing.id);
+        if (isEquivalentCancellationRequest(existing, existingLines, input, requestedByLine, reason)) {
+            return {
+                ...toCancellationDto(existing),
+                lines: existingLines.map(toCancellationLineDto),
+            };
+        }
+        throw new ConflictError('Cancellation external reference was reused with a different request', {
+            externalReference: existing.externalReference,
+        });
     }
-    async execute(input) {
+
+    async function releaseInventoryForCancellation(tx, tenantId, orderId, cancellationId, applied) {
+        const releaseInput = {
+            tenantId,
+            stockLocationId: applied.stockLocationId,
+            productId: applied.productId,
+            quantity: applied.quantity,
+            idempotencyKey: `${CANCELLATION_IDEMPOTENCY_PREFIX}:${cancellationId}:${applied.orderLineId}`,
+        };
+        try {
+            await deps.inventoryService.release({
+                ...releaseInput,
+                referenceType: CANCELLATION_REFERENCE_TYPE,
+                referenceId: cancellationId,
+            }, tx);
+        }
+        catch (error) {
+            if (!(error instanceof NotFoundError)) {
+                throw error;
+            }
+            await deps.inventoryService.release({
+                ...releaseInput,
+                referenceType: ORDER_REFERENCE_TYPE,
+                referenceId: orderId,
+            }, tx);
+        }
+    }
+
+    async function execute(input) {
         if (input.permission === 'cancellations.create') {
-            requireCancellationsCreate(this.deps.authorization, input.actorPermissions);
+            requireCancellationsCreate(deps.authorization, input.actorPermissions);
         }
         else {
-            requireOrdersCancel(this.deps.authorization, input.actorPermissions);
+            requireOrdersCancel(deps.authorization, input.actorPermissions);
         }
-        const order = await this.deps.orderQueryService.findOrderById(input.tenantId, input.orderId);
+        const order = await deps.orderQueryService.findOrderById(input.tenantId, input.orderId);
         if (order === null) {
             throw new NotFoundError('Order was not found', {
                 tenantId: input.tenantId,
@@ -51,18 +105,18 @@ export class CreateCancellation {
         const now = new Date();
         const work = async (tx) => {
             if (externalReference !== null) {
-                const existing = await this.deps.cancellations.findByExternalReference(tx, input.tenantId, externalReference);
+                const existing = await deps.cancellations.findByExternalReference(tx, input.tenantId, externalReference);
                 if (existing !== null) {
-                    return this.resolveExistingExternalReferenceCancellation(tx, input, existing, requestedByLine, reason);
+                    return resolveExistingExternalReferenceCancellation(tx, input, existing, requestedByLine, reason);
                 }
             }
 
-            await this.deps.orderFulfillmentService.lockOrderLinesForFulfillment(input.tenantId, input.orderId, tx);
+            await deps.orderFulfillmentService.lockOrderLinesForFulfillment(input.tenantId, input.orderId, tx);
 
             if (externalReference !== null) {
-                const existing = await this.deps.cancellations.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
+                const existing = await deps.cancellations.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
                 if (existing !== null) {
-                    return this.resolveExistingExternalReferenceCancellation(tx, input, existing, requestedByLine, reason);
+                    return resolveExistingExternalReferenceCancellation(tx, input, existing, requestedByLine, reason);
                 }
             }
 
@@ -75,18 +129,18 @@ export class CreateCancellation {
                 createdAt: now,
             });
             try {
-                await this.deps.cancellations.insertCancellation(tx, cancellation);
+                await deps.cancellations.insertCancellation(tx, cancellation);
             }
             catch (error) {
                 if (externalReference !== null && isExternalReferenceUniqueViolation(error)) {
-                    const raced = await this.deps.cancellations.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
+                    const raced = await deps.cancellations.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
                     if (raced !== null) {
-                        return this.resolveExistingExternalReferenceCancellation(tx, input, raced, requestedByLine, reason);
+                        return resolveExistingExternalReferenceCancellation(tx, input, raced, requestedByLine, reason);
                     }
                 }
                 throw error;
             }
-            const fulfillment = await this.deps.orderFulfillmentService.applyCancellation(tx, {
+            const fulfillment = await deps.orderFulfillmentService.applyCancellation(tx, {
                 tenantId: input.tenantId,
                 orderId: input.orderId,
                 lines: requestedLines.map((line) => ({
@@ -104,13 +158,13 @@ export class CreateCancellation {
                     quantity: applied.quantity,
                     createdAt: now,
                 });
-                await this.deps.cancellations.insertCancellationLine(tx, cancellationLine);
+                await deps.cancellations.insertCancellationLine(tx, cancellationLine);
                 persistedLines.push(cancellationLine);
-                await this.releaseInventoryForCancellation(tx, input.tenantId, input.orderId, cancellationId, applied);
+                await releaseInventoryForCancellation(tx, input.tenantId, input.orderId, cancellationId, applied);
             }
             const completed = cancellation.complete(now);
-            await this.deps.cancellations.updateCancellation(tx, completed);
-            await this.deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
+            await deps.cancellations.updateCancellation(tx, completed);
+            await deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
                 tenantId: input.tenantId,
                 provider: ExternalIdMappingProvider.COMPAT_V2,
                 resourceType: ExternalIdMappingResourceType.CANCELLATION,
@@ -120,9 +174,9 @@ export class CreateCancellation {
                 ...toCancellationDto(completed),
                 lines: persistedLines.map(toCancellationLineDto),
             };
-            await this.deps.eventRecorder.record(tx, cancellationCreatedEvent(dto));
-            await this.deps.eventRecorder.record(tx, cancellationCompletedEvent(dto));
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.eventRecorder.record(tx, cancellationCreatedEvent(dto));
+            await deps.eventRecorder.record(tx, cancellationCompletedEvent(dto));
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: input.actorKind,
                 actorId: input.actorId,
@@ -143,62 +197,17 @@ export class CreateCancellation {
         };
         const detail = input.transaction !== undefined
             ? await work(input.transaction)
-            : await this.deps.database.execute(work, { tenantId: input.tenantId });
+            : await deps.database.execute(work, { tenantId: input.tenantId });
         return { cancellation: detail };
     }
 
-    /**
-     * @param {object} tx
-     * @param {object} input
-     * @param {import('../models/cancellation.js').Cancellation} existing
-     * @param {Map<string, number>} requestedByLine
-     * @param {string|null} reason
-     */
-    async resolveExistingExternalReferenceCancellation(tx, input, existing, requestedByLine, reason) {
-        if (existing.orderId !== input.orderId) {
-            throw new ConflictError('Cancellation external reference belongs to a different order', {
-                externalReference: existing.externalReference,
-                orderId: input.orderId,
-                existingOrderId: existing.orderId,
-            });
-        }
-        const existingLines = await this.deps.cancellations.listLines(tx, input.tenantId, existing.id);
-        if (isEquivalentCancellationRequest(existing, existingLines, input, requestedByLine, reason)) {
-            return {
-                ...toCancellationDto(existing),
-                lines: existingLines.map(toCancellationLineDto),
-            };
-        }
-        throw new ConflictError('Cancellation external reference was reused with a different request', {
-            externalReference: existing.externalReference,
-        });
-    }
+    return { execute };
+}
 
-    async releaseInventoryForCancellation(tx, tenantId, orderId, cancellationId, applied) {
-        const releaseInput = {
-            tenantId,
-            stockLocationId: applied.stockLocationId,
-            productId: applied.productId,
-            quantity: applied.quantity,
-            idempotencyKey: `${CANCELLATION_IDEMPOTENCY_PREFIX}:${cancellationId}:${applied.orderLineId}`,
-        };
-        try {
-            await this.deps.inventoryService.release({
-                ...releaseInput,
-                referenceType: CANCELLATION_REFERENCE_TYPE,
-                referenceId: cancellationId,
-            }, tx);
-        }
-        catch (error) {
-            if (!(error instanceof NotFoundError)) {
-                throw error;
-            }
-            await this.deps.inventoryService.release({
-                ...releaseInput,
-                referenceType: ORDER_REFERENCE_TYPE,
-                referenceId: orderId,
-            }, tx);
-        }
+/** @deprecated Prefer createCreateCancellation */
+export class CreateCancellation {
+    constructor(deps) {
+        return createCreateCancellation(deps);
     }
 }
 

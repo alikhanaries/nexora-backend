@@ -43,8 +43,8 @@ describe('cancellations module physical MVC layout', () => {
     expect(content).toMatch(/views\/cancellation\.mapper\.js/);
   });
 
-  it('does not leave active implementations under src/nest/cancellations', () => {
-    const legacy = join(repoRoot, 'src/nest/cancellations');
+  it('does not leave active implementations under src/app/cancellations', () => {
+    const legacy = join(repoRoot, 'src/app/cancellations');
     if (!existsSync(legacy)) {
       return;
     }

@@ -1,9 +1,9 @@
-import { MarketplaceWebhookEventKind } from '../../../../marketplace-webhook-ingestion/public/marketplace-webhook-event-kind.js';
+import { MarketplaceWebhookEventKind } from '../../../../webhooks/marketplace/public/marketplace-webhook-event-kind.js';
 import {
     MarketplaceWebhookAuthenticationError,
     MarketplaceWebhookPermanentError,
     MarketplaceWebhookUnsupportedError,
-} from '../../../../marketplace-webhook-ingestion/public/marketplace-webhook-errors.js';
+} from '../../../../webhooks/marketplace/public/marketplace-webhook-errors.js';
 import { MarketplaceValidationError } from '../../../models/marketplace-errors.js';
 import { requireChannelStockLocationId } from '../../../../commerce-integrations/public/index.js';
 import { SHOPIFY_MARKETPLACE_KEY } from './shopify-catalog-adapter.js';
@@ -34,7 +34,7 @@ export class ShopifyMarketplaceWebhookAdapter {
     }
 
     /**
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
      */
     async authenticateWebhookRequest(context) {
         const runtime = await this.loadRuntime(context.connection);
@@ -54,7 +54,7 @@ export class ShopifyMarketplaceWebhookAdapter {
     }
 
     /**
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
      */
     async normalizeWebhookEvent(context) {
         const topic = headerValue(context.headers['x-shopify-topic']);
@@ -90,7 +90,7 @@ export class ShopifyMarketplaceWebhookAdapter {
     }
 
     /**
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookConnectionContext} connection
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookConnectionContext} connection
      * @param {unknown} payload
      * @param {string} topic
      */
@@ -124,7 +124,7 @@ export class ShopifyMarketplaceWebhookAdapter {
     }
 
     /**
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookConnectionContext} connection
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookConnectionContext} connection
      */
     async loadRuntime(connection) {
         return this.deps.database.execute(async (tx) => this.deps.marketplaceAdapterRuntimeFactory.createForSync({

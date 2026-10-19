@@ -4,7 +4,7 @@ import {
   tenantIdParamsSchema,
 } from '../../views/tenant.schemas.js';
 import { parseOrThrow } from '../../../../shared/validation/index.js';
-import { Public } from '../../../../nest/common/decorators/public.decorator.js';
+import { Public } from '../../../../app/common/decorators/public.decorator.js';
 import { TenantsService } from './tenants.service.js';
 
 export @Controller()

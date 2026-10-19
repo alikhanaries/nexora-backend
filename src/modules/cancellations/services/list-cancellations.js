@@ -2,13 +2,14 @@ import { clampCursorLimit, decodeCursor, encodeCursor, } from '../../../shared/p
 import { ValidationError } from '../../../shared/errors/index.js';
 import { toCancellationDto } from '../views/cancellation-dto.js';
 import { requireCancellationsRead } from './cancellation-permissions.js';
-export class ListCancellations {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireCancellationsRead(this.deps.authorization, input.actorPermissions);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createListCancellations(deps) {
+    async function execute(input) {
+        requireCancellationsRead(deps.authorization, input.actorPermissions);
         const limit = clampCursorLimit(input.limit);
         const fetchLimit = limit + 1;
         let cursorCreatedAt = null;
@@ -21,7 +22,7 @@ export class ListCancellations {
             cursorCreatedAt = new Date(parts[0] ?? '');
             cursorId = parts[1] ?? null;
         }
-        const page = await this.deps.cancellations.listPage(this.deps.queryable, input.tenantId, {
+        const page = await deps.cancellations.listPage(deps.queryable, input.tenantId, {
             ...(input.orderId === undefined ? {} : { orderId: input.orderId }),
             ...(input.status === undefined ? {} : { status: input.status }),
         }, fetchLimit, cursorCreatedAt, cursorId);
@@ -36,4 +37,6 @@ export class ListCancellations {
                 : null,
         };
     }
+
+    return { execute };
 }

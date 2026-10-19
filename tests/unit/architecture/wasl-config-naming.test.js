@@ -8,8 +8,8 @@ const FORBIDDEN = /\bnexora\b|\bchannelengine\b|\bchannel-engine\b/i;
 
 const CONFIG_LAYER_FILES = [
   'src/app/config/schema.js',
-  'src/nest/config/config.module.js',
-  'src/nest/database/database.tokens.js',
+  'src/app/config/wasl-config.module.js',
+  'src/app/database/database.tokens.js',
 ];
 
 describe('Wasl naming guard (config layer)', () => {

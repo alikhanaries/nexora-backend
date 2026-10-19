@@ -4,7 +4,7 @@ import { NoonOrderAdapter } from './noon/noon-order-adapter.js';
 import { ShopifyOrderAdapter } from './shopify/shopify-order-adapter.js';
 
 /**
- * @param {import('../../../marketplace-order-ingestion/public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} registry
+ * @param {import('../../../orders/marketplace-ingestion/public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} registry
  * @param {{ httpClient?: import('../http/marketplace-http-client.js').MarketplaceHttpClient, shopifyAdminApiVersion?: string | null, amazonLwaTokenUrl?: string | null, noonApiBaseUrl?: string | null, noonUserAgent?: string | null }} [deps]
  */
 export function registerMarketplaceOrderAdapters(registry, deps = {}) {

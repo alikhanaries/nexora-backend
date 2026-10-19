@@ -41,8 +41,8 @@ describe('shipments module physical MVC layout', () => {
     expect(content).toMatch(/views\/shipment\.mapper\.js/);
   });
 
-  it('does not leave active implementations under src/nest/shipments', () => {
-    const legacy = join(repoRoot, 'src/nest/shipments');
+  it('does not leave active implementations under src/app/shipments', () => {
+    const legacy = join(repoRoot, 'src/app/shipments');
     if (!existsSync(legacy)) return;
     expect(readdirSync(legacy).filter((n) => n.endsWith('.js'))).toEqual([]);
   });

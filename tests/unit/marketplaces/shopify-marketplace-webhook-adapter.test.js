@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { ShopifyMarketplaceWebhookAdapter } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-marketplace-webhook-adapter.js';
-import { MarketplaceWebhookAuthenticationError, MarketplaceWebhookUnsupportedError, } from '../../../src/modules/marketplace-webhook-ingestion/public/marketplace-webhook-errors.js';
+import { MarketplaceWebhookAuthenticationError, MarketplaceWebhookUnsupportedError, } from '../../../src/modules/webhooks/marketplace/public/marketplace-webhook-errors.js';
 import { buildShopifyGraphqlOrder } from './shopify-order-fixtures.js';
 
 const connection = {

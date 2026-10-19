@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/orders/marketplace-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
 import { NoonOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-order-adapter.js';
 import { mapNoonFbpiOrderToLifecycleCommand } from '../../../src/modules/marketplaces/repositories/adapters/noon/map-noon-fbpi-order-to-lifecycle-command.js';
 import {

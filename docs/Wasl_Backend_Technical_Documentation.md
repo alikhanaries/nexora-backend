@@ -506,7 +506,7 @@ The storage probe exists only on the API side; the worker instead asserts that j
 
 ### Graceful shutdown
 
-`src/app/bootstrap/shutdown.js` implements a single ordered routine used by both processes, bounded by `SERVER_SHUTDOWN_TIMEOUT_MS` (default 15000). Each step is wrapped so a failure is logged as a warning and does not abort the remaining steps, and each is raced against the time remaining until the global deadline.
+`src/app/shutdown.js` implements a single ordered routine used by both processes, bounded by `SERVER_SHUTDOWN_TIMEOUT_MS` (default 15000). Each step is wrapped so a failure is logged as a warning and does not abort the remaining steps, and each is raced against the time remaining until the global deadline.
 
 1. Log shutdown start.
 2. `readiness.markNotReady()` — readiness immediately reports failure so load balancers stop routing traffic.
@@ -2664,9 +2664,9 @@ Recommendations only. Nothing here is implemented, and nothing here should be re
 | ------- | -------------- |
 | API process entrypoint | `src/app/main.js` |
 | Worker process entrypoint | `src/workers/main.js` |
-| Infrastructure composition | `src/app/bootstrap/create-infrastructure.js` |
-| Application composition | `src/app/bootstrap/create-application.js` |
-| Graceful shutdown | `src/app/bootstrap/shutdown.js` |
+| Infrastructure composition | `src/app/create-infrastructure.js` |
+| Application composition | `src/app/create-application.js` |
+| Graceful shutdown | `src/app/shutdown.js` |
 | Configuration schema | `src/app/config/schema.js`, `src/app/config/config.js` |
 | HTTP server and plugin order | `src/app/http/create-server.js` |
 | Authentication | `src/app/http/plugins/authentication.plugin.js` |
@@ -2701,11 +2701,11 @@ Recommendations only. Nothing here is implemented, and nothing here should be re
 | Catalog sync job identifiers | `src/modules/integration-catalog-sync/services/build-catalog-sync-job-id.js` |
 | Adapter runtime factory | `src/modules/marketplaces/services/marketplace-adapter-runtime-factory.js` |
 | Adapter error classification | `src/modules/marketplaces/services/map-marketplace-error-to-adapter-error.js` |
-| Inbound webhook receipt | `src/modules/marketplace-webhook-ingestion/services/receive-marketplace-webhook.js` |
-| Order ingestion service | `src/modules/marketplace-order-ingestion/services/marketplace-order-ingestion-service.js` |
-| Webhook delivery | `src/modules/webhooks/services/webhook-delivery-service.js` |
-| Webhook signing | `src/modules/webhooks/services/webhook-request-signer.js` |
-| Webhook response classification | `src/modules/webhooks/services/classify-webhook-http-response.js` |
+| Inbound webhook receipt | `src/modules/webhooks/marketplace/services/receive-marketplace-webhook.js` |
+| Order ingestion service | `src/modules/orders/marketplace-ingestion/services/marketplace-order-ingestion-service.js` |
+| Webhook delivery | `src/modules/webhooks/outbound/services/webhook-delivery-service.js` |
+| Webhook signing | `src/modules/webhooks/outbound/services/webhook-request-signer.js` |
+| Webhook response classification | `src/modules/webhooks/outbound/services/classify-webhook-http-response.js` |
 | SSRF validation | `src/shared/security/validate-outbound-https-url.js`, `ssrf-validator.js` |
 | Postgres pool and transactions | `src/infrastructure/postgres/postgres-database.js` |
 | Migration runner | `src/infrastructure/postgres/migrator.js` |

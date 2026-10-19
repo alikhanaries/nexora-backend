@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const moduleRoot = join(repoRoot, 'src/modules/cancellations');
-const legacyNest = join(repoRoot, 'src/nest/cancellations');
+const legacyNest = join(repoRoot, 'src/app/cancellations');
 
 function ensureDir(path) {
   if (!existsSync(path)) {
@@ -144,8 +144,8 @@ function patchNestAdapter(content) {
       "from '../../../../shared/",
     )
     .replace("from '../../shared/", "from '../../../../shared/")
-    .replace("from '../common/", "from '../../../../nest/common/")
-    .replace("from '../domain/", "from '../../../../nest/domain/");
+    .replace("from '../common/", "from '../../../../app/common/")
+    .replace("from '../domain/", "from '../../../../app/di/");
 }
 
 // --- moves ---

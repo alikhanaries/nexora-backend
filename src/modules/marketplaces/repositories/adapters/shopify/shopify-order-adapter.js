@@ -52,7 +52,7 @@ export class ShopifyOrderAdapter extends BaseMarketplaceOrderAdapter {
 
     /**
      * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
-     * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderFetchContext} context
+     * @param {import('../../../../orders/marketplace-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderFetchContext} context
      */
     async fetchOrder(runtime, context) {
         return this.runWithResult(async () => {
@@ -76,8 +76,8 @@ export class ShopifyOrderAdapter extends BaseMarketplaceOrderAdapter {
 
     /**
      * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
-     * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderListContext} context
-     * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderListOptions} options
+     * @param {import('../../../../orders/marketplace-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderListContext} context
+     * @param {import('../../../../orders/marketplace-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderListOptions} options
      */
     async listOrders(runtime, context, options) {
         return this.runWithResult(async () => {
@@ -97,7 +97,7 @@ export class ShopifyOrderAdapter extends BaseMarketplaceOrderAdapter {
                 throw new MarketplaceValidationError('Shopify orders connection is invalid');
             }
             const edges = Array.isArray(connection.edges) ? connection.edges : [];
-            /** @type {import('../../../../marketplace-order-ingestion/public/normalized-marketplace-order.schema.js').NormalizedMarketplaceOrder[]} */
+            /** @type {import('../../../../orders/marketplace-ingestion/public/normalized-marketplace-order.schema.js').NormalizedMarketplaceOrder[]} */
             const orders = [];
             for (const edge of edges) {
                 const node = edge?.node;

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AesSecretEncryptor } from '../../src/infrastructure/auth/aes-secret-encryptor.js';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { MarketplaceAdapterRuntimeFactory } from '../../src/modules/marketplaces/services/marketplace-adapter-runtime-factory.js';
 import { PostgresMarketplaceConnectionRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-connection-repository.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../../src/modules/marketplaces/public/index.js';
@@ -10,8 +10,8 @@ import { registerMarketplaceOrderAdapters } from '../../src/modules/marketplaces
 import { ShopifyOrderAdapter } from '../../src/modules/marketplaces/repositories/adapters/shopify/shopify-order-adapter.js';
 import { ShopifyGraphqlClient } from '../../src/modules/marketplaces/repositories/adapters/shopify/shopify-graphql-client.js';
 import { MarketplaceHttpClient } from '../../src/modules/marketplaces/repositories/http/marketplace-http-client.js';
-import { createMarketplaceOrderIngestionModule } from '../../src/modules/marketplace-order-ingestion/index.js';
-import { MarketplaceOrderIngestionPermanentError } from '../../src/modules/marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
+import { createMarketplaceOrderIngestionModule } from '../../src/modules/orders/marketplace-ingestion/index.js';
+import { MarketplaceOrderIngestionPermanentError } from '../../src/modules/orders/marketplace-ingestion/public/marketplace-order-ingestion-errors.js';
 import { DefaultProductQueryService } from '../../src/modules/products/public/index.js';
 import { PostgresProductRepository } from '../../src/modules/products/repositories/postgres-product-repository.js';
 import { buildShopifyGraphqlOrder } from '../unit/marketplaces/shopify-order-fixtures.js';

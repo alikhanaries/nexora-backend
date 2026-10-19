@@ -16,70 +16,41 @@ import { resolveOrderLines } from './resolve-order-lines.js';
 const ORDER_REFERENCE_TYPE = 'ORDER';
 const EXTERNAL_REF_UNIQUE_CONSTRAINT = 'orders_tenant_channel_external_ref_unique';
 
-export class CreateIntegrationOrder {
-    deps;
-
-    constructor(deps) {
-        this.deps = deps;
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCreateIntegrationOrder(deps) {
+    /**
+     * @param {import('../models/order.js').Order} order
+     * @param {import('../models/order-line.js').OrderLine[]} lines
+     * @param {import('../models/customer-snapshot.js').CustomerSnapshot|null} customer
+     */
+    function toOrderDetail(order, lines, customer) {
+        return {
+            ...toOrderDto(order),
+            lines: lines.map(toOrderLineDto),
+            customer: customer === null ? null : toCustomerSnapshotDto(customer),
+        };
     }
 
-    async execute(input) {
-        requireOrdersIngest(this.deps.authorization, input.actorPermissions);
-        if (input.lines.length === 0) {
-            throw new ValidationError('Order must contain at least one line');
-        }
-        const externalOrderReference = normalizeRequiredExternalReference(input.externalOrderReference);
-        const currency = parseCurrency(input.currency);
-        const discountMinor = input.discountMinor ?? 0;
-        const taxMinor = input.taxMinor ?? 0;
-        const shippingMinor = input.shippingMinor ?? 0;
-        if (!Number.isInteger(discountMinor) || discountMinor < 0) {
-            throw new ValidationError('Discount must be a non-negative integer');
-        }
-        if (!Number.isInteger(taxMinor) || taxMinor < 0) {
-            throw new ValidationError('Tax must be a non-negative integer');
-        }
-        if (!Number.isInteger(shippingMinor) || shippingMinor < 0) {
-            throw new ValidationError('Shipping must be a non-negative integer');
-        }
-        await this.deps.commerceIntegrationQueryService.verifyChannelUsable(input.tenantId, input.channelId);
-        const resolvedLines = await this.resolveOrderLinesInTenantScope(input, currency, { skuFirst: true });
-        const subtotalMinor = resolvedLines.reduce((sum, line) => sum + line.lineTotalMinor, 0);
-        const totalMinor = subtotalMinor - discountMinor + taxMinor + shippingMinor;
-        if (totalMinor < 0) {
-            throw new BusinessRuleError('Order total cannot be negative');
-        }
-        const work = async (tx) => {
-            await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
-                `channel-order:${input.tenantId}:${input.channelId}:${externalOrderReference}`,
-            ], { operation: 'orders.advisory_channel_external_ref' });
-            const existing = await this.deps.orders.findByChannelAndExternalReference(tx, input.tenantId, input.channelId, externalOrderReference);
-            if (existing !== null) {
-                return this.resolveExistingChannelOrder(tx, input, existing, resolvedLines, currency, discountMinor, taxMinor, shippingMinor);
-            }
-            const lockedExisting = await this.deps.orders.lockByChannelAndExternalReferenceForUpdate(tx, input.tenantId, input.channelId, externalOrderReference);
-            if (lockedExisting !== null) {
-                return this.resolveExistingChannelOrder(tx, input, lockedExisting, resolvedLines, currency, discountMinor, taxMinor, shippingMinor);
-            }
-            return this.createNewChannelOrder(tx, input, {
-                externalOrderReference,
-                currency,
-                discountMinor,
-                taxMinor,
-                shippingMinor,
-                subtotalMinor,
-                totalMinor,
-                resolvedLines,
-            });
+    /**
+     * @param {object} input
+     * @param {string} currency
+     * @param {{ skuFirst?: boolean }} [options]
+     */
+    async function resolveOrderLinesInTenantScope(input, currency, options = {}) {
+        const payload = {
+            tenantId: input.tenantId,
+            channelId: input.channelId,
+            currency,
+            lines: input.lines,
         };
-        const detail = input.transaction !== undefined
-            ? await work(input.transaction)
-            : await this.deps.database.execute(work, { tenantId: input.tenantId });
-        const { ingestionOutcome, ...order } = detail;
-        return {
-            order,
-            ingestionOutcome: ingestionOutcome ?? 'created',
-        };
+        if (input.transaction !== undefined) {
+            return resolveOrderLines(deps, { ...payload, transaction: input.transaction }, options);
+        }
+        return deps.database.withTenant(input.tenantId, (tx) =>
+            resolveOrderLines(deps, { ...payload, transaction: tx }, options));
     }
 
     /**
@@ -92,9 +63,9 @@ export class CreateIntegrationOrder {
      * @param {number} taxMinor
      * @param {number} shippingMinor
      */
-    async resolveExistingChannelOrder(tx, input, existing, resolvedLines, currency, discountMinor, taxMinor, shippingMinor) {
-        const existingLines = await this.deps.orders.listOrderLines(tx, input.tenantId, existing.id);
-        const existingCustomer = await this.deps.orders.findCustomerSnapshot(tx, input.tenantId, existing.id);
+    async function resolveExistingChannelOrder(tx, input, existing, resolvedLines, currency, discountMinor, taxMinor, shippingMinor) {
+        const existingLines = await deps.orders.listOrderLines(tx, input.tenantId, existing.id);
+        const existingCustomer = await deps.orders.findCustomerSnapshot(tx, input.tenantId, existing.id);
         const equivalent = isEquivalentChannelOrderRequest(existing, existingLines, existingCustomer, {
             ...input,
             currency,
@@ -109,7 +80,7 @@ export class CreateIntegrationOrder {
             });
         }
         return {
-            ...this.toOrderDetail(existing, existingLines, existingCustomer),
+            ...toOrderDetail(existing, existingLines, existingCustomer),
             ingestionOutcome: 'duplicate',
         };
     }
@@ -119,10 +90,10 @@ export class CreateIntegrationOrder {
      * @param {object} input
      * @param {object} prepared
      */
-    async createNewChannelOrder(tx, input, prepared) {
+    async function createNewChannelOrder(tx, input, prepared) {
         const orderId = randomUUID();
         for (const line of prepared.resolvedLines) {
-            await this.deps.inventoryService.reserve({
+            await deps.inventoryService.reserve({
                 tenantId: input.tenantId,
                 stockLocationId: line.input.stockLocationId,
                 productId: line.productId,
@@ -131,7 +102,7 @@ export class CreateIntegrationOrder {
                 referenceId: orderId,
             }, tx);
         }
-        const orderNumber = await this.deps.orders.allocateOrderNumber(tx, input.tenantId);
+        const orderNumber = await deps.orders.allocateOrderNumber(tx, input.tenantId);
         const now = new Date();
         const order = Order.create({
             id: orderId,
@@ -151,15 +122,15 @@ export class CreateIntegrationOrder {
         const insertSavepoint = 'create_channel_order_insert';
         await tx.query(`SAVEPOINT ${insertSavepoint}`, [], { operation: 'orders.create_channel.savepoint' });
         try {
-            await this.deps.orders.insertOrder(tx, order);
+            await deps.orders.insertOrder(tx, order);
             await tx.query(`RELEASE SAVEPOINT ${insertSavepoint}`, [], { operation: 'orders.create_channel.release_savepoint' });
         }
         catch (error) {
             if (isExternalReferenceUniqueViolation(error)) {
                 await tx.query(`ROLLBACK TO SAVEPOINT ${insertSavepoint}`, [], { operation: 'orders.create_channel.rollback_savepoint' });
-                const raced = await this.deps.orders.lockByChannelAndExternalReferenceForUpdate(tx, input.tenantId, input.channelId, prepared.externalOrderReference);
+                const raced = await deps.orders.lockByChannelAndExternalReferenceForUpdate(tx, input.tenantId, input.channelId, prepared.externalOrderReference);
                 if (raced !== null) {
-                    return this.resolveExistingChannelOrder(tx, input, raced, prepared.resolvedLines, prepared.currency, prepared.discountMinor, prepared.taxMinor, prepared.shippingMinor);
+                    return resolveExistingChannelOrder(tx, input, raced, prepared.resolvedLines, prepared.currency, prepared.discountMinor, prepared.taxMinor, prepared.shippingMinor);
                 }
             }
             throw error;
@@ -182,7 +153,7 @@ export class CreateIntegrationOrder {
                 lineTotalMinor: line.lineTotalMinor,
                 currency: prepared.currency,
             });
-            await this.deps.orders.insertOrderLine(tx, orderLine);
+            await deps.orders.insertOrderLine(tx, orderLine);
             orderLines.push(orderLine);
         }
         const customerInput = input.customer ?? {};
@@ -200,17 +171,17 @@ export class CreateIntegrationOrder {
             shippingAddress: customerInput.shippingAddress ?? null,
             metadata: customerInput.metadata ?? {},
         });
-        await this.deps.orders.insertCustomerSnapshot(tx, snapshot);
+        await deps.orders.insertCustomerSnapshot(tx, snapshot);
         await assignOrderCompatibilityExternalIds(
-            this.deps.externalIntegerIdMappingCommandService,
+            deps.externalIntegerIdMappingCommandService,
             tx,
             input.tenantId,
             order.id,
             orderLines,
         );
         const orderDto = toOrderDto(order);
-        await this.deps.eventRecorder.record(tx, orderCreatedEvent(orderDto));
-        await this.deps.auditRecorder?.record(tx, {
+        await deps.eventRecorder.record(tx, orderCreatedEvent(orderDto));
+        await deps.auditRecorder?.record(tx, {
             tenantId: input.tenantId,
             actorKind: input.actorKind,
             actorId: input.actorId,
@@ -236,36 +207,72 @@ export class CreateIntegrationOrder {
         };
     }
 
-    /**
-     * @param {import('../models/order.js').Order} order
-     * @param {import('../models/order-line.js').OrderLine[]} lines
-     * @param {import('../models/customer-snapshot.js').CustomerSnapshot|null} customer
-     */
-    toOrderDetail(order, lines, customer) {
+    async function execute(input) {
+        requireOrdersIngest(deps.authorization, input.actorPermissions);
+        if (input.lines.length === 0) {
+            throw new ValidationError('Order must contain at least one line');
+        }
+        const externalOrderReference = normalizeRequiredExternalReference(input.externalOrderReference);
+        const currency = parseCurrency(input.currency);
+        const discountMinor = input.discountMinor ?? 0;
+        const taxMinor = input.taxMinor ?? 0;
+        const shippingMinor = input.shippingMinor ?? 0;
+        if (!Number.isInteger(discountMinor) || discountMinor < 0) {
+            throw new ValidationError('Discount must be a non-negative integer');
+        }
+        if (!Number.isInteger(taxMinor) || taxMinor < 0) {
+            throw new ValidationError('Tax must be a non-negative integer');
+        }
+        if (!Number.isInteger(shippingMinor) || shippingMinor < 0) {
+            throw new ValidationError('Shipping must be a non-negative integer');
+        }
+        await deps.commerceIntegrationQueryService.verifyChannelUsable(input.tenantId, input.channelId);
+        const resolvedLines = await resolveOrderLinesInTenantScope(input, currency, { skuFirst: true });
+        const subtotalMinor = resolvedLines.reduce((sum, line) => sum + line.lineTotalMinor, 0);
+        const totalMinor = subtotalMinor - discountMinor + taxMinor + shippingMinor;
+        if (totalMinor < 0) {
+            throw new BusinessRuleError('Order total cannot be negative');
+        }
+        const work = async (tx) => {
+            await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+                `channel-order:${input.tenantId}:${input.channelId}:${externalOrderReference}`,
+            ], { operation: 'orders.advisory_channel_external_ref' });
+            const existing = await deps.orders.findByChannelAndExternalReference(tx, input.tenantId, input.channelId, externalOrderReference);
+            if (existing !== null) {
+                return resolveExistingChannelOrder(tx, input, existing, resolvedLines, currency, discountMinor, taxMinor, shippingMinor);
+            }
+            const lockedExisting = await deps.orders.lockByChannelAndExternalReferenceForUpdate(tx, input.tenantId, input.channelId, externalOrderReference);
+            if (lockedExisting !== null) {
+                return resolveExistingChannelOrder(tx, input, lockedExisting, resolvedLines, currency, discountMinor, taxMinor, shippingMinor);
+            }
+            return createNewChannelOrder(tx, input, {
+                externalOrderReference,
+                currency,
+                discountMinor,
+                taxMinor,
+                shippingMinor,
+                subtotalMinor,
+                totalMinor,
+                resolvedLines,
+            });
+        };
+        const detail = input.transaction !== undefined
+            ? await work(input.transaction)
+            : await deps.database.execute(work, { tenantId: input.tenantId });
+        const { ingestionOutcome, ...order } = detail;
         return {
-            ...toOrderDto(order),
-            lines: lines.map(toOrderLineDto),
-            customer: customer === null ? null : toCustomerSnapshotDto(customer),
+            order,
+            ingestionOutcome: ingestionOutcome ?? 'created',
         };
     }
 
-    /**
-     * @param {object} input
-     * @param {string} currency
-     * @param {{ skuFirst?: boolean }} [options]
-     */
-    async resolveOrderLinesInTenantScope(input, currency, options = {}) {
-        const payload = {
-            tenantId: input.tenantId,
-            channelId: input.channelId,
-            currency,
-            lines: input.lines,
-        };
-        if (input.transaction !== undefined) {
-            return resolveOrderLines(this.deps, { ...payload, transaction: input.transaction }, options);
-        }
-        return this.deps.database.withTenant(input.tenantId, (tx) =>
-            resolveOrderLines(this.deps, { ...payload, transaction: tx }, options));
+    return { execute };
+}
+
+/** @deprecated Prefer {@link createCreateIntegrationOrder}; kept for existing import sites. */
+export class CreateIntegrationOrder {
+    constructor(deps) {
+        return createCreateIntegrationOrder(deps);
     }
 }
 

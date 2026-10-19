@@ -7,20 +7,20 @@ import {
 } from '../../views/inventory.mapper.js';
 import { requireActorContext } from '../../../../shared/context/require-principal.js';
 import { withCommerceMetric } from '../../../../shared/metrics/record-commerce-operation.js';
-import { CORE_DOMAIN } from '../../../../nest/domain/core-domain.tokens.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
 export @Injectable()
 class InventoryService {
-  constructor(@Inject(CORE_DOMAIN) coreDomain) {
-    this.coreDomain = coreDomain;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.coreServices = coreServices;
   }
 
   get useCases() {
-    return this.coreDomain.inventory.useCases;
+    return this.coreServices.inventory.useCases;
   }
 
   get metrics() {
-    return this.coreDomain.metrics;
+    return this.coreServices.metrics;
   }
 
   async listStockLocations() {

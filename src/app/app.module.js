@@ -19,7 +19,7 @@ import { ShipmentsModule } from '../modules/shipments/public/nest-shipments-modu
 import { ReturnsModule } from '../modules/returns/public/nest-returns-module.js';
 import { CompatibilityOrdersModule } from '../modules/compatibility/controllers/nest/compatibility-orders.module.js';
 import { CompatibilityHttpModule } from '../modules/compatibility/controllers/nest/compatibility-http.module.js';
-import { StockConnectIntegrationModule } from '../modules/stock-connect/controllers/nest/stock-connect-integration.module.js';
+import { StockConnectIntegrationModule } from '../modules/erp/stock-connect/controllers/nest/stock-connect-integration.module.js';
 import { WaslConfigModule } from './config/wasl-config.module.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { AuthGuard } from './common/guards/auth.guard.js';

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ExternalIdMappingResourceType } from '../../src/modules/external-id-mapping/public/index.js';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import {
     createOrder,

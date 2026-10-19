@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { BusinessRuleError } from '../../src/shared/errors/index.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { countOutboxEventsForOrder } from './compatibility-helpers.js';

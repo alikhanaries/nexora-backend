@@ -2,13 +2,14 @@ import { clampCursorLimit, decodeCursor, encodeCursor, } from '../../../shared/p
 import { ValidationError } from '../../../shared/errors/index.js';
 import { toReturnDetailDto } from '../views/return-dto.js';
 import { requireReturnsRead } from './return-permissions.js';
-export class ListReturns {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireReturnsRead(this.deps.authorization, input.actorPermissions);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createListReturns(deps) {
+    async function execute(input) {
+        requireReturnsRead(deps.authorization, input.actorPermissions);
         const limit = clampCursorLimit(input.limit);
         const fetchLimit = limit + 1;
         let cursorCreatedAt = null;
@@ -21,14 +22,14 @@ export class ListReturns {
             cursorCreatedAt = new Date(parts[0] ?? '');
             cursorId = parts[1] ?? null;
         }
-        const page = await this.deps.returns.listPage(this.deps.queryable, input.tenantId, {
+        const page = await deps.returns.listPage(deps.queryable, input.tenantId, {
             ...(input.orderId === undefined ? {} : { orderId: input.orderId }),
             ...(input.status === undefined ? {} : { status: input.status }),
         }, fetchLimit, cursorCreatedAt, cursorId);
         const hasMore = page.items.length > limit;
         const items = hasMore ? page.items.slice(0, limit) : page.items;
         const details = await Promise.all(items.map(async (returnEntity) => {
-            const lines = await this.deps.returns.listReturnLines(this.deps.queryable, input.tenantId, returnEntity.id);
+            const lines = await deps.returns.listReturnLines(deps.queryable, input.tenantId, returnEntity.id);
             return toReturnDetailDto(returnEntity, lines);
         }));
         const last = items.at(-1);
@@ -40,4 +41,6 @@ export class ListReturns {
                 : null,
         };
     }
+
+    return { execute };
 }

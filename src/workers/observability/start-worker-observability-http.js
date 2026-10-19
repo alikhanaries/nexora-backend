@@ -3,12 +3,12 @@ import { createWorkerObservabilityHttpServer } from './create-worker-observabili
 
 /**
  * @param {object} input
- * @param {import('../../app/config/config.js').AppConfig['workerObservability']} input.workerObservability
+ * @param {import('../app/config/config.js').AppConfig['workerObservability']} input.workerObservability
  * @param {number} input.serverPort
- * @param {import('../../app/observability/readiness.js').ReadinessService} input.readiness
- * @param {import('../../shared/metrics/metrics-recorder.js').MetricsRecorder} input.metrics
+ * @param {import('../app/observability/readiness.js').ReadinessService} input.readiness
+ * @param {import('../shared/metrics/metrics-recorder.js').MetricsRecorder} input.metrics
  * @param {boolean} input.metricsEnabled
- * @param {import('../../shared/logging/logger.port.js').Logger} [input.logger]
+ * @param {import('../shared/logging/logger.port.js').Logger} [input.logger]
  */
 export async function startWorkerObservabilityHttp(input) {
     const { workerObservability, serverPort, readiness, metrics, metricsEnabled, logger } = input;

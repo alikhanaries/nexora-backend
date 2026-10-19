@@ -25,6 +25,9 @@ src/modules/<module-name>/
 | Marketplace order ingestion / lifecycle | `orders/marketplace-ingestion/` |
 | Marketplace inbound webhooks | `webhooks/marketplace/` |
 | Merchant outbound webhooks (subscriptions / delivery) | `webhooks/outbound/` |
+| ERP adapters (StockConnect, future ERPs) | `erp/<erp-name>/` |
+
+See [erp/README.md](erp/README.md).
 
 ### Mapping from the old layered names
 
@@ -39,7 +42,7 @@ Do **not** add new code under `domain/`, `application/`, `infrastructure/`, or `
 
 ## Nest HTTP surface
 
-Feature Nest modules live under each business module’s `controllers/nest/` (auth → `identity`, Merchant/CE adapters → `compatibility`, StockConnect → `stock-connect`, health → `health`, etc.).
+Feature Nest modules live under each business module’s `controllers/nest/` (auth → `identity`, Merchant/CE adapters → `compatibility`, StockConnect → `erp/stock-connect`, health → `health`, etc.).
 
 `src/app/` is the composition root (`main.js`, `app.module.js`, shared guards/filters, config DI module, database module, DI tokens). Import feature Nest modules from there — do not add feature controllers under `src/app/`.
 

@@ -1,12 +1,12 @@
 import { Queue, Worker } from 'bullmq';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '../../src/app/config/config.js';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { JobName } from '../../src/infrastructure/queue/queue-names.js';
-import { ExecuteMarketplaceLifecycleJob } from '../../src/modules/marketplace-order-ingestion/services/execute-marketplace-lifecycle-job.js';
-import { MarketplaceOrderLifecycleProcessor } from '../../src/modules/marketplace-webhook-ingestion/services/marketplace-order-lifecycle-processor.js';
-import { MarketplaceWebhookEventKind } from '../../src/modules/marketplace-webhook-ingestion/models/marketplace-webhook-event-kind.js';
-import { NormalizedMarketplaceOrderStatus } from '../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
+import { ExecuteMarketplaceLifecycleJob } from '../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
+import { MarketplaceOrderLifecycleProcessor } from '../../src/modules/webhooks/marketplace/services/marketplace-order-lifecycle-processor.js';
+import { MarketplaceWebhookEventKind } from '../../src/modules/webhooks/marketplace/models/marketplace-webhook-event-kind.js';
+import { NormalizedMarketplaceOrderStatus } from '../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-order-status.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 
 describe('marketplace lifecycle worker integration', () => {

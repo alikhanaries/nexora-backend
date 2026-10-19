@@ -33,8 +33,6 @@ const MODULES = [
   'identity',
   'integration-catalog-sync',
   'inventory',
-  'marketplace-order-ingestion',
-  'marketplace-webhook-ingestion',
   'marketplaces',
   'mfa',
   'offers',
@@ -44,7 +42,7 @@ const MODULES = [
   'webhooks',
 ];
 
-/** Nest dirs under src/nest that belong to a business module. */
+/** Nest dirs under src/app that belong to a business module. */
 const NEST_FEATURE_MOVES = [
   { nest: 'api-keys', module: 'api-keys' },
   { nest: 'audit', module: 'audit' },
@@ -170,17 +168,17 @@ function rewriteMovedNestFile(originalContent) {
   // ../../shared → ../../../../shared
   next = next.replaceAll("from '../../shared/", "from '../../../../shared/");
   next = next.replaceAll('from "../../shared/', 'from "../../../../shared/');
-  // ../common (nest common) → ../../../../nest/common? From controllers/nest, nest common is ../../../common under nest — actually nest common is at src/nest/common
-  // From src/modules/X/controllers/nest → src/nest/common is ../../../../nest/common
-  next = next.replaceAll("from '../common/", "from '../../../../nest/common/");
-  next = next.replaceAll('from "../common/', 'from "../../../../nest/common/');
-  next = next.replaceAll("from '../../common/", "from '../../../../nest/common/");
-  next = next.replaceAll('from "../../common/', 'from "../../../../nest/common/');
-  // ../domain (core-domain tokens) was src/nest/domain
-  next = next.replaceAll("from '../domain/", "from '../../../../nest/domain/");
-  next = next.replaceAll('from "../domain/', 'from "../../../../nest/domain/');
-  next = next.replaceAll("from '../../domain/", "from '../../../../nest/domain/");
-  next = next.replaceAll('from "../../domain/', 'from "../../../../nest/domain/');
+  // ../common (nest common) → ../../../../nest/common? From controllers/nest, nest common is ../../../common under nest — actually nest common is at src/app/common
+  // From src/modules/X/controllers/nest → src/app/common is ../../../../nest/common
+  next = next.replaceAll("from '../common/", "from '../../../../app/common/");
+  next = next.replaceAll('from "../common/', 'from "../../../../app/common/');
+  next = next.replaceAll("from '../../common/", "from '../../../../app/common/");
+  next = next.replaceAll('from "../../common/', 'from "../../../../app/common/');
+  // ../domain (core-domain tokens) was src/app/domain
+  next = next.replaceAll("from '../domain/", "from '../../../../app/di/");
+  next = next.replaceAll('from "../domain/', 'from "../../../../app/di/');
+  next = next.replaceAll("from '../../domain/", "from '../../../../app/di/");
+  next = next.replaceAll('from "../../domain/', 'from "../../../../app/di/');
   return next;
 }
 
@@ -196,7 +194,7 @@ for (const moduleName of MODULES) {
 // 2) Move Nest feature folders (capture file contents first for rewrite after move)
 const nestFileRewrites = [];
 for (const { nest, module } of NEST_FEATURE_MOVES) {
-  const fromDir = join(repoRoot, 'src/nest', nest);
+  const fromDir = join(repoRoot, 'src/app', nest);
   if (!existsSync(fromDir)) continue;
   const toDir = join(repoRoot, 'src/modules', module, 'controllers', 'nest');
   ensureDir(toDir);
@@ -230,7 +228,7 @@ for (const { nest, module } of NEST_FEATURE_MOVES) {
 }
 
 // 3) Rewrite remaining source imports (module layer paths + app.module)
-const appModulePath = join(repoRoot, 'src/nest/app.module.js');
+const appModulePath = join(repoRoot, 'src/app/app.module.js');
 if (existsSync(appModulePath)) {
   let content = readFileSync(appModulePath, 'utf8');
   const map = [
@@ -240,8 +238,8 @@ if (existsSync(appModulePath)) {
     ["./inventory/inventory.module.js", "../modules/inventory/controllers/nest/inventory.module.js"],
     ["./commerce-integrations/commerce-integrations.module.js", "../modules/commerce-integrations/controllers/nest/commerce-integrations.module.js"],
     ["./marketplaces/marketplaces.module.js", "../modules/marketplaces/controllers/nest/marketplaces.module.js"],
-    ["./webhooks/webhooks.module.js", "../modules/webhooks/controllers/nest/webhooks.module.js"],
-    ["./webhook-subscriptions/webhook-subscriptions.module.js", "../modules/webhooks/controllers/nest/webhook-subscriptions.module.js"],
+    ["./webhooks/webhooks.module.js", "../modules/webhooks/outbound/controllers/nest/webhooks.module.js"],
+    ["./webhook-subscriptions/webhook-subscriptions.module.js", "../modules/webhooks/outbound/controllers/nest/webhook-subscriptions.module.js"],
     ["./api-keys/api-keys.module.js", "../modules/api-keys/controllers/nest/api-keys.module.js"],
     ["./audit/audit.module.js", "../modules/audit/controllers/nest/audit.module.js"],
     ["./authorization/authorization.module.js", "../modules/authorization/controllers/nest/authorization.module.js"],
@@ -251,7 +249,7 @@ if (existsSync(appModulePath)) {
   const before = content;
   for (const [a, b] of map) content = content.replaceAll(a, b);
   if (content !== before) {
-    console.log(`${dryRun ? '[dry] ' : ''}rewrite src/nest/app.module.js`);
+    console.log(`${dryRun ? '[dry] ' : ''}rewrite src/app/app.module.js`);
     if (!dryRun) writeFileSync(appModulePath, content, 'utf8');
   }
 }

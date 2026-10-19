@@ -1,8 +1,8 @@
-import { MarketplaceWebhookEventKind } from '../../../../marketplace-webhook-ingestion/public/marketplace-webhook-event-kind.js';
+import { MarketplaceWebhookEventKind } from '../../../../webhooks/marketplace/public/marketplace-webhook-event-kind.js';
 import {
     MarketplaceWebhookPermanentError,
     MarketplaceWebhookUnsupportedError,
-} from '../../../../marketplace-webhook-ingestion/services/marketplace-webhook-errors.js';
+} from '../../../../webhooks/marketplace/services/marketplace-webhook-errors.js';
 import { AMAZON_MARKETPLACE_KEY } from './amazon-catalog-adapter.js';
 import { parseAmazonSnsEnvelope } from './parse-amazon-sns-envelope.js';
 
@@ -14,7 +14,7 @@ export class AmazonWebhookAdapter {
     }
 
     /**
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
      */
     async authenticateWebhookRequest(context) {
         const parsed = parseAmazonSnsEnvelope(context.rawBody);
@@ -26,7 +26,7 @@ export class AmazonWebhookAdapter {
     }
 
     /**
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
      */
     async normalizeWebhookEvent(context) {
         const parsed = parseAmazonSnsEnvelope(context.rawBody);

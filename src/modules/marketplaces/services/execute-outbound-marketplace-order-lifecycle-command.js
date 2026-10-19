@@ -4,12 +4,12 @@ import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
 } from '../../integration-catalog-sync/public/catalog-sync-adapter-errors.js';
-import { MarketplaceOrderLifecycleOperation } from '../../marketplace-order-ingestion/index.js';
+import { MarketplaceOrderLifecycleOperation } from '../../orders/marketplace-ingestion/index.js';
 import {
     MarketplaceOrderLifecyclePermanentError,
     MarketplaceOrderLifecycleRetryError,
     MarketplaceOrderLifecycleUnsupportedError,
-} from '../../marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
+} from '../../orders/marketplace-ingestion/public/marketplace-order-lifecycle-errors.js';
 import { mapMarketplaceErrorToAdapterError } from '../public/index.js';
 
 const ROUTE_ID = 'marketplace-order-lifecycle/outbound';
@@ -27,7 +27,7 @@ export class ExecuteOutboundMarketplaceOrderLifecycleCommand {
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
      * @param {import('../../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} [deps.idempotency]
      * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} [deps.commerceIntegrationQueryService]
-     * @param {import('../../marketplace-order-ingestion/public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} [deps.marketplaceLookup]
+     * @param {import('../../orders/marketplace-ingestion/public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} [deps.marketplaceLookup]
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
      */

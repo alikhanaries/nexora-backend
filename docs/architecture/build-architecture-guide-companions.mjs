@@ -29,7 +29,7 @@ function walk(dir, acc = [], opts = {}) {
 }
 
 function layerForPath(path) {
-  if (path.startsWith('src/nest/')) return 'nest-http';
+  if (path.startsWith('src/app/')) return 'nest-http';
   if (path.startsWith('src/modules/')) return 'domain-module';
   if (path.startsWith('src/app/')) return 'application-bootstrap';
   if (path.startsWith('src/infrastructure/')) return 'infrastructure';
@@ -43,7 +43,7 @@ function layerForPath(path) {
 }
 
 function scanNestControllers() {
-  const nestDir = join(ROOT, 'src/nest');
+  const nestDir = join(ROOT, 'src/app');
   const re = /@(Get|Post|Put|Patch|Delete)\(\s*['`]([^'`]+)['`]/g;
   const routes = [];
   for (const file of walk(nestDir)) {
@@ -88,7 +88,7 @@ writeFileSync(join(OUT_DIR, 'Wasl_Backend_Source_File_Inventory.csv'), inventory
 const routeMd = [
   '# Nest HTTP endpoint inventory (static scan)',
   '',
-  `Generated from \`src/nest/**/*.controller.js\` decorator paths.`,
+  `Generated from \`src/app/**/*.controller.js\` decorator paths.`,
   '',
   `**Total routes:** ${nestRoutes.length}`,
   '',

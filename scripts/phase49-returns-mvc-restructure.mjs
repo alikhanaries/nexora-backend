@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const moduleRoot = join(repoRoot, 'src/modules/returns');
-const legacyNest = join(repoRoot, 'src/nest/returns');
+const legacyNest = join(repoRoot, 'src/app/returns');
 
 function ensureDir(path) {
   if (!existsSync(path)) mkdirSync(path, { recursive: true });
@@ -107,8 +107,8 @@ function patchNestAdapter(content) {
     .replace("from '../../modules/returns/views/return.mapper.js'", "from '../../views/return.mapper.js'")
     .replace("from '../../modules/orders/views/order.schemas.js'", "from '../../views/return.schemas.js'")
     .replace("from '../../shared/", "from '../../../../shared/")
-    .replace("from '../common/", "from '../../../../nest/common/")
-    .replace("from '../domain/", "from '../../../../nest/domain/");
+    .replace("from '../common/", "from '../../../../app/common/")
+    .replace("from '../domain/", "from '../../../../app/di/");
 }
 
 ensureDir(join(moduleRoot, 'models'));

@@ -1,8 +1,8 @@
-import { MarketplaceWebhookEventKind } from '../../../../marketplace-webhook-ingestion/public/marketplace-webhook-event-kind.js';
+import { MarketplaceWebhookEventKind } from '../../../../webhooks/marketplace/public/marketplace-webhook-event-kind.js';
 import {
     MarketplaceWebhookPermanentError,
     MarketplaceWebhookUnsupportedError,
-} from '../../../../marketplace-webhook-ingestion/services/marketplace-webhook-errors.js';
+} from '../../../../webhooks/marketplace/services/marketplace-webhook-errors.js';
 import { MarketplaceValidationError } from '../../../models/marketplace-errors.js';
 import { NAMSHI_MARKETPLACE_KEY } from './namshi-catalog-adapter.js';
 import { parseNamshiFbpiWebhookEvent } from './parse-namshi-fbpi-webhook-event.js';
@@ -18,14 +18,14 @@ export class NamshiWebhookAdapter {
     /**
      * Ingress token resolves tenant/channel; FBPI events do not carry a separate HMAC in Wasl.
      *
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} _context
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} _context
      */
     async authenticateWebhookRequest(_context) {
         return undefined;
     }
 
     /**
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
      */
     async normalizeWebhookEvent(context) {
         let event;

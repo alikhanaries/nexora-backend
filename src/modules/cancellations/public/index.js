@@ -1,2 +1,8 @@
-export { DefaultCancellationQueryService, } from '../services/cancellation-query-service.js';
-export { DefaultCancellationCommandService, } from './cancellation-command-service.js';
+export {
+    createCancellationQueryService,
+    DefaultCancellationQueryService,
+} from '../services/cancellation-query-service.js';
+export {
+    createCancellationCommandService,
+    DefaultCancellationCommandService,
+} from './cancellation-command-service.js';

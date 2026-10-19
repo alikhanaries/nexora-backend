@@ -3,13 +3,15 @@ import { OrderLineStatus } from '../models/order-line-status.js';
 import { OrderStatus, isOrderCancellable } from '../models/order-status.js';
 import { toOrderDto } from '../views/order-dto.js';
 import { orderCancelledEvent, orderStatusChangedEvent } from './order-events.js';
-export class DefaultOrderFulfillmentService {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async applyCancellation(transaction, input) {
-        const order = await this.deps.orders.lockOrderForUpdate(transaction, input.tenantId, input.orderId);
+
+/**
+ * @param {object} deps
+ * @param {import('../repositories/postgres-order-repository.js').PostgresOrderRepository} deps.orders
+ * @param {object} deps.eventRecorder
+ */
+export function createOrderFulfillmentService(deps) {
+    async function applyCancellation(transaction, input) {
+        const order = await deps.orders.lockOrderForUpdate(transaction, input.tenantId, input.orderId);
         if (order === null) {
             throw new NotFoundError('Order was not found', {
                 tenantId: input.tenantId,
@@ -22,7 +24,7 @@ export class DefaultOrderFulfillmentService {
                 status: order.status,
             });
         }
-        const lockedLines = await this.deps.orders.lockOrderLinesForUpdate(transaction, input.tenantId, input.orderId);
+        const lockedLines = await deps.orders.lockOrderLinesForUpdate(transaction, input.tenantId, input.orderId);
         if (lockedLines.length === 0) {
             throw new BusinessRuleError('Order has no lines to cancel');
         }
@@ -63,7 +65,7 @@ export class DefaultOrderFulfillmentService {
                 status,
                 updatedAt: now,
             });
-            await this.deps.orders.updateOrderLine(transaction, updatedLine);
+            await deps.orders.updateOrderLine(transaction, updatedLine);
             lineById.set(line.id, updatedLine);
             appliedLines.push({
                 orderLineId: line.id,
@@ -78,10 +80,10 @@ export class DefaultOrderFulfillmentService {
         let updatedOrder = order;
         if (fullyCancelled) {
             updatedOrder = order.transitionTo(OrderStatus.CANCELLED, now);
-            await this.deps.orders.updateOrder(transaction, updatedOrder);
+            await deps.orders.updateOrder(transaction, updatedOrder);
             const orderDto = toOrderDto(updatedOrder);
-            await this.deps.eventRecorder.record(transaction, orderStatusChangedEvent(orderDto, previousOrderStatus));
-            await this.deps.eventRecorder.record(transaction, orderCancelledEvent(orderDto));
+            await deps.eventRecorder.record(transaction, orderStatusChangedEvent(orderDto, previousOrderStatus));
+            await deps.eventRecorder.record(transaction, orderCancelledEvent(orderDto));
         }
         return {
             order: toOrderDto(updatedOrder),
@@ -89,8 +91,9 @@ export class DefaultOrderFulfillmentService {
             previousOrderStatus,
         };
     }
-    async lockOrderLinesForFulfillment(tenantId, orderId, tx) {
-        const order = await this.deps.orders.lockOrderForUpdate(tx, tenantId, orderId);
+
+    async function lockOrderLinesForFulfillment(tenantId, orderId, tx) {
+        const order = await deps.orders.lockOrderForUpdate(tx, tenantId, orderId);
         if (order === null) {
             throw new NotFoundError('Order was not found', { tenantId, orderId });
         }
@@ -106,13 +109,14 @@ export class DefaultOrderFulfillmentService {
                 status: order.status,
             });
         }
-        return this.deps.orders.lockOrderLinesForUpdate(tx, tenantId, orderId);
+        return deps.orders.lockOrderLinesForUpdate(tx, tenantId, orderId);
     }
-    async applyShipmentQuantities(tenantId, orderId, lines, tx) {
+
+    async function applyShipmentQuantities(tenantId, orderId, lines, tx) {
         if (lines.length === 0) {
             throw new ValidationError('At least one shipment line is required');
         }
-        const locked = await this.lockOrderLinesForFulfillment(tenantId, orderId, tx);
+        const locked = await lockOrderLinesForFulfillment(tenantId, orderId, tx);
         const byId = new Map(locked.map((line) => [line.id, line]));
         for (const input of lines) {
             if (!Number.isInteger(input.quantity) || input.quantity <= 0) {
@@ -141,12 +145,13 @@ export class DefaultOrderFulfillmentService {
                     ? OrderLineStatus.CLOSED
                     : line.status,
             });
-            await this.deps.orders.updateOrderLine(tx, updated);
+            await deps.orders.updateOrderLine(tx, updated);
             byId.set(input.orderLineId, updated);
         }
     }
-    async reverseShipmentQuantities(tenantId, orderId, lines, tx) {
-        const locked = await this.lockOrderLinesForFulfillment(tenantId, orderId, tx);
+
+    async function reverseShipmentQuantities(tenantId, orderId, lines, tx) {
+        const locked = await lockOrderLinesForFulfillment(tenantId, orderId, tx);
         const byId = new Map(locked.map((line) => [line.id, line]));
         for (const input of lines) {
             if (!Number.isInteger(input.quantity) || input.quantity <= 0) {
@@ -174,16 +179,17 @@ export class DefaultOrderFulfillmentService {
                     ? OrderLineStatus.OPEN
                     : line.status,
             });
-            await this.deps.orders.updateOrderLine(tx, updated);
+            await deps.orders.updateOrderLine(tx, updated);
             byId.set(input.orderLineId, updated);
         }
     }
-    async evaluateOrderShipmentState(tenantId, orderId, tx) {
-        const order = await this.deps.orders.findById(tx, tenantId, orderId);
+
+    async function evaluateOrderShipmentState(tenantId, orderId, tx) {
+        const order = await deps.orders.findById(tx, tenantId, orderId);
         if (order === null) {
             throw new NotFoundError('Order was not found', { tenantId, orderId });
         }
-        const lines = await this.deps.orders.listOrderLines(tx, tenantId, orderId);
+        const lines = await deps.orders.listOrderLines(tx, tenantId, orderId);
         const allNonCancelledShipped = lines.every((line) => line.shippedQuantity >= line.quantity - line.cancelledQuantity);
         if (!allNonCancelledShipped) {
             return;
@@ -202,7 +208,22 @@ export class DefaultOrderFulfillmentService {
         if (updated.status === previousStatus) {
             return;
         }
-        await this.deps.orders.updateOrder(tx, updated);
-        await this.deps.eventRecorder.record(tx, orderStatusChangedEvent(toOrderDto(updated), previousStatus));
+        await deps.orders.updateOrder(tx, updated);
+        await deps.eventRecorder.record(tx, orderStatusChangedEvent(toOrderDto(updated), previousStatus));
+    }
+
+    return {
+        applyCancellation,
+        lockOrderLinesForFulfillment,
+        applyShipmentQuantities,
+        reverseShipmentQuantities,
+        evaluateOrderShipmentState,
+    };
+}
+
+/** @deprecated Prefer {@link createOrderFulfillmentService}; kept for existing import sites. */
+export class DefaultOrderFulfillmentService {
+    constructor(deps) {
+        return createOrderFulfillmentService(deps);
     }
 }

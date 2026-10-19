@@ -1,5 +1,5 @@
-export { CreateTenant } from './create-tenant.js';
-export { GetTenant } from './get-tenant.js';
-export { SuspendTenant, } from './suspend-tenant.js';
-export { ReactivateTenant, } from './reactivate-tenant.js';
-export { CloseTenant } from './close-tenant.js';
+export { createCreateTenant, CreateTenant } from './create-tenant.js';
+export { createGetTenant, GetTenant } from './get-tenant.js';
+export { createSuspendTenant, SuspendTenant } from './suspend-tenant.js';
+export { createReactivateTenant, ReactivateTenant } from './reactivate-tenant.js';
+export { createCloseTenant, CloseTenant } from './close-tenant.js';

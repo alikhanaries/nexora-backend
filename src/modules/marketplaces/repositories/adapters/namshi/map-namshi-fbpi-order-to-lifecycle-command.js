@@ -1,5 +1,5 @@
-import { MarketplaceOrderLifecycleOperation } from '../../../../marketplace-order-ingestion/public/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../marketplace-order-ingestion/public/normalized-marketplace-lifecycle-target-status.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../../orders/marketplace-ingestion/public/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../orders/marketplace-ingestion/public/normalized-marketplace-lifecycle-target-status.js';
 import { MarketplaceValidationError } from '../../../models/marketplace-errors.js';
 import { NAMSHI_MARKETPLACE_KEY } from './namshi-catalog-adapter.js';
 import {

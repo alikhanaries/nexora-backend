@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
+import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-order-status.js';
 import { mapFbpiOrderPayloadToNormalizedMarketplaceOrder } from '../../../src/modules/marketplaces/repositories/adapters/shared/map-fbpi-order-payload-to-normalized.js';
 
 describe('mapFbpiOrderPayloadToNormalizedMarketplaceOrder', () => {

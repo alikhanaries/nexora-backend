@@ -3,7 +3,7 @@
 | Folder | Responsibility |
 |--------|----------------|
 | `models/` | `Return`, lines, status transitions |
-| `services/` | Create/acknowledge/receive/complete lifecycle, command/query services |
+| `services/` | Factories (`createCreateReturn`, `createAcknowledgeReturn`, …); deprecated class wrappers for public/`new` consumers |
 | `services/ports/` | Order gateway port used by return use cases |
 | `repositories/` | `PostgresReturnRepository`, port |
 | `views/` | Schemas, mappers, DTO helpers |

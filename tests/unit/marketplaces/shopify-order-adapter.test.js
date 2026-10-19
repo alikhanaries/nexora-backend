@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MarketplaceCatalogAdapterPermanentError } from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
-import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
+import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-order-status.js';
 import { mapShopifyOrderToNormalized } from '../../../src/modules/marketplaces/repositories/adapters/shopify/map-shopify-order-to-normalized.js';
 import { mapShopifyOrderStatus } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-order-status.js';
 import { ShopifyOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-order-adapter.js';

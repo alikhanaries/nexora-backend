@@ -1,8 +1,8 @@
-import { MarketplaceWebhookEventKind } from '../../../../marketplace-webhook-ingestion/public/marketplace-webhook-event-kind.js';
+import { MarketplaceWebhookEventKind } from '../../../../webhooks/marketplace/public/marketplace-webhook-event-kind.js';
 import {
     MarketplaceWebhookPermanentError,
     MarketplaceWebhookUnsupportedError,
-} from '../../../../marketplace-webhook-ingestion/services/marketplace-webhook-errors.js';
+} from '../../../../webhooks/marketplace/services/marketplace-webhook-errors.js';
 import { NOON_MARKETPLACE_KEY } from './noon-catalog-adapter.js';
 import {
     NOON_FBPI_ORDER_SYNC_EVENT_TYPE,
@@ -21,14 +21,14 @@ export class NoonWebhookAdapter {
      * Wasl ingress token routes the connection; Noon Event Notifications optional credentials
      * are configured in noon and validated at the network edge by the integrator when required.
      *
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
      */
     async authenticateWebhookRequest(context) {
         parseNoonEventNotification(context.rawBody);
     }
 
     /**
-     * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
+     * @param {import('../../../../webhooks/marketplace/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context
      */
     async normalizeWebhookEvent(context) {
         const parsed = parseNoonEventNotification(context.rawBody);

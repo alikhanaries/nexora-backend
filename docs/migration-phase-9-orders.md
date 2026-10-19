@@ -77,7 +77,7 @@ Response mapping via existing `order.mapper.js` (`toOrderResponse`, `toOrderDeta
 
 ## Business logic reused
 
-- `createOrdersModule` wired in `wire-core-domain.js` with the same dependencies as `create-application.js` (products, channels, offers, pricing, inventory, idempotency, external integer id mapping, audit, outbox).
+- `createOrdersModule` wired in `wire-core-services.js` with the same dependencies as `create-application.js` (products, channels, offers, pricing, inventory, idempotency, external integer id mapping, audit, outbox).
 - Use cases: `CreateOrder`, `ListOrders`, `GetOrder`, `ConfirmOrder`, `PostgresIdempotencyService` (via `useCases.idempotency`).
 - **Not wired in Nest:** `wireChannelFulfilledOrder` (only needed for compatibility v2 routes, out of scope).
 
@@ -87,16 +87,16 @@ Marketplace lifecycle / webhook order creation paths are unchanged (Phase 8).
 
 **Created**
 
-- `src/nest/orders/orders.module.js`
-- `src/nest/orders/orders.controller.js`
-- `src/nest/orders/orders.service.js`
+- `src/app/orders/orders.module.js`
+- `src/app/orders/orders.controller.js`
+- `src/app/orders/orders.service.js`
 - `test/nest/orders.test.js`
 - `docs/migration-phase-9-orders.md`
 
 **Changed**
 
-- `src/nest/app.module.js` — register `OrdersModule`
-- `src/nest/bootstrap/wire-core-domain.js` — `createExternalIdMappingModule`, `createOrdersModule`, expose `orders`
+- `src/app/app.module.js` — register `OrdersModule`
+- `src/app/wire-core-services.js` — `createExternalIdMappingModule`, `createOrdersModule`, expose `orders`
 - `test/nest/helpers/mock-core-domain.js` — mock `orders.useCases`
 
 **Unchanged**

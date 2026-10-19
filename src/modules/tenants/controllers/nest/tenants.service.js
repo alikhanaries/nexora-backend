@@ -1,27 +1,27 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { requireActorContext } from '../../../../shared/context/require-principal.js';
 import { toTenantResponse } from '../../views/tenant.mapper.js';
-import { CORE_DOMAIN } from '../../../../nest/domain/core-domain.tokens.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
 export @Injectable()
 class TenantsService {
-  constructor(@Inject(CORE_DOMAIN) coreDomain) {
-    this.coreDomain = coreDomain;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.coreServices = coreServices;
   }
 
   async createTenant(body) {
-    const { tenant } = await this.coreDomain.tenants.useCases.createTenant.execute(body);
+    const { tenant } = await this.coreServices.tenants.useCases.createTenant.execute(body);
     return toTenantResponse(tenant);
   }
 
   async getTenant(tenantId) {
-    const { tenant } = await this.coreDomain.tenants.useCases.getTenant.execute({ tenantId });
+    const { tenant } = await this.coreServices.tenants.useCases.getTenant.execute({ tenantId });
     return toTenantResponse(tenant);
   }
 
   async suspendTenant(tenantId) {
     const actor = requireActorContext();
-    const { tenant } = await this.coreDomain.tenants.useCases.suspendTenant.execute({
+    const { tenant } = await this.coreServices.tenants.useCases.suspendTenant.execute({
       tenantId,
       actorTenantId: actor.tenantId,
       actorPermissions: actor.permissions,
@@ -31,7 +31,7 @@ class TenantsService {
 
   async reactivateTenant(tenantId) {
     const actor = requireActorContext();
-    const { tenant } = await this.coreDomain.tenants.useCases.reactivateTenant.execute({
+    const { tenant } = await this.coreServices.tenants.useCases.reactivateTenant.execute({
       tenantId,
       actorTenantId: actor.tenantId,
       actorPermissions: actor.permissions,
@@ -41,7 +41,7 @@ class TenantsService {
 
   async closeTenant(tenantId) {
     const actor = requireActorContext();
-    const { tenant } = await this.coreDomain.tenants.useCases.closeTenant.execute({
+    const { tenant } = await this.coreServices.tenants.useCases.closeTenant.execute({
       tenantId,
       actorTenantId: actor.tenantId,
       actorPermissions: actor.permissions,

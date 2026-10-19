@@ -1,9 +1,25 @@
 export { toReturnDto, toReturnDetailDto } from '../views/return-dto.js';
-export { DefaultReturnQueryService, } from './return-query-service.js';
-export { CreateReturn } from './create-return.js';
-export { GetReturn } from './get-return.js';
-export { ListReturns } from './list-returns.js';
-export { AcknowledgeReturn } from './acknowledge-return.js';
-export { ReceiveReturn } from './receive-return.js';
-export { ProcessReturnReceive } from './process-return-receive.js';
-export { ApproveReturn, CancelReturn, CompleteReturn, RejectReturn } from './transition-return.js';
+export {
+    createReturnQueryService,
+    DefaultReturnQueryService,
+} from './return-query-service.js';
+export {
+    createReturnCommandService,
+    DefaultReturnCommandService,
+} from './return-command-service.js';
+export { createCreateReturn, CreateReturn } from './create-return.js';
+export { createGetReturn } from './get-return.js';
+export { createListReturns } from './list-returns.js';
+export { createAcknowledgeReturn, AcknowledgeReturn } from './acknowledge-return.js';
+export { createReceiveReturn, ReceiveReturn } from './receive-return.js';
+export { createProcessReturnReceive, ProcessReturnReceive } from './process-return-receive.js';
+export {
+    createApproveReturn,
+    createRejectReturn,
+    createCancelReturn,
+    createCompleteReturn,
+    ApproveReturn,
+    CancelReturn,
+    CompleteReturn,
+    RejectReturn,
+} from './transition-return.js';

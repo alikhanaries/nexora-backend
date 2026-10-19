@@ -1,4 +1,4 @@
-import { MarketplaceOrderLifecycleUnsupportedError } from '../../marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
+import { MarketplaceOrderLifecycleUnsupportedError } from '../../orders/marketplace-ingestion/public/marketplace-order-lifecycle-errors.js';
 
 export class MarketplaceOutboundOrderLifecycleAdapterRegistry {
     /** @type {Map<string, import('../public/marketplace-outbound-order-lifecycle.port.js').MarketplaceOutboundOrderLifecycleAdapter>} */

@@ -5,17 +5,18 @@ import { shipmentShippedEvent, shipmentStatusChangedEvent } from './shipment-eve
 import { ShipmentStatus } from '../models/shipment-status.js';
 import { fulfillInventoryWhenShipmentShipped } from './fulfill-inventory-when-shipment-shipped.js';
 import { requireShipmentsUpdate } from './shipment-permissions.js';
-export class ShipShipment {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createShipShipment(deps) {
+    async function execute(input) {
         if (input.skipAuthorization !== true) {
-            requireShipmentsUpdate(this.deps.authorization, input.actorPermissions);
+            requireShipmentsUpdate(deps.authorization, input.actorPermissions);
         }
         const work = async (tx) => {
-            const existing = await this.deps.shipments.lockShipmentForUpdate(tx, input.tenantId, input.shipmentId);
+            const existing = await deps.shipments.lockShipmentForUpdate(tx, input.tenantId, input.shipmentId);
             if (existing === null) {
                 throw new NotFoundError('Shipment was not found', {
                     tenantId: input.tenantId,
@@ -40,12 +41,12 @@ export class ShipShipment {
                         : { trackingNumber: normalizeOptionalText(input.trackingNumber) }),
                 }, now);
             }
-            await this.deps.shipments.updateShipment(tx, updated);
-            const lines = await this.deps.shipments.listShipmentLines(tx, input.tenantId, updated.id);
+            await deps.shipments.updateShipment(tx, updated);
+            const lines = await deps.shipments.listShipmentLines(tx, input.tenantId, updated.id);
             if (previousStatus !== ShipmentStatus.SHIPPED && updated.status === ShipmentStatus.SHIPPED) {
                 await fulfillInventoryWhenShipmentShipped({
-                    inventoryService: this.deps.inventoryService,
-                    orderQueryService: this.deps.orderQueryService,
+                    inventoryService: deps.inventoryService,
+                    orderQueryService: deps.orderQueryService,
                 }, tx, {
                     tenantId: input.tenantId,
                     orderId: updated.orderId,
@@ -62,10 +63,10 @@ export class ShipShipment {
             }
             const detail = toShipmentDetailDto(updated, lines);
             if (previousStatus !== updated.status) {
-                await this.deps.eventRecorder.record(tx, shipmentStatusChangedEvent(detail, previousStatus));
-                await this.deps.eventRecorder.record(tx, shipmentShippedEvent(detail));
+                await deps.eventRecorder.record(tx, shipmentStatusChangedEvent(detail, previousStatus));
+                await deps.eventRecorder.record(tx, shipmentShippedEvent(detail));
             }
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: input.actorKind,
                 actorId: input.actorId,
@@ -84,10 +85,23 @@ export class ShipShipment {
         };
         const shipment = input.transaction !== undefined
             ? await work(input.transaction)
-            : await this.deps.database.execute(work, { tenantId: input.tenantId });
+            : await deps.database.execute(work, { tenantId: input.tenantId });
         return { shipment };
     }
+
+    return { execute };
 }
+
+/** @deprecated Prefer createShipShipment */
+export class ShipShipment {
+    constructor(deps) {
+        return createShipShipment(deps);
+    }
+}
+
+/**
+ * @param {string|null|undefined} value
+ */
 function normalizeOptionalText(value) {
     if (value === undefined || value === null) {
         return null;

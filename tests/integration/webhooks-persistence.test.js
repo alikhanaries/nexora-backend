@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { ValidationError } from '../../src/shared/errors/index.js';
 import { createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';

@@ -1,16 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { requireActorContext } from '../../../../shared/context/require-principal.js';
-import { CORE_DOMAIN } from '../../../../nest/domain/core-domain.tokens.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
 export @Injectable()
 class AuditService {
-  constructor(@Inject(CORE_DOMAIN) coreDomain) {
-    this.coreDomain = coreDomain;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.coreServices = coreServices;
   }
 
   async listEvents(query) {
     const actor = requireActorContext();
-    const auditService = this.coreDomain.audit.routes.options.auditService;
+    const auditService = this.coreServices.audit.routes.options.auditService;
     const result = await auditService.listEvents({
       tenantId: actor.tenantId,
       actorPermissions: actor.permissions,

@@ -1,5 +1,5 @@
 import { MarketplaceValidationError } from '../../../models/marketplace-errors.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../marketplace-order-ingestion/public/normalized-marketplace-lifecycle-target-status.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../orders/marketplace-ingestion/public/normalized-marketplace-lifecycle-target-status.js';
 
 /** @typedef {'Pending' | 'Unshipped' | 'PartiallyShipped' | 'Shipped' | 'Canceled' | 'Unfulfillable' | 'InvoiceUnconfirmed' | 'PendingAvailability'} AmazonOrderStatus */
 

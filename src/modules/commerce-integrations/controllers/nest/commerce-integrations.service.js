@@ -2,16 +2,16 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IntegrationStatus } from '../../models/integration-status.js';
 import { toCommerceIntegrationResponse } from '../../views/commerce-integration.mapper.js';
 import { requireActorContext } from '../../../../shared/context/require-principal.js';
-import { CORE_DOMAIN } from '../../../../nest/domain/core-domain.tokens.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
 export @Injectable()
 class CommerceIntegrationsService {
-  constructor(@Inject(CORE_DOMAIN) coreDomain) {
-    this.coreDomain = coreDomain;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.coreServices = coreServices;
   }
 
   get deps() {
-    return this.coreDomain.channelRouteDeps;
+    return this.coreServices.channelRouteDeps;
   }
 
   async listCommerceIntegrations(query) {

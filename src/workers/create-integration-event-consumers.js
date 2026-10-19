@@ -8,7 +8,7 @@ import { WebhookDispatchEnqueueHandler } from './handlers/webhook-dispatch-enque
  * @param {import('../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
  * @param {import('../infrastructure/postgres/inbox-repository.js').PostgresInboxRepository} deps.inbox
  * @param {import('../shared/logging/logger.port.js').Logger} deps.logger
- * @param {import('../modules/webhooks/services/webhook-dispatch-service.js').WebhookDispatchService} deps.webhookDispatchService
+ * @param {import('../modules/webhooks/outbound/services/webhook-dispatch-service.js').WebhookDispatchService} deps.webhookDispatchService
  * @param {import('./handlers/catalog-sync-enqueue.handler.js').CatalogSyncEnqueueHandler} [deps.catalogSyncEnqueueHandler]
  */
 export function createIntegrationEventConsumers(deps) {

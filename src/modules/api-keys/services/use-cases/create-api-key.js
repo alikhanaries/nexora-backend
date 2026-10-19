@@ -4,12 +4,16 @@ import { AuthorizationError, RateLimitError, ValidationError } from '../../../..
 import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-policies.js';
 import { formatApiKey, generateApiKeyPrefix, generateApiKeySecret, hashApiKeySecret, } from '../../models/api-key-secret.js';
 import { intersectScopesWithPermissions } from '../../models/api-key.js';
-export class CreateApiKeyUseCase {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCreateApiKey(deps) {
+    /**
+     * @param {object} input
+     */
+    async function execute(input) {
         if (!input.actorPermissions.includes('api_keys.manage')) {
             throw new AuthorizationError('Missing required permission: api_keys.manage');
         }
@@ -24,7 +28,7 @@ export class CreateApiKeyUseCase {
         if (allowedScopes.length !== input.scopes.length) {
             throw new ValidationError('One or more scopes exceed the caller permissions');
         }
-        const rateLimit = await this.deps.rateLimiter.consume({
+        const rateLimit = await deps.rateLimiter.consume({
             policy: AUTH_RATE_LIMIT_POLICIES.apiKeyCreate,
             subject: `${input.tenantId}:${input.actorId}`,
         });
@@ -35,8 +39,8 @@ export class CreateApiKeyUseCase {
         const secret = generateApiKeySecret();
         const secretHash = hashApiKeySecret(secret);
         const id = randomUUID();
-        const summary = await this.deps.db.execute(async (tx) => {
-            const created = await this.deps.apiKeys.create(tx, {
+        const summary = await deps.db.execute(async (tx) => {
+            const created = await deps.apiKeys.create(tx, {
                 id,
                 tenantId: input.tenantId,
                 name,
@@ -46,7 +50,7 @@ export class CreateApiKeyUseCase {
                 scopes: allowedScopes,
                 expiresAt: input.expiresAt ?? null,
             });
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: 'user',
                 actorId: input.actorId,
@@ -67,5 +71,14 @@ export class CreateApiKeyUseCase {
             keyType: summary.keyType,
             expiresAt: summary.expiresAt,
         };
+    }
+
+    return { execute };
+}
+
+/** @deprecated Prefer {@link createCreateApiKey}; kept for existing import sites and tests. */
+export class CreateApiKeyUseCase {
+    constructor(deps) {
+        return createCreateApiKey(deps);
     }
 }

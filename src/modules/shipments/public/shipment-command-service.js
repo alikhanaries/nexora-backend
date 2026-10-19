@@ -61,4 +61,7 @@
  * @property {(command: UpdateShipmentTrackingCommand) => Promise<UpdateShipmentTrackingResult>} updateShipmentTracking
  */
 
-export { DefaultShipmentCommandService } from '../services/shipment-command-service.js';
+export {
+    createShipmentCommandService,
+    DefaultShipmentCommandService,
+} from '../services/shipment-command-service.js';

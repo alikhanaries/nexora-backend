@@ -34,7 +34,7 @@ describe('worker startup port separation', () => {
         expect(config.workerObservability.port).not.toBe(config.server.port);
     });
 
-    it('does not import API HTTP bootstrap from workers/main.js', () => {
+    it('does not import API HTTP create-application from workers/main.js', () => {
         const src = readFileSync(new URL('../../../src/workers/main.js', import.meta.url), 'utf8');
         expect(src).not.toMatch(/app\/main\.js/);
         expect(src).not.toMatch(/createApplication/);

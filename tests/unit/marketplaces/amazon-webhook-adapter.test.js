@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/models/marketplace-webhook-event-kind.js';
-import { MarketplaceWebhookUnsupportedError } from '../../../src/modules/marketplace-webhook-ingestion/services/marketplace-webhook-errors.js';
-import { normalizedMarketplaceWebhookEventSchema } from '../../../src/modules/marketplace-webhook-ingestion/services/normalized-marketplace-webhook-event.schema.js';
+import { MarketplaceWebhookEventKind } from '../../../src/modules/webhooks/marketplace/models/marketplace-webhook-event-kind.js';
+import { MarketplaceWebhookUnsupportedError } from '../../../src/modules/webhooks/marketplace/services/marketplace-webhook-errors.js';
+import { normalizedMarketplaceWebhookEventSchema } from '../../../src/modules/webhooks/marketplace/services/normalized-marketplace-webhook-event.schema.js';
 import { AmazonWebhookAdapter } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-webhook-adapter.js';
 import { buildAmazonOrderChangeNotification, wrapAmazonNotificationInSns } from './amazon-order-change-fixtures.js';
 

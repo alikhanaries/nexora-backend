@@ -18,4 +18,7 @@
  * @property {(tenantId: string, orderId: string, tx: object) => Promise<void>} evaluateOrderShipmentState
  * Advances order status when all non-cancelled lines are fully shipped.
  */
-export { DefaultOrderFulfillmentService } from '../services/order-fulfillment-service.js';
+export {
+    createOrderFulfillmentService,
+    DefaultOrderFulfillmentService,
+} from '../services/order-fulfillment-service.js';

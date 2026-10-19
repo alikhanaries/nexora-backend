@@ -1,4 +1,4 @@
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../marketplace-order-ingestion/public/normalized-marketplace-lifecycle-target-status.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../orders/marketplace-ingestion/public/normalized-marketplace-lifecycle-target-status.js';
 import {
     NamshiFbpiIntegrationItemStatus,
     NamshiFbpiMpItemStatus,

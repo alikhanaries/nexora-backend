@@ -44,7 +44,7 @@ Migrate existing **`/api/v2/orders*`** and **`/api/v2/ce/orders*`** HTTP routes 
 
 Same 8 routes on:
 
-- `LegacyOrdersV2Controller` (5)
+- `CompatibilityOrdersV2Controller` (5)
 - `ChannelEngineOrdersController` (3)
 
 ## Route parity
@@ -89,19 +89,19 @@ Existing Zod schemas from `src/modules/compatibility/views/*.schemas.js` (Pascal
 
 **Created**
 
-- `src/nest/legacy-orders/legacy-orders.module.js`
-- `src/nest/legacy-orders/legacy-orders.service.js`
-- `src/nest/legacy-orders/legacy-orders-v2.controller.js`
-- `src/nest/legacy-orders/channel-engine-orders.controller.js`
-- `src/nest/bootstrap/wire-compatibility.js`
-- `src/nest/common/filters/compatibility-exception.filter.js`
+- `src/modules/compatibility/controllers/nest/compatibility-orders.module.js`
+- `src/modules/compatibility/controllers/nest/compatibility-orders.service.js`
+- `src/modules/compatibility/controllers/nest/compatibility-orders-v2.controller.js`
+- `src/modules/compatibility/controllers/nest/channel-engine-orders.controller.js`
+- `src/app/wire-compatibility.js`
+- `src/app/common/filters/compatibility-exception.filter.js`
 - `test/nest/legacy-orders.test.js`
 - `docs/migration-phase-11-legacy-order-apis.md`
 
 **Changed**
 
-- `src/nest/app.module.js`
-- `src/nest/bootstrap/wire-core-domain.js`
+- `src/app/app.module.js`
+- `src/app/wire-core-services.js`
 - `test/nest/helpers/mock-core-domain.js`
 
 **Unchanged**

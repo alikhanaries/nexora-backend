@@ -4,7 +4,7 @@ import { NoonWebhookAdapter } from './noon/noon-webhook-adapter.js';
 import { ShopifyMarketplaceWebhookAdapter } from './shopify/shopify-marketplace-webhook-adapter.js';
 
 /**
- * @param {import('../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter-registry.js').MarketplaceWebhookAdapterRegistry} registry
+ * @param {import('../../../webhooks/marketplace/public/marketplace-webhook-adapter-registry.js').MarketplaceWebhookAdapterRegistry} registry
  * @param {object} [deps]
  * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
  * @param {import('../../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} [deps.commerceIntegrationQueryService]

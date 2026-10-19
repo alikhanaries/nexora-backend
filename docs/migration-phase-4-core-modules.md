@@ -11,7 +11,7 @@ Migrate foundational **identity (auth)** and **tenants** HTTP endpoints into Nes
 | `HealthModule` | Already on Nest (Phase 2/3) |
 | `AuthModule` | `src/modules/identity/views/auth.routes.js` |
 | `TenantsModule` | `src/modules/tenants/views/tenant.routes.js` |
-| `CoreDomainModule` | Wired via `wire-core-domain.js` (same factories as Fastify) |
+| `CoreServicesModule` | Wired via `wire-core-services.js` (same factories as Fastify) |
 | Global `AuthGuard` | `src/app/http/plugins/authentication.plugin.js` |
 
 ## Endpoints migrated (Nest)
@@ -50,24 +50,24 @@ Migrate foundational **identity (auth)** and **tenants** HTTP endpoints into Nes
 
 ## Files added
 
-- `src/nest/auth/*`
-- `src/nest/tenants/*`
-- `src/nest/domain/core-domain.module.js`, `core-domain.tokens.js`
-- `src/nest/bootstrap/wire-core-domain.js`
-- `src/nest/common/guards/auth.guard.js`
-- `src/nest/common/decorators/public.decorator.js`
-- `src/nest/common/auth/public-route.js`
+- `src/modules/identity/controllers/nest/*`
+- `src/app/tenants/*`
+- `src/app/di/core-services.module.js`, `core-services.tokens.js`
+- `src/app/wire-core-services.js`
+- `src/app/common/guards/auth.guard.js`
+- `src/app/common/decorators/public.decorator.js`
+- `src/app/common/auth/public-route.js`
 - `test/nest/core-modules.test.js`
 - `docs/migration-phase-4-core-modules.md`
 
 ## Files changed
 
-- `src/nest/app.module.js` — core modules + `APP_GUARD`
-- `src/nest/main.js` — wire core domain, Redis shutdown
-- `src/nest/bootstrap/create-nest-application.js` — optional `coreDomain`
-- `src/nest/bootstrap/create-nest-infrastructure.js` — Redis + rate limiter for auth
+- `src/app/app.module.js` — core modules + `APP_GUARD`
+- `src/app/nest-main.js` — wire core domain, Redis shutdown
+- `src/app/http/create-nest-application.js` — optional `coreServices`
+- `src/app/create-nest-infrastructure.js` — Redis + rate limiter for auth
 - `src/modules/identity/views/auth.routes.js` — export body schemas for Nest
-- `test/nest/helpers/create-test-nest-app.js` — optional mock `coreDomain`
+- `test/nest/helpers/create-test-nest-app.js` — optional mock `coreServices`
 
 ## Tests added
 

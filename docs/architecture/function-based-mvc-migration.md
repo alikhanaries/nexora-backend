@@ -5,7 +5,7 @@
 
 ## Executive summary
 
-Wasl is a **modular monolith** (domain / application / infrastructure / presentation per module) with a **NestJS + Express** HTTP surface (`src/nest/`). Module **composition roots are already function-based** (`createOrdersModule`, `createWebhooksModule`, …). Most **use cases are class + `execute()`** (~375 `export class` hits under `src/modules/`). **Configuration is centralized** in `src/app/config/` and `src/shared/config/wasl-naming.config.js`. **`process.env` is not read in business modules.**
+Wasl is a **modular monolith** (domain / application / infrastructure / presentation per module) with a **NestJS + Express** HTTP surface (`src/app/`). Module **composition roots are already function-based** (`createOrdersModule`, `createWebhooksModule`, …). **Orders / Cancellations / Shipments / Returns** core services are factory-based (Phases 4.12–4.15); many other modules still use class + `execute()`. Infra helpers migrated: Redis keys, Argon2 hasher, Fetch HTTP client (4.17–4.21). **Configuration is centralized** in `src/app/config/` and `src/shared/config/wasl-naming.config.js`. **`process.env` is not read in business modules.**
 
 A full folder restructure to the target MVC tree in one pass would touch **1,000+ files** and cannot be validated safely without phased delivery. This document is the authoritative migration plan.
 
@@ -22,7 +22,7 @@ src/
   integrations/           StockConnect mappers (compatibility)
 ```
 
-**NestJS (framework-mandated classes):** ~34 controller files under `src/nest/`, plus `@Module` / `@Injectable` providers. These remain thin delegates to module `useCases` / services created by `create*Module` factories.
+**NestJS (framework-mandated classes):** ~34 controller files under `src/app/`, plus `@Module` / `@Injectable` providers. These remain thin delegates to module `useCases` / services created by `create*Module` factories.
 
 **Legacy / duplicate paths on disk (do not expand):** Some IDE indexes still list removed `channels/`, `channel-catalog-sync/` trees; authoritative modules are `commerce-integrations/` and `integration-catalog-sync/`.
 
@@ -44,7 +44,7 @@ orders/
   public/                  # cross-module contracts
 ```
 
-Nest bootstrap imports `OrdersModule` from `src/modules/orders/controllers/nest/orders.module.js`. Other features still use `src/nest/<feature>/` until migrated.
+Nest bootstrap imports `OrdersModule` from `src/modules/orders/controllers/nest/orders.module.js`. Other features still use `src/app/<feature>/` until migrated.
 
 Enforced by: `tests/unit/architecture/orders-mvc-structure.test.js` and dependency-cruiser rules (`services-no-controllers`, `views-no-repositories`, …).
 
@@ -72,7 +72,7 @@ Enforced by: `tests/unit/architecture/returns-mvc-structure.test.js`.
 |--------|--------------------------------|
 | `src/config/` | **Stage 1 facade** → `src/app/config/`, `src/shared/config/wasl-naming.config.js` |
 | `src/common/` | **`src/shared/`** (errors, validation, http, security, logging) — alias documented in `src/common/README.md` |
-| `modules/*/controllers/` | **`src/nest/<feature>/`** + optional `presentation/*.routes.js` |
+| `modules/*/controllers/` | **`src/app/<feature>/`** + optional `presentation/*.routes.js` |
 | `modules/*/services/` | **`modules/*/application/`** |
 | `modules/*/repositories/` | **`modules/*/infrastructure/postgres-*-repository.js`** |
 | `modules/*/models/` | **`modules/*/domain/`** |
@@ -138,6 +138,27 @@ export function createGetOrder(deps) {
 | **4** | Integration-catalog-sync, workers handlers (function handlers already) | Medium |
 | **5** | Nest controllers: optional thin functional wrappers — only if Nest version supports | Low–medium |
 | **6** | Remove obsolete classes/files; delete ghost `channels/` paths | High — needs full test matrix |
+| **4.12–4.15** | Orders / Cancellations / Shipments / Returns **business** services → factories | Done (Nest adapters remain classes) |
+| **4.16** | Infrastructure class inventory + factory migration **plan only** | See [phase-4-16-infrastructure-class-inventory.md](./phase-4-16-infrastructure-class-inventory.md) |
+| **4.17** | `RedisKeyBuilder` → `createRedisKeyBuilder` (P1 pilot; deprecated class wrapper retained) | Done — key formats unchanged |
+| **4.18** | `Argon2PasswordHasher` → `createArgon2PasswordHasher` (P1; deprecated class wrapper retained) | Done — Argon2id params/encoding unchanged; pre-migration hashes remain verifiable |
+| **4.19** | Post-migration infra audit + next-candidate selection | Historical pause before HTTP characterization; see [phase-4-19…](./phase-4-19-infrastructure-post-migration-audit.md) |
+| **4.20** | Characterize `FetchHttpClient` (tests + docs only; **no factory**) | Suite `tests/unit/infrastructure/fetch-http-client.test.js` |
+| **4.21** | `FetchHttpClient` → `createFetchHttpClient` (deprecated class wrapper retained) | Done — HTTP/retry contract unchanged; composition uses factory; MarketplaceHttpClient untouched |
+| **4.22** | Function-based MVC progress audit (docs only) | See [phase-4-22-function-based-mvc-progress-audit.md](./phase-4-22-function-based-mvc-progress-audit.md) |
+| **4.23** | Master completion batch | API Keys + Tenants factories; webhook outbound audit import fixes; commerce-integrations queryable tests; marketplace-worker test wiring; suite-load debris removed |
+
+### Migration status (master)
+
+**COMPLETE WITH ACCEPTED LIMITATIONS** — see § Acceptance tracking and deferred list below.
+
+**Done (required / completed pilots):** O/C/S/R business factories; infra `createRedisKeyBuilder`, `createArgon2PasswordHasher`, `createFetchHttpClient`; API Keys + Tenants business factories; Nest/Express composition retained.
+
+**Deferred (finite backlog — not blocking this completion):** Remaining class-based use cases in identity, MFA, authorization, products/offers/pricing/inventory, commerce-integrations, marketplaces, compatibility, webhooks outbound CRUD, integration-catalog-sync, external-id-mapping, marketplace-ingestion job services. Convert in later dedicated module batches using the same factory + deprecated-wrapper pattern.
+
+**Keep as classes:** Resource owners (DB/Redis/BullMQ/outbox/inbox/Prometheus/S3), Nest adapters, domain models, errors, marketplace adapter inheritance, schedulers/registries with mutable state.
+
+**Infra not converted (by design):** AES, JWT, Redis cache/lock/rate-limit, idempotency, retention, repositories — require separate characterization/security review.
 
 After each phase: `verify:naming`, `test:unit`, `test:jest`, `arch:check`, `build`, targeted integration.
 
@@ -146,7 +167,7 @@ After each phase: `verify:naming`, `test:unit`, `test:jest`, `arch:check`, `buil
 | Wrapper | Why |
 |---------|-----|
 | `@Module`, `@Controller`, `@Injectable` | Nest DI and route registration |
-| `src/nest/bootstrap/create-nest-application.js` | Express adapter bootstrap |
+| `src/app/http/create-nest-application.js` | Express adapter bootstrap |
 | Guards / filters (class) | Nest request pipeline |
 
 Business logic must not live in controllers; controllers call module use cases.
@@ -166,7 +187,7 @@ Recorded at migration kickoff:
 | Criterion | State |
 |-----------|--------|
 | Feature-based layout | **Partial** — modules exist; MVC subfolders not forced |
-| Function-based business logic | **Partial** — composition functions yes; use cases mostly classes |
+| Function-based business logic | **Partial (accepted)** — O/C/S/R + API Keys + Tenants factories done; remaining modules deferred as finite backlog; infra P1 + FetchHttpClient done |
 | Single config layer | **Mostly** — Stage 1 facade added |
 | Generic shared behavior | **Partial** — `shared/` exists; dedup backlog above |
 | Behavior preserved | **Required** — enforced per phase |

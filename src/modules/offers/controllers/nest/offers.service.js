@@ -2,17 +2,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { OfferStatus } from '../../models/offer-status.js';
 import { toOfferResponse } from '../../views/offer.mapper.js';
 import { requireActorContext } from '../../../../shared/context/require-principal.js';
-import { commerceActorFields } from '../../../../nest/common/commerce-actor.js';
-import { CORE_DOMAIN } from '../../../../nest/domain/core-domain.tokens.js';
+import { commerceActorFields } from '../../../../app/common/commerce-actor.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
 export @Injectable()
 class OffersService {
-  constructor(@Inject(CORE_DOMAIN) coreDomain) {
-    this.coreDomain = coreDomain;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.coreServices = coreServices;
   }
 
   get useCases() {
-    return this.coreDomain.offers.useCases;
+    return this.coreServices.offers.useCases;
   }
 
   async listOffers(query) {

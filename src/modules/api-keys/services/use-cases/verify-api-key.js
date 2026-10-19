@@ -2,19 +2,23 @@ import { secureCompareHash } from '../../../../shared/security/index.js';
 import { AuthenticationError } from '../../../../shared/errors/index.js';
 import { hashApiKeySecret, parseApiKey } from '../../models/api-key-secret.js';
 import { intersectScopesWithPermissions } from '../../models/api-key.js';
-export class VerifyApiKeyUseCase {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createVerifyApiKey(deps) {
+    /**
+     * @param {object} input
+     */
+    async function execute(input) {
         const parsed = parseApiKey(input.rawKey.trim());
         if (parsed === null) {
             throw new AuthenticationError();
         }
         const candidateHash = hashApiKeySecret(parsed.secret);
         const now = new Date();
-        const key = await this.deps.db.executeAsOwner(async (tx) => this.deps.apiKeys.findByPrefix(tx, parsed.prefix));
+        const key = await deps.db.executeAsOwner(async (tx) => deps.apiKeys.findByPrefix(tx, parsed.prefix));
         if (key === null) {
             throw new AuthenticationError();
         }
@@ -27,8 +31,8 @@ export class VerifyApiKeyUseCase {
         if (!secureCompareHash(key.secretHash, candidateHash)) {
             throw new AuthenticationError();
         }
-        await this.deps.db.execute(async (tx) => {
-            await this.deps.apiKeys.touchLastUsed(tx, key.id, now);
+        await deps.db.execute(async (tx) => {
+            await deps.apiKeys.touchLastUsed(tx, key.id, now);
         }, { tenantId: key.tenantId });
         const permissions = intersectScopesWithPermissions(key.scopes, key.scopes);
         return {
@@ -38,5 +42,14 @@ export class VerifyApiKeyUseCase {
             permissions,
             ...(key.channelId === null ? {} : { channelId: key.channelId }),
         };
+    }
+
+    return { execute };
+}
+
+/** @deprecated Prefer {@link createVerifyApiKey}; kept for existing import sites. */
+export class VerifyApiKeyUseCase {
+    constructor(deps) {
+        return createVerifyApiKey(deps);
     }
 }

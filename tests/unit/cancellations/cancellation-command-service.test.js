@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DefaultCancellationCommandService } from '../../../src/modules/cancellations/public/cancellation-command-service.js';
+import {
+    createCancellationCommandService,
+    DefaultCancellationCommandService,
+} from '../../../src/modules/cancellations/public/cancellation-command-service.js';
 
 const cancellationDetail = {
     id: 'cancellation-1',
@@ -11,12 +14,12 @@ const cancellationDetail = {
     lines: [{ orderLineId: 'line-1', quantity: 2 }],
 };
 
-describe('DefaultCancellationCommandService', () => {
+describe('createCancellationCommandService', () => {
     it('delegates createCancellation to the CreateCancellation use case', async () => {
         const createCancellation = {
             execute: vi.fn().mockResolvedValue({ cancellation: cancellationDetail }),
         };
-        const service = new DefaultCancellationCommandService({ createCancellation });
+        const service = createCancellationCommandService({ createCancellation });
 
         const result = await service.createCancellation({
             tenantId: 'tenant-1',
@@ -52,7 +55,7 @@ describe('DefaultCancellationCommandService', () => {
                 return { kind: 'executed', value };
             }),
         };
-        const service = new DefaultCancellationCommandService({ createCancellation, idempotency });
+        const service = createCancellationCommandService({ createCancellation, idempotency });
 
         const result = await service.createCancellation({
             tenantId: 'tenant-1',
@@ -73,5 +76,23 @@ describe('DefaultCancellationCommandService', () => {
             idempotencyKey: 'idem-cancel-1',
         }, 'body-1', expect.any(Function), expect.any(Function), { useTransaction: true });
         expect(result.cancellation).toMatchObject({ transactionProvided: true });
+    });
+
+    it('keeps DefaultCancellationCommandService constructor-return wrapper working', async () => {
+        const createCancellation = {
+            execute: vi.fn().mockResolvedValue({ cancellation: cancellationDetail }),
+        };
+        const service = new DefaultCancellationCommandService({ createCancellation });
+
+        const result = await service.createCancellation({
+            tenantId: 'tenant-1',
+            actorId: 'actor-1',
+            actorKind: 'user',
+            actorPermissions: ['cancellations.create'],
+            orderId: 'order-1',
+            lines: [{ orderLineId: 'line-1', quantity: 2 }],
+        });
+
+        expect(result).toEqual({ cancellation: cancellationDetail });
     });
 });

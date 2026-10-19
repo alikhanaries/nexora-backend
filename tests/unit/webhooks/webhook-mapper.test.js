@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toWebhookDeliveryResponse, toWebhookSubscriptionResponse } from '../../../src/modules/webhooks/views/webhook.mapper.js';
+import { toWebhookDeliveryResponse, toWebhookSubscriptionResponse } from '../../../src/modules/webhooks/outbound/views/webhook.mapper.js';
 
 describe('webhook presentation mappers', () => {
     it('maps subscription DTOs without secrets or internal fields', () => {

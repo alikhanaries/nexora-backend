@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
-import { createMarketplaceOrderIngestionModule } from '../../src/modules/marketplace-order-ingestion/index.js';
-import { MarketplaceOrderLifecycleOperation } from '../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
-import { NormalizedMarketplaceOrderStatus } from '../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
-import { MarketplaceOrderLifecycleUnsupportedError } from '../../src/modules/marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
+import { createApplication } from '../../src/app/create-application.js';
+import { createMarketplaceOrderIngestionModule } from '../../src/modules/orders/marketplace-ingestion/index.js';
+import { MarketplaceOrderLifecycleOperation } from '../../src/modules/orders/marketplace-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
+import { NormalizedMarketplaceOrderStatus } from '../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-order-status.js';
+import { MarketplaceOrderLifecycleUnsupportedError } from '../../src/modules/orders/marketplace-ingestion/public/marketplace-order-lifecycle-errors.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../../src/modules/marketplaces/public/index.js';
 import { PostgresMarketplaceEntityMappingRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-entity-mapping-repository.js';
 import { PostgresMarketplaceRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-repository.js';

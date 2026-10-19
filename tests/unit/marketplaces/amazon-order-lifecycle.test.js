@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/orders/marketplace-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
 import { AmazonOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-order-adapter.js';
 import { mapAmazonOrderStatusToLifecycleTarget } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-order-status.js';
 import { mapAmazonOrderChangeToLifecycleCommand } from '../../../src/modules/marketplaces/repositories/adapters/amazon/map-amazon-order-change-to-lifecycle-command.js';

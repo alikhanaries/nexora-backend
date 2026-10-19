@@ -1,17 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { toProductContentResponse, toProductResponse } from '../../views/product.mapper.js';
 import { requireActorContext } from '../../../../shared/context/require-principal.js';
-import { productActorFields } from '../../../../nest/common/commerce-actor.js';
-import { CORE_DOMAIN } from '../../../../nest/domain/core-domain.tokens.js';
+import { productActorFields } from '../../../../app/common/commerce-actor.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
 export @Injectable()
 class ProductsService {
-  constructor(@Inject(CORE_DOMAIN) coreDomain) {
-    this.coreDomain = coreDomain;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.coreServices = coreServices;
   }
 
   get useCases() {
-    return this.coreDomain.products.useCases;
+    return this.coreServices.products.useCases;
   }
 
   async listProducts(query) {

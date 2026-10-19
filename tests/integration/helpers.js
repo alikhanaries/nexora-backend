@@ -1,5 +1,5 @@
 import { loadConfig } from '../../src/app/config/config.js';
-import { createInfrastructure, } from '../../src/app/bootstrap/create-infrastructure.js';
+import { createInfrastructure, } from '../../src/app/create-infrastructure.js';
 let sharedInfra;
 async function closeInfrastructure(infra) {
     await infra.queue.close().catch(() => undefined);

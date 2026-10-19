@@ -69,8 +69,8 @@ Fastify startup: NOT VERIFIED — PostgreSQL/Redis unavailable
 
 ## Files changed
 
-- `src/nest/bootstrap/wire-core-domain.js` — `channelRouteDeps`, expose `channels`/`marketplaces`  
-- `src/nest/channels/*`, `src/nest/marketplaces/*`, `app.module.js`  
+- `src/app/wire-core-services.js` — `channelRouteDeps`, expose `channels`/`marketplaces`  
+- `src/app/channels/*`, `src/app/marketplaces/*`, `app.module.js`  
 - `test/nest/channels-marketplaces.test.js`  
 
 ## Dependencies

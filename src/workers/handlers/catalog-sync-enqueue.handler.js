@@ -8,14 +8,14 @@ export class CatalogSyncEnqueueHandler {
     consumerName = WASL_NAMING.infrastructure.queue.inboxConsumers.catalogSyncEnqueue;
 
     /**
-     * @param {import('../../modules/integration-catalog-sync/services/integration-catalog-sync-service.js').IntegrationCatalogSyncService} channelCatalogSyncService
+     * @param {import('../modules/integration-catalog-sync/services/integration-catalog-sync-service.js').IntegrationCatalogSyncService} channelCatalogSyncService
      */
     constructor(channelCatalogSyncService) {
         this.channelCatalogSyncService = channelCatalogSyncService;
     }
 
     /**
-     * @param {import('../../shared/events/integration-event.js').IntegrationEvent} event
+     * @param {import('../shared/events/integration-event.js').IntegrationEvent} event
      */
     async handle(event) {
         await this.channelCatalogSyncService.enqueueFromIntegrationEvent(event);

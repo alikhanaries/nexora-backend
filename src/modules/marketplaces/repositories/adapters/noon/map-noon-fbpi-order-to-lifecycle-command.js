@@ -1,4 +1,4 @@
-import { MarketplaceOrderLifecycleOperation } from '../../../../marketplace-order-ingestion/public/marketplace-order-lifecycle-operation.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../../orders/marketplace-ingestion/public/marketplace-order-lifecycle-operation.js';
 import { MarketplaceValidationError } from '../../../models/marketplace-errors.js';
 import { NOON_MARKETPLACE_KEY } from './noon-catalog-adapter.js';
 import {

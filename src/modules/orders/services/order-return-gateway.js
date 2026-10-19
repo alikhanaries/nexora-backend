@@ -1,13 +1,13 @@
 import { BusinessRuleError, NotFoundError } from '../../../shared/errors/index.js';
 import { toOrderDto } from '../views/order-dto.js';
 
-export class DefaultOrderReturnGateway {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async findOrder(queryable, tenantId, orderId) {
-        const order = await this.deps.orders.findById(queryable, tenantId, orderId);
+/**
+ * @param {object} deps
+ * @param {import('../repositories/postgres-order-repository.js').PostgresOrderRepository} deps.orders
+ */
+export function createOrderReturnGateway(deps) {
+    async function findOrder(queryable, tenantId, orderId) {
+        const order = await deps.orders.findById(queryable, tenantId, orderId);
         if (order === null) {
             return null;
         }
@@ -18,8 +18,9 @@ export class DefaultOrderReturnGateway {
             status: dto.status,
         };
     }
-    async lockOrderLinesForUpdate(transaction, tenantId, orderId) {
-        const lines = await this.deps.orders.lockOrderLinesForUpdate(transaction, tenantId, orderId);
+
+    async function lockOrderLinesForUpdate(transaction, tenantId, orderId) {
+        const lines = await deps.orders.lockOrderLinesForUpdate(transaction, tenantId, orderId);
         return lines.map((line) => ({
             id: line.id,
             tenantId: line.tenantId,
@@ -31,11 +32,13 @@ export class DefaultOrderReturnGateway {
             returnedQuantity: line.returnedQuantity,
         }));
     }
-    async updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt) {
-        await this.deps.orders.updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt);
+
+    async function updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt) {
+        await deps.orders.updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt);
     }
-    async applyReturnReceivedOnOrderLine(transaction, tenantId, orderLineId, quantity, updatedAt) {
-        const line = await this.deps.orders.lockOrderLineForUpdate(transaction, tenantId, orderLineId);
+
+    async function applyReturnReceivedOnOrderLine(transaction, tenantId, orderLineId, quantity, updatedAt) {
+        const line = await deps.orders.lockOrderLineForUpdate(transaction, tenantId, orderLineId);
         if (line === null) {
             throw new NotFoundError('Order line was not found', { tenantId, orderLineId });
         }
@@ -52,6 +55,20 @@ export class DefaultOrderReturnGateway {
             returnedQuantity: line.returnedQuantity + quantity,
             updatedAt,
         });
-        await this.deps.orders.updateOrderLine(transaction, updated);
+        await deps.orders.updateOrderLine(transaction, updated);
+    }
+
+    return {
+        findOrder,
+        lockOrderLinesForUpdate,
+        updateOrderLineReturnedQuantity,
+        applyReturnReceivedOnOrderLine,
+    };
+}
+
+/** @deprecated Prefer {@link createOrderReturnGateway}; kept for existing import sites. */
+export class DefaultOrderReturnGateway {
+    constructor(deps) {
+        return createOrderReturnGateway(deps);
     }
 }

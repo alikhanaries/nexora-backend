@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DefaultAuthorizationService } from '../../../src/modules/authorization/public/index.js';
-import { RotateWebhookSecret } from '../../../src/modules/webhooks/services/rotate-webhook-secret.js';
-import { WebhookSubscription } from '../../../src/modules/webhooks/models/webhook-subscription.js';
+import { RotateWebhookSecret } from '../../../src/modules/webhooks/outbound/services/rotate-webhook-secret.js';
+import { WebhookSubscription } from '../../../src/modules/webhooks/outbound/models/webhook-subscription.js';
 import { AuthorizationError, ValidationError } from '../../../src/shared/errors/index.js';
 
 const WEBHOOK_PERMISSIONS = ['webhooks.read', 'webhooks.manage'];

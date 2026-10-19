@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '../../src/app/config/config.js';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { AesSecretEncryptor } from '../../src/infrastructure/auth/aes-secret-encryptor.js';
 import { createWebhookDeliveryService, createWebhookDispatchService } from '../../src/modules/webhooks/index.js';
-import { verifyWebhookRequestBody } from '../../src/modules/webhooks/services/webhook-request-signer.js';
+import { verifyWebhookRequestBody } from '../../src/modules/webhooks/outbound/services/webhook-request-signer.js';
 import { authHeaders, createAuthenticatedUser, createAuthenticatedUserWithSystemRole, createTestTenant } from './auth-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 

@@ -57,10 +57,10 @@ describe('platform independence', () => {
 
     it('imports compatibility only from the composition root wiring', () => {
         const allowed = new Set([
-            'src/app/bootstrap/create-application.js',
+            'src/app/create-application.js',
             'src/app/http/create-nest-http-server.js',
-            'src/workers/bootstrap/wire-external-consumer-webhook-payload-strategies.js',
-            'src/workers/bootstrap/wire-compat-v2-webhook-delivery.js',
+            'src/workers/wire-external-consumer-webhook-payload-strategies.js',
+            'src/workers/wire-compat-v2-webhook-delivery.js',
         ]);
         const offenders = [];
         for (const file of collectJsFiles(join(repoRoot, 'src'))) {
@@ -75,12 +75,10 @@ describe('platform independence', () => {
             if (allowed.has(rel)) {
                 continue;
             }
-            // Nest bootstrap + legacy compatibility HTTP layer (Phase 11+) mirrors Fastify wiring.
+            // App composition root + legacy compatibility Nest HTTP layer (Phase 11+).
             if (
-                rel.startsWith('src/nest/bootstrap/')
-                || rel.startsWith('src/nest/legacy-orders/')
-                || rel.startsWith('src/nest/legacy-compatibility/')
-                || rel === 'src/nest/common/filters/compatibility-exception.filter.js'
+                rel.startsWith('src/app/')
+                || rel.startsWith('src/modules/compatibility/controllers/nest/')
             ) {
                 continue;
             }

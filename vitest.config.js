@@ -5,7 +5,7 @@ import swc from 'unplugin-swc';
  * - `unit` runs anywhere with no external dependencies.
  * - `integration` requires PostgreSQL, Redis and MinIO (see docker-compose.yml).
  *
- * Integration loads NestJS decorator syntax in `src/nest/*.js` via unplugin-swc
+ * Integration loads NestJS decorator syntax in `src/app/*.js` via unplugin-swc
  * (SSR transform + inline deps). Jest covers dedicated Nest controller tests.
  */
 export default defineConfig({

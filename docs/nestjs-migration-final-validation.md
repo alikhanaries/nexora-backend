@@ -101,8 +101,8 @@ Every Nest route has a Fastify counterpart. No unexplained Nest-only HTTP routes
 
 | Area | Nest delegation | Parity assessment |
 |------|-----------------|-------------------|
-| `/api/v1/*` domain APIs | `coreDomain.*.useCases` / command services | **PASS** (static — same use cases as Fastify route handlers) |
-| `/api/v2/*` + `/api/v2/ce/*` | `coreDomain.compatibility.routeDeps` | **PASS** on Phase 12 branch |
+| `/api/v1/*` domain APIs | `coreServices.*.useCases` / command services | **PASS** (static — same use cases as Fastify route handlers) |
+| `/api/v2/*` + `/api/v2/ce/*` | `coreServices.compatibility.routeDeps` | **PASS** on Phase 12 branch |
 | Marketplace webhook ingress | `marketplaceWebhookIngestion.receiveMarketplaceWebhook` | **PASS** |
 | Raw body / HMAC | Express middleware in `configure-express.js` | **PASS** (Jest foundation tests) |
 
@@ -186,7 +186,7 @@ Compatibility routes call `enforceCompatibilityRateLimit` with `COMPATIBILITY_RA
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| NestJS startup | **PASS** | `node src/nest/bootstrap.mjs`, `NEST_SERVER_PORT=3010`, Postgres wired |
+| NestJS startup | **PASS** | `node src/app/nest-bootstrap.mjs`, `NEST_SERVER_PORT=3010`, Postgres wired |
 | Fastify startup (comparison) | **PASS** | `node src/app/main.js`, `SERVER_PORT=3000`, same DB session |
 | Database connectivity (Nest) | **PASS** | `postgres: true` in startup log; authenticated reads succeeded |
 | Queue initialization | **PASS** | Redis + BullMQ initialized during bootstrap (same as Fastify infra) |
@@ -198,7 +198,7 @@ Compatibility routes call `enforceCompatibilityRateLimit` with `COMPATIBILITY_RA
 # Example (after Nest on 3010, optional Fastify on 3000):
 DATABASE_URL=postgresql://nexora:nexora@localhost:5432/nexora \
 DATABASE_MIGRATION_URL=postgresql://nexora:nexora@localhost:5432/nexora \
-NEST_SERVER_PORT=3010 node --env-file=.env src/nest/bootstrap.mjs
+NEST_SERVER_PORT=3010 node --env-file=.env src/app/nest-bootstrap.mjs
 
 NEST_BASE_URL=http://127.0.0.1:3010 FASTIFY_BASE_URL=http://127.0.0.1:3000 \
 node scripts/local-runtime-smoke.mjs

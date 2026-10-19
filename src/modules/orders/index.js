@@ -1,21 +1,21 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { AcknowledgeOrder } from './services/acknowledge-order.js';
-import { ConfirmOrder } from './services/confirm-order.js';
-import { CreateIntegrationFulfilledOrder } from './services/create-integration-fulfilled-order.js';
-import { CreateIntegrationOrder } from './services/create-integration-order.js';
-import { CreateOrder } from './services/create-order.js';
+import { createAcknowledgeOrder } from './services/acknowledge-order.js';
+import { createConfirmOrder } from './services/confirm-order.js';
+import { createCreateIntegrationFulfilledOrder } from './services/create-integration-fulfilled-order.js';
+import { createCreateIntegrationOrder } from './services/create-integration-order.js';
+import { createCreateOrder } from './services/create-order.js';
 import { createGetOrder } from './services/get-order.js';
 import { createListOrders } from './services/list-orders.js';
-import { DefaultOrderCommandService } from './services/order-command-service.js';
-import { DefaultOrderFulfillmentService } from './services/order-fulfillment-service.js';
+import { createOrderCommandService } from './services/order-command-service.js';
+import { createOrderFulfillmentService } from './services/order-fulfillment-service.js';
 import { createOrderQueryService } from './services/order-query-service.js';
-import { DefaultOrderReturnGateway } from './services/order-return-gateway.js';
+import { createOrderReturnGateway } from './services/order-return-gateway.js';
 import { PostgresOrderRepository } from './repositories/index.js';
 import orderRoutes, {} from './controllers/order.routes.js';
 export function createOrdersModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const orders = new PostgresOrderRepository();
-    const orderFulfillmentService = new DefaultOrderFulfillmentService({
+    const orderFulfillmentService = createOrderFulfillmentService({
         orders,
         eventRecorder: deps.eventRecorder,
     });
@@ -25,7 +25,7 @@ export function createOrdersModule(deps) {
         database: deps.database,
         orders,
     });
-    const orderReturnGateway = new DefaultOrderReturnGateway({ orders });
+    const orderReturnGateway = createOrderReturnGateway({ orders });
     const sharedDeps = {
         authorization,
         database: deps.database,
@@ -42,16 +42,16 @@ export function createOrdersModule(deps) {
         inventoryService: deps.inventoryService,
         externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
     };
-    const createOrder = new CreateOrder(orderCreationDeps);
-    const createIntegrationOrder = new CreateIntegrationOrder(orderCreationDeps);
-    const confirmOrder = new ConfirmOrder(sharedDeps);
-    const acknowledgeOrder = new AcknowledgeOrder({
+    const createOrder = createCreateOrder(orderCreationDeps);
+    const createIntegrationOrder = createCreateIntegrationOrder(orderCreationDeps);
+    const confirmOrder = createConfirmOrder(sharedDeps);
+    const acknowledgeOrder = createAcknowledgeOrder({
         ...sharedDeps,
         confirmOrder,
     });
-    /** @type {import('./services/create-integration-fulfilled-order.js').CreateIntegrationFulfilledOrder|null} */
+    /** @type {{ execute: Function }|null} */
     let createIntegrationFulfilledOrder = null;
-    const orderCommandService = new DefaultOrderCommandService({
+    const orderCommandService = createOrderCommandService({
         createOrder,
         createIntegrationOrder,
         get createIntegrationFulfilledOrder() {
@@ -62,12 +62,12 @@ export function createOrdersModule(deps) {
     });
     /**
      * @param {object} shipmentDeps
-     * @param {import('./services/create-shipment.js').CreateShipment} shipmentDeps.createShipment
-     * @param {import('../shipments/services/ship-shipment.js').ShipShipment} shipmentDeps.shipShipment
+     * @param {{ execute: Function }} shipmentDeps.createShipment
+     * @param {{ execute: Function }} shipmentDeps.shipShipment
      * @param {(tx: object, tenantId: string, orderId: string) => Promise<object[]>} shipmentDeps.listShipmentsForOrder
      */
     function wireChannelFulfilledOrder(shipmentDeps) {
-        createIntegrationFulfilledOrder = new CreateIntegrationFulfilledOrder({
+        createIntegrationFulfilledOrder = createCreateIntegrationFulfilledOrder({
             ...orderCreationDeps,
             createShipment: shipmentDeps.createShipment,
             shipShipment: shipmentDeps.shipShipment,
@@ -102,3 +102,6 @@ export function createOrdersModule(deps) {
         routes: orderRoutes,
     };
 }
+
+// Marketplace order ingestion lives under ./marketplace-ingestion (not a top-level module).
+export { createMarketplaceOrderIngestionModule } from './marketplace-ingestion/index.js';

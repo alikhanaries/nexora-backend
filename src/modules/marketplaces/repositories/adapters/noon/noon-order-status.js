@@ -1,5 +1,5 @@
 import { MarketplaceValidationError } from '../../../models/marketplace-errors.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../marketplace-order-ingestion/public/normalized-marketplace-lifecycle-target-status.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../orders/marketplace-ingestion/public/normalized-marketplace-lifecycle-target-status.js';
 
 /** @typedef {'MP_ITEM_STATUS_CONFIRMED' | 'MP_ITEM_STATUS_CANCELLED' | 'MP_ITEM_STATUS_UNSPECIFIED'} NoonMpItemStatus */
 /** @typedef {'INTEGRATION_ITEM_STATUS_ACKNOWLEDGED' | 'INTEGRATION_ITEM_STATUS_OUT_OF_STOCK' | 'INTEGRATION_ITEM_STATUS_SHIPPED' | 'INTEGRATION_ITEM_STATUS_UNSPECIFIED'} NoonIntegrationItemStatus */

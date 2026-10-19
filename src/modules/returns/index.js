@@ -1,12 +1,24 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { AcknowledgeReturn, ApproveReturn, CancelReturn, CompleteReturn, CreateReturn, DefaultReturnQueryService, GetReturn, ListReturns, ProcessReturnReceive, ReceiveReturn, RejectReturn, } from './services/index.js';
-import { DefaultReturnCommandService } from './public/return-command-service.js';
+import {
+    createAcknowledgeReturn,
+    createApproveReturn,
+    createCancelReturn,
+    createCompleteReturn,
+    createCreateReturn,
+    createGetReturn,
+    createListReturns,
+    createProcessReturnReceive,
+    createReceiveReturn,
+    createRejectReturn,
+    createReturnQueryService,
+    createReturnCommandService,
+} from './services/index.js';
 import { PostgresReturnRepository } from './repositories/index.js';
 import returnRoutes, {} from './controllers/return.routes.js';
 export function createReturnsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const returns = new PostgresReturnRepository();
-    const returnQueryService = new DefaultReturnQueryService({
+    const returnQueryService = createReturnQueryService({
         authorization,
         queryable: deps.database,
         returns,
@@ -21,13 +33,13 @@ export function createReturnsModule(deps) {
         externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
-    const createReturn = new CreateReturn(lifecycleDeps);
-    const acknowledgeReturn = new AcknowledgeReturn(lifecycleDeps);
-    const processReturnReceive = new ProcessReturnReceive({
+    const createReturn = createCreateReturn(lifecycleDeps);
+    const acknowledgeReturn = createAcknowledgeReturn(lifecycleDeps);
+    const processReturnReceive = createProcessReturnReceive({
         ...lifecycleDeps,
         inventoryService: deps.inventoryService,
     });
-    const returnCommandService = new DefaultReturnCommandService({
+    const returnCommandService = createReturnCommandService({
         createReturn,
         acknowledgeReturn,
         processReturnReceive,
@@ -35,22 +47,22 @@ export function createReturnsModule(deps) {
     });
     const useCases = {
         createReturn,
-        getReturn: new GetReturn({ authorization, returnQueryService }),
-        listReturns: new ListReturns({
+        getReturn: createGetReturn({ authorization, returnQueryService }),
+        listReturns: createListReturns({
             authorization,
             queryable: deps.database,
             returns,
         }),
         acknowledgeReturn,
-        approveReturn: new ApproveReturn(lifecycleDeps),
+        approveReturn: createApproveReturn(lifecycleDeps),
         processReturnReceive,
-        receiveReturn: new ReceiveReturn({
+        receiveReturn: createReceiveReturn({
             ...lifecycleDeps,
             inventoryService: deps.inventoryService,
         }),
-        completeReturn: new CompleteReturn(lifecycleDeps),
-        rejectReturn: new RejectReturn(lifecycleDeps),
-        cancelReturn: new CancelReturn(lifecycleDeps),
+        completeReturn: createCompleteReturn(lifecycleDeps),
+        rejectReturn: createRejectReturn(lifecycleDeps),
+        cancelReturn: createCancelReturn(lifecycleDeps),
         idempotency: deps.idempotency,
     };
     return {

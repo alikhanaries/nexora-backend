@@ -90,17 +90,17 @@ Full compatibility surface (Phase 11 + 12): **44** Fastify routes = **44** Nest 
 ## Nest implementation
 
 ```
-src/nest/legacy-compatibility/
-├── legacy-compatibility.module.js
-├── legacy-compatibility.service.js      → compatibility.routeDeps + rate limits
+src/modules/compatibility/controllers/nest/
+├── compatibility-http.module.js
+├── compatibility-http.service.js      → compatibility.routeDeps + rate limits
 ├── compatibility-v2.controller.js       → /api/v2/* (non-order)
 └── channel-engine-compatibility.controller.js → /api/v2/ce/* (non-order)
 ```
 
-Phase 11 remains in `src/nest/legacy-orders/`.
+Phase 11 remains in `src/modules/compatibility/controllers/nest/`.
 
 - **Errors:** `CompatibilityExceptionFilter` + `mapCoreErrorToExternalApiResponse` on both controllers.
-- **Rate limits:** `COMPATIBILITY_RATE_LIMIT_POLICIES` read/mutation via shared `LegacyOrdersService` helpers.
+- **Rate limits:** `COMPATIBILITY_RATE_LIMIT_POLICIES` read/mutation via shared `CompatibilityOrdersService` helpers.
 - **Idempotency:** v2 mutations require `Idempotency-Key` header (same as Fastify). CE mutations use `resolveStockConnectCeIdempotencyKey` when header omitted.
 - **Auth:** Bearer / `X-Api-Key` / `ApiKey` for v2; CE paths also accept query `apiKey`/`apikey` and `X-CE-KEY` (Nest `AuthGuard` aligned with Fastify `authentication.plugin.js`).
 
@@ -121,15 +121,15 @@ All handlers delegate to existing `routeDeps`:
 
 **Created**
 
-- `src/nest/legacy-compatibility/*`
+- `src/modules/compatibility/controllers/nest/*`
 - `test/nest/legacy-compatibility.test.js`
 - `docs/migration-phase-12-remaining-compatibility-apis.md`
 
 **Changed**
 
-- `src/nest/app.module.js` — register `LegacyCompatibilityModule`
-- `src/nest/legacy-orders/legacy-orders.module.js` — export `LegacyOrdersService`
-- `src/nest/common/guards/auth.guard.js` — CE query/header API key auth
+- `src/app/app.module.js` — register `CompatibilityHttpModule`
+- `src/modules/compatibility/controllers/nest/compatibility-orders.module.js` — export `CompatibilityOrdersService`
+- `src/app/common/guards/auth.guard.js` — CE query/header API key auth
 - `test/nest/helpers/mock-core-domain.js` — extended `routeDeps` mocks
 - `tests/unit/architecture/platform-independence.test.js` — allow `legacy-compatibility` imports
 

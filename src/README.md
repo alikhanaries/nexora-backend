@@ -2,40 +2,35 @@
 
 ```
 src/
-├── nest/             NestJS bootstrap, auth, health, StockConnect, legacy compat
-├── modules/          Business features (MVC: models / services / repositories / views / controllers)
-├── app/              Config loaders, shared HTTP helpers, migration CLIs
+├── app/              Nest composition root (entry, modules wiring, DI, guards, config, HTTP)
+├── modules/          Business features (MVC) + erp/<name> adapters
 ├── infrastructure/   Postgres, Redis, BullMQ, S3, observability adapters
 ├── workers/          Background worker process entry + handlers
 ├── shared/           Cross-cutting utilities (errors, validation, metrics, …)
 ├── common/           Alias docs → prefer `shared/`
-├── config/           Stage-1 config facade → `app/config` + naming
-└── integrations/     StockConnect mappers (compatibility)
+└── config/           Stage-1 config facade → `app/config` + naming
 ```
+
+## `src/app/`
+
+| File / folder | Role |
+| ------------- | ---- |
+| `main.js` | API process entry |
+| `create-application.js` | Wire modules + Nest HTTP server |
+| `create-infrastructure.js` | Postgres, Redis, queue, outbox, … |
+| `http/` | Nest app factory, Express middleware, HTTP server helper |
+| `common/` | Guards, filters, Nest logger |
+| `di/` / `database/` / `config/` | Nest DI tokens, DB module, config |
 
 ## Modules (MVC)
 
-See [modules/README.md](modules/README.md). Each feature uses:
-
-- `models/` — entities and rules  
-- `services/` — use cases  
-- `repositories/` — persistence / adapters  
-- `views/` — schemas and mappers  
-- `controllers/nest/` — Nest HTTP adapters  
-
-## Nest vs modules
-
-| Concern | Location |
-| ------- | -------- |
-| Process entry (`start:nest`) | `src/nest/bootstrap.mjs` |
-| Feature HTTP (products, orders, …) | `src/modules/<feature>/controllers/nest/` |
-| Auth guard, health, StockConnect | `src/nest/` |
+See [modules/README.md](modules/README.md).
 
 ## Dependency flow
 
 ```
-nest / workers / app ──► modules ──► shared
-                └──► infrastructure ──► shared
+app / workers ──► modules ──► shared
+           └──► infrastructure ──► shared
 ```
 
 Run `npm run arch:check` to verify boundaries.

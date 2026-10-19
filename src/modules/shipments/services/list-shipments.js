@@ -2,13 +2,14 @@ import { clampCursorLimit, decodeCursor, encodeCursor, } from '../../../shared/p
 import { ValidationError } from '../../../shared/errors/index.js';
 import { toShipmentDto } from '../views/shipment-dto.js';
 import { requireShipmentsRead } from './shipment-permissions.js';
-export class ListShipments {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireShipmentsRead(this.deps.authorization, input.actorPermissions);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createListShipments(deps) {
+    async function execute(input) {
+        requireShipmentsRead(deps.authorization, input.actorPermissions);
         const limit = clampCursorLimit(input.limit);
         const fetchLimit = limit + 1;
         let cursorCreatedAt = null;
@@ -21,7 +22,7 @@ export class ListShipments {
             cursorCreatedAt = new Date(parts[0] ?? '');
             cursorId = parts[1] ?? null;
         }
-        const page = await this.deps.shipments.listPage(this.deps.queryable, input.tenantId, {
+        const page = await deps.shipments.listPage(deps.queryable, input.tenantId, {
             ...(input.orderId === undefined ? {} : { orderId: input.orderId }),
             ...(input.status === undefined ? {} : { status: input.status }),
             ...(input.trackingNumber === undefined ? {} : { trackingNumber: input.trackingNumber }),
@@ -37,4 +38,6 @@ export class ListShipments {
                 : null,
         };
     }
+
+    return { execute };
 }

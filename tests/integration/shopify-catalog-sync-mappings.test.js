@@ -4,7 +4,7 @@ import { ShopifyCatalogAdapter } from '../../src/modules/marketplaces/repositori
 import { ShopifyGraphqlClient } from '../../src/modules/marketplaces/repositories/adapters/shopify/shopify-graphql-client.js';
 import { createMarketplaceEntityMappingRecorder } from '../../src/modules/marketplaces/services/create-marketplace-entity-mapping-recorder.js';
 import { MarketplaceHttpClient } from '../../src/modules/marketplaces/repositories/http/marketplace-http-client.js';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { seedCommerceFixture } from './compatibility-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';

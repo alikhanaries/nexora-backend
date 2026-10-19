@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { JobName, QueueName } from '../../infrastructure/queue/queue-names.js';
-import { WebhookDeliveryRetryError } from '../../modules/webhooks/services/webhook-delivery-errors.js';
+import { WebhookDeliveryRetryError } from '../../modules/webhooks/outbound/services/webhook-delivery-errors.js';
 import { CatalogSyncRetryError } from '../../modules/integration-catalog-sync/services/catalog-sync-errors.js';
 import { parseOrThrow } from '../../shared/validation/index.js';
 const integrationEventPayloadSchema = z.object({

@@ -24,7 +24,7 @@ export function mapFbpiOrderPayloadToNormalizedMarketplaceOrder(input) {
     if (items.length === 0) {
         throw new MarketplaceValidationError('FBPI order has no line items');
     }
-    /** @type {import('../../../../marketplace-order-ingestion/services/normalized-marketplace-order.schema.js').NormalizedMarketplaceOrder['lines']} */
+    /** @type {import('../../../../orders/marketplace-ingestion/services/normalized-marketplace-order.schema.js').NormalizedMarketplaceOrder['lines']} */
     const lines = [];
     for (const item of items) {
         if (item === null || typeof item !== 'object') {

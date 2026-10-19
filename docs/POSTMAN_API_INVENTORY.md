@@ -33,7 +33,7 @@
 | R-0019 | PATCH | `/api/v1/channels/:channelId/marketplace-connection` | channels | `src/modules/commerce-integrations/views/commerce-integration.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
 | R-0020 | POST | `/api/v1/channels/:channelId/marketplace-connection` | channels | `src/modules/commerce-integrations/views/commerce-integration.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
 | R-0021 | POST | `/api/v1/channels/:channelId/marketplace-connection/test` | channels | `src/modules/commerce-integrations/views/commerce-integration.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
-| R-0022 | POST | `/api/v1/inbound/marketplace-webhooks/:ingressToken` | marketplace-webhook-ingestion | `src/modules/marketplace-webhook-ingestion/views/marketplace-webhook.routes.js` | webhook ingress token (marketplace adapter) | CONFIRMED | generated |
+| R-0022 | POST | `/api/v1/inbound/marketplace-webhooks/:ingressToken` | marketplace-webhook-ingestion | `src/modules/webhooks/marketplace/views/marketplace-webhook.routes.js` | webhook ingress token (marketplace adapter) | CONFIRMED | generated |
 | R-0023 | GET | `/api/v1/inventory` | inventory | `src/modules/inventory/views/inventory.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
 | R-0024 | GET | `/api/v1/inventory/:productId` | inventory | `src/modules/inventory/views/inventory.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
 | R-0025 | POST | `/api/v1/inventory/adjustments` | inventory | `src/modules/inventory/views/inventory.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
@@ -99,14 +99,14 @@
 | R-0085 | POST | `/api/v1/tenants/:tenantId/close` | tenants | `src/modules/tenants/views/tenant.routes.js` | mixed (POST create public; GET by id public per auth plugin) | CONFIRMED | generated |
 | R-0086 | POST | `/api/v1/tenants/:tenantId/reactivate` | tenants | `src/modules/tenants/views/tenant.routes.js` | mixed (POST create public; GET by id public per auth plugin) | CONFIRMED | generated |
 | R-0087 | POST | `/api/v1/tenants/:tenantId/suspend` | tenants | `src/modules/tenants/views/tenant.routes.js` | mixed (POST create public; GET by id public per auth plugin) | CONFIRMED | generated |
-| R-0088 | GET | `/api/v1/webhooks` | webhooks | `src/modules/webhooks/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
-| R-0089 | POST | `/api/v1/webhooks` | webhooks | `src/modules/webhooks/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
-| R-0090 | DELETE | `/api/v1/webhooks/:webhookId` | webhooks | `src/modules/webhooks/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
-| R-0091 | GET | `/api/v1/webhooks/:webhookId` | webhooks | `src/modules/webhooks/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
-| R-0092 | PATCH | `/api/v1/webhooks/:webhookId` | webhooks | `src/modules/webhooks/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
-| R-0093 | GET | `/api/v1/webhooks/:webhookId/deliveries` | webhooks | `src/modules/webhooks/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
-| R-0094 | GET | `/api/v1/webhooks/:webhookId/deliveries/:deliveryId` | webhooks | `src/modules/webhooks/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
-| R-0095 | POST | `/api/v1/webhooks/:webhookId/rotate-secret` | webhooks | `src/modules/webhooks/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
+| R-0088 | GET | `/api/v1/webhooks` | webhooks | `src/modules/webhooks/outbound/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
+| R-0089 | POST | `/api/v1/webhooks` | webhooks | `src/modules/webhooks/outbound/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
+| R-0090 | DELETE | `/api/v1/webhooks/:webhookId` | webhooks | `src/modules/webhooks/outbound/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
+| R-0091 | GET | `/api/v1/webhooks/:webhookId` | webhooks | `src/modules/webhooks/outbound/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
+| R-0092 | PATCH | `/api/v1/webhooks/:webhookId` | webhooks | `src/modules/webhooks/outbound/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
+| R-0093 | GET | `/api/v1/webhooks/:webhookId/deliveries` | webhooks | `src/modules/webhooks/outbound/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
+| R-0094 | GET | `/api/v1/webhooks/:webhookId/deliveries/:deliveryId` | webhooks | `src/modules/webhooks/outbound/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
+| R-0095 | POST | `/api/v1/webhooks/:webhookId/rotate-secret` | webhooks | `src/modules/webhooks/outbound/views/webhook.routes.js` | Bearer or x-api-key header (default) | CONFIRMED | generated |
 | R-0096 | POST | `/api/v2/cancellations` | compatibility-v2 | `src/modules/compatibility/views/compatibility.routes.js` | Bearer or x-api-key header | CONFIRMED | generated |
 | R-0097 | GET | `/api/v2/cancellations/merchant` | compatibility-v2 | `src/modules/compatibility/views/compatibility.routes.js` | Bearer or x-api-key header | CONFIRMED | generated |
 | R-0098 | POST | `/api/v2/ce/cancellations` | compatibility-stockconnect-ce | `src/modules/compatibility/views/compat-v2.routes.js` | api-key (query apiKey/apikey or X-CE-KEY) or Bearer | CONFIRMED | generated |

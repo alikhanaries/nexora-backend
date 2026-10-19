@@ -13,12 +13,12 @@ vi.mock('../../../src/shared/auth/read-merchant-compat-query-api-key.js', () => 
   readMerchantCompatCeKeyHeader: () => null,
 }));
 
-vi.mock('../../../src/nest/common/auth/public-route.js', () => ({
+vi.mock('../../../src/app/common/auth/public-route.js', () => ({
   isPublicRoute: () => false,
 }));
 
 const { enrichRequestContext } = await import('../../../src/shared/context/request-context.js');
-const { AuthGuard } = await import('../../../src/nest/common/guards/auth.guard.js');
+const { AuthGuard } = await import('../../../src/app/common/guards/auth.guard.js');
 const { AuthorizationError, AuthenticationError } = await import(
   '../../../src/shared/errors/index.js'
 );
