@@ -1,7 +1,7 @@
 {
   "name": "nexora-docs-tooling",
   "version": "1.0.0",
-  "description": "Documentation build tooling for the Nexora backend technical documentation PDF. Not part of the backend runtime and not referenced by src/.",
+  "description": "Documentation build tooling for the Wasl backend technical documentation PDF. Not part of the backend runtime and not referenced by src/.",
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
@@ -19,3 +19,4 @@
     "puppeteer-core": "^25.12.0"
   }
 }
+

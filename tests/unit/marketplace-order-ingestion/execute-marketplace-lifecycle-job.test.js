@@ -44,8 +44,8 @@ function buildWebhookJob(overrides = {}) {
 }
 
 function buildExecutor(overrides = {}) {
-    const channelQueryService = {
-        getChannelById: vi.fn(async () => ({
+    const commerceIntegrationQueryService = {
+        getCommerceIntegrationById: vi.fn(async () => ({
             tenantId,
             channelId,
             marketplaceId: '55555555-5555-4555-8555-555555555555',
@@ -64,7 +64,7 @@ function buildExecutor(overrides = {}) {
         executor: new ExecuteMarketplaceLifecycleJob({
             orderLifecycleProcessor,
             lifecycleService,
-            channelQueryService,
+            commerceIntegrationQueryService,
             marketplaceLookup,
             logger: undefined,
             metrics: undefined,
@@ -72,7 +72,7 @@ function buildExecutor(overrides = {}) {
         }),
         orderLifecycleProcessor,
         lifecycleService,
-        channelQueryService,
+        commerceIntegrationQueryService,
         marketplaceLookup,
     };
 }
@@ -103,14 +103,14 @@ describe('ExecuteMarketplaceLifecycleJob', () => {
     });
 
     it('rejects tenant mismatch on channel lookup', async () => {
-        const channelQueryService = {
-            getChannelById: vi.fn(async () => ({
+        const commerceIntegrationQueryService = {
+            getCommerceIntegrationById: vi.fn(async () => ({
                 tenantId: '99999999-9999-4999-8999-999999999999',
                 channelId,
                 marketplaceId: '55555555-5555-4555-8555-555555555555',
             })),
         };
-        const { executor } = buildExecutor({ deps: { channelQueryService } });
+        const { executor } = buildExecutor({ deps: { commerceIntegrationQueryService } });
         await executor.execute(buildWebhookJob());
     });
 

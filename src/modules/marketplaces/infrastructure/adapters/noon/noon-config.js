@@ -1,7 +1,16 @@
 import { MarketplaceConfigurationError } from '../../../domain/marketplace-errors.js';
 
+/**
+ * Noon API host resolution (highest precedence first):
+ * 1. Tenant connection `configuration.apiBaseUrl`
+ * 2. Deployment env `NOON_API_BASE_URL` (see schema.js)
+ * 3. {@link DEFAULT_NOON_API_BASE_URL} (Noon partners production gateway)
+ *
+ * Tenant credentials (keyId, privateKey, projectCode) are stored encrypted per connection;
+ * they are never returned from connection APIs.
+ */
 export const DEFAULT_NOON_API_BASE_URL = 'https://noon-api-gateway.noon.partners';
-export const DEFAULT_NOON_USER_AGENT = 'Nexora/1.0';
+export const DEFAULT_NOON_USER_AGENT = 'Wasl/1.0';
 
 const NOON_COUNTRY_CODES = new Set(['ae', 'sa', 'eg']);
 

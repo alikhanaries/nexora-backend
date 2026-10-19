@@ -1,8 +1,8 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { CreateCancellation, DefaultCancellationQueryService, GetCancellation, ListCancellations, } from './application/index.js';
+import { CreateCancellation, DefaultCancellationQueryService, GetCancellation, ListCancellations, } from './services/index.js';
 import { DefaultCancellationCommandService } from './public/cancellation-command-service.js';
-import { PostgresCancellationRepository } from './infrastructure/index.js';
-import cancellationRoutes, {} from './presentation/cancellation.routes.js';
+import { PostgresCancellationRepository } from './repositories/index.js';
+import cancellationRoutes, {} from './controllers/cancellation.routes.js';
 export function createCancellationsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const cancellations = new PostgresCancellationRepository();
@@ -45,4 +45,4 @@ export function createCancellationsModule(deps) {
         routes: cancellationRoutes,
     };
 }
-export { Cancellation, CancellationLine, CancellationStatus } from './domain/index.js';
+export { Cancellation, CancellationLine, CancellationStatus } from './models/index.js';

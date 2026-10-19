@@ -29,7 +29,7 @@ async function bootstrap() {
 
   infra.logger.info(
     { host, port: nestPort, postgres: infra.database !== null },
-    'Nexora Nest (Express) listening',
+    'Wasl Nest (Express) listening',
   );
 
   let shuttingDown = false;

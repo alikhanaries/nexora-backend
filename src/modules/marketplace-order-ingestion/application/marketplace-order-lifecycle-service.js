@@ -20,9 +20,9 @@ export class MarketplaceOrderLifecycleService {
     /**
      * @param {object} deps
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
-     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {import('../public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} deps.marketplaceLookup
-     * @param {{ findByChannelAndExternalReference: (queryable: object, tenantId: string, channelId: string, externalOrderReference: string) => Promise<import('../../orders/domain/order.js').Order | null> }} deps.orders
+     * @param {{ findByChannelAndExternalReference: (queryable: object, tenantId: string, channelId: string, externalOrderReference: string) => Promise<import('../../orders/models/order.js').Order | null> }} deps.orders
      * @param {ExecuteMarketplaceOrderLifecycleOperation} deps.executeOperation
      * @param {import('../public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
      * @param {import('../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
@@ -54,7 +54,7 @@ export class MarketplaceOrderLifecycleService {
                 const externalOrderReference = command.externalOrderId.trim();
                 const order = await this.deps.orders.findByChannelAndExternalReference(tx, input.tenantId, input.channelId, externalOrderReference);
                 if (order === null) {
-                    throw new MarketplaceOrderLifecyclePermanentError('Marketplace order was not found in Nexora', {
+                    throw new MarketplaceOrderLifecyclePermanentError('Marketplace order was not found in Wasl', {
                         externalOrderId: externalOrderReference,
                         channelId: input.channelId,
                     });
@@ -134,7 +134,7 @@ export class MarketplaceOrderLifecycleService {
      * @param {string} marketplaceKey
      */
     async assertChannelContext(tenantId, channelId, marketplaceKey) {
-        const channel = await this.deps.channelQueryService.getChannelById(tenantId, channelId);
+        const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(tenantId, channelId);
         if (channel.tenantId !== tenantId) {
             throw new MarketplaceOrderLifecyclePermanentError('Channel tenant mismatch', { channelId });
         }

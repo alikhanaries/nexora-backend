@@ -16,16 +16,16 @@ const LIFECYCLE_PERMISSIONS = Object.freeze([
 ]);
 
 /**
- * Applies a normalized lifecycle command to Nexora order services (no provider HTTP).
+ * Applies a normalized lifecycle command to Wasl order services (no provider HTTP).
  */
 export class ExecuteMarketplaceOrderLifecycleOperation {
     deps;
 
     /**
      * @param {object} deps
-     * @param {{ listOrderLines: (queryable: object, tenantId: string, orderId: string) => Promise<import('../../orders/domain/order-line.js').OrderLine[]> }} deps.orders
+     * @param {{ listOrderLines: (queryable: object, tenantId: string, orderId: string) => Promise<import('../../orders/models/order-line.js').OrderLine[]> }} deps.orders
      * @param {import('../../products/public/index.js').ProductQueryService} deps.productQueryService
-     * @param {import('../../orders/application/confirm-order.js').ConfirmOrder} deps.confirmOrder
+     * @param {import('../../orders/services/confirm-order.js').ConfirmOrder} deps.confirmOrder
      * @param {import('../../cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} deps.cancellationCommandService
      * @param {import('../../returns/public/return-command-service.js').DefaultReturnCommandService} [deps.returnCommandService]
      * @param {import('../../shipments/public/shipment-command-service.js').DefaultShipmentCommandService} [deps.shipmentCommandService]
@@ -40,7 +40,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
      * @param {string} input.tenantId
      * @param {string} input.channelId
      * @param {import('./normalized-marketplace-lifecycle-command.schema.js').normalizedMarketplaceLifecycleCommandSchema['_output']} command
-     * @param {import('../../orders/domain/order.js').Order} order
+     * @param {import('../../orders/models/order.js').Order} order
      * @param {object} tx
      */
     async execute(input, command, order, tx) {
@@ -69,7 +69,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
     /**
      * @param {object} input
      * @param {object} command
-     * @param {import('../../orders/domain/order.js').Order} order
+     * @param {import('../../orders/models/order.js').Order} order
      * @param {object} tx
      */
     async applyStatusSync(input, command, order, tx) {
@@ -115,7 +115,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
     /**
      * @param {object} input
      * @param {object} command
-     * @param {import('../../orders/domain/order.js').Order} order
+     * @param {import('../../orders/models/order.js').Order} order
      * @param {object} tx
      */
     async applyFulfilledStatusSync(input, command, order, tx) {
@@ -165,7 +165,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
     /**
      * @param {object} input
      * @param {object} command
-     * @param {import('../../orders/domain/order.js').Order} order
+     * @param {import('../../orders/models/order.js').Order} order
      * @param {object} tx
      */
     async applyReturnOrder(input, command, order, tx) {
@@ -203,7 +203,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
     /**
      * @param {object} input
      * @param {object} command
-     * @param {import('../../orders/domain/order.js').Order} order
+     * @param {import('../../orders/models/order.js').Order} order
      * @param {object} tx
      */
     async applyCancelOrder(input, command, order, tx) {

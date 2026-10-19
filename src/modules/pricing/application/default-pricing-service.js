@@ -26,7 +26,7 @@ export class DefaultPricingService {
             });
         }
         if (input.channelId !== undefined && input.channelId !== null) {
-            await this.deps.channelQueryService.verifyChannelBelongsToTenant(input.tenantId, input.channelId, tx);
+            await this.deps.commerceIntegrationQueryService.verifyChannelBelongsToTenant(input.tenantId, input.channelId, tx);
         }
         const now = new Date();
         const price = Price.create({
@@ -62,7 +62,7 @@ export class DefaultPricingService {
                 });
             }
             if (input.channelId !== undefined && input.channelId !== null) {
-                await this.deps.channelQueryService.verifyChannelBelongsToTenant(input.tenantId, input.channelId, transaction);
+                await this.deps.commerceIntegrationQueryService.verifyChannelBelongsToTenant(input.tenantId, input.channelId, transaction);
             }
             const now = new Date();
             const updated = existing.update({

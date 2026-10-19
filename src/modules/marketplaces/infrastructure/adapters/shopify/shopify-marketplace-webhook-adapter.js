@@ -5,7 +5,7 @@ import {
     MarketplaceWebhookUnsupportedError,
 } from '../../../../marketplace-webhook-ingestion/public/marketplace-webhook-errors.js';
 import { MarketplaceValidationError } from '../../../domain/marketplace-errors.js';
-import { requireChannelStockLocationId } from '../../../../channels/public/index.js';
+import { requireChannelStockLocationId } from '../../../../commerce-integrations/public/index.js';
 import { SHOPIFY_MARKETPLACE_KEY } from './shopify-catalog-adapter.js';
 import { mapShopifyOrderToNormalized } from './map-shopify-order-to-normalized.js';
 import { mapShopifyRestWebhookOrderToGraphqlShape } from './map-shopify-rest-webhook-order.js';
@@ -20,8 +20,8 @@ export class ShopifyMarketplaceWebhookAdapter {
 
     /**
      * @param {object} deps
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
-     * @param {import('../../../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
+     * @param {import('../../../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {import('../../../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
      * @param {import('./shopify-order-adapter.js').ShopifyOrderAdapter} deps.shopifyOrderAdapter
      */
@@ -95,7 +95,7 @@ export class ShopifyMarketplaceWebhookAdapter {
      * @param {string} topic
      */
     async resolveNormalizedOrder(connection, payload, topic) {
-        const channel = await this.deps.channelQueryService.getChannelById(connection.tenantId, connection.channelId);
+        const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(connection.tenantId, connection.channelId);
         const stockLocationId = requireChannelStockLocationId(channel);
         if (topic === ShopifyWebhookTopic.REFUNDS_CREATE || topic === ShopifyWebhookTopic.FULFILLMENTS_CREATE) {
             const orderId = extractRelatedOrderId(payload);

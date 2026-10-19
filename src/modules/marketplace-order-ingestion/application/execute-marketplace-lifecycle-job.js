@@ -20,7 +20,7 @@ export class ExecuteMarketplaceLifecycleJob {
      * @param {import('../../marketplace-webhook-ingestion/application/marketplace-order-lifecycle-processor.js').MarketplaceOrderLifecycleProcessor} deps.orderLifecycleProcessor
      * @param {import('./marketplace-order-lifecycle-service.js').MarketplaceOrderLifecycleService} deps.lifecycleService
      * @param {import('../../marketplaces/application/execute-outbound-marketplace-order-lifecycle-command.js').ExecuteOutboundMarketplaceOrderLifecycleCommand} [deps.executeOutboundLifecycle]
-     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {import('../public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} deps.marketplaceLookup
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
      * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
@@ -136,7 +136,7 @@ export class ExecuteMarketplaceLifecycleJob {
      * @param {import('./marketplace-lifecycle-job.schema.js').MarketplaceLifecycleJob} job
      */
     async assertJobTenantContext(job) {
-        const channel = await this.deps.channelQueryService.getChannelById(job.tenantId, job.channelId);
+        const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(job.tenantId, job.channelId);
         if (channel.tenantId !== job.tenantId) {
             throw new MarketplaceOrderLifecyclePermanentError('Channel tenant mismatch', {
                 channelId: job.channelId,

@@ -60,7 +60,7 @@ Error (shape from error handler):
 
 ## External compatibility API (`/api/v2`)
 
-Optional Merchant-compatible surface — not required for native Nexora operation. Foundation probe only until endpoints are implemented. See [platform-independence.md](../architecture/platform-independence.md), [compatibility.md](../architecture/compatibility.md), and [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md).
+Optional Merchant-compatible surface — not required for native Wasl operation. Foundation probe only until endpoints are implemented. See [platform-independence.md](../architecture/platform-independence.md), [compatibility.md](../architecture/compatibility.md), and [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md).
 
 ## Marketplace connections (Phase 21–22)
 
@@ -101,3 +101,4 @@ Not part of the product API version contract:
 - [API strategy](../architecture/api-strategy.md)
 - [ADR-002 Fastify](../decisions/ADR-002-fastify-http-server.md)
 - [ADR-010 API versioning](../decisions/ADR-010-api-versioning.md)
+

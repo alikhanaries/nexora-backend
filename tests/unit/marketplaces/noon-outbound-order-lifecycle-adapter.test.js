@@ -29,7 +29,7 @@ describe('mapMarketplaceFulfillmentToNoonCreateShipment', () => {
         expect(mapped.body.fbpi_order_nr).toBe('NFBO123456789');
         expect(mapped.body.awbs).toEqual([{ courier: 'noon', awb_nr: 'AWB123456789' }]);
         expect(mapped.body.items).toEqual([{ mp_item_nr: 'NFBO123456789-1' }]);
-        expect(mapped.body.integration_shipment_nr).toMatch(/^nexora-/);
+        expect(mapped.body.integration_shipment_nr).toMatch(/^wasl-/);
     });
 
     it('rejects quantity other than 1 per line', () => {
@@ -63,7 +63,7 @@ describe('NoonOutboundOrderLifecycleAdapter', () => {
         const [callRuntime, body] = createFbpiShipment.mock.calls[0];
         expect(callRuntime).toBe(runtime);
         expect(body.fbpi_order_nr).toBe('NFBO123456789');
-        expect(result.providerReference).toMatch(/^nexora-/);
+        expect(result.providerReference).toMatch(/^wasl-/);
     });
 
     it('maps transient errors to retryable adapter errors', async () => {

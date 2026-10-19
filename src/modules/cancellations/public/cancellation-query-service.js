@@ -18,4 +18,4 @@
  * }) => Promise<{ items: object[], totalCount: number, page: number, pageSize: number }>} listCancellations
  * Tenant-scoped page-based cancellation listing with optional filters.
  */
-export { DefaultCancellationQueryService } from '../application/cancellation-query-service.js';
+export { DefaultCancellationQueryService } from '../services/cancellation-query-service.js';

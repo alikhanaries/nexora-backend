@@ -1,4 +1,10 @@
-name: nexora
+name: wasl
+
+# Local dependency stack for Wasl backend development.
+# PostgreSQL role `nexora_app` in DATABASE_URL is a persisted identifier from migration 0030
+# (see WASL_EXTERNAL_COMPATIBILITY db.role.nexora_app) — not the Docker POSTGRES_USER.
+# Greenfield: use REDIS_KEY_PREFIX=wasl and QUEUE_PREFIX=wasl-queue to match schema defaults.
+# Existing volumes created with `nexora` Redis/queue prefixes require coordinated prefix migration.
 
 # Default `docker compose up -d` starts only the dependencies the API needs:
 # PostgreSQL, Redis and MinIO. The observability stack is behind the
@@ -46,7 +52,7 @@ services:
     environment:
       MINIO_ROOT_USER: nexora
       MINIO_ROOT_PASSWORD: nexora-secret
-      MINIO_DEFAULT_BUCKETS: nexora-local
+      MINIO_DEFAULT_BUCKETS: wasl-local
       MINIO_BROWSER: 'on'
     ports:
       - '9000:9000'
@@ -68,7 +74,7 @@ services:
     entrypoint: >
       /bin/sh -c "
       mc alias set local http://minio:9000 nexora nexora-secret &&
-      mc mb --ignore-existing local/nexora-local &&
+      mc mb --ignore-existing local/wasl-local &&
       echo 'bucket ready'
       "
     restart: 'no'

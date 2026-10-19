@@ -1,6 +1,6 @@
 # Marketplace catalog capability matrix (Phases 23–26)
 
-Authoritative summary of **implemented** adapter behavior. “Partial” means the generic Nexora operation maps to a subset of provider semantics — see provider READMEs.
+Authoritative summary of **implemented** adapter behavior. “Partial” means the generic Wasl operation maps to a subset of provider semantics — see provider READMEs.
 
 | Capability | Shopify | Amazon | Noon | Namshi |
 | ---------- | ------- | ------ | ---- | ------ |
@@ -18,7 +18,7 @@ Authoritative summary of **implemented** adapter behavior. “Partial” means t
 | ----- | ------- | ------ | ---- | ------ |
 | Auth | Admin access token | LWA + AWS SigV4 | RS256 JWT + cookie session | RS256 JWT + cookie session |
 | Inventory | Location + inventory item GID | Seller SKU listing availability | `warehouse_code` + `partner_sku` | Same as Noon stock API |
-| Price input | Nexora effective minor units | Decimal value_with_tax | Decimal `price` | Decimal `price` on **local** upsert |
+| Price input | Wasl effective minor units | Decimal value_with_tax | Decimal `price` | Decimal `price` on **local** upsert |
 | Delist | Unpublish / inactive | Qty 0 | `is_active: false` | Qty 0 |
 
 ## Entity mapping types
@@ -31,3 +31,4 @@ Authoritative summary of **implemented** adapter behavior. “Partial” means t
 | Namshi | `namshi_partner_sku`, `namshi_offer`, `namshi_catalog_sku` |
 
 Provider details: `src/modules/marketplaces/infrastructure/adapters/{shopify,amazon,noon,namshi}/README.md`.
+

@@ -22,7 +22,7 @@ describe('ProcessMarketplaceLifecyclePayload', () => {
         const processor = new ProcessMarketplaceLifecyclePayload({
             lifecycleService,
             orderAdapterRegistry: { resolve: vi.fn(() => adapter) },
-            channelQueryService: { getChannelById: vi.fn() },
+            commerceIntegrationQueryService: { getCommerceIntegrationById: vi.fn() },
             database: { execute: vi.fn(async (work) => work({})) },
             ensureMarketplaceOrderIngestedFromLifecycle,
         });

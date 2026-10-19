@@ -1,8 +1,8 @@
 /**
  * ISO 4217 minor-unit exponents for currencies that differ from the common default (2).
  *
- * Nexora stores amounts as integer minor units per ISO 4217. Most currencies use 2 decimal
- * places; this table covers the exceptions Nexora must handle when converting to decimals.
+ * Wasl stores amounts as integer minor units per ISO 4217. Most currencies use 2 decimal
+ * places; this table covers the exceptions Wasl must handle when converting to decimals.
  *
  * Unknown currencies default to exponent 2 — the same implicit convention used across pricing
  * and order flows today.

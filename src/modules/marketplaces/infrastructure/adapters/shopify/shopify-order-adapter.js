@@ -51,7 +51,7 @@ export class ShopifyOrderAdapter extends BaseMarketplaceOrderAdapter {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderFetchContext} context
      */
     async fetchOrder(runtime, context) {
@@ -75,7 +75,7 @@ export class ShopifyOrderAdapter extends BaseMarketplaceOrderAdapter {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderListContext} context
      * @param {import('../../../../marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderListOptions} options
      */

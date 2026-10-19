@@ -220,7 +220,7 @@ describe('Shopify order lifecycle integration', () => {
         expect(res.statusCode).toBe(401);
     });
 
-    it('documents outbound return gap: Shopify supports returns but Nexora outbound adapter does not', async () => {
+    it('documents outbound return gap: Shopify supports returns but Wasl outbound adapter does not', async () => {
         const { tenantId, slug } = await createTestTenant(server);
         const user = await createAuthenticatedUser(app, tenantId, slug);
         const headers = authHeaders(user.accessToken);

@@ -1,3 +1,7 @@
+import { WASL_NAMING } from '../../shared/config/wasl-naming.config.js';
+
+const { logicalNames, jobNames } = WASL_NAMING.infrastructure.queue;
+
 /**
  * Every queue in the system, declared in one place.
  *
@@ -6,21 +10,18 @@
  */
 export const QueueName = {
     /** Integration events handed over by the outbox publisher. */
-    INTEGRATION_EVENTS: 'integration-events',
+    INTEGRATION_EVENTS: logicalNames.integrationEvents,
     /** Webhook HTTP delivery jobs enqueued by the dispatch handler. */
-    WEBHOOK_DELIVERIES: 'webhook-deliveries',
-    /** Outbound channel/marketplace catalog synchronization jobs. */
-    CHANNEL_CATALOG_SYNC: 'channel-catalog-sync',
+    WEBHOOK_DELIVERIES: logicalNames.webhookDeliveries,
+    /** Outbound integration catalog synchronization jobs (persisted BullMQ name). */
+    CHANNEL_CATALOG_SYNC: logicalNames.catalogSync,
     /** Inbound/outbound marketplace order lifecycle jobs (webhook, polling, outbound). */
-    MARKETPLACE_ORDER_LIFECYCLE: 'marketplace-order-lifecycle',
+    MARKETPLACE_ORDER_LIFECYCLE: logicalNames.marketplaceOrderLifecycle,
 };
 /** Job names within {@link QueueName.INTEGRATION_EVENTS}. */
 export const JobName = {
-    PUBLISH_INTEGRATION_EVENT: 'publish-integration-event',
-    /** Hand off a persisted webhook delivery row to the future HTTP worker. */
-    DELIVER_WEBHOOK: 'deliver-webhook',
-    /** Execute a planned channel catalog sync unit of work. */
-    RUN_CATALOG_SYNC: 'run-catalog-sync',
-    /** Apply a normalized marketplace lifecycle job (webhook, polling, or outbound). */
-    PROCESS_MARKETPLACE_LIFECYCLE: 'process-marketplace-lifecycle',
+    PUBLISH_INTEGRATION_EVENT: jobNames.publishIntegrationEvent,
+    DELIVER_WEBHOOK: jobNames.deliverWebhook,
+    RUN_CATALOG_SYNC: jobNames.runCatalogSync,
+    PROCESS_MARKETPLACE_LIFECYCLE: jobNames.processMarketplaceLifecycle,
 };

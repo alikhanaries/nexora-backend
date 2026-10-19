@@ -5,9 +5,9 @@
 
 ## Context
 
-Phases 5–7 delivered Nexora's Merchant- and Channel-compatible `/api/v2` adapter. The verified contracts use integer surrogate keys (`OrderId`, `ReturnId`, line `Id`, …) alongside merchant/channel string references. Phase 5–7 deliberately did not fabricate or persist external integer IDs ([compatibility-matrix.md](../architecture/compatibility-matrix.md)).
+Phases 5–7 delivered Wasl's Merchant- and Channel-compatible `/api/v2` adapter. The verified contracts use integer surrogate keys (`OrderId`, `ReturnId`, line `Id`, …) alongside merchant/channel string references. Phase 5–7 deliberately did not fabricate or persist external integer IDs ([compatibility-matrix.md](../architecture/compatibility-matrix.md)).
 
-Nexora is an independent platform — compatibility endpoints translate to Nexora public contracts; they do not proxy to ChannelEngine ([ADR-018](ADR-018-phase-5-merchant-compatible-scope.md)).
+Wasl is an independent platform — compatibility endpoints translate to Wasl public contracts; they do not proxy to ChannelEngine ([ADR-018](ADR-018-phase-5-merchant-compatible-scope.md)).
 
 ## Problem
 
@@ -17,7 +17,7 @@ Compatibility integrators need stable integer IDs in responses and reliable inte
 
 Adopt **Option B**: a dedicated tenant-scoped **`external_integer_id_mappings`** table in module `src/modules/external-id-mapping/`, with public command/query ports deferred to Phase 8.2.
 
-Rejected: integer columns on core tables (provider coupling), per-provider tables (duplication), reusing `external_reference` for CE integers (conflates merchant string keys with Nexora-assigned surrogates).
+Rejected: integer columns on core tables (provider coupling), per-provider tables (duplication), reusing `external_reference` for CE integers (conflates merchant string keys with platform-assigned surrogates).
 
 ---
 
@@ -33,7 +33,7 @@ Table `external_integer_id_mappings`:
 | `tenant_id` | uuid FK → `tenants` | RLS scope |
 | `provider` | text | Initial: `compat_v2` (provider-neutral namespace for verified `/api/v2` contracts) |
 | `resource_type` | text | `order`, `order_line`, `return`, `shipment`, `cancellation` |
-| `resource_id` | uuid | Nexora entity UUID (polymorphic, app-enforced) |
+| `resource_id` | uuid | Wasl entity UUID (polymorphic, app-enforced) |
 | `external_id` | bigint | Assigned integer (> 0) |
 | `created_at` | timestamptz | Insert-only |
 
@@ -202,3 +202,4 @@ After backfill, Phase 8.3 enrichment and Phase 8.4 inbound resolution behave unc
 - [ADR-020](ADR-020-phase-7-channel-inbound-integration.md)
 - [compatibility-matrix.md](../architecture/compatibility-matrix.md)
 - [open-questions.md](../architecture/open-questions.md)
+

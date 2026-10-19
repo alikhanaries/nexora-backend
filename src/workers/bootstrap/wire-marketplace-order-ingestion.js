@@ -1,5 +1,5 @@
-import { DefaultChannelQueryService } from '../../modules/channels/public/index.js';
-import { PostgresChannelRepository } from '../../modules/channels/infrastructure/postgres-channel-repository.js';
+import { CommerceIntegrationQueryService } from '../../modules/commerce-integrations/public/index.js';
+import { PostgresCommerceIntegrationRepository } from '../../modules/commerce-integrations/infrastructure/postgres-commerce-integration-repository.js';
 import { PostgresMarketplaceRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../../modules/marketplaces/public/index.js';
 import { PostgresMarketplaceEntityMappingRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-entity-mapping-repository.js';
@@ -13,15 +13,15 @@ import { PostgresProductRepository } from '../../modules/products/infrastructure
  * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
  * @param {import('../../shared/metrics/metrics-recorder.js').MetricsRecorder} deps.metrics
  * @param {import('../../shared/logging/logger.port.js').Logger} deps.logger
- * @param {import('../../modules/orders/public/index.js').CreateChannelOrder} deps.createChannelOrder
- * @param {import('../../modules/channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
+ * @param {import('../../modules/orders/public/index.js').CreateIntegrationOrder} deps.createIntegrationOrder
+ * @param {import('../../modules/integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
  * @param {(registry: import('../../modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry) => void} [deps.registerMarketplaceOrderAdapters]
  * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
  * @param {string | null | undefined} [deps.amazonLwaTokenUrl]
  * @param {string | null | undefined} [deps.noonApiBaseUrl]
  * @param {string | null | undefined} [deps.noonUserAgent]
- * @param {import('../../modules/orders/infrastructure/postgres-order-repository.js').PostgresOrderRepository} [deps.orders]
- * @param {import('../../modules/orders/application/confirm-order.js').ConfirmOrder} [deps.confirmOrder]
+ * @param {import('../../modules/orders/repositories/postgres-order-repository.js').PostgresOrderRepository} [deps.orders]
+ * @param {import('../../modules/orders/services/confirm-order.js').ConfirmOrder} [deps.confirmOrder]
  * @param {import('../../modules/cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} [deps.cancellationCommandService]
  * @param {import('../../modules/returns/public/return-command-service.js').DefaultReturnCommandService} [deps.returnCommandService]
  * @param {import('../../modules/shipments/public/shipment-command-service.js').DefaultShipmentCommandService} [deps.shipmentCommandService]
@@ -36,12 +36,12 @@ export function wireMarketplaceOrderIngestion(deps) {
             noonApiBaseUrl: deps.noonApiBaseUrl,
             noonUserAgent: deps.noonUserAgent,
         }));
-    const channelRepository = new PostgresChannelRepository();
-    const channelQueryService = new DefaultChannelQueryService({
+    const channelRepository = new PostgresCommerceIntegrationRepository();
+    const commerceIntegrationQueryService = new CommerceIntegrationQueryService({
         queryable: deps.database,
-        getChannelById: (tenantId, channelId, queryable) => channelRepository.findById(queryable, tenantId, channelId),
-        getChannelByExternalReference: (tenantId, externalReference, queryable) => channelRepository.findByExternalReference(queryable, tenantId, externalReference),
-        listChannels: (tenantId, filters, queryable) => channelRepository.list(queryable, tenantId, filters),
+        getCommerceIntegrationById: (tenantId, channelId, queryable) => channelRepository.findById(queryable, tenantId, channelId),
+        getCommerceIntegrationByExternalReference: (tenantId, externalReference, queryable) => channelRepository.findByExternalReference(queryable, tenantId, externalReference),
+        listCommerceIntegrations: (tenantId, filters, queryable) => channelRepository.list(queryable, tenantId, filters),
     });
     const marketplaceRepository = new PostgresMarketplaceRepository();
     const marketplaceLookup = {
@@ -67,9 +67,9 @@ export function wireMarketplaceOrderIngestion(deps) {
     });
     const module = createMarketplaceOrderIngestionModule({
         database: deps.database,
-        channelQueryService,
+        commerceIntegrationQueryService,
         marketplaceLookup,
-        createChannelOrder: deps.createChannelOrder,
+        createIntegrationOrder: deps.createIntegrationOrder,
         marketplaceEntityMappingLookup,
         productQueryService,
         metrics: deps.metrics,
@@ -92,7 +92,7 @@ export function wireMarketplaceOrderIngestion(deps) {
     });
     return {
         ...module,
-        channelQueryService,
+        commerceIntegrationQueryService,
         marketplaceLookup,
         ...(deps.marketplaceAdapterRuntimeFactory === undefined
             ? {}

@@ -14,7 +14,7 @@ describe('worker observability configuration', () => {
         expect(config.workerObservability.httpEnabled).toBe(true);
         expect(config.workerObservability.host).toBe('127.0.0.1');
         expect(config.workerObservability.port).toBe(3001);
-        expect(config.workerObservability.otelServiceName).toBe('nexora-backend-worker');
+        expect(config.workerObservability.otelServiceName).toBe('wasl-backend-worker');
     });
     it('accepts custom host, port, and disable flag', () => {
         const config = loadConfig({
@@ -32,7 +32,7 @@ describe('worker observability configuration', () => {
         const config = loadConfig({
             ...baseEnv,
             NODE_ENV: 'test',
-            OTEL_SERVICE_NAME: 'nexora-backend',
+            OTEL_SERVICE_NAME: 'wasl-backend',
             WORKER_OTEL_SERVICE_NAME: 'custom-worker',
         });
         expect(config.workerObservability.otelServiceName).toBe('custom-worker');

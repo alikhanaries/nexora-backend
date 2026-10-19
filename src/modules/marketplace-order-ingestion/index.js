@@ -10,17 +10,17 @@ import { MarketplaceOrderAdapterRegistry } from './public/marketplace-order-adap
 /**
  * @param {object} deps
  * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
- * @param {import('../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+ * @param {import('../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
  * @param {import('./public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} deps.marketplaceLookup
- * @param {import('../orders/public/index.js').CreateChannelOrder} deps.createChannelOrder
+ * @param {import('../orders/public/index.js').CreateIntegrationOrder} deps.createIntegrationOrder
  * @param {import('./public/marketplace-entity-mapping-lookup.port.js').MarketplaceEntityMappingLookup} deps.marketplaceEntityMappingLookup
  * @param {import('../products/public/index.js').ProductQueryService} deps.productQueryService
  * @param {import('../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
  * @param {import('../../shared/logging/logger.port.js').Logger} [deps.logger]
- * @param {import('../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
+ * @param {import('../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
  * @param {(registry: MarketplaceOrderAdapterRegistry) => void} [deps.registerMarketplaceOrderAdapters]
- * @param {import('../orders/infrastructure/postgres-order-repository.js').PostgresOrderRepository} [deps.orders]
- * @param {import('../orders/application/confirm-order.js').ConfirmOrder} [deps.confirmOrder]
+ * @param {import('../orders/repositories/postgres-order-repository.js').PostgresOrderRepository} [deps.orders]
+ * @param {import('../orders/services/confirm-order.js').ConfirmOrder} [deps.confirmOrder]
  * @param {import('../cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} [deps.cancellationCommandService]
  * @param {import('../returns/public/return-command-service.js').DefaultReturnCommandService} [deps.returnCommandService]
  * @param {import('../shipments/public/shipment-command-service.js').DefaultShipmentCommandService} [deps.shipmentCommandService]
@@ -32,9 +32,9 @@ export function createMarketplaceOrderIngestionModule(deps) {
     deps.registerMarketplaceOrderAdapters?.(orderAdapterRegistry);
     const ingestionService = new MarketplaceOrderIngestionService({
         database: deps.database,
-        channelQueryService: deps.channelQueryService,
+        commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         marketplaceLookup: deps.marketplaceLookup,
-        createChannelOrder: deps.createChannelOrder,
+        createIntegrationOrder: deps.createIntegrationOrder,
         marketplaceEntityMappingLookup: deps.marketplaceEntityMappingLookup,
         productQueryService: deps.productQueryService,
         metrics: deps.metrics,
@@ -43,7 +43,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
     const ingestNormalizedMarketplaceOrder = new IngestNormalizedMarketplaceOrder({
         ingestionService,
         orderAdapterRegistry,
-        channelQueryService: deps.channelQueryService,
+        commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         database: deps.database,
         ...(deps.marketplaceAdapterRuntimeFactory === undefined
             ? {}
@@ -54,7 +54,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
         : new FetchAndIngestMarketplaceOrders({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry,
-            channelQueryService: deps.channelQueryService,
+            commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
             marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory,
             database: deps.database,
         });
@@ -75,7 +75,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
     const lifecycleService = lifecycleEnabled
         ? new MarketplaceOrderLifecycleService({
             database: deps.database,
-            channelQueryService: deps.channelQueryService,
+            commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
             marketplaceLookup: deps.marketplaceLookup,
             orders: deps.orders,
             executeOperation: executeLifecycleOperation,
@@ -89,7 +89,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
         ? new EnsureMarketplaceOrderIngestedFromLifecycle({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry,
-            channelQueryService: deps.channelQueryService,
+            commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
             orders: deps.orders,
             database: deps.database,
             ...(deps.marketplaceAdapterRuntimeFactory === undefined
@@ -102,7 +102,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
         : new ProcessMarketplaceLifecyclePayload({
             lifecycleService,
             orderAdapterRegistry,
-            channelQueryService: deps.channelQueryService,
+            commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
             database: deps.database,
             ...(ensureMarketplaceOrderIngestedFromLifecycle === undefined
                 ? {}

@@ -21,8 +21,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DOCS_DIR = dirname(fileURLToPath(import.meta.url));
-const PDF_PATH = join(DOCS_DIR, 'Nexora_Backend_Technical_Documentation.pdf');
-const MD_PATH = join(DOCS_DIR, 'Nexora_Backend_Technical_Documentation.md');
+const PDF_PATH = join(DOCS_DIR, 'Wasl_Backend_Technical_Documentation.pdf');
+const MD_PATH = join(DOCS_DIR, 'Wasl_Backend_Technical_Documentation.md');
 const RENDER_DIR = join(DOCS_DIR, '.pdf-pages');
 
 const RENDER = process.argv.includes('--render');
@@ -234,3 +234,4 @@ async function main() {
 }
 
 await main();
+

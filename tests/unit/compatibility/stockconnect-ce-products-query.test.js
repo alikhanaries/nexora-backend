@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { StockConnectCeProductsQuery } from '../../../src/modules/compatibility/application/stockconnect-ce-products-query.js';
+import { CompatV2ProductsQuery } from '../../../src/modules/compatibility/application/compat-v2-products-query.js';
 
-describe('StockConnectCeProductsQuery', () => {
+describe('CompatV2ProductsQuery', () => {
     it('returns CE product rows without requiring product content', async () => {
-        const query = new StockConnectCeProductsQuery({
+        const query = new CompatV2ProductsQuery({
             authorization: { requirePermission: vi.fn() },
             productQueryService: {
                 getProductBySku: vi.fn(async (_tenantId, sku) => (

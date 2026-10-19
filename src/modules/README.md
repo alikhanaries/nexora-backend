@@ -1,6 +1,6 @@
 # Business Modules
 
-`src/modules/` holds **bounded contexts** — orders, products, channels, inventory, etc. The folder is **empty in Phase 1**; this document defines conventions for Phase 2+.
+`src/modules/` holds **bounded contexts** — orders, products, commerce integrations, inventory, etc. This document defines conventions for module layout and boundaries.
 
 ## Module structure
 
@@ -55,7 +55,7 @@ Prefer integration events (outbox) for async cross-module reactions; synchronous
 - Register plugin in `src/app/http/create-server.ts`
 - Use Zod schemas for OpenAPI generation
 
-Merchant-compatible external API routes belong in the provider-neutral `compatibility` module under `/api/v2` — not in core domain modules. Native Nexora routes stay under `/api/v1`.
+Merchant-compatible external API routes belong in the provider-neutral `compatibility` module under `/api/v2` — not in core domain modules. Native Wasl routes stay under `/api/v1`.
 
 ## Persistence
 

@@ -2,18 +2,18 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module.js';
-import { NEXORA_CONFIG } from './config/config.module.js';
+import { WASL_CONFIG } from './config/config.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, new FastifyAdapter({ logger: false }));
 
-  const config = app.get(NEXORA_CONFIG);
+  const config = app.get(WASL_CONFIG);
   const port = resolveNestPort(config);
   const host = config.server.host;
 
   await app.listen(port, host);
   process.stdout.write(
-    `Nexora Nest (Phase 1) listening on http://${host === '0.0.0.0' ? 'localhost' : host}:${port}\n`,
+    `Deprecated root nest stub listening on http://${host === '0.0.0.0' ? 'localhost' : host}:${port} — use src/nest/bootstrap.mjs (npm run start:nest)\n`,
   );
 }
 

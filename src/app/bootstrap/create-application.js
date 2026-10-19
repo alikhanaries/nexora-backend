@@ -6,7 +6,7 @@ import { PostgresMembershipRoleRepository } from '../../modules/authorization/in
 import { createIdentityModule } from '../../modules/identity/index.js';
 import { AuthenticateAccessTokenUseCase } from '../../modules/identity/application/authenticate-access-token.js';
 import { createMfaModule } from '../../modules/mfa/index.js';
-import { createChannelsModule } from '../../modules/channels/index.js';
+import { createCommerceIntegrationsModule } from '../../modules/commerce-integrations/index.js';
 import { createInventoryModule } from '../../modules/inventory/index.js';
 import { createMarketplacesModule, createMarketplaceConnectionServices, } from '../../modules/marketplaces/index.js';
 import { createOffersModule } from '../../modules/offers/index.js';
@@ -20,8 +20,8 @@ import { createTenantsModule } from '../../modules/tenants/index.js';
 import { createCompatibilityModule } from '../../modules/compatibility/index.js';
 import {
     createExternalCompatibilityReadinessProbe,
-    createStockConnectCeCompatibilityReadinessProbe,
-} from '../../modules/compatibility/application/stockconnect-ce-readiness.js';
+    createCompatV2CompatibilityReadinessProbe,
+} from '../../modules/compatibility/application/compat-v2-readiness.js';
 import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
 import { createWebhooksModule } from '../../modules/webhooks/index.js';
 import { createMarketplaceWebhookIngestionModule } from '../../modules/marketplace-webhook-ingestion/index.js';
@@ -35,7 +35,7 @@ import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../modules/m
 import { MarketplaceLifecycleEnqueueService } from '../../modules/marketplace-order-ingestion/application/marketplace-lifecycle-enqueue-service.js';
 import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/application/enqueue-outbound-marketplace-order-lifecycle-command.js';
 import { ShopifyOrderAdapter } from '../../modules/marketplaces/infrastructure/adapters/shopify/shopify-order-adapter.js';
-import { PostgresOrderRepository } from '../../modules/orders/infrastructure/postgres-order-repository.js';
+import { PostgresOrderRepository } from '../../modules/orders/repositories/postgres-order-repository.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestion.js';
 import { createNestHttpServer } from '../http/create-nest-http-server.js';
@@ -101,7 +101,7 @@ export async function createApplication(infra) {
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
     });
-    const channels = createChannelsModule({
+    const channels = createCommerceIntegrationsModule({
         database: infra.database,
         eventRecorder: infra.eventRecorder,
         verifyMarketplaceExists: marketplaces.verifyMarketplaceExists,
@@ -111,7 +111,7 @@ export async function createApplication(infra) {
     const marketplaceConnections = createMarketplaceConnectionServices({
         queryable: infra.database,
         secretEncryptor: identity.auth.secretEncryptor,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         auditRecorder: audit.auditRecorder,
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
         noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
@@ -138,14 +138,14 @@ export async function createApplication(infra) {
     const pricing = createPricingModule({
         database: infra.database,
         productQueryService: products.productQueryService,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
     });
     const offers = createOffersModule({
         database: infra.database,
         productQueryService: products.productQueryService,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         pricingService: pricing.pricingService,
         eventRecorder: infra.eventRecorder,
         auditRecorder: audit.auditRecorder,
@@ -157,7 +157,7 @@ export async function createApplication(infra) {
     const orders = createOrdersModule({
         database: infra.database,
         productQueryService: products.productQueryService,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         offerQueryService: offers.offerQueryService,
         pricingService: pricing.pricingService,
         inventoryService: inventory.inventoryService,
@@ -220,7 +220,7 @@ export async function createApplication(infra) {
         database: infra.database,
         metrics: infra.metrics,
         logger: infra.logger,
-        createChannelOrder: orders.createChannelOrder,
+        createIntegrationOrder: orders.createIntegrationOrder,
         marketplaceAdapterRuntimeFactory,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
@@ -255,7 +255,7 @@ export async function createApplication(infra) {
         marketplaceAdapterRuntimeFactory,
         database: infra.database,
         idempotency: infra.idempotency,
-        channelQueryService: channels.channelQueryService,
+        commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
         marketplaceLookup: {
             findById: async (marketplaceId) => {
                 const marketplace = await marketplaceRepository.findById(infra.database, marketplaceId);
@@ -288,7 +288,7 @@ export async function createApplication(infra) {
             : { marketplaceOrderLifecycleService: marketplaceOrderIngestion.lifecycleService }),
         registerMarketplaceWebhookAdapters: (registry) => registerMarketplaceWebhookAdapters(registry, {
             marketplaceAdapterRuntimeFactory,
-            channelQueryService: channels.channelQueryService,
+            commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
             database: infra.database,
             shopifyOrderAdapter,
         }),
@@ -299,7 +299,7 @@ export async function createApplication(infra) {
         idempotency: infra.idempotency,
         coreContracts: {
             productQueryService: products.productQueryService,
-            channelQueryService: channels.channelQueryService,
+            commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
             inventoryService: inventory.inventoryService,
             pricingService: pricing.pricingService,
             offerQueryService: offers.offerQueryService,
@@ -337,7 +337,7 @@ export async function createApplication(infra) {
         },
     });
     readiness.registerProbe(createExternalCompatibilityReadinessProbe(compatibility.routeDeps));
-    readiness.registerProbe(createStockConnectCeCompatibilityReadinessProbe(compatibility.routeDeps));
+    readiness.registerProbe(createCompatV2CompatibilityReadinessProbe(compatibility.routeDeps));
     const coreDomain = {
         identity,
         tenants,

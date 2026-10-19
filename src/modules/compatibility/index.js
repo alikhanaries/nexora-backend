@@ -9,14 +9,14 @@ import { OrderCompatibilityQuery } from './application/order-compatibility-query
 import { ShipmentCompatibilityCommand } from './application/shipment-compatibility-command.js';
 import { ShipmentCompatibilityQuery } from './application/shipment-compatibility-query.js';
 import compatibilityRoutes from './presentation/compatibility.routes.js';
-import stockconnectCeRoutes from './presentation/stockconnect-ce.routes.js';
-import { StockConnectCeOrderCompatibilityQuery } from './application/stockconnect-ce-order-compatibility-query.js';
-import { StockConnectCeChannelCompatibilityQuery } from './application/stockconnect-ce-channel-compatibility-query.js';
-import { StockConnectCeCatalogCommand } from './application/stockconnect-ce-catalog-command.js';
-import { StockConnectCeShipmentDeliveryCommand } from './application/stockconnect-ce-shipment-delivery-command.js';
-import { StockConnectCeChannelProductsQuery } from './application/stockconnect-ce-channel-products-query.js';
-import { StockConnectCeProductsQuery } from './application/stockconnect-ce-products-query.js';
-import { StockConnectCeOrderInvoiceQuery } from './application/stockconnect-ce-order-invoice-query.js';
+import compatV2Routes from './presentation/compat-v2.routes.js';
+import { CompatV2OrderQuery } from './application/compat-v2-order-query.js';
+import { CompatV2IntegrationListQuery } from './application/compat-v2-integration-list-query.js';
+import { CompatV2CatalogCommand } from './application/compat-v2-catalog-command.js';
+import { CompatV2ShipmentDeliveryCommand } from './application/compat-v2-shipment-delivery-command.js';
+import { CompatV2IntegrationProductsQuery } from './application/compat-v2-integration-products-query.js';
+import { CompatV2ProductsQuery } from './application/compat-v2-products-query.js';
+import { CompatV2OrderInvoiceQuery } from './application/compat-v2-order-invoice-query.js';
 
 /**
  * @param {object} deps
@@ -29,13 +29,13 @@ import { StockConnectCeOrderInvoiceQuery } from './application/stockconnect-ce-o
 export function createCompatibilityModule(deps) {
     const orderCompatibilityQuery = new OrderCompatibilityQuery({
         orderQueryService: deps.coreContracts.orderQueryService,
-        channelQueryService: deps.coreContracts.channelQueryService,
+        commerceIntegrationQueryService: deps.coreContracts.commerceIntegrationQueryService,
         externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const orderCompatibilityCommand = new OrderCompatibilityCommand({
         orderCommandService: deps.coreContracts.orderCommandService,
         orderQueryService: deps.coreContracts.orderQueryService,
-        channelQueryService: deps.coreContracts.channelQueryService,
+        commerceIntegrationQueryService: deps.coreContracts.commerceIntegrationQueryService,
         externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
     const shipmentCompatibilityCommand = new ShipmentCompatibilityCommand({
@@ -67,28 +67,28 @@ export function createCompatibilityModule(deps) {
     const returnCompatibilityQuery = new ReturnCompatibilityQuery({
         returnQueryService: deps.coreContracts.returnQueryService,
         orderQueryService: deps.coreContracts.orderQueryService,
-        channelQueryService: deps.coreContracts.channelQueryService,
+        commerceIntegrationQueryService: deps.coreContracts.commerceIntegrationQueryService,
         externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
-    const stockConnectCeOrderCompatibilityQuery = new StockConnectCeOrderCompatibilityQuery({
+    const compatV2OrderQuery = new CompatV2OrderQuery({
         orderQueryService: deps.coreContracts.orderQueryService,
-        channelQueryService: deps.coreContracts.channelQueryService,
+        commerceIntegrationQueryService: deps.coreContracts.commerceIntegrationQueryService,
         externalIntegerIdMappingQueryService: deps.coreContracts.externalIntegerIdMappingQueryService,
     });
-    const stockConnectCeChannelCompatibilityQuery = new StockConnectCeChannelCompatibilityQuery({
-        channelQueryService: deps.coreContracts.channelQueryService,
+    const compatV2IntegrationListQuery = new CompatV2IntegrationListQuery({
+        commerceIntegrationQueryService: deps.coreContracts.commerceIntegrationQueryService,
     });
-    const stockConnectCeChannelProductsQuery = new StockConnectCeChannelProductsQuery({
+    const compatV2IntegrationProductsQuery = new CompatV2IntegrationProductsQuery({
         authorization: deps.authorization,
-        channelQueryService: deps.coreContracts.channelQueryService,
+        commerceIntegrationQueryService: deps.coreContracts.commerceIntegrationQueryService,
         offerQueryService: deps.coreContracts.offerQueryService,
         productQueryService: deps.coreContracts.productQueryService,
     });
-    const stockConnectCeProductsQuery = new StockConnectCeProductsQuery({
+    const compatV2ProductsQuery = new CompatV2ProductsQuery({
         authorization: deps.authorization,
         productQueryService: deps.coreContracts.productQueryService,
     });
-    const stockConnectCeCatalogCommand = new StockConnectCeCatalogCommand({
+    const compatV2CatalogCommand = new CompatV2CatalogCommand({
         productQueryService: deps.coreContracts.productQueryService,
         createProduct: deps.coreContracts.createProduct,
         archiveProduct: deps.coreContracts.archiveProduct,
@@ -97,15 +97,15 @@ export function createCompatibilityModule(deps) {
         getProductContent: deps.coreContracts.getProductContent,
         suspendOffer: deps.coreContracts.suspendOffer,
         activateOffer: deps.coreContracts.activateOffer,
-        channelQueryService: deps.coreContracts.channelQueryService,
+        commerceIntegrationQueryService: deps.coreContracts.commerceIntegrationQueryService,
         inventoryService: deps.coreContracts.inventoryService,
         pricingService: deps.coreContracts.pricingService,
         offerQueryService: deps.coreContracts.offerQueryService,
     });
-    const stockConnectCeOrderInvoiceQuery = new StockConnectCeOrderInvoiceQuery({
+    const compatV2OrderInvoiceQuery = new CompatV2OrderInvoiceQuery({
         orderQueryService: deps.coreContracts.orderQueryService,
     });
-    const stockConnectCeShipmentDeliveryCommand = new StockConnectCeShipmentDeliveryCommand({
+    const compatV2ShipmentDeliveryCommand = new CompatV2ShipmentDeliveryCommand({
         shipmentQueryService: deps.coreContracts.shipmentQueryService,
         shipShipment: deps.coreContracts.shipShipment,
         deliverShipment: deps.coreContracts.deliverShipment,
@@ -114,7 +114,7 @@ export function createCompatibilityModule(deps) {
         authorization: deps.authorization,
         idempotency: deps.idempotency,
         productQueryService: deps.coreContracts.productQueryService,
-        channelQueryService: deps.coreContracts.channelQueryService,
+        commerceIntegrationQueryService: deps.coreContracts.commerceIntegrationQueryService,
         inventoryService: deps.coreContracts.inventoryService,
         pricingService: deps.coreContracts.pricingService,
         offerQueryService: deps.coreContracts.offerQueryService,
@@ -127,19 +127,19 @@ export function createCompatibilityModule(deps) {
     });
     const registerCompatibilityRoutes = async (app, routeDeps) => {
         await compatibilityRoutes(app, routeDeps);
-        await stockconnectCeRoutes(app, routeDeps);
+        await compatV2Routes(app, routeDeps);
     };
     return {
         routes: registerCompatibilityRoutes,
         routeDeps: {
             orderCompatibilityQuery,
-            stockConnectCeOrderCompatibilityQuery,
-            stockConnectCeChannelCompatibilityQuery,
-            stockConnectCeChannelProductsQuery,
-            stockConnectCeProductsQuery,
-            stockConnectCeCatalogCommand,
-            stockConnectCeShipmentDeliveryCommand,
-            stockConnectCeOrderInvoiceQuery,
+            compatV2OrderQuery,
+            compatV2IntegrationListQuery,
+            compatV2IntegrationProductsQuery,
+            compatV2ProductsQuery,
+            compatV2CatalogCommand,
+            compatV2ShipmentDeliveryCommand,
+            compatV2OrderInvoiceQuery,
             orderCompatibilityCommand,
             shipmentCompatibilityCommand,
             shipmentCompatibilityQuery,

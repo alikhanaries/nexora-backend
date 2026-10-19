@@ -1,7 +1,7 @@
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
-} from '../../channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+} from '../../integration-catalog-sync/public/catalog-sync-adapter-errors.js';
 import {
     MarketplaceAuthenticationError,
     MarketplaceConfigurationError,

@@ -4,12 +4,14 @@ import { enrichRequestContext } from '../../../shared/context/request-context.js
 import { AuthenticationError } from '../../../shared/errors/index.js';
 import { CORE_DOMAIN } from '../../domain/core-domain.tokens.js';
 import { isMerchantCompatQueryAuthPath } from '../../../shared/auth/merchant-compat-route-prefix.js';
+import { isStockConnectIntegrationPath } from '../../../shared/auth/stock-connect-integration-route-prefix.js';
 import {
   readMerchantCompatCeKeyHeader,
   readMerchantCompatQueryApiKey,
 } from '../../../shared/auth/read-merchant-compat-query-api-key.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import { isPublicRoute } from '../auth/public-route.js';
+import { parseApiKey } from '../../../modules/api-keys/domain/api-key-secret.js';
 
 function readBearerToken(authorization) {
   if (typeof authorization !== 'string') {
@@ -30,6 +32,20 @@ function readApiKey(headers) {
   }
   const apiKeyMatch = /^ApiKey\s+(\S+)$/i.exec(authorization);
   return apiKeyMatch?.[1] ?? null;
+}
+
+/**
+ * Wasl API keys are `nxk_<prefix>.<secret>` (see formatApiKey). JWTs also contain dots,
+ * so never treat Bearer as an API key unless the prefix segment is an nxk key.
+ * @param {string} bearer
+ */
+function readBearerApiKeyRaw(bearer) {
+  const trimmed = bearer.trim();
+  const parsed = parseApiKey(trimmed);
+  if (parsed === null || !parsed.prefix.startsWith('nxk_')) {
+    return null;
+  }
+  return trimmed;
 }
 
 export @Injectable()
@@ -55,6 +71,8 @@ class AuthGuard {
     }
 
     const bearer = readBearerToken(request.headers.authorization);
+    const bearerApiKey =
+      bearer !== null && isStockConnectIntegrationPath(path) ? readBearerApiKeyRaw(bearer) : null;
     let apiKey = readApiKey(request.headers);
     if (apiKey === null && isMerchantCompatQueryAuthPath(path)) {
       apiKey =
@@ -62,12 +80,34 @@ class AuthGuard {
         ?? readMerchantCompatCeKeyHeader(request.headers);
     }
 
-    if (bearer !== null && apiKey !== null) {
+    if (bearer !== null && bearerApiKey === null && apiKey !== null) {
+      throw new AuthenticationError('Provide either Bearer token or API key, not both');
+    }
+    if (bearerApiKey !== null && apiKey !== null) {
       throw new AuthenticationError('Provide either Bearer token or API key, not both');
     }
 
     try {
-      if (bearer !== null) {
+      if (bearerApiKey !== null) {
+        const verified = await this.coreDomain.verifyApiKey.execute({ rawKey: bearerApiKey });
+        const principal = {
+          kind: 'api-key',
+          id: verified.apiKeyId,
+          tenantId: verified.tenantId,
+          permissions: verified.permissions,
+          authenticationMethod: 'api-key',
+          apiKeyId: verified.apiKeyId,
+          scopes: verified.scopes,
+          ...(verified.channelId === undefined ? {} : { apiKeyChannelId: verified.channelId }),
+        };
+        enrichRequestContext({
+          tenantId: principal.tenantId,
+          principal,
+        });
+        this.coreDomain.metrics.recordAuthEvent({ method: 'api-key', outcome: 'success' });
+        return true;
+      }
+      if (bearer !== null && bearerApiKey === null) {
         const principal = await this.coreDomain.authenticateAccessToken.execute({
           accessToken: bearer,
           authenticationMethod: 'password',

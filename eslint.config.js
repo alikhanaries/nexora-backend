@@ -4,7 +4,18 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'scripts/**'],
+    // Nest layer uses SWC decorator syntax (`export @Injectable()`); validated at runtime via register-swc.mjs.
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      'scripts/**',
+      'docs/**',
+      'src/nest/**',
+      'src/modules/*/controllers/nest/**',
+      'nest/**',
+      'test/nest/**',
+    ],
   },
   js.configs.recommended,
   {
@@ -51,6 +62,10 @@ export default [
   {
     files: ['src/app/http/**/*.js', 'src/workers/handlers/**/*.js'],
     rules: {},
+  },
+  {
+    files: ['src/app/register-swc.mjs', 'tests/integration/node-swc-register.mjs'],
+    rules: { 'no-restricted-globals': 'off' },
   },
   prettier,
 ];

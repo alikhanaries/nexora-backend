@@ -1,6 +1,6 @@
 # Tenants module
 
-Global tenant registry for Nexora. Tenants are platform-level records — the `tenants` table is **not** tenant-scoped and has no row-level security policy.
+Global tenant registry for Wasl. Tenants are platform-level records — the `tenants` table is **not** tenant-scoped and has no row-level security policy.
 
 ## Lifecycle
 

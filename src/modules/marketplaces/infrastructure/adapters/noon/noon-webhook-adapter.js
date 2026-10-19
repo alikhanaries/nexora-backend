@@ -18,7 +18,7 @@ export class NoonWebhookAdapter {
     }
 
     /**
-     * Nexora ingress token routes the connection; Noon Event Notifications optional credentials
+     * Wasl ingress token routes the connection; Noon Event Notifications optional credentials
      * are configured in noon and validated at the network edge by the integrator when required.
      *
      * @param {import('../../../../marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js').MarketplaceWebhookRequestContext} context

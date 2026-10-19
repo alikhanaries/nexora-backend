@@ -3,7 +3,7 @@
 Authoritative summary of **implemented** lifecycle behavior. Legend:
 
 - **In** = inbound only (webhook/poll → Nexora)
-- **Out** = outbound only (Nexora → marketplace via `ExecuteOutboundMarketplaceOrderLifecycleCommand`)
+- **Out** = outbound only (Wasl → marketplace via `ExecuteOutboundMarketplaceOrderLifecycleCommand`)
 - **Both** = implemented in both directions
 - **—** = not implemented / not verified for generic contract
 
@@ -55,3 +55,4 @@ HTTP `createApplication` wires inbound lifecycle via `wireMarketplaceOrderIngest
 - Noon/Namshi `UpdateOrder`, `GetShipment`, `CancelShipment`, `AddShipmentCourierAwbs`
 
 Provider READMEs: `src/modules/marketplaces/infrastructure/adapters/{amazon,shopify,noon,namshi}/README.md`.
+

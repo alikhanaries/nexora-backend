@@ -8,7 +8,7 @@ import { createApiKeysModule } from '../../modules/api-keys/index.js';
 import { createMfaModule } from '../../modules/mfa/index.js';
 import { createTenantsModule } from '../../modules/tenants/index.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
-import { createChannelsModule } from '../../modules/channels/index.js';
+import { createCommerceIntegrationsModule } from '../../modules/commerce-integrations/index.js';
 import { createInventoryModule } from '../../modules/inventory/index.js';
 import {
   createMarketplaceConnectionServices,
@@ -100,7 +100,7 @@ export async function wireCoreDomain(config, database, deps) {
     auditRecorder: audit.auditRecorder,
   });
 
-  const channels = createChannelsModule({
+  const channels = createCommerceIntegrationsModule({
     database,
     eventRecorder,
     verifyMarketplaceExists: marketplaces.verifyMarketplaceExists,
@@ -111,7 +111,7 @@ export async function wireCoreDomain(config, database, deps) {
   const marketplaceConnections = createMarketplaceConnectionServices({
     queryable: database,
     secretEncryptor: identity.auth.secretEncryptor,
-    channelQueryService: channels.channelQueryService,
+    commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
     auditRecorder: audit.auditRecorder,
     amazonLwaTokenUrl: config.marketplace.amazonLwaTokenUrl,
     noonApiBaseUrl: config.marketplace.noonApiBaseUrl,
@@ -140,7 +140,7 @@ export async function wireCoreDomain(config, database, deps) {
   const pricing = createPricingModule({
     database,
     productQueryService: products.productQueryService,
-    channelQueryService: channels.channelQueryService,
+    commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
     eventRecorder,
     auditRecorder: audit.auditRecorder,
   });
@@ -148,7 +148,7 @@ export async function wireCoreDomain(config, database, deps) {
   const offers = createOffersModule({
     database,
     productQueryService: products.productQueryService,
-    channelQueryService: channels.channelQueryService,
+    commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
     pricingService: pricing.pricingService,
     eventRecorder,
     auditRecorder: audit.auditRecorder,
@@ -162,7 +162,7 @@ export async function wireCoreDomain(config, database, deps) {
   const orders = createOrdersModule({
     database,
     productQueryService: products.productQueryService,
-    channelQueryService: channels.channelQueryService,
+    commerceIntegrationQueryService: channels.commerceIntegrationQueryService,
     offerQueryService: offers.offerQueryService,
     pricingService: pricing.pricingService,
     inventoryService: inventory.inventoryService,

@@ -5,7 +5,7 @@ import { readAmazonMarketplaceId } from './amazon-config.js';
 /**
  * Maps generic outbound fulfillment to SP-API confirmShipment body (MFN).
  *
- * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+ * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
  * @param {import('../../../public/marketplace-outbound-order-lifecycle.port.js').MarketplaceCreateFulfillmentRequest} request
  * @param {string} [shipDateIso]
  */

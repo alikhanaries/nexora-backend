@@ -1,5 +1,8 @@
 import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics } from 'prom-client';
+import { WASL_NAMING } from '../../shared/config/wasl-naming.config.js';
 import { classifyStatus } from '../../shared/metrics/index.js';
+
+const retentionMetrics = WASL_NAMING.observability.metrics;
 /**
  * Prometheus implementation of the metrics port.
  *
@@ -132,25 +135,25 @@ export class PrometheusMetrics {
             registers: [this.registry],
         });
         this.retentionCleanupDeletedTotal = new Counter({
-            name: 'nexora_retention_cleanup_deleted_total',
+            name: retentionMetrics.retentionCleanupDeletedTotal,
             help: 'Rows deleted by retention cleanup sweeps.',
             labelNames: ['resource'],
             registers: [this.registry],
         });
         this.retentionCleanupRunsTotal = new Counter({
-            name: 'nexora_retention_cleanup_runs_total',
+            name: retentionMetrics.retentionCleanupRunsTotal,
             help: 'Retention cleanup runs by outcome.',
             labelNames: ['outcome'],
             registers: [this.registry],
         });
         this.retentionCleanupFailuresTotal = new Counter({
-            name: 'nexora_retention_cleanup_failures_total',
+            name: retentionMetrics.retentionCleanupFailuresTotal,
             help: 'Retention cleanup failures by resource.',
             labelNames: ['resource'],
             registers: [this.registry],
         });
         this.retentionCleanupDuration = new Histogram({
-            name: 'nexora_retention_cleanup_duration_seconds',
+            name: retentionMetrics.retentionCleanupDurationSeconds,
             help: 'Retention cleanup run duration in seconds.',
             buckets: DURATION_BUCKETS,
             registers: [this.registry],

@@ -6,11 +6,11 @@ import {
 } from '../../../src/shared/context/request-context.js';
 import { REQUEST_ID_HEADER, resolveRequestId } from '../../../src/shared/context/request-id.js';
 import { currentTraceId } from '../../../src/infrastructure/observability/tracing.js';
-import { NEXORA_CONFIG } from '../../config/config.module.js';
+import { WASL_CONFIG } from '../../config/config.module.js';
 
 export @Injectable()
 class RequestContextMiddleware {
-  constructor(@Inject(NEXORA_CONFIG) config) {
+  constructor(@Inject(WASL_CONFIG) config) {
     this.config = config;
   }
 

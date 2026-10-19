@@ -15,9 +15,9 @@ export class MarketplaceOrderIngestionService {
     /**
      * @param {object} deps
      * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
-     * @param {import('../../channels/public/index.js').DefaultChannelQueryService} deps.channelQueryService
+     * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {import('../public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} deps.marketplaceLookup
-     * @param {import('../../orders/application/create-channel-order.js').CreateChannelOrder} deps.createChannelOrder
+     * @param {import('../../orders/services/create-integration-order.js').CreateIntegrationOrder} deps.createIntegrationOrder
      * @param {import('../public/marketplace-entity-mapping-lookup.port.js').MarketplaceEntityMappingLookup} deps.marketplaceEntityMappingLookup
      * @param {import('../../products/public/index.js').ProductQueryService} deps.productQueryService
      * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
@@ -45,7 +45,7 @@ export class MarketplaceOrderIngestionService {
                     status: order.status,
                 });
             }
-            const channel = await this.deps.channelQueryService.getChannelById(input.tenantId, input.channelId);
+            const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.channelId);
             if (channel.tenantId !== input.tenantId) {
                 throw new MarketplaceOrderIngestionPermanentError('Channel tenant mismatch', {
                     channelId: input.channelId,
@@ -75,7 +75,7 @@ export class MarketplaceOrderIngestionService {
                     lines: order.lines,
                     queryable: tx,
                 });
-                const createResult = await this.deps.createChannelOrder.execute({
+                const createResult = await this.deps.createIntegrationOrder.execute({
                     tenantId: input.tenantId,
                     actorId: SYSTEM_ACTOR_ID,
                     actorKind: 'api-key',

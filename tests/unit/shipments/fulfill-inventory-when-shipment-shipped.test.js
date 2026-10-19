@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fulfillInventoryWhenShipmentShipped } from '../../../src/modules/shipments/application/fulfill-inventory-when-shipment-shipped.js';
+import { fulfillInventoryWhenShipmentShipped } from '../../../src/modules/shipments/services/fulfill-inventory-when-shipment-shipped.js';
 
 describe('fulfillInventoryWhenShipmentShipped', () => {
     it('calls fulfillReservedForShipment for normal orders', async () => {

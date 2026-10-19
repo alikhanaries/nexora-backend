@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import {
-    assertStockConnectCeCompatibilityWired,
-    createStockConnectCeCompatibilityReadinessProbe,
-} from '../../../src/modules/compatibility/application/stockconnect-ce-readiness.js';
+    assertCompatV2CompatibilityWired,
+    createCompatV2CompatibilityReadinessProbe,
+} from '../../../src/modules/compatibility/application/compat-v2-readiness.js';
 
 describe('StockConnect CE readiness', () => {
     it('passes when required route deps are present', async () => {
-        const probe = createStockConnectCeCompatibilityReadinessProbe({
-            stockConnectCeOrderCompatibilityQuery: {},
-            stockConnectCeCatalogCommand: {},
-            stockConnectCeOrderInvoiceQuery: {},
-            stockConnectCeChannelCompatibilityQuery: {},
+        const probe = createCompatV2CompatibilityReadinessProbe({
+            compatV2OrderQuery: {},
+            compatV2CatalogCommand: {},
+            compatV2OrderInvoiceQuery: {},
+            compatV2IntegrationListQuery: {},
         });
         await expect(probe.check()).resolves.toBeUndefined();
     });
 
     it('fails when route deps are missing', () => {
-        expect(() => assertStockConnectCeCompatibilityWired(null)).toThrow(/missing/);
-        expect(() => assertStockConnectCeCompatibilityWired({
-            stockConnectCeOrderCompatibilityQuery: {},
+        expect(() => assertCompatV2CompatibilityWired(null)).toThrow(/missing/);
+        expect(() => assertCompatV2CompatibilityWired({
+            compatV2OrderQuery: {},
         })).toThrow(/External compatibility handler/);
     });
 });

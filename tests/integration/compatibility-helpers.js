@@ -331,7 +331,7 @@ export function channelOrderHeaders(baseHeaders, idempotencyKey, channelExternal
     };
 }
 
-export async function createChannelScopedApiKey(app, tenantId, actorId, permissions, channelId, scopes) {
+export async function createCommerceIntegrationScopedApiKey(app, tenantId, actorId, permissions, channelId, scopes) {
     const apiKey = await app.apiKeys.useCases.createApiKey.execute({
         tenantId,
         actorId,

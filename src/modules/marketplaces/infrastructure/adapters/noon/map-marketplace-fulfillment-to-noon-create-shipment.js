@@ -7,7 +7,7 @@ import { readNoonWarehouseCode } from './noon-config.js';
  *
  * @see https://noon-docs.noonpartners.dev/docs/fbpi/setup/order-flow
  *
- * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+ * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
  * @param {string} fbpiOrderNr
  * @param {import('../../../public/marketplace-outbound-order-lifecycle.port.js').MarketplaceCreateFulfillmentRequest} request
  */
@@ -68,5 +68,5 @@ function buildIntegrationShipmentNr(items, awbNr) {
         .sort()
         .join('|');
     const hash = createHash('sha256').update(`${fingerprint}|${awbNr}`).digest('hex');
-    return `nexora-${hash.slice(0, 20)}`;
+    return `wasl-${hash.slice(0, 20)}`;
 }

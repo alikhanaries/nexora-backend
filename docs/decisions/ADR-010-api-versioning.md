@@ -5,9 +5,9 @@
 
 ## Context
 
-Nexora serves two client populations:
+Wasl serves two client populations:
 
-1. **Native integrations** — want a clean, evolving Nexora API
+1. **Native integrations** — want a clean, evolving Wasl API
 2. **ChannelEngine migrants** — expect ChannelEngine URL shapes, status codes, and payload formats
 
 Breaking both groups with a single version line creates either migration pain or innovation paralysis.
@@ -18,7 +18,7 @@ Use **URL path versioning** with two prefixes:
 
 | Prefix    | Purpose                            | Phase 1                             |
 | --------- | ---------------------------------- | ----------------------------------- |
-| `/api/v1` | Native Nexora API                  | Foundation endpoints only           |
+| `/api/v1` | Native Wasl API                  | Foundation endpoints only           |
 | `/api/v2` | Merchant-compatible compatibility facade | **Phase 5** — boundary established; Merchant endpoints per [ADR-018](ADR-018-phase-5-merchant-compatible-scope.md) |
 
 Rules:
@@ -48,3 +48,4 @@ OpenAPI document describes native API only in Phase 1.
 - [compatibility.md](../architecture/compatibility.md)
 - [compatibility-matrix.md](../architecture/compatibility-matrix.md)
 - [ADR-018](ADR-018-phase-5-merchant-compatible-scope.md)
+

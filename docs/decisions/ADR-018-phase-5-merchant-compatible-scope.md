@@ -12,15 +12,15 @@ OpenAPI verification resolved **OQ-CE-001**. The external platform publishes two
 | **Merchant API** | Merchant-facing reads and fulfilment mutations (poll orders, acknowledge, ship, cancel, return) |
 | **Channel API** | Channel/marketplace order ingestion (`POST /v2/orders`, channel-fulfilled orders) |
 
-Nexora `/api/v2` must not silently blend these contracts into a hybrid surface. Internal architecture remains provider-neutral (`src/modules/compatibility/`).
+Wasl `/api/v2` must not silently blend these contracts into a hybrid surface. Internal architecture remains provider-neutral (`src/modules/compatibility/`).
 
-Nexora is an **independent platform** — compatibility endpoints translate to Nexora public contracts and PostgreSQL. They do not proxy to or depend on an external commerce platform for business truth. See [platform-independence.md](../architecture/platform-independence.md).
+Wasl is an **independent platform** — compatibility endpoints translate to Wasl public contracts and PostgreSQL. They do not proxy to or depend on an external commerce platform for business truth. See [platform-independence.md](../architecture/platform-independence.md).
 
 ## Decision
 
 ### Phase 5 `/api/v2` scope
 
-Nexora `/api/v2` will initially implement the **Merchant-compatible compatibility surface** only.
+Wasl `/api/v2` will initially implement the **Merchant-compatible compatibility surface** only.
 
 1. **`/api/v2/orders` is not an order-creation endpoint** in the initial Merchant-compatible surface. The Merchant OpenAPI defines `GET /v2/orders`, `GET /v2/orders/new`, and `POST /v2/orders/acknowledge` — not `POST /v2/orders`.
 2. **No hybrid semantics** — path parity follows the verified Merchant contract; Channel ingestion paths are not repurposed.
@@ -54,3 +54,4 @@ Nexora `/api/v2` will initially implement the **Merchant-compatible compatibilit
 - [compatibility-matrix.md](../architecture/compatibility-matrix.md)
 - [ADR-007](ADR-007-channelengine-compatibility-layer.md) — original compatibility layer decision
 - [ADR-010](ADR-010-api-versioning.md) — `/api/v1` vs `/api/v2` versioning
+

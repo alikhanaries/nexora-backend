@@ -12,7 +12,7 @@ describe('compatibility-channel-order.mapper', () => {
     const channelId = '33333333-3333-4333-8333-333333333333';
     const stockLocationId = '66666666-6666-4666-8666-666666666666';
 
-    it('maps a verified Channel create request to createChannelOrder input', () => {
+    it('maps a verified Channel create request to createIntegrationOrder input', () => {
         const mapped = mapExternalChannelOrderRequest({
             ChannelOrderNo: 'CH-1001',
             CurrencyCode: 'USD',

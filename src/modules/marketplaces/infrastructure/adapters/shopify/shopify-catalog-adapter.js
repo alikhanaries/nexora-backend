@@ -40,7 +40,7 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         };
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime */
     async testConnection(runtime) {
         return this.run(async () => {
             this.assertRuntime(runtime, 'testConnection');
@@ -48,7 +48,7 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         });
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceInventorySyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceInventorySyncInput} input @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncInventory(input, runtime) {
         return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncInventory');
@@ -81,7 +81,7 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         });
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplacePriceSyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplacePriceSyncInput} input @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncPrice(input, runtime) {
         return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncPrice');
@@ -104,7 +104,7 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         });
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceProductSyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceProductSyncInput} input @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncProduct(input, runtime) {
         return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncProduct');
@@ -139,7 +139,7 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         });
     }
 
-    /** @param {import('../../../../channel-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceOfferSyncInput} input @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
+    /** @param {import('../../../../integration-catalog-sync/public/marketplace-catalog-adapter.port.js').MarketplaceOfferSyncInput} input @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} [runtime] */
     async syncOffer(input, runtime) {
         return this.runWithResult(async () => {
             this.assertRuntime(runtime, 'syncOffer');
@@ -186,7 +186,7 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
     }
 
     /**
-     * @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} externalCatalogIdentifier
      */
     async resolveInventoryItemId(runtime, externalCatalogIdentifier) {
@@ -205,7 +205,7 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
     /**
      * Deactivate sets the parent product to DRAFT (not deleted).
      *
-     * @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} externalCatalogIdentifier
      * @param {boolean} published
      */
@@ -218,7 +218,7 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
     }
 
     /**
-     * @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} externalCatalogIdentifier
      */
     async loadVariantContext(runtime, externalCatalogIdentifier) {
@@ -239,7 +239,7 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
     }
 
     /**
-     * @param {import('../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} productGid
      * @param {'ACTIVE'|'DRAFT'} status
      */

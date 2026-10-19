@@ -34,7 +34,7 @@ export function wireMarketplaceWebhookIngestion(input) {
     registerMarketplaceWebhookAdapters: (registry) =>
       registerMarketplaceWebhookAdapters(registry, {
         marketplaceAdapterRuntimeFactory,
-        channelQueryService: input.channels.channelQueryService,
+        commerceIntegrationQueryService: input.channels.commerceIntegrationQueryService,
         database: input.database,
         shopifyOrderAdapter,
       }),

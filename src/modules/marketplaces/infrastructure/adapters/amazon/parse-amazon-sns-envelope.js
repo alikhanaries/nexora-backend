@@ -1,7 +1,7 @@
 import { MarketplaceValidationError } from '../../../domain/marketplace-errors.js';
 
 /**
- * Parses an SNS envelope posted to Nexora's marketplace webhook ingress.
+ * Parses an SNS envelope posted to Wasl's marketplace webhook ingress.
  * Operators typically subscribe HTTPS to SNS or forward SQS payloads unchanged.
  *
  * @param {string} rawBody

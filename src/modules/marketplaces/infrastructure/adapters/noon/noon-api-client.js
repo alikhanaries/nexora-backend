@@ -32,7 +32,7 @@ export class NoonApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      */
     async whoami(runtime) {
         return this.authenticatedRequest(runtime, {
@@ -42,7 +42,7 @@ export class NoonApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} partnerSku
      * @param {number} quantity
      */
@@ -64,7 +64,7 @@ export class NoonApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} partnerSku
      * @param {number} price
      * @param {{ isActive?: boolean }} [options]
@@ -90,7 +90,7 @@ export class NoonApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} partnerSku
      * @param {boolean} isActive
      */
@@ -112,7 +112,7 @@ export class NoonApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} partnerSku
      */
     async getProductOffers(runtime, partnerSku) {
@@ -125,7 +125,7 @@ export class NoonApiClient {
     /**
      * FBPI GetFbpiOrder — full order details for lifecycle sync (Phase 35).
      *
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {string} fbpiOrderNr
      */
     async getFbpiOrder(runtime, fbpiOrderNr) {
@@ -142,7 +142,7 @@ export class NoonApiClient {
     /**
      * FBPI CreateShipment — register seller shipment with AWB (Phase 41 outbound fulfill).
      *
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {object} body
      */
     async createFbpiShipment(runtime, body) {
@@ -154,7 +154,7 @@ export class NoonApiClient {
     }
 
     /**
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {{ path: string, method?: string, body?: unknown }} request
      */
     async authenticatedRequest(runtime, request) {

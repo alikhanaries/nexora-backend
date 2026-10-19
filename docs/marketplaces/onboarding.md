@@ -1,6 +1,6 @@
 # Marketplace onboarding
 
-How Nexora registers marketplace providers for catalog sync, order ingestion, webhooks, and order lifecycle.
+How Wasl registers marketplace providers for catalog sync, order ingestion, webhooks, and order lifecycle.
 
 ## Registration surfaces
 
@@ -130,3 +130,4 @@ Metrics: `marketplace_lifecycle_worker_jobs_total` (outcome, marketplace, operat
 - Maps to **`fulfill_order`** only; `shipment_update` not enabled separately.
 - Partial fulfillment: subset of `mp_item_nr` lines; quantity `1` per line.
 - Deferred: outbound cancel/refund/return/update; `GetShipment` / `CancelShipment` / `UpdateOrder`.
+

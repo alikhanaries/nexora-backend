@@ -1,17 +1,17 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { AcknowledgeOrder } from './application/acknowledge-order.js';
-import { ConfirmOrder } from './application/confirm-order.js';
-import { CreateChannelFulfilledOrder } from './application/create-channel-fulfilled-order.js';
-import { CreateChannelOrder } from './application/create-channel-order.js';
-import { CreateOrder } from './application/create-order.js';
-import { GetOrder } from './application/get-order.js';
-import { ListOrders } from './application/list-orders.js';
-import { DefaultOrderCommandService } from './application/order-command-service.js';
-import { DefaultOrderFulfillmentService } from './application/order-fulfillment-service.js';
-import { DefaultOrderQueryService } from './application/order-query-service.js';
-import { DefaultOrderReturnGateway } from './application/order-return-gateway.js';
-import { PostgresOrderRepository } from './infrastructure/index.js';
-import orderRoutes, {} from './presentation/order.routes.js';
+import { AcknowledgeOrder } from './services/acknowledge-order.js';
+import { ConfirmOrder } from './services/confirm-order.js';
+import { CreateIntegrationFulfilledOrder } from './services/create-integration-fulfilled-order.js';
+import { CreateIntegrationOrder } from './services/create-integration-order.js';
+import { CreateOrder } from './services/create-order.js';
+import { createGetOrder } from './services/get-order.js';
+import { createListOrders } from './services/list-orders.js';
+import { DefaultOrderCommandService } from './services/order-command-service.js';
+import { DefaultOrderFulfillmentService } from './services/order-fulfillment-service.js';
+import { createOrderQueryService } from './services/order-query-service.js';
+import { DefaultOrderReturnGateway } from './services/order-return-gateway.js';
+import { PostgresOrderRepository } from './repositories/index.js';
+import orderRoutes, {} from './controllers/order.routes.js';
 export function createOrdersModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const orders = new PostgresOrderRepository();
@@ -19,7 +19,7 @@ export function createOrdersModule(deps) {
         orders,
         eventRecorder: deps.eventRecorder,
     });
-    const orderQueryService = new DefaultOrderQueryService({
+    const orderQueryService = createOrderQueryService({
         authorization,
         queryable: deps.database,
         database: deps.database,
@@ -36,38 +36,38 @@ export function createOrdersModule(deps) {
     const orderCreationDeps = {
         ...sharedDeps,
         productQueryService: deps.productQueryService,
-        channelQueryService: deps.channelQueryService,
+        commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         offerQueryService: deps.offerQueryService,
         pricingService: deps.pricingService,
         inventoryService: deps.inventoryService,
         externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
     };
     const createOrder = new CreateOrder(orderCreationDeps);
-    const createChannelOrder = new CreateChannelOrder(orderCreationDeps);
+    const createIntegrationOrder = new CreateIntegrationOrder(orderCreationDeps);
     const confirmOrder = new ConfirmOrder(sharedDeps);
     const acknowledgeOrder = new AcknowledgeOrder({
         ...sharedDeps,
         confirmOrder,
     });
-    /** @type {import('./application/create-channel-fulfilled-order.js').CreateChannelFulfilledOrder|null} */
-    let createChannelFulfilledOrder = null;
+    /** @type {import('./services/create-integration-fulfilled-order.js').CreateIntegrationFulfilledOrder|null} */
+    let createIntegrationFulfilledOrder = null;
     const orderCommandService = new DefaultOrderCommandService({
         createOrder,
-        createChannelOrder,
-        get createChannelFulfilledOrder() {
-            return createChannelFulfilledOrder;
+        createIntegrationOrder,
+        get createIntegrationFulfilledOrder() {
+            return createIntegrationFulfilledOrder;
         },
         acknowledgeOrder,
         idempotency: deps.idempotency,
     });
     /**
      * @param {object} shipmentDeps
-     * @param {import('./application/create-shipment.js').CreateShipment} shipmentDeps.createShipment
-     * @param {import('../shipments/application/ship-shipment.js').ShipShipment} shipmentDeps.shipShipment
+     * @param {import('./services/create-shipment.js').CreateShipment} shipmentDeps.createShipment
+     * @param {import('../shipments/services/ship-shipment.js').ShipShipment} shipmentDeps.shipShipment
      * @param {(tx: object, tenantId: string, orderId: string) => Promise<object[]>} shipmentDeps.listShipmentsForOrder
      */
     function wireChannelFulfilledOrder(shipmentDeps) {
-        createChannelFulfilledOrder = new CreateChannelFulfilledOrder({
+        createIntegrationFulfilledOrder = new CreateIntegrationFulfilledOrder({
             ...orderCreationDeps,
             createShipment: shipmentDeps.createShipment,
             shipShipment: shipmentDeps.shipShipment,
@@ -78,12 +78,12 @@ export function createOrdersModule(deps) {
         createOrder,
         confirmOrder,
         acknowledgeOrder,
-        getOrder: new GetOrder({
+        getOrder: createGetOrder({
             authorization,
             queryable: deps.database,
             orders,
         }),
-        listOrders: new ListOrders({
+        listOrders: createListOrders({
             authorization,
             queryable: deps.database,
             orders,
@@ -96,7 +96,7 @@ export function createOrdersModule(deps) {
         orderQueryService,
         orderReturnGateway,
         createOrder,
-        createChannelOrder,
+        createIntegrationOrder,
         wireChannelFulfilledOrder,
         useCases,
         routes: orderRoutes,

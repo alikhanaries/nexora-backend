@@ -2,7 +2,7 @@ import { MarketplaceConfigurationError } from '../../../domain/marketplace-error
 
 /** Namshi seller APIs are hosted on the noon Partners gateway (verified in platform docs). */
 export const DEFAULT_NAMSHI_API_BASE_URL = 'https://noon-api-gateway.noon.partners';
-export const DEFAULT_NAMSHI_USER_AGENT = 'Nexora/1.0';
+export const DEFAULT_NAMSHI_USER_AGENT = 'Wasl/1.0';
 
 const NAMSHI_COUNTRY_CODES = new Set(['ae', 'sa', 'eg']);
 

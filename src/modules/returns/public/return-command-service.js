@@ -79,4 +79,4 @@
  * @property {(command: ProcessReturnReceiveCommand) => Promise<ProcessReturnReceiveResult>} processReturnReceive
  */
 
-export { DefaultReturnCommandService } from '../application/return-command-service.js';
+export { DefaultReturnCommandService } from '../services/return-command-service.js';

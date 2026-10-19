@@ -1,6 +1,6 @@
 # Postman coverage report
 
-**Collection:** `postman/Nexora_Backend_API.postman_collection.json`
+**Collection:** `postman/Wasl_Backend_API.postman_collection.json`
 
 ## Summary
 
@@ -172,4 +172,5 @@
 | W-0001 | GET | `/health/live` | Worker Observability (separate listener) | [W-0001] GET /health/live | GENERATED | MATCH |
 | W-0002 | GET | `/health/ready` | Worker Observability (separate listener) | [W-0002] GET /health/ready | GENERATED | MATCH |
 | W-0003 | GET | `/internal/metrics` | Worker Observability (separate listener) | [W-0003] GET /internal/metrics | GENERATED | MATCH |
+
 

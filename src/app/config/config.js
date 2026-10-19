@@ -116,6 +116,8 @@ function toAppConfig(raw) {
         marketplace: {
             shopifyAdminApiVersion: raw.SHOPIFY_ADMIN_API_VERSION,
             amazonLwaTokenUrl: raw.AMAZON_LWA_TOKEN_URL,
+            noonApiBaseUrl: raw.NOON_API_BASE_URL,
+            noonUserAgent: raw.NOON_USER_AGENT,
         },
         marketplaceLifecycle: {
             queueName: raw.MARKETPLACE_LIFECYCLE_QUEUE_NAME,
@@ -125,6 +127,11 @@ function toAppConfig(raw) {
             backoffBaseMs: raw.MARKETPLACE_LIFECYCLE_BACKOFF_MS > 0
                 ? raw.MARKETPLACE_LIFECYCLE_BACKOFF_MS
                 : raw.QUEUE_BACKOFF_BASE_MS,
+        },
+        stockConnect: {
+            integrationEnabled: raw.STOCK_CONNECT_INTEGRATION_ENABLED,
+            baseUrl: raw.STOCK_CONNECT_BASE_URL,
+            serviceToken: raw.STOCK_CONNECT_SERVICE_TOKEN,
         },
     };
 }
@@ -145,6 +152,10 @@ function assertConsistency(config) {
     }
     if (config.auth.mfaEncryptionKey.length !== 32) {
         problems.push('AUTH_MFA_ENCRYPTION_KEY must be exactly 32 bytes');
+    }
+    const devMfaPlaceholder = '0123456789abcdef0123456789abcdef';
+    if (config.isProduction && config.auth.mfaEncryptionKey === devMfaPlaceholder) {
+        problems.push('AUTH_MFA_ENCRYPTION_KEY must not use the development placeholder in production');
     }
     if (config.database.migrationUrl !== undefined && !URL.canParse(config.database.migrationUrl)) {
         problems.push('DATABASE_MIGRATION_URL must be a valid URL when set');

@@ -5,7 +5,7 @@
 
 ## Context
 
-Nexora runs two Node.js processes — **API** (`src/app/main.js`) and **Worker** (`src/workers/main.js`) — that share `createInfrastructure()` and the same Prometheus metrics port (`PrometheusMetrics` / `noopMetricsRecorder`).
+Wasl runs two Node.js processes — **API** (`src/app/main.js`) and **Worker** (`src/workers/main.js`) — that share `createInfrastructure()` and the same Prometheus metrics port (`PrometheusMetrics` / `noopMetricsRecorder`).
 
 The API exposes operational HTTP endpoints via Fastify:
 
@@ -30,7 +30,7 @@ Until Phase 13, those series are **not scrapeable** from the worker: there is no
 
 1. **Observability gap** — Prometheus local config scrapes only the API (`host.docker.internal:3000`, `/internal/metrics`). Worker job failure, webhook delivery, and retention metrics exist in-process but are invisible to standard scrape workflows.
 2. **Deployment gap** — `docs/operations/README.md` documents health probes for the API only. Container orchestrators cannot use HTTP probes against the worker without a defined contract.
-3. **Identity gap** — API and worker currently share `OTEL_SERVICE_NAME` (default `nexora-backend`) and the same Prometheus `service` label when both use one `PrometheusMetrics` instance per process, which complicates dashboards when both processes run.
+3. **Identity gap** — API and worker currently share `OTEL_SERVICE_NAME` (default `wasl-backend`) and the same Prometheus `service` label when both use one `PrometheusMetrics` instance per process, which complicates dashboards when both processes run.
 
 Phase 13 defines the contract; implementation follows in a separate change set.
 
@@ -286,3 +286,4 @@ Shutdown order (extends existing [`shutdown.js`](../../src/app/bootstrap/shutdow
 - [requirements.md](../architecture/requirements.md)
 - [operations README](../operations/README.md)
 - [workers/README.md](../../workers/README.md)
+

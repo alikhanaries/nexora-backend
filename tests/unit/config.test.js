@@ -18,4 +18,14 @@ describe('configuration', () => {
     it('fails fast on invalid configuration', () => {
         expect(() => loadConfig({ ...baseEnv, DATABASE_URL: 'not-a-url' })).toThrow(ConfigurationError);
     });
+
+    it('rejects the development MFA encryption placeholder in production', () => {
+        expect(() =>
+            loadConfig({
+                ...baseEnv,
+                NODE_ENV: 'production',
+                AUTH_MFA_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef',
+            }),
+        ).toThrow(ConfigurationError);
+    });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OrderStatus, canTransitionOrderStatus, isOrderCancellable, } from '../../../src/modules/orders/domain/order-status.js';
+import { OrderStatus, canTransitionOrderStatus, isOrderCancellable, } from '../../../src/modules/orders/models/order-status.js';
 describe('order status machine', () => {
     it('allows the primary fulfillment lifecycle', () => {
         expect(canTransitionOrderStatus(OrderStatus.NEW, OrderStatus.CONFIRMED)).toBe(true);

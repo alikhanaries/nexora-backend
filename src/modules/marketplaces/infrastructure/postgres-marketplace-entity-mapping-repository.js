@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { parseOrThrow } from '../../../shared/validation/index.js';
-import { isMarketplaceNexoraEntityType } from '../domain/marketplace-nexora-entity-type.js';
+import { isMarketplaceIntegrationEntityType } from '../domain/marketplace-integration-entity-type.js';
 
 const rowSchema = z.object({
     id: z.string().uuid(),
@@ -25,7 +25,7 @@ export class PostgresMarketplaceEntityMappingRepository {
      * @param {string} nexoraEntityType
      * @param {string} nexoraEntityId
      */
-    async findByNexoraEntity(queryable, tenantId, channelId, marketplaceKey, nexoraEntityType, nexoraEntityId) {
+    async findByWaslEntity(queryable, tenantId, channelId, marketplaceKey, nexoraEntityType, nexoraEntityId) {
         const result = await queryable.query(`SELECT id, tenant_id, channel_id, marketplace_key, nexora_entity_type,
               nexora_entity_id, external_entity_type, external_entity_id, created_at, updated_at
        FROM marketplace_entity_mappings
@@ -36,7 +36,7 @@ export class PostgresMarketplaceEntityMappingRepository {
             marketplaceKey,
             nexoraEntityType,
             nexoraEntityId,
-        ], { operation: 'marketplace_entity_mappings.find_by_nexora_entity' });
+        ], { operation: 'marketplace_entity_mappings.find_by_commerce_entity' });
         const row = result.rows[0];
         if (row === undefined) {
             return null;
@@ -76,8 +76,8 @@ export class PostgresMarketplaceEntityMappingRepository {
      * @param {object} input
      */
     async upsert(transaction, input) {
-        if (!isMarketplaceNexoraEntityType(input.nexoraEntityType)) {
-            throw new Error('Invalid nexora entity type for marketplace mapping');
+        if (!isMarketplaceIntegrationEntityType(input.nexoraEntityType)) {
+            throw new Error('Invalid platform entity type for marketplace mapping');
         }
         const id = input.id ?? randomUUID();
         await transaction.query(`INSERT INTO marketplace_entity_mappings (

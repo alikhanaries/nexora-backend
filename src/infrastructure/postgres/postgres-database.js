@@ -1,5 +1,6 @@
 import { performance } from 'node:perf_hooks';
 import { Pool } from 'pg';
+import { WASL_NAMING } from '../../shared/config/wasl-naming.config.js';
 import { getRequestContext } from '../../shared/context/request-context.js';
 import { ConfigurationError, DatabaseError } from '../../shared/errors/index.js';
 import { migrateUp } from './migrator.js';
@@ -80,7 +81,7 @@ export class PostgresDatabase {
             statement_timeout: config.pool.statementTimeoutMs,
             // Client-side cap: releases the pool slot even if the server never answers.
             query_timeout: config.pool.queryTimeoutMs,
-            application_name: 'nexora-backend',
+            application_name: WASL_NAMING.application.postgresApplicationName,
             ...(config.ssl ? { ssl: { rejectUnauthorized: true } } : {}),
         };
         this.pool = new Pool(poolConfig);
@@ -92,7 +93,7 @@ export class PostgresDatabase {
             ? new Pool({
                 ...poolConfig,
                 connectionString: migrationUrl,
-                application_name: 'nexora-backend-owner',
+                application_name: WASL_NAMING.application.postgresOwnerApplicationName,
             })
             : this.pool;
         // An idle client can fail without any query in flight. Without this
@@ -236,7 +237,7 @@ export class PostgresDatabase {
             const migrationPool = new Pool({
                 connectionString: migrationUrl,
                 max: 1,
-                application_name: 'nexora-backend-migrate',
+                application_name: WASL_NAMING.application.postgresMigrateApplicationName,
             });
             try {
                 await migrateUp(migrationPool, this.logger);

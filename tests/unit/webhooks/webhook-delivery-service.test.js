@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { STOCKCONNECT_CE_BRIDGE_SUBSCRIPTION_DESCRIPTION } from '../../../src/shared/stockconnect/stockconnect-ce-webhook-subscription.js';
+import { COMPAT_V2_WEBHOOK_BRIDGE_SUBSCRIPTION_DESCRIPTION } from '../../../src/shared/stockconnect/compat-v2-webhook-bridge.js';
 import { WebhookDeliveryService } from '../../../src/modules/webhooks/application/webhook-delivery-service.js';
 import { WebhookDeliveryRetryError } from '../../../src/modules/webhooks/application/webhook-delivery-errors.js';
 import { verifyWebhookRequestBody } from '../../../src/modules/webhooks/application/webhook-request-signer.js';
@@ -81,7 +81,7 @@ describe('WebhookDeliveryService', () => {
         const ceBody = JSON.stringify({ Content: [{ Id: 1, MerchantOrderNo: 'ORD-CE' }] });
         const { service, deps } = createService({
             webhookPayloadStrategies: [{
-                matches: (subscription) => subscription.description === STOCKCONNECT_CE_BRIDGE_SUBSCRIPTION_DESCRIPTION,
+                matches: (subscription) => subscription.description === COMPAT_V2_WEBHOOK_BRIDGE_SUBSCRIPTION_DESCRIPTION,
                 buildBody: vi.fn(async () => ceBody),
             }],
         });
@@ -105,7 +105,7 @@ describe('WebhookDeliveryService', () => {
             id: job.subscriptionId,
             tenantId: job.tenantId,
             url: 'https://stockconnect.example/orders/channelengine-webhook',
-            description: STOCKCONNECT_CE_BRIDGE_SUBSCRIPTION_DESCRIPTION,
+            description: COMPAT_V2_WEBHOOK_BRIDGE_SUBSCRIPTION_DESCRIPTION,
             secretCiphertext: 'cipher',
             status: 'ACTIVE',
             eventTypes: ['order.created'],

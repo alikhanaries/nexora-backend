@@ -5,7 +5,7 @@ global:
   evaluation_interval: 10s
 
 scrape_configs:
-  - job_name: nexora-api
+  - job_name: wasl-api
     metrics_path: /internal/metrics
     static_configs:
       # `host.docker.internal` reaches the API running on the developer's
@@ -13,7 +13,7 @@ scrape_configs:
       - targets: ['host.docker.internal:3000']
         labels:
           component: api
-  - job_name: nexora-worker
+  - job_name: wasl-worker
     metrics_path: /internal/metrics
     static_configs:
       - targets: ['host.docker.internal:3001']

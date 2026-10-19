@@ -29,7 +29,7 @@ map result to external response (compatibility mapper)
 
 1. **Single ledger** — `idempotency_records` via `PostgresIdempotencyService` only.
 2. **Transactional completion** — mutations that change business state must use `useTransaction: true` so a successful command cannot be replayed if completion fails.
-3. **Route identity** — `routeId` uses the Nexora compatibility route (e.g. `POST /api/v2/shipments`), not an external path alias.
+3. **Route identity** — `routeId` uses the Wasl compatibility route (e.g. `POST /api/v2/shipments`), not an external path alias.
 4. **Principal fingerprint** — reuse `actorFingerprint(actor)` from `shared/http/actor-fingerprint.js`.
 5. **Request fingerprint** — hash the mapped **core command input**, not the raw external body, so semantically identical requests replay correctly.
 6. **Idempotency-Key header** — required for compatibility mutations (same as `/api/v1` fulfillment routes).
@@ -62,3 +62,4 @@ Future compatibility mutation handlers should:
 5. Map core result → external envelope.
 
 Command services must remain idempotency-agnostic; the HTTP/compatibility boundary owns the ledger interaction (same as native routes today).
+

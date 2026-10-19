@@ -12,7 +12,7 @@ import { NotFoundError, ValidationError } from '../../../shared/errors/index.js'
  * @param {object} [input.queryable]
  */
 export async function resolveMarketplaceOrderLines(deps, input) {
-    /** @type {import('../../orders/public/order-command-service.js').CreateChannelOrderLineCommand[]} */
+    /** @type {import('../../orders/public/order-command-service.js').CreateIntegrationOrderLineCommand[]} */
     const channelLines = [];
     for (const line of input.lines) {
         const resolved = await resolveSingleLine(deps, input, line);

@@ -1,20 +1,20 @@
 # Platform Independence
 
-Nexora is an **independent, provider-neutral commerce platform**. Optional external compatibility and outbound integrations exist at explicit boundaries — Nexora does not depend on another commerce platform for core functionality.
+Wasl is an **independent, provider-neutral commerce platform**. Optional external compatibility and outbound integrations exist at explicit boundaries — Wasl does not depend on another commerce platform for core functionality.
 
 ## Source of truth
 
 | Layer | Role |
 | ----- | ---- |
 | **PostgreSQL** | System of record for business data |
-| **Nexora domain/application logic** | Business rules and state machines |
-| **Nexora workers** | Async processing (outbox → BullMQ) |
-| **Nexora events** | Cross-module reactions and integration triggers |
+| **Wasl domain/application logic** | Business rules and state machines |
+| **Wasl workers** | Async processing (outbox → BullMQ) |
+| **Wasl events** | Cross-module reactions and integration triggers |
 | **`/api/v1`** | Native product API |
 | **`/api/v2`** | Optional external compatibility surface only |
 | **Integration adapters** | Explicit outbound connections when a customer requires them |
 
-Nexora must **not**:
+Wasl must **not**:
 
 - Call another commerce platform's API for core functionality
 - Proxy native requests to an external platform
@@ -29,13 +29,13 @@ External API documentation may be used as **reference material** for compatibili
 
 ```
                     ┌─────────────────────┐
-                    │    Nexora APIs      │
+                    │    Wasl APIs      │
                     │      /api/v1        │
                     └──────────┬──────────┘
                                │
                                ▼
                     ┌─────────────────────┐
-                    │   Nexora modules    │
+                    │   Wasl modules    │
                     │ Orders, Products,   │
                     │ Inventory, …        │
                     └──────────┬──────────┘
@@ -56,22 +56,22 @@ External-compatible client
    /api/v2 compatibility
           │
           ▼
-Nexora public contracts
+Wasl public contracts
           │
           ▼
-   Nexora core modules
+   Wasl core modules
           │
           ▼
       PostgreSQL
 ```
 
-Compatibility translates external requests to Nexora operations against **Nexora's own database**. It does not call an external commerce API to fulfil native or compatibility reads/writes unless the feature is an **explicit outbound integration** (customer-connected external system).
+Compatibility translates external requests to Wasl operations against **Nexora's own database**. It does not call an external commerce API to fulfil native or compatibility reads/writes unless the feature is an **explicit outbound integration** (customer-connected external system).
 
 ## Independence test
 
 For every compatibility feature:
 
-> If the external platform disappeared permanently, could Nexora still perform this operation using its own database and business logic?
+> If the external platform disappeared permanently, could Wasl still perform this operation using its own database and business logic?
 
 - **Native `/api/v1` functionality:** answer must be **YES**
 - **Compatibility endpoints:** answer must be **YES** (adapter → public contract → core → PostgreSQL)
@@ -93,11 +93,11 @@ Nexora-owned tables (`orders`, `products`, `inventory_balances`, …) are the so
 
 ## Configuration
 
-Native Nexora operation must not require external commerce platform configuration (`*_API_URL`, `*_API_KEY` for a specific provider in core config). Outbound provider credentials belong only inside an isolated integration boundary when explicitly required.
+Native Wasl operation must not require external commerce platform configuration (`*_API_URL`, `*_API_KEY` for a specific provider in core config). Outbound provider credentials belong only inside an isolated integration boundary when explicitly required.
 
 ## Removability
 
-Removing `src/modules/compatibility/` must not break Nexora core business modules. Core modules must compile and operate without importing compatibility. The composition root registers compatibility as an optional adapter — core factories do not depend on it.
+Removing `src/modules/compatibility/` must not break Wasl core business modules. Core modules must compile and operate without importing compatibility. The composition root registers compatibility as an optional adapter — core factories do not depend on it.
 
 ## Marketplace catalog adapters (Phase 21)
 
@@ -105,13 +105,13 @@ Outbound marketplace catalog sync uses **`MarketplaceCatalogAdapter`** implement
 
 Tenant credentials live in **`marketplace_connections`** (encrypted). Workers load connections at **job execution** via `MarketplaceAdapterRuntimeFactory`; credentials are not stored in BullMQ payloads, domain events, or integration events.
 
-See [ADR-029](../decisions/ADR-029-marketplace-connector-framework.md) and [channel-catalog-sync README](../../src/modules/channel-catalog-sync/README.md).
+See [ADR-029](../decisions/ADR-029-marketplace-connector-framework.md) and [channel-catalog-sync README](../../src/modules/integration-catalog-sync/README.md).
 
 See [module-boundaries.md](module-boundaries.md) for enforceable dependency rules and [compatibility.md](compatibility.md) for the `/api/v2` boundary.
 
 ## External ERP / OMS consumers
 
-StockConnect and future ERPs are **external consumers** of Nexora APIs. They must not become the definition of Nexora's core model.
+StockConnect and future ERPs are **external consumers** of Wasl APIs. They must not become the definition of Nexora's core model.
 
 - HTTP: compatibility routes and mappers (`/api/v2`, `/api/v2/ce/*`).
 - Webhooks: optional `WebhookPayloadStrategy` registrations at the worker composition root ([external-integration.md](external-integration.md)).
@@ -126,3 +126,4 @@ Production deployment uses the same consumer-neutral configuration model — see
 - [ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md) — Merchant-compatible scope
 - [compatibility-matrix.md](compatibility-matrix.md) — endpoint scope and contract gaps
 - [external-integration.md](external-integration.md) — ERP/consumer boundaries and webhook strategies
+

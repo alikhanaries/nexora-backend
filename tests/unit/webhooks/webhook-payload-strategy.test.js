@@ -27,7 +27,7 @@ describe('resolveWebhookRequestBody', () => {
         expect(strategies[1].buildBody).toHaveBeenCalledWith(subscription, event);
     });
 
-    it('falls back to the default Nexora webhook envelope when no strategy matches', async () => {
+    it('falls back to the default Wasl webhook envelope when no strategy matches', async () => {
         const body = await resolveWebhookRequestBody([], subscription, {
             id: randomUUID(),
             type: 'order.created',

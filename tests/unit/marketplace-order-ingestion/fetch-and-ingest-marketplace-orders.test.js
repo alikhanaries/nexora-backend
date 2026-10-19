@@ -48,8 +48,8 @@ describe('FetchAndIngestMarketplaceOrders', () => {
         const useCase = new FetchAndIngestMarketplaceOrders({
             ingestNormalizedMarketplaceOrder: { execute: ingest },
             orderAdapterRegistry: registry,
-            channelQueryService: {
-                getChannelById: async () => ({
+            commerceIntegrationQueryService: {
+                getCommerceIntegrationById: async () => ({
                     tenantId: TENANT_ID,
                     id: CHANNEL_ID,
                     defaultStockLocationId: STOCK_LOCATION_ID,
@@ -96,8 +96,8 @@ describe('FetchAndIngestMarketplaceOrders', () => {
                 execute: async () => ({ outcome: 'created', order: { id: 'x' } }),
             },
             orderAdapterRegistry: registry,
-            channelQueryService: {
-                getChannelById: async () => ({
+            commerceIntegrationQueryService: {
+                getCommerceIntegrationById: async () => ({
                     tenantId: TENANT_ID,
                     defaultStockLocationId: STOCK_LOCATION_ID,
                 }),

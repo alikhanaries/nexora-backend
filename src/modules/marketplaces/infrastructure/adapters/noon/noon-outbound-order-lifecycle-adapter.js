@@ -29,7 +29,7 @@ export class NoonOutboundOrderLifecycleAdapter extends BaseMarketplaceOrderAdapt
     /**
      * FBPI CreateShipment → generic fulfill_order (seller registers AWB + items with noon).
      *
-     * @param {import('../../../../channel-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
      * @param {import('../../../public/marketplace-outbound-order-lifecycle.port.js').MarketplaceOutboundOrderLifecycleContext} context
      * @param {import('../../../public/marketplace-outbound-order-lifecycle.port.js').MarketplaceCreateFulfillmentRequest} request
      */

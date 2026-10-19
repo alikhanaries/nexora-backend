@@ -6,7 +6,7 @@ Accepted — deferred implementation to identity/audit phase.
 
 ## Context
 
-ChannelEngine exposes audit logs; Nexora requires an auditable, scalable audit trail without blocking request paths.
+ChannelEngine exposes audit logs; Wasl requires an auditable, scalable audit trail without blocking request paths.
 
 ## Decision
 
@@ -17,3 +17,4 @@ Audit records are append-only events written in the same transaction as state ch
 - Phase 1 provides outbox/inbox infrastructure reusable for audit export.
 - No audit log tables or `/api/v2/auditlogs` in Phase 1.
 - Audit retention and query scaling are addressed in the audit phase.
+

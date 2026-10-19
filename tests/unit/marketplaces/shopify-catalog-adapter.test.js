@@ -6,7 +6,7 @@ import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/infrast
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
-} from '../../../src/modules/channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+} from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
 
 const runtime = {
     marketplaceKey: 'shopify',

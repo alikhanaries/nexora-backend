@@ -1,6 +1,6 @@
 import { getCurrencyMinorUnitExponent, minorUnitsToDecimal } from '../../../../shared/money/index.js';
 
-const EXTERNAL_ORDER_STATUS_BY_NEXORA_STATUS = {
+const EXTERNAL_ORDER_STATUS_BY_PLATFORM_STATUS = {
     NEW: 'NEW',
     CONFIRMED: 'IN_PROGRESS',
     PROCESSING: 'IN_PROGRESS',
@@ -11,7 +11,7 @@ const EXTERNAL_ORDER_STATUS_BY_NEXORA_STATUS = {
     RETURNED: 'RETURNED',
 };
 
-const EXTERNAL_LINE_STATUS_BY_NEXORA_LINE_STATUS = {
+const EXTERNAL_LINE_STATUS_BY_PLATFORM_LINE_STATUS = {
     OPEN: 'IN_PROGRESS',
     CANCELLED: 'CANCELED',
     CLOSED: 'CLOSED',
@@ -50,7 +50,7 @@ function mapExternalOrderLine(line, externalLineId) {
         Quantity: quantity,
         UnitPriceInclVat: unitPriceInclVat,
         LineTotalInclVat: lineTotalDecimal,
-        Status: EXTERNAL_LINE_STATUS_BY_NEXORA_LINE_STATUS[line.status] ?? 'IN_PROGRESS',
+        Status: EXTERNAL_LINE_STATUS_BY_PLATFORM_LINE_STATUS[line.status] ?? 'IN_PROGRESS',
     };
 }
 
@@ -80,7 +80,7 @@ export function mapExternalOrder(order, channel, externalIdMaps) {
         ChannelOrderNo: order.externalOrderReference,
         ChannelName: channel?.name ?? null,
         ChannelReference: channel?.externalReference ?? null,
-        Status: EXTERNAL_ORDER_STATUS_BY_NEXORA_STATUS[order.status] ?? 'IN_PROGRESS',
+        Status: EXTERNAL_ORDER_STATUS_BY_PLATFORM_STATUS[order.status] ?? 'IN_PROGRESS',
         Email: customer?.email ?? '',
         Phone: customer?.phone ?? null,
         CurrencyCode: order.currency,
@@ -119,7 +119,7 @@ export function mapOrderPageToExternalCollection(page, channelsById, externalIdM
     };
 }
 
-/** External statuses that have no Nexora equivalent — filtered requests return empty results. */
+/** External statuses that have no platform equivalent — filtered requests return empty results. */
 export const UNMAPPED_EXTERNAL_ORDER_STATUSES = [
     'IN_BACKORDER',
     'MANCO',
@@ -128,7 +128,7 @@ export const UNMAPPED_EXTERNAL_ORDER_STATUSES = [
     'AWAITING_PAYMENT',
 ];
 
-const EXTERNAL_TO_NEXORA_ORDER_STATUSES = {
+const EXTERNAL_TO_PLATFORM_ORDER_STATUSES = {
     NEW: ['NEW'],
     IN_PROGRESS: ['CONFIRMED', 'PROCESSING', 'READY_TO_SHIP'],
     SHIPPED: ['SHIPPED'],
@@ -138,25 +138,25 @@ const EXTERNAL_TO_NEXORA_ORDER_STATUSES = {
 };
 
 /**
- * Maps verified external order statuses to Nexora order statuses for querying.
+ * Maps verified external order statuses to platform order statuses for querying.
  *
  * @param {string[]|undefined} externalStatuses
- * @returns {string[]|undefined} Nexora statuses, or undefined when no status filter was requested.
+ * @returns {string[]|undefined} Platform statuses, or undefined when no status filter was requested.
  */
-export function mapExternalStatusesToNexoraStatuses(externalStatuses) {
+export function mapExternalStatusesToPlatformStatuses(externalStatuses) {
     if (externalStatuses === undefined) {
         return undefined;
     }
-    const nexoraStatuses = new Set();
+    const platformStatuses = new Set();
     for (const externalStatus of externalStatuses) {
-        const mapped = EXTERNAL_TO_NEXORA_ORDER_STATUSES[externalStatus];
+        const mapped = EXTERNAL_TO_PLATFORM_ORDER_STATUSES[externalStatus];
         if (mapped !== undefined) {
             for (const status of mapped) {
-                nexoraStatuses.add(status);
+                platformStatuses.add(status);
             }
         }
     }
-    return [...nexoraStatuses];
+    return [...platformStatuses];
 }
 
 export function mapNewOrderStatusFilter() {

@@ -3,7 +3,7 @@
  * compatibility adapters, jobs, and future integrations.
  *
  * Compatibility must depend on this contract — never on `create-order.js` or repositories.
- * `createOrder` is the native direct-entry path. Channel ingestion uses `createChannelOrder`.
+ * `createOrder` is the native direct-entry path. Channel ingestion uses `createIntegrationOrder`.
  *
  * @typedef {object} CreateOrderAddressCommand
  * @property {string|null} [line1]
@@ -30,7 +30,7 @@
  * @property {number} quantity
  * @property {string|null} [offerId]
  *
- * @typedef {object} CreateChannelOrderLineCommand
+ * @typedef {object} CreateIntegrationOrderLineCommand
  * @property {string} stockLocationId
  * @property {number} quantity
  * @property {string} [merchantSku]
@@ -57,7 +57,7 @@
  * @property {string} [requestFingerprint]
  * @property {object} [transaction]
  *
- * @typedef {object} CreateChannelOrderCommand
+ * @typedef {object} CreateIntegrationOrderCommand
  * @property {string} tenantId
  * @property {string} actorId
  * @property {'user'|'api-key'} actorKind
@@ -65,7 +65,7 @@
  * @property {string} channelId
  * @property {string} externalOrderReference
  * @property {string} currency
- * @property {CreateChannelOrderLineCommand[]} lines
+ * @property {CreateIntegrationOrderLineCommand[]} lines
  * @property {CreateOrderCustomerCommand} [customer]
  * @property {number} [discountMinor]
  * @property {number} [taxMinor]
@@ -101,7 +101,7 @@
  * @typedef {object} CreateOrderResult
  * @property {OrderDetailDto} order
  *
- * @typedef {object} CreateChannelOrderResult
+ * @typedef {object} CreateIntegrationOrderResult
  * @property {OrderDetailDto} order
  *
  * @typedef {object} ChannelFulfilledShipmentCommand
@@ -110,7 +110,7 @@
  * @property {string|null} [service]
  * @property {string|null} [trackingNumber]
  *
- * @typedef {object} CreateChannelFulfilledOrderCommand
+ * @typedef {object} CreateIntegrationFulfilledOrderCommand
  * @property {string} tenantId
  * @property {string} actorId
  * @property {'user'|'api-key'} actorKind
@@ -118,7 +118,7 @@
  * @property {string} channelId
  * @property {string} externalOrderReference
  * @property {string} currency
- * @property {CreateChannelOrderLineCommand[]} lines
+ * @property {CreateIntegrationOrderLineCommand[]} lines
  * @property {CreateOrderCustomerCommand} [customer]
  * @property {number} [discountMinor]
  * @property {number} [taxMinor]
@@ -130,7 +130,7 @@
  * @property {string} [requestFingerprint]
  * @property {object} [transaction]
  *
- * @typedef {object} CreateChannelFulfilledOrderResult
+ * @typedef {object} CreateIntegrationFulfilledOrderResult
  * @property {OrderDetailDto} order
  * @property {object|null} shipment
  *
@@ -139,7 +139,7 @@
  * @property {string} actorId
  * @property {'user'|'api-key'} actorKind
  * @property {readonly string[]} actorPermissions
- * @property {string} orderNumber Merchant order number in Nexora (`orders.order_number`).
+ * @property {string} orderNumber Merchant order number in Wasl (`orders.order_number`).
  * @property {string} [idempotencyKey]
  * @property {string} [principalFingerprint]
  * @property {string} [routeId]
@@ -152,11 +152,11 @@
  * @typedef {object} OrderCommandService
  * @property {(command: CreateOrderCommand) => Promise<CreateOrderResult>} createOrder
  * Native order entry — creates `CONFIRMED` orders and emits `order.created` + `order.confirmed`.
- * @property {(command: CreateChannelOrderCommand) => Promise<CreateChannelOrderResult>} createChannelOrder
+ * @property {(command: CreateIntegrationOrderCommand) => Promise<CreateIntegrationOrderResult>} createIntegrationOrder
  * Channel ingestion — creates `NEW` orders, reserves inventory, emits `order.created` only.
- * @property {(command: CreateChannelFulfilledOrderCommand) => Promise<CreateChannelFulfilledOrderResult>} createChannelFulfilledOrder
+ * @property {(command: CreateIntegrationFulfilledOrderCommand) => Promise<CreateIntegrationFulfilledOrderResult>} createIntegrationFulfilledOrder
  * Channel-fulfilled ingestion — creates `CONFIRMED` orders, auto-ships, no inventory reservation.
  * @property {(command: AcknowledgeOrderCommand) => Promise<AcknowledgeOrderResult>} acknowledgeOrder
  */
 
-export { DefaultOrderCommandService } from '../application/order-command-service.js';
+export { DefaultOrderCommandService } from '../services/order-command-service.js';

@@ -54,7 +54,7 @@ import {
 | `deactivatePrice(input, tx?)`                                           | Set status to `INACTIVE`                                                 |
 | `listPrices(input, tx?)`                                                | Cursor-paginated listing                                                 |
 
-Depends on `ProductQueryService` and `ChannelQueryService` from their public interfaces only.
+Depends on `ProductQueryService` and `CommerceIntegrationQueryService` from their public interfaces only.
 
 ## Integration events
 

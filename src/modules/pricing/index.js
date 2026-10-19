@@ -10,7 +10,7 @@ export function createPricingModule(deps) {
         queryable: deps.database,
         prices,
         productQueryService: deps.productQueryService,
-        channelQueryService: deps.channelQueryService,
+        commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         eventRecorder: deps.eventRecorder,
     });
     const sharedDeps = {

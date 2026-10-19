@@ -3,7 +3,7 @@ import { MarketplaceWebhookPermanentError, MarketplaceWebhookUnsupportedError } 
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
-} from '../../../src/modules/channel-catalog-sync/public/catalog-sync-adapter-errors.js';
+} from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
 import { MarketplaceTransientError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
 import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
 import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';

@@ -22,7 +22,7 @@ describe('MarketplaceEntityMappingService', () => {
         expect(upsert).toHaveBeenCalledOnce();
     });
 
-    it('rejects invalid nexora entity type', async () => {
+    it('rejects invalid platform entity type', async () => {
         const service = new MarketplaceEntityMappingService({ mappings: { upsert: vi.fn() } });
         await expect(service.upsertMapping({
             tenantId: '11111111-1111-4111-8111-111111111111',

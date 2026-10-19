@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console, no-restricted-globals, no-undef -- build-time CLI outside src/; page.evaluate bodies run in the browser */
 /**
- * Documentation build tool. Renders Nexora_Backend_Technical_Documentation.md
+ * Documentation build tool. Renders Wasl_Backend_Technical_Documentation.md
  * to a print-ready A4 PDF with rendered Mermaid diagrams, a cover page,
  * a numbered table of contents, running footers and PDF bookmarks.
  *
@@ -17,9 +17,9 @@ import { marked } from 'marked';
 import puppeteer from 'puppeteer-core';
 
 const DOCS_DIR = dirname(fileURLToPath(import.meta.url));
-const MD_PATH = join(DOCS_DIR, 'Nexora_Backend_Technical_Documentation.md');
-const HTML_PATH = join(DOCS_DIR, 'Nexora_Backend_Technical_Documentation.html');
-const PDF_PATH = join(DOCS_DIR, 'Nexora_Backend_Technical_Documentation.pdf');
+const MD_PATH = join(DOCS_DIR, 'Wasl_Backend_Technical_Documentation.md');
+const HTML_PATH = join(DOCS_DIR, 'Wasl_Backend_Technical_Documentation.html');
+const PDF_PATH = join(DOCS_DIR, 'Wasl_Backend_Technical_Documentation.pdf');
 const MERMAID_PATH = join(DOCS_DIR, 'node_modules', 'mermaid', 'dist', 'mermaid.min.js');
 
 const CHROME_CANDIDATES = [
@@ -32,7 +32,7 @@ const CHROME_CANDIDATES = [
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ].filter(Boolean);
 
-const DOC_TITLE = 'Nexora Backend Technical Documentation';
+const DOC_TITLE = 'Wasl Backend Technical Documentation';
 const DOC_SUBTITLE = 'Architecture, APIs, Business Workflows & Integrations';
 const DOC_HIGHLIGHT = 'ChannelEngine Compatibility for StockConnect';
 const DOC_VERSION = '1.0';
@@ -279,7 +279,7 @@ function buildHtml(bodyHtml, tocHtml) {
 <body>
   <section class="cover">
     <div class="cover-top">
-      <div class="cover-kicker">Nexora &middot; Backend Engineering</div>
+      <div class="cover-kicker">Wasl &middot; Backend Engineering</div>
       <h1>${DOC_TITLE}</h1>
       <p class="cover-sub">${DOC_SUBTITLE}</p>
       <div class="cover-highlight"><strong>Priority section:</strong> ${DOC_HIGHLIGHT}</div>
@@ -287,7 +287,7 @@ function buildHtml(bodyHtml, tocHtml) {
     <dl class="cover-meta">
       <dt>Version</dt><dd>${DOC_VERSION}</dd>
       <dt>Date</dt><dd>${DOC_DATE}</dd>
-      <dt>Repository</dt><dd>nexora-backend</dd>
+      <dt>Repository</dt><dd>wasl-backend</dd>
       <dt>Runtime</dt><dd>Node.js 24+, Fastify 5, PostgreSQL, Redis, BullMQ</dd>
       <dt>Classification</dt><dd>${DOC_CLASSIFICATION}</dd>
       <dt>Audience</dt><dd>Backend engineers, architects, QA, DevOps, technical leads</dd>
@@ -459,7 +459,7 @@ async function main() {
             footerTemplate: `
               <div style="box-sizing:border-box;width:100%;padding:0 14mm;font-size:7.5pt;color:#64748b;
                           font-family:Segoe UI,Arial,sans-serif;display:flex;justify-content:space-between;">
-                <span>Nexora Backend &middot; v${DOC_VERSION} &middot; ${DOC_DATE}</span>
+                <span>Wasl Backend &middot; v${DOC_VERSION} &middot; ${DOC_DATE}</span>
                 <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
               </div>`,
             margin: { top: '16mm', bottom: '16mm', left: '0', right: '0' },
@@ -477,3 +477,4 @@ async function main() {
 }
 
 await main();
+

@@ -9,7 +9,7 @@ Normalized marketplace order
         ↓
 MarketplaceOrderIngestionService
         ↓
-CreateChannelOrder (Orders domain)
+CreateCommerceIntegrationOrder (Orders domain)
 ```
 
 Generic inbound **lifecycle** pipeline (Phase 31 — no provider HTTP in core):

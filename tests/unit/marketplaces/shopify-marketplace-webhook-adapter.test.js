@@ -48,8 +48,8 @@ describe('ShopifyMarketplaceWebhookAdapter', () => {
             marketplaceAdapterRuntimeFactory: {
                 createForSync: vi.fn(async () => runtime),
             },
-            channelQueryService: {
-                getChannelById: vi.fn(async () => ({
+            commerceIntegrationQueryService: {
+                getCommerceIntegrationById: vi.fn(async () => ({
                     tenantId: connection.tenantId,
                     id: connection.channelId,
                     defaultStockLocationId: '44444444-4444-4444-8444-444444444444',

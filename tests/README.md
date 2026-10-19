@@ -1,6 +1,6 @@
 # Tests
 
-Nexora uses **Vitest** with two projects defined in `vitest.config.js`: `unit` and `integration`.
+Wasl uses **Vitest** with two projects defined in `vitest.config.js`: `unit` and `integration`.
 
 ## Commands
 

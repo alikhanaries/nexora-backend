@@ -145,9 +145,9 @@ describe('Shopify marketplace order ingestion integration', () => {
         });
         ingestionModule = createMarketplaceOrderIngestionModule({
             database: infra.database,
-            channelQueryService: app.channels.channelQueryService,
+            commerceIntegrationQueryService: app.channels.commerceIntegrationQueryService,
             marketplaceLookup,
-            createChannelOrder: app.orders.createChannelOrder,
+            createIntegrationOrder: app.orders.createIntegrationOrder,
             marketplaceEntityMappingLookup: new DefaultMarketplaceEntityMappingLookup({
                 mappings: new PostgresMarketplaceEntityMappingRepository(),
                 queryable: infra.database,
@@ -195,7 +195,7 @@ describe('Shopify marketplace order ingestion integration', () => {
         expect(result.order.externalOrderReference).toBe('gid://shopify/Order/1001');
     });
 
-    it('fetchOrder via adapter creates one Nexora order and deduplicates', async () => {
+    it('fetchOrder via adapter creates one Wasl order and deduplicates', async () => {
         const { tenantId, slug } = await createTestTenant(server);
         const user = await createAuthenticatedUser(app, tenantId, slug);
         const headers = authHeaders(user.accessToken);
@@ -232,9 +232,9 @@ describe('Shopify marketplace order ingestion integration', () => {
         });
         const adapterModule = createMarketplaceOrderIngestionModule({
             database: app.infra.database,
-            channelQueryService: app.channels.channelQueryService,
+            commerceIntegrationQueryService: app.channels.commerceIntegrationQueryService,
             marketplaceLookup,
-            createChannelOrder: app.orders.createChannelOrder,
+            createIntegrationOrder: app.orders.createIntegrationOrder,
             marketplaceEntityMappingLookup: new DefaultMarketplaceEntityMappingLookup({
                 mappings: new PostgresMarketplaceEntityMappingRepository(),
                 queryable: app.infra.database,
