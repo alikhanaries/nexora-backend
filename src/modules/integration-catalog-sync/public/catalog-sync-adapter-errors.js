@@ -1,4 +1,4 @@
 export {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
-} from '../application/catalog-sync-adapter-errors.js';
+} from '../services/catalog-sync-adapter-errors.js';

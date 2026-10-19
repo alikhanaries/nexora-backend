@@ -23,17 +23,17 @@ describe('Nest channels and marketplaces modules', () => {
   });
 
   it('GET /api/v1/channels requires authentication', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
     await request(app.getHttpServer()).get('/api/v1/channels').expect(401);
   });
 
   it('GET /api/v1/channels returns list when authenticated', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -45,17 +45,17 @@ describe('Nest channels and marketplaces modules', () => {
   });
 
   it('GET /api/v1/marketplaces requires authentication', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
     await request(app.getHttpServer()).get('/api/v1/marketplaces').expect(401);
   });
 
   it('GET /api/v1/marketplaces returns list when authenticated', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -67,11 +67,11 @@ describe('Nest channels and marketplaces modules', () => {
   });
 
   it('DELETE /api/v1/channels/:channelId/marketplace-connection returns success only', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
-    coreDomain.channelRouteDeps.deleteMarketplaceConnection.execute.mockResolvedValue(undefined);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    coreServices.channelRouteDeps.deleteMarketplaceConnection.execute.mockResolvedValue(undefined);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const channelId = '11111111-1111-4111-8111-111111111111';

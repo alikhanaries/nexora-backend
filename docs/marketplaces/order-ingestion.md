@@ -120,7 +120,7 @@ Metric: `marketplace_order_lifecycle_total` (`outcome`, `marketplace`, `operatio
 
 ## Namshi order lifecycle (Phase 36)
 
-Namshi uses FBPI on the noon Partners gateway. See [namshi/README.md](../../src/modules/marketplaces/infrastructure/adapters/namshi/README.md).
+Namshi uses FBPI on the noon Partners gateway. See [namshi/README.md](../../src/modules/marketplaces/repositories/adapters/namshi/README.md).
 
 - **Inbound:** `FBPI::ORDER_SYNC` (Event Notifications) → marketplace webhook ingress → `GetFbpiOrder` → `ProcessMarketplaceLifecyclePayload`. The HTTP app wires `processMarketplaceLifecyclePayload` in `createApplication` (shared with Amazon ORDER_CHANGE webhooks).
 - **Polling sync:** `NamshiOrderAdapter.fetchOrderLifecycleCommand` → `GET /fbpi/v1/fbpi-order/{fbpi_order_nr}/get`.
@@ -130,7 +130,7 @@ Orders with `mp_code !== namshi` are rejected at normalization time (tenant/chan
 
 ## Amazon order lifecycle (Phase 34)
 
-Amazon is the second provider on the generic lifecycle framework. See [amazon/README.md](../../src/modules/marketplaces/infrastructure/adapters/amazon/README.md).
+Amazon is the second provider on the generic lifecycle framework. See [amazon/README.md](../../src/modules/marketplaces/repositories/adapters/amazon/README.md).
 
 - **Inbound:** SP-API `ORDER_CHANGE` notifications (SNS → marketplace webhook ingress) normalize to `order.update` events with a provider `lifecyclePayload`, then `ProcessMarketplaceLifecyclePayload` → `MarketplaceOrderLifecycleService`.
 - **Polling sync:** `AmazonOrderAdapter.fetchOrderLifecycleCommand` / `normalizeLifecycleCommand` with `source: sp_api_get_order` calls `GET /orders/v0/orders/{orderId}`.
@@ -138,7 +138,7 @@ Amazon is the second provider on the generic lifecycle framework. See [amazon/RE
 
 ## Noon order lifecycle (Phase 35)
 
-See [noon/README.md](../../src/modules/marketplaces/infrastructure/adapters/noon/README.md).
+See [noon/README.md](../../src/modules/marketplaces/repositories/adapters/noon/README.md).
 
 - **Inbound:** Event Notifications `FBPI::ORDER_SYNC` → marketplace webhook ingress → `GetFbpiOrder` → lifecycle command.
 - **Polling sync:** `NoonOrderAdapter.fetchOrderLifecycleCommand` calls `GET /fbpi/v1/fbpi-order/{order_nr}/get`.

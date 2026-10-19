@@ -6,7 +6,7 @@ Expose the existing **tenant-scoped order HTTP APIs** on NestJS (JavaScript only
 
 ## Scope
 
-In-scope routes are those defined in `src/modules/orders/presentation/order.routes.js` only.
+In-scope routes are those defined in `src/modules/orders/views/order.routes.js` only.
 
 **Out of scope (separate modules / later phases):**
 
@@ -67,7 +67,7 @@ No seller-specific HTTP routes exist on the core orders module; tenant isolation
 
 ## Validation
 
-Reused schemas from `src/modules/orders/presentation/order.schemas.js`:
+Reused schemas from `src/modules/orders/views/order.schemas.js`:
 
 - `createOrderBodySchema`
 - `listOrdersQuerySchema` (cursor, limit, status enum, channelId, filters, ISO datetimes)
@@ -101,7 +101,7 @@ Marketplace lifecycle / webhook order creation paths are unchanged (Phase 8).
 
 **Unchanged**
 
-- `src/modules/orders/presentation/order.routes.js` (Fastify)
+- `src/modules/orders/views/order.routes.js` (Fastify)
 
 ## Tests executed
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/domain/sync-target.js';
-import { planCatalogSyncJobsFromEvent } from '../../../src/modules/integration-catalog-sync/application/plan-catalog-sync-jobs.js';
+import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/models/sync-target.js';
+import { planCatalogSyncJobsFromEvent } from '../../../src/modules/integration-catalog-sync/services/plan-catalog-sync-jobs.js';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
 const channelA = '22222222-2222-4222-8222-222222222222';

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/domain/sync-operation.js';
-import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/domain/sync-target.js';
-import { SyncChannelProduct } from '../../../src/modules/integration-catalog-sync/application/sync-integration-product.js';
+import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/models/sync-operation.js';
+import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/models/sync-target.js';
+import { SyncChannelProduct } from '../../../src/modules/integration-catalog-sync/services/sync-integration-product.js';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
 const channelId = '22222222-2222-4222-8222-222222222222';

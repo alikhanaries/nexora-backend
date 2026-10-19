@@ -1,9 +1,9 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { NoonCatalogAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-catalog-adapter.js';
-import { NoonApiClient } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-api-client.js';
-import { NoonAuthSessionProvider } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-auth-session.js';
-import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/infrastructure/http/marketplace-http-client.js';
+import { NoonCatalogAdapter } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-catalog-adapter.js';
+import { NoonApiClient } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-api-client.js';
+import { NoonAuthSessionProvider } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-auth-session.js';
+import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/repositories/http/marketplace-http-client.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,

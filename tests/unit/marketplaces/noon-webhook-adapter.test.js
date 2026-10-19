@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/domain/marketplace-webhook-event-kind.js';
-import { MarketplaceWebhookUnsupportedError } from '../../../src/modules/marketplace-webhook-ingestion/application/marketplace-webhook-errors.js';
-import { normalizedMarketplaceWebhookEventSchema } from '../../../src/modules/marketplace-webhook-ingestion/application/normalized-marketplace-webhook-event.schema.js';
-import { NoonWebhookAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-webhook-adapter.js';
+import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/models/marketplace-webhook-event-kind.js';
+import { MarketplaceWebhookUnsupportedError } from '../../../src/modules/marketplace-webhook-ingestion/services/marketplace-webhook-errors.js';
+import { normalizedMarketplaceWebhookEventSchema } from '../../../src/modules/marketplace-webhook-ingestion/services/normalized-marketplace-webhook-event.schema.js';
+import { NoonWebhookAdapter } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-webhook-adapter.js';
 import { buildNoonFbpiOrderSyncEvent } from './noon-event-fixtures.js';
 
 const connection = {

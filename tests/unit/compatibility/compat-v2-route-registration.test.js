@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const routeSource = readFileSync(
-  join(repoRoot, 'src/modules/compatibility/presentation/compat-v2.routes.js'),
+  join(repoRoot, 'src/modules/compatibility/views/compat-v2.routes.js'),
   'utf8',
 );
 

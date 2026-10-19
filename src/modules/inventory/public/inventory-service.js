@@ -23,4 +23,4 @@
  * @property {(tenantId: string, stockLocationId: string, tx?: object) => Promise<void>} verifyUsableStockLocation
  * Ensures the stock location exists for the tenant and is active.
  */
-export { DefaultInventoryService } from '../application/default-inventory-service.js';
+export { DefaultInventoryService } from '../services/default-inventory-service.js';

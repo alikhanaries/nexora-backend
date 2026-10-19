@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { expandPermissionPatterns, permissionKeyMatchesPattern, } from '../../../src/modules/authorization/domain/permission-pattern.js';
+import { expandPermissionPatterns, permissionKeyMatchesPattern, } from '../../../src/modules/authorization/models/permission-pattern.js';
 const catalog = [
     'tenant.admin',
     'orders.read',

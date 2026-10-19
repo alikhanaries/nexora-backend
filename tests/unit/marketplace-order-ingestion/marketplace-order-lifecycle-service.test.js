@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceOrderLifecycleService } from '../../../src/modules/marketplace-order-ingestion/application/marketplace-order-lifecycle-service.js';
-import { ExecuteMarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/application/execute-marketplace-order-lifecycle-operation.js';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
-import { MarketplaceOrderLifecycleOutcome } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-outcome.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';
+import { MarketplaceOrderLifecycleService } from '../../../src/modules/marketplace-order-ingestion/services/marketplace-order-lifecycle-service.js';
+import { ExecuteMarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/services/execute-marketplace-order-lifecycle-operation.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { MarketplaceOrderLifecycleOutcome } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-outcome.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
 import { MarketplaceOrderAdapterRegistry } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js';
 import {
     MarketplaceOrderLifecyclePermanentError,

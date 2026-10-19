@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { resolveMarketplaceOrderLines } from '../../../src/modules/marketplace-order-ingestion/application/resolve-marketplace-order-lines.js';
+import { resolveMarketplaceOrderLines } from '../../../src/modules/marketplace-order-ingestion/services/resolve-marketplace-order-lines.js';
 
 describe('resolveMarketplaceOrderLines', () => {
     it('passes through merchantSku', async () => {

@@ -42,7 +42,7 @@ Core mutation → outbox → integration-events → channel-catalog-sync (unchan
     → Provider adapter (shopify | amazon | noon | namshi | stub)
 ```
 
-- **Adapter implementations** live in `src/modules/marketplaces/infrastructure/adapters/`.
+- **Adapter implementations** live in `src/modules/marketplaces/repositories/adapters/`.
 - **Port types** remain in `channel-catalog-sync/public` (orchestration owns the sync contract).
 - **Connection persistence** in `marketplaces` module: `marketplace_connections`, `marketplace_entity_mappings`.
 - **Core modules** MUST NOT branch on `marketplace.key`.

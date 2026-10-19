@@ -1,10 +1,10 @@
-import { ExecuteMarketplaceOrderLifecycleOperation } from './application/execute-marketplace-order-lifecycle-operation.js';
-import { FetchAndIngestMarketplaceOrders } from './application/fetch-and-ingest-marketplace-orders.js';
-import { IngestNormalizedMarketplaceOrder } from './application/ingest-normalized-marketplace-order.js';
-import { MarketplaceOrderIngestionService } from './application/marketplace-order-ingestion-service.js';
-import { MarketplaceOrderLifecycleService } from './application/marketplace-order-lifecycle-service.js';
-import { ProcessMarketplaceLifecyclePayload } from './application/process-marketplace-lifecycle-payload.js';
-import { EnsureMarketplaceOrderIngestedFromLifecycle } from './application/ensure-marketplace-order-ingested-from-lifecycle.js';
+import { ExecuteMarketplaceOrderLifecycleOperation } from './services/execute-marketplace-order-lifecycle-operation.js';
+import { FetchAndIngestMarketplaceOrders } from './services/fetch-and-ingest-marketplace-orders.js';
+import { IngestNormalizedMarketplaceOrder } from './services/ingest-normalized-marketplace-order.js';
+import { MarketplaceOrderIngestionService } from './services/marketplace-order-ingestion-service.js';
+import { MarketplaceOrderLifecycleService } from './services/marketplace-order-lifecycle-service.js';
+import { ProcessMarketplaceLifecyclePayload } from './services/process-marketplace-lifecycle-payload.js';
+import { EnsureMarketplaceOrderIngestedFromLifecycle } from './services/ensure-marketplace-order-ingested-from-lifecycle.js';
 import { MarketplaceOrderAdapterRegistry } from './public/marketplace-order-adapter-registry.js';
 
 /**
@@ -123,10 +123,10 @@ export function createMarketplaceOrderIngestionModule(deps) {
     };
 }
 
-export { MarketplaceOrderIngestionService } from './application/marketplace-order-ingestion-service.js';
-export { MarketplaceOrderLifecycleService } from './application/marketplace-order-lifecycle-service.js';
-export { normalizedMarketplaceOrderSchema } from './application/normalized-marketplace-order.schema.js';
-export { normalizedMarketplaceLifecycleCommandSchema } from './application/normalized-marketplace-lifecycle-command.schema.js';
-export { MarketplaceOrderLifecycleOperation } from './domain/marketplace-order-lifecycle-operation.js';
-export { MarketplaceOrderLifecycleOutcome } from './domain/marketplace-order-lifecycle-outcome.js';
+export { MarketplaceOrderIngestionService } from './services/marketplace-order-ingestion-service.js';
+export { MarketplaceOrderLifecycleService } from './services/marketplace-order-lifecycle-service.js';
+export { normalizedMarketplaceOrderSchema } from './services/normalized-marketplace-order.schema.js';
+export { normalizedMarketplaceLifecycleCommandSchema } from './services/normalized-marketplace-lifecycle-command.schema.js';
+export { MarketplaceOrderLifecycleOperation } from './models/marketplace-order-lifecycle-operation.js';
+export { MarketplaceOrderLifecycleOutcome } from './models/marketplace-order-lifecycle-outcome.js';
 export { MarketplaceOrderAdapterRegistry } from './public/marketplace-order-adapter-registry.js';

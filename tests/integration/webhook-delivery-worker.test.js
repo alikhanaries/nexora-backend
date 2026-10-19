@@ -4,8 +4,8 @@ import { loadConfig } from '../../src/app/config/config.js';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';
 import { AesSecretEncryptor } from '../../src/infrastructure/auth/aes-secret-encryptor.js';
 import { createWebhookDeliveryService, createWebhookDispatchService } from '../../src/modules/webhooks/index.js';
-import { verifyWebhookRequestBody } from '../../src/modules/webhooks/application/webhook-request-signer.js';
-import { WebhookDeliveryRetryError } from '../../src/modules/webhooks/application/webhook-delivery-errors.js';
+import { verifyWebhookRequestBody } from '../../src/modules/webhooks/services/webhook-request-signer.js';
+import { WebhookDeliveryRetryError } from '../../src/modules/webhooks/services/webhook-delivery-errors.js';
 import { createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 

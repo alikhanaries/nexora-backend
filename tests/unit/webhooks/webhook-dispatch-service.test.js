@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { WebhookDispatchService } from '../../../src/modules/webhooks/application/webhook-dispatch-service.js';
+import { WebhookDispatchService } from '../../../src/modules/webhooks/services/webhook-dispatch-service.js';
 import { ConflictError, ServiceUnavailableError } from '../../../src/shared/errors/index.js';
 import { JobName, QueueName } from '../../../src/infrastructure/queue/queue-names.js';
 

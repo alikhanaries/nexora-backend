@@ -1,4 +1,4 @@
-import { createCompatV2WebhookBodyBuilder } from '../../modules/compatibility/application/build-compat-v2-webhook-body.js';
+import { createCompatV2WebhookBodyBuilder } from '../../modules/compatibility/services/build-compat-v2-webhook-body.js';
 import { isCompatV2BridgeSubscription } from '../../shared/stockconnect/compat-v2-webhook-bridge.js';
 
 /**
@@ -9,7 +9,7 @@ import { isCompatV2BridgeSubscription } from '../../shared/stockconnect/compat-v
  * @param {import('../../modules/orders/public/order-query-service.js').DefaultOrderQueryService} deps.orderQueryService
  * @param {import('../../modules/commerce-integrations/public/commerce-integration-query-service.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
  * @param {import('../../modules/external-id-mapping/public/external-integer-id-mapping-query-service.js').ExternalIntegerIdMappingQueryService} deps.externalIntegerIdMappingQueryService
- * @returns {import('../../modules/webhooks/application/webhook-payload-strategy.js').WebhookPayloadStrategy[]}
+ * @returns {import('../../modules/webhooks/services/webhook-payload-strategy.js').WebhookPayloadStrategy[]}
  */
 export function wireExternalConsumerWebhookPayloadStrategies(deps) {
     const externalCompatibilityOrderBodyBuilder = createCompatV2WebhookBodyBuilder(deps);

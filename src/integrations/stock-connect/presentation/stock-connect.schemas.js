@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { OrderStatus } from '../../../modules/orders/models/order-status.js';
-import { ProductStatus } from '../../../modules/products/domain/product-status.js';
+import { ProductStatus } from '../../../modules/products/models/product-status.js';
 
 export const stockConnectProductIdParamsSchema = z.object({
   productId: z.string().uuid(),

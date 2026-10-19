@@ -23,22 +23,22 @@ describe('Nest catalog modules (products, pricing, offers, inventory)', () => {
   });
 
   it('GET /api/v1/products requires authentication', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
     await request(app.getHttpServer()).get('/api/v1/products').expect(401);
   });
 
   it('GET /api/v1/products returns paginated envelope when authenticated', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
-    coreDomain.products.useCases.listProducts.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    coreServices.products.useCases.listProducts.execute.mockResolvedValue({
       items: [],
       nextCursor: null,
       hasMore: false,
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -55,10 +55,10 @@ describe('Nest catalog modules (products, pricing, offers, inventory)', () => {
   });
 
   it('GET /api/v1/prices returns list envelope when authenticated', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -71,17 +71,17 @@ describe('Nest catalog modules (products, pricing, offers, inventory)', () => {
   });
 
   it('GET /api/v1/offers requires authentication', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
     await request(app.getHttpServer()).get('/api/v1/offers').expect(401);
   });
 
   it('GET /api/v1/stock-locations returns array when authenticated', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -93,10 +93,10 @@ describe('Nest catalog modules (products, pricing, offers, inventory)', () => {
   });
 
   it('GET /api/v1/inventory returns balances array when authenticated', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())

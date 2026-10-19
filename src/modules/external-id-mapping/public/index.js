@@ -3,4 +3,4 @@ export { DefaultExternalIntegerIdMappingQueryService } from './external-integer-
 export {
     ExternalIdMappingProvider,
     ExternalIdMappingResourceType,
-} from '../domain/external-id-mapping-namespace.js';
+} from '../models/external-id-mapping-namespace.js';

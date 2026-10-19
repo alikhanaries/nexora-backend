@@ -1,5 +1,5 @@
 /**
- * @param {import('../../../modules/products/presentation/product.mapper.js').toProductResponse extends (p: infer P) => infer R ? P : never} product
+ * @param {import('../../../modules/products/views/product.mapper.js').toProductResponse extends (p: infer P) => infer R ? P : never} product
  * @param {{ totalAvailable?: number } | null} [inventorySummary]
  */
 export function toStockConnectProduct(product, inventorySummary = null) {

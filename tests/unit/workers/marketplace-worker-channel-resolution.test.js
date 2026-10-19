@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ExecuteMarketplaceLifecycleJob } from '../../../src/modules/marketplace-order-ingestion/application/execute-marketplace-lifecycle-job.js';
-import { MarketplaceLifecycleJobSource } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-lifecycle-job-source.js';
-import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/domain/marketplace-webhook-event-kind.js';
+import { ExecuteMarketplaceLifecycleJob } from '../../../src/modules/marketplace-order-ingestion/services/execute-marketplace-lifecycle-job.js';
+import { MarketplaceLifecycleJobSource } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-lifecycle-job-source.js';
+import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/models/marketplace-webhook-event-kind.js';
 import { wireMarketplaceOrderIngestion } from '../../../src/workers/bootstrap/wire-marketplace-order-ingestion.js';
 
 const tenantA = '22222222-2222-4222-8222-222222222222';

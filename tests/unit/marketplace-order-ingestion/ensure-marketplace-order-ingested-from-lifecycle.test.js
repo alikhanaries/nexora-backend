@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { EnsureMarketplaceOrderIngestedFromLifecycle } from '../../../src/modules/marketplace-order-ingestion/application/ensure-marketplace-order-ingested-from-lifecycle.js';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';
+import { EnsureMarketplaceOrderIngestedFromLifecycle } from '../../../src/modules/marketplace-order-ingestion/services/ensure-marketplace-order-ingested-from-lifecycle.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
 
 describe('EnsureMarketplaceOrderIngestedFromLifecycle', () => {
     const tenantId = randomUUID();

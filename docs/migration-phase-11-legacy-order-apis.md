@@ -8,8 +8,8 @@ Migrate existing **`/api/v2/orders*`** and **`/api/v2/ce/orders*`** HTTP routes 
 
 **In scope (8 routes):** order-related paths only from:
 
-- `src/modules/compatibility/presentation/compatibility.routes.js`
-- `src/modules/compatibility/presentation/stockconnect-ce.routes.js`
+- `src/modules/compatibility/views/compatibility.routes.js`
+- `src/modules/compatibility/views/stockconnect-ce.routes.js`
 
 **Out of scope (remain Fastify-only for now):**
 
@@ -68,7 +68,7 @@ Same 8 routes on:
 
 ## Validation
 
-Existing Zod schemas from `src/modules/compatibility/presentation/*.schemas.js` (PascalCase query fields preserved).
+Existing Zod schemas from `src/modules/compatibility/views/*.schemas.js` (PascalCase query fields preserved).
 
 ## Idempotency
 

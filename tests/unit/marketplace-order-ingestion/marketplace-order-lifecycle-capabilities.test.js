@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
-import { assertMarketplaceOrderLifecycleCapability } from '../../../src/modules/marketplace-order-ingestion/application/marketplace-order-lifecycle-capabilities.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { assertMarketplaceOrderLifecycleCapability } from '../../../src/modules/marketplace-order-ingestion/services/marketplace-order-lifecycle-capabilities.js';
 import { MarketplaceOrderLifecycleUnsupportedError } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
 
 describe('marketplace order lifecycle capabilities', () => {

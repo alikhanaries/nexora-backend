@@ -1,7 +1,7 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { ActivateOffer, CreateOffer, DeactivateOffer, DefaultOfferQueryService, GetOffer, ListOffers, SuspendOffer, UpdateOffer, } from './application/index.js';
-import { PostgresOfferRepository } from './infrastructure/index.js';
-import offerRoutes, {} from './presentation/offer.routes.js';
+import { ActivateOffer, CreateOffer, DeactivateOffer, DefaultOfferQueryService, GetOffer, ListOffers, SuspendOffer, UpdateOffer, } from './services/index.js';
+import { PostgresOfferRepository } from './repositories/index.js';
+import offerRoutes, {} from './views/offer.routes.js';
 export function createOffersModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const offers = new PostgresOfferRepository();
@@ -44,4 +44,4 @@ export function createOffersModule(deps) {
         routes: offerRoutes,
     };
 }
-export { Offer, OfferStatus, ListingStatus } from './domain/index.js';
+export { Offer, OfferStatus, ListingStatus } from './models/index.js';

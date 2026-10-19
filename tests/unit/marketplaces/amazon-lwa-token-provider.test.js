@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AmazonLwaTokenProvider } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-lwa-token-provider.js';
-import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/infrastructure/http/marketplace-http-client.js';
-import { MarketplaceAuthenticationError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
+import { AmazonLwaTokenProvider } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-lwa-token-provider.js';
+import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/repositories/http/marketplace-http-client.js';
+import { MarketplaceAuthenticationError } from '../../../src/modules/marketplaces/models/marketplace-errors.js';
 
 const runtime = {
     marketplaceKey: 'amazon',

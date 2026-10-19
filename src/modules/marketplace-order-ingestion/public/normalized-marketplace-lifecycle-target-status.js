@@ -1,1 +1,1 @@
-export { NormalizedMarketplaceLifecycleTargetStatus } from '../domain/normalized-marketplace-lifecycle-target-status.js';
+export { NormalizedMarketplaceLifecycleTargetStatus } from '../models/normalized-marketplace-lifecycle-target-status.js';

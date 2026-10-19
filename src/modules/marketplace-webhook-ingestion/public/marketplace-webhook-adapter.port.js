@@ -17,7 +17,7 @@
  * @property {string} rawBody
  * @property {MarketplaceWebhookConnectionContext} connection
  *
- * @typedef {import('../application/normalized-marketplace-webhook-event.schema.js').NormalizedMarketplaceWebhookEvent} NormalizedMarketplaceWebhookEvent
+ * @typedef {import('../services/normalized-marketplace-webhook-event.schema.js').NormalizedMarketplaceWebhookEvent} NormalizedMarketplaceWebhookEvent
  *
  * @typedef {object} MarketplaceWebhookAdapter
  * @property {string} marketplaceKey

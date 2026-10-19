@@ -20,7 +20,7 @@ Authentication is bypassed for `/health/*` and `/internal/metrics` on the API ([
 The worker process **already records** worker-relevant metrics into the same in-process registry:
 
 - `queue_jobs_total`, `queue_job_duration_seconds` — BullMQ handlers ([`bullmq-worker-runtime.js`](../../src/infrastructure/queue/bullmq-worker-runtime.js))
-- `webhook_delivery_*` — HTTP delivery worker ([`webhook-delivery-service.js`](../../src/modules/webhooks/application/webhook-delivery-service.js))
+- `webhook_delivery_*` — HTTP delivery worker ([`webhook-delivery-service.js`](../../src/modules/webhooks/services/webhook-delivery-service.js))
 - `nexora_retention_cleanup_*` — retention sweeps ([`retention-cleanup-service.js`](../../src/infrastructure/postgres/retention-cleanup-service.js))
 - `db_*`, `redis_*`, Node.js default metrics — shared infrastructure adapters
 

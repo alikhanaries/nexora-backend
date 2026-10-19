@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     resolveCompatV2IdempotencyKey,
     stableIdempotencyFingerprint,
-} from '../../../src/modules/compatibility/application/resolve-compat-v2-idempotency-key.js';
+} from '../../../src/modules/compatibility/services/resolve-compat-v2-idempotency-key.js';
 
 describe('StockConnect CE idempotency', () => {
     it('uses explicit Idempotency-Key when provided', () => {

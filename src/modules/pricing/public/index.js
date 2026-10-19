@@ -1,1 +1,1 @@
-export { DefaultPricingService } from '../application/index.js';
+export { DefaultPricingService } from '../services/index.js';

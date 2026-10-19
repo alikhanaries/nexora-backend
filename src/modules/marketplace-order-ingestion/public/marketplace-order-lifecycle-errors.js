@@ -2,4 +2,4 @@ export {
     MarketplaceOrderLifecyclePermanentError,
     MarketplaceOrderLifecycleRetryError,
     MarketplaceOrderLifecycleUnsupportedError,
-} from '../application/marketplace-order-lifecycle-errors.js';
+} from '../services/marketplace-order-lifecycle-errors.js';

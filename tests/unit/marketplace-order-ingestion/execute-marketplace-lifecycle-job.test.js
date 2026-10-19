@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ExecuteMarketplaceLifecycleJob } from '../../../src/modules/marketplace-order-ingestion/application/execute-marketplace-lifecycle-job.js';
-import { MarketplaceLifecycleJobSource } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-lifecycle-job-source.js';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
+import { ExecuteMarketplaceLifecycleJob } from '../../../src/modules/marketplace-order-ingestion/services/execute-marketplace-lifecycle-job.js';
+import { MarketplaceLifecycleJobSource } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-lifecycle-job-source.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
 import { MarketplaceOrderLifecycleRetryError } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
-import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/domain/marketplace-webhook-event-kind.js';
-import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-order-status.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';
+import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/models/marketplace-webhook-event-kind.js';
+import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
 
 const tenantId = '22222222-2222-4222-8222-222222222222';
 const channelId = '33333333-3333-4333-8333-333333333333';

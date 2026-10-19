@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { ProcessMarketplaceLifecyclePayload } from '../../../src/modules/marketplace-order-ingestion/application/process-marketplace-lifecycle-payload.js';
+import { ProcessMarketplaceLifecyclePayload } from '../../../src/modules/marketplace-order-ingestion/services/process-marketplace-lifecycle-payload.js';
 
 describe('ProcessMarketplaceLifecyclePayload', () => {
     it('ensures ingest before applying lifecycle', async () => {

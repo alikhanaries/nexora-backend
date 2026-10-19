@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { JobName, QueueName } from '../../../src/infrastructure/queue/queue-names.js';
-import { CatalogSyncEnqueueService } from '../../../src/modules/integration-catalog-sync/application/catalog-sync-enqueue-service.js';
-import { buildCatalogSyncJobId } from '../../../src/modules/integration-catalog-sync/application/build-catalog-sync-job-id.js';
-import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/domain/sync-target.js';
+import { CatalogSyncEnqueueService } from '../../../src/modules/integration-catalog-sync/services/catalog-sync-enqueue-service.js';
+import { buildCatalogSyncJobId } from '../../../src/modules/integration-catalog-sync/services/build-catalog-sync-job-id.js';
+import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/models/sync-target.js';
 
 describe('CatalogSyncEnqueueService', () => {
     it('enqueues coalesced jobs with deterministic job ids', async () => {

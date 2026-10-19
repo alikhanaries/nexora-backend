@@ -889,7 +889,7 @@ flowchart TD
   E --> M[GlobalExceptionFilter on error]
 ```
 
-**Files:** `src/nest/common/guards/auth.guard.js`, `src/modules/identity/application/authenticate-access-token.js`, `src/shared/context/request-context.js`, controllers/services under `src/nest/<feature>/`.
+**Files:** `src/nest/common/guards/auth.guard.js`, `src/modules/identity/services/authenticate-access-token.js`, `src/shared/context/request-context.js`, controllers/services under `src/nest/<feature>/`.
 
 ### 5.2 Database read/write
 
@@ -955,11 +955,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **api-keys** (see `src/modules/api-keys/application/` use cases). |
+| **Business purpose** | Domain logic for **api-keys** (see `src/modules/api-keys/services/` use cases). |
 | **Folder** | `src/modules/api-keys/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`. |
 | **HTTP (Nest)** | `src/nest/api-keys/` Nest module + controller(s). |
 | **Factory** | `createApiKeysModule` or `index.js` export in `src/modules/api-keys/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/api-keys/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/api-keys/repositories/` where present. |
 | **Tests** | `tests/unit/**/api-keys*`, `tests/integration/**/api-keys*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -968,11 +968,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **audit** (see `src/modules/audit/application/` use cases). |
+| **Business purpose** | Domain logic for **audit** (see `src/modules/audit/services/` use cases). |
 | **Folder** | `src/modules/audit/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/audit/` Nest module + controller(s). |
 | **Factory** | `createAuditModule` or `index.js` export in `src/modules/audit/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/audit/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/audit/repositories/` where present. |
 | **Tests** | `tests/unit/**/audit*`, `tests/integration/**/audit*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -981,11 +981,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **authorization** (see `src/modules/authorization/application/` use cases). |
+| **Business purpose** | Domain logic for **authorization** (see `src/modules/authorization/services/` use cases). |
 | **Folder** | `src/modules/authorization/` with typical layers: `application/`, `composition/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/authorization/` Nest module + controller(s). |
 | **Factory** | `createAuthorizationModule` or `index.js` export in `src/modules/authorization/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/authorization/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/authorization/repositories/` where present. |
 | **Tests** | `tests/unit/**/authorization*`, `tests/integration/**/authorization*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -994,11 +994,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **cancellations** (see `src/modules/cancellations/application/` use cases). |
+| **Business purpose** | Domain logic for **cancellations** (see `src/modules/cancellations/services/` use cases). |
 | **Folder** | `src/modules/cancellations/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/cancellations/` Nest module + controller(s). |
 | **Factory** | `createCancellationsModule` or `index.js` export in `src/modules/cancellations/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/cancellations/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/cancellations/repositories/` where present. |
 | **Tests** | `tests/unit/**/cancellations*`, `tests/integration/**/cancellations*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1007,11 +1007,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **channel-catalog-sync** (see `src/modules/integration-catalog-sync/application/` use cases). |
+| **Business purpose** | Domain logic for **channel-catalog-sync** (see `src/modules/integration-catalog-sync/services/` use cases). |
 | **Folder** | `src/modules/integration-catalog-sync/` with typical layers: `application/`, `domain/`, `infrastructure/`, `public/`. |
 | **HTTP (Nest)** | No dedicated Nest folder; may be wired via compatibility or worker paths. |
 | **Factory** | `createChannelCatalogSyncModule` or `index.js` export in `src/modules/integration-catalog-sync/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/integration-catalog-sync/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/integration-catalog-sync/repositories/` where present. |
 | **Tests** | `tests/unit/**/channel-catalog-sync*`, `tests/integration/**/channel-catalog-sync*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1020,11 +1020,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **channels** (see `src/modules/commerce-integrations/application/` use cases). |
+| **Business purpose** | Domain logic for **channels** (see `src/modules/commerce-integrations/services/` use cases). |
 | **Folder** | `src/modules/commerce-integrations/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/channels/` Nest module + controller(s). |
 | **Factory** | `createChannelsModule` or `index.js` export in `src/modules/commerce-integrations/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/commerce-integrations/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/commerce-integrations/repositories/` where present. |
 | **Tests** | `tests/unit/**/channels*`, `tests/integration/**/channels*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1033,11 +1033,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **compatibility** (see `src/modules/compatibility/application/` use cases). |
+| **Business purpose** | Domain logic for **compatibility** (see `src/modules/compatibility/services/` use cases). |
 | **Folder** | `src/modules/compatibility/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | No dedicated Nest folder; may be wired via compatibility or worker paths. |
 | **Factory** | `createCompatibilityModule` or `index.js` export in `src/modules/compatibility/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/compatibility/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/compatibility/repositories/` where present. |
 | **Tests** | `tests/unit/**/compatibility*`, `tests/integration/**/compatibility*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1046,11 +1046,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **external-id-mapping** (see `src/modules/external-id-mapping/application/` use cases). |
+| **Business purpose** | Domain logic for **external-id-mapping** (see `src/modules/external-id-mapping/services/` use cases). |
 | **Folder** | `src/modules/external-id-mapping/` with typical layers: `application/`, `domain/`, `infrastructure/`, `public/`. |
 | **HTTP (Nest)** | No dedicated Nest folder; may be wired via compatibility or worker paths. |
 | **Factory** | `createExternalIdMappingModule` or `index.js` export in `src/modules/external-id-mapping/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/external-id-mapping/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/external-id-mapping/repositories/` where present. |
 | **Tests** | `tests/unit/**/external-id-mapping*`, `tests/integration/**/external-id-mapping*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1059,11 +1059,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **identity** (see `src/modules/identity/application/` use cases). |
+| **Business purpose** | Domain logic for **identity** (see `src/modules/identity/services/` use cases). |
 | **Folder** | `src/modules/identity/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`. |
 | **HTTP (Nest)** | No dedicated Nest folder; may be wired via compatibility or worker paths. |
 | **Factory** | `createIdentityModule` or `index.js` export in `src/modules/identity/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/identity/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/identity/repositories/` where present. |
 | **Tests** | `tests/unit/**/identity*`, `tests/integration/**/identity*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1072,11 +1072,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **inventory** (see `src/modules/inventory/application/` use cases). |
+| **Business purpose** | Domain logic for **inventory** (see `src/modules/inventory/services/` use cases). |
 | **Folder** | `src/modules/inventory/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/inventory/` Nest module + controller(s). |
 | **Factory** | `createInventoryModule` or `index.js` export in `src/modules/inventory/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/inventory/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/inventory/repositories/` where present. |
 | **Tests** | `tests/unit/**/inventory*`, `tests/integration/**/inventory*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1085,11 +1085,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **marketplace-order-ingestion** (see `src/modules/marketplace-order-ingestion/application/` use cases). |
+| **Business purpose** | Domain logic for **marketplace-order-ingestion** (see `src/modules/marketplace-order-ingestion/services/` use cases). |
 | **Folder** | `src/modules/marketplace-order-ingestion/` with typical layers: `application/`, `domain/`, `public/`. |
 | **HTTP (Nest)** | No dedicated Nest folder; may be wired via compatibility or worker paths. |
 | **Factory** | `createMarketplaceOrderIngestionModule` or `index.js` export in `src/modules/marketplace-order-ingestion/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/marketplace-order-ingestion/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/marketplace-order-ingestion/repositories/` where present. |
 | **Tests** | `tests/unit/**/marketplace-order-ingestion*`, `tests/integration/**/marketplace-order-ingestion*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1098,11 +1098,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **marketplace-webhook-ingestion** (see `src/modules/marketplace-webhook-ingestion/application/` use cases). |
+| **Business purpose** | Domain logic for **marketplace-webhook-ingestion** (see `src/modules/marketplace-webhook-ingestion/services/` use cases). |
 | **Folder** | `src/modules/marketplace-webhook-ingestion/` with typical layers: `application/`, `domain/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | No dedicated Nest folder; may be wired via compatibility or worker paths. |
 | **Factory** | `createMarketplaceWebhookIngestionModule` or `index.js` export in `src/modules/marketplace-webhook-ingestion/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/marketplace-webhook-ingestion/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/marketplace-webhook-ingestion/repositories/` where present. |
 | **Tests** | `tests/unit/**/marketplace-webhook-ingestion*`, `tests/integration/**/marketplace-webhook-ingestion*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1111,11 +1111,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **marketplaces** (see `src/modules/marketplaces/application/` use cases). |
+| **Business purpose** | Domain logic for **marketplaces** (see `src/modules/marketplaces/services/` use cases). |
 | **Folder** | `src/modules/marketplaces/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/marketplaces/` Nest module + controller(s). |
 | **Factory** | `createMarketplacesModule` or `index.js` export in `src/modules/marketplaces/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/marketplaces/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/marketplaces/repositories/` where present. |
 | **Tests** | `tests/unit/**/marketplaces*`, `tests/integration/**/marketplaces*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1124,11 +1124,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **mfa** (see `src/modules/mfa/application/` use cases). |
+| **Business purpose** | Domain logic for **mfa** (see `src/modules/mfa/services/` use cases). |
 | **Folder** | `src/modules/mfa/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/mfa/` Nest module + controller(s). |
 | **Factory** | `createMfaModule` or `index.js` export in `src/modules/mfa/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/mfa/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/mfa/repositories/` where present. |
 | **Tests** | `tests/unit/**/mfa*`, `tests/integration/**/mfa*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1137,11 +1137,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **offers** (see `src/modules/offers/application/` use cases). |
+| **Business purpose** | Domain logic for **offers** (see `src/modules/offers/services/` use cases). |
 | **Folder** | `src/modules/offers/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/offers/` Nest module + controller(s). |
 | **Factory** | `createOffersModule` or `index.js` export in `src/modules/offers/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/offers/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/offers/repositories/` where present. |
 | **Tests** | `tests/unit/**/offers*`, `tests/integration/**/offers*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1150,11 +1150,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **orders** (see `src/modules/orders/application/` use cases). |
+| **Business purpose** | Domain logic for **orders** (see `src/modules/orders/services/` use cases). |
 | **Folder** | `src/modules/orders/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/orders/` Nest module + controller(s). |
 | **Factory** | `createOrdersModule` or `index.js` export in `src/modules/orders/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/orders/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/orders/repositories/` where present. |
 | **Tests** | `tests/unit/**/orders*`, `tests/integration/**/orders*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1163,11 +1163,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **pricing** (see `src/modules/pricing/application/` use cases). |
+| **Business purpose** | Domain logic for **pricing** (see `src/modules/pricing/services/` use cases). |
 | **Folder** | `src/modules/pricing/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/pricing/` Nest module + controller(s). |
 | **Factory** | `createPricingModule` or `index.js` export in `src/modules/pricing/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/pricing/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/pricing/repositories/` where present. |
 | **Tests** | `tests/unit/**/pricing*`, `tests/integration/**/pricing*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1176,11 +1176,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **products** (see `src/modules/products/application/` use cases). |
+| **Business purpose** | Domain logic for **products** (see `src/modules/products/services/` use cases). |
 | **Folder** | `src/modules/products/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/products/` Nest module + controller(s). |
 | **Factory** | `createProductsModule` or `index.js` export in `src/modules/products/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/products/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/products/repositories/` where present. |
 | **Tests** | `tests/unit/**/products*`, `tests/integration/**/products*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1189,11 +1189,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **returns** (see `src/modules/returns/application/` use cases). |
+| **Business purpose** | Domain logic for **returns** (see `src/modules/returns/services/` use cases). |
 | **Folder** | `src/modules/returns/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/returns/` Nest module + controller(s). |
 | **Factory** | `createReturnsModule` or `index.js` export in `src/modules/returns/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/returns/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/returns/repositories/` where present. |
 | **Tests** | `tests/unit/**/returns*`, `tests/integration/**/returns*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1202,11 +1202,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **shipments** (see `src/modules/shipments/application/` use cases). |
+| **Business purpose** | Domain logic for **shipments** (see `src/modules/shipments/services/` use cases). |
 | **Folder** | `src/modules/shipments/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/shipments/` Nest module + controller(s). |
 | **Factory** | `createShipmentsModule` or `index.js` export in `src/modules/shipments/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/shipments/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/shipments/repositories/` where present. |
 | **Tests** | `tests/unit/**/shipments*`, `tests/integration/**/shipments*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1215,11 +1215,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **tenants** (see `src/modules/tenants/application/` use cases). |
+| **Business purpose** | Domain logic for **tenants** (see `src/modules/tenants/services/` use cases). |
 | **Folder** | `src/modules/tenants/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/tenants/` Nest module + controller(s). |
 | **Factory** | `createTenantsModule` or `index.js` export in `src/modules/tenants/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/tenants/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/tenants/repositories/` where present. |
 | **Tests** | `tests/unit/**/tenants*`, `tests/integration/**/tenants*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.
@@ -1228,11 +1228,11 @@ Domain modules discovered under `src/modules/`:
 
 | Attribute | Detail |
 | --------- | ------ |
-| **Business purpose** | Domain logic for **webhooks** (see `src/modules/webhooks/application/` use cases). |
+| **Business purpose** | Domain logic for **webhooks** (see `src/modules/webhooks/services/` use cases). |
 | **Folder** | `src/modules/webhooks/` with typical layers: `application/`, `domain/`, `infrastructure/`, `presentation/`, `public/`. |
 | **HTTP (Nest)** | `src/nest/webhooks/` Nest module + controller(s). |
 | **Factory** | `createWebhooksModule` or `index.js` export in `src/modules/webhooks/`. |
-| **Persistence** | PostgreSQL repositories under `src/modules/webhooks/infrastructure/` where present. |
+| **Persistence** | PostgreSQL repositories under `src/modules/webhooks/repositories/` where present. |
 | **Tests** | `tests/unit/**/webhooks*`, `tests/integration/**/webhooks*` (search by module name). |
 
 **How it fits:** Domain modules are composed in `src/app/bootstrap/create-application.js` and injected into Nest via `CoreDomainModule` (`src/nest/domain/`). Controllers call thin Nest services that delegate to domain query/command services.

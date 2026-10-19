@@ -1,3 +1,3 @@
 export {
     normalizedMarketplaceOrderSchema,
-} from '../application/normalized-marketplace-order.schema.js';
+} from '../services/normalized-marketplace-order.schema.js';

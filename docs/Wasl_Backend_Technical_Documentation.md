@@ -609,7 +609,7 @@ Each module below is described by what it is for, what it owns, and where its li
 
 **Purpose.** Authenticate a user into a tenant and issue short-lived access tokens with rotating refresh tokens.
 
-**Login** (`src/modules/identity/application/use-cases/login.js`) resolves the tenant by slug, requires tenant status `ACTIVE`, normalises the email through the `Email` value object, verifies the password with Argon2id, and requires an active membership that grants access. On success it creates a refresh session, signs a JWT, and writes a `LOGIN_SUCCESS` audit entry. Failures write `LOGIN_FAILURE` and return a generic `InvalidCredentialsError` so the caller cannot distinguish a wrong password from a missing user.
+**Login** (`src/modules/identity/services/use-cases/login.js`) resolves the tenant by slug, requires tenant status `ACTIVE`, normalises the email through the `Email` value object, verifies the password with Argon2id, and requires an active membership that grants access. On success it creates a refresh session, signs a JWT, and writes a `LOGIN_SUCCESS` audit entry. Failures write `LOGIN_FAILURE` and return a generic `InvalidCredentialsError` so the caller cannot distinguish a wrong password from a missing user.
 
 **Refresh rotation** is the most security-sensitive part of the module. The refresh token is hashed with SHA-256 before lookup, so the raw token is never stored. `evaluateRefreshSession` in `domain/refresh-rotation.js` classifies the presented token. If a session that was already `REPLACED` or `REVOKED` is presented again, this is treated as **token family reuse**: the entire `familyId` is revoked, a `REFRESH_REUSE_DETECTED` audit entry is written, and the caller receives invalid credentials. A normal rotation creates a new session in the same family and marks the old one replaced.
 
@@ -1313,7 +1313,7 @@ This produces a relationship that is the opposite of what the phrase "ChannelEng
 | ChannelEngine credentials are configured | No `CHANNELENGINE_*` environment variables exist |
 | ChannelEngine reaches the marketplaces | Wasl's own marketplace adapters do that, independently |
 
-The evidence is direct. Searching `src/` for "ChannelEngine" returns three files, all within the compatibility module, and every occurrence is a comment or an OpenAPI description. `src/modules/compatibility/infrastructure/index.js` is an empty boundary stub — the module has no infrastructure because it makes no outbound calls. Its `domain/index.js` is likewise an empty placeholder, because the compatibility layer holds no business rules of its own; it translates and delegates.
+The evidence is direct. Searching `src/` for "ChannelEngine" returns three files, all within the compatibility module, and every occurrence is a comment or an OpenAPI description. `src/modules/compatibility/repositories/index.js` is an empty boundary stub — the module has no infrastructure because it makes no outbound calls. Its `domain/index.js` is likewise an empty placeholder, because the compatibility layer holds no business rules of its own; it translates and delegates.
 
 ### System context
 
@@ -2680,32 +2680,32 @@ Recommendations only. Nothing here is implemented, and nothing here should be re
 | Rate limit policies | `src/shared/auth/rate-limit-policies.js` |
 | CE prefix detection | `src/shared/auth/merchant-compat-route-prefix.js` |
 | CE credential readers | `src/shared/auth/read-merchant-compat-query-api-key.js` |
-| Merchant compatibility routes | `src/modules/compatibility/presentation/compatibility.routes.js` |
-| StockConnect CE routes | `src/modules/compatibility/presentation/stockconnect-ce.routes.js` |
-| CE error envelope | `src/modules/compatibility/application/errors/map-core-error.js` |
-| CE idempotency derivation | `src/modules/compatibility/application/resolve-stockconnect-ce-idempotency-key.js` |
-| CE catalog command | `src/modules/compatibility/application/stockconnect-ce-catalog-command.js` |
-| CE order poll | `src/modules/compatibility/application/stockconnect-ce-order-compatibility-query.js` |
-| CE invoice generation | `src/modules/compatibility/application/generate-stockconnect-ce-invoice-pdf.js` |
-| CE readiness probe | `src/modules/compatibility/application/stockconnect-ce-readiness.js` |
-| CE webhook body | `src/modules/compatibility/application/build-stockconnect-ce-webhook-body.js` |
+| Merchant compatibility routes | `src/modules/compatibility/views/compatibility.routes.js` |
+| StockConnect CE routes | `src/modules/compatibility/views/stockconnect-ce.routes.js` |
+| CE error envelope | `src/modules/compatibility/services/errors/map-core-error.js` |
+| CE idempotency derivation | `src/modules/compatibility/services/resolve-stockconnect-ce-idempotency-key.js` |
+| CE catalog command | `src/modules/compatibility/services/stockconnect-ce-catalog-command.js` |
+| CE order poll | `src/modules/compatibility/services/stockconnect-ce-order-compatibility-query.js` |
+| CE invoice generation | `src/modules/compatibility/services/generate-stockconnect-ce-invoice-pdf.js` |
+| CE readiness probe | `src/modules/compatibility/services/stockconnect-ce-readiness.js` |
+| CE webhook body | `src/modules/compatibility/services/build-stockconnect-ce-webhook-body.js` |
 | CE webhook constants | `src/shared/stockconnect/stockconnect-ce-webhook-subscription.js` |
-| External identifier resolution | `src/modules/compatibility/application/compatibility-external-id-resolution.js` |
-| Order status machine | `src/modules/orders/domain/order-status.js` |
-| Order fulfilment coordination | `src/modules/orders/application/order-fulfillment-service.js` |
-| Channel order equivalence | `src/modules/orders/application/channel-order-request-equivalence.js` |
-| Inventory balance invariant | `src/modules/inventory/domain/inventory-balance.js` |
-| Shipment inventory consumption | `src/modules/shipments/application/fulfill-inventory-when-shipment-shipped.js` |
-| Catalog sync planning | `src/modules/integration-catalog-sync/application/plan-catalog-sync-jobs.js` |
-| Catalog sync execution | `src/modules/integration-catalog-sync/application/execute-catalog-sync-job.js` |
-| Catalog sync job identifiers | `src/modules/integration-catalog-sync/application/build-catalog-sync-job-id.js` |
-| Adapter runtime factory | `src/modules/marketplaces/application/marketplace-adapter-runtime-factory.js` |
-| Adapter error classification | `src/modules/marketplaces/application/map-marketplace-error-to-adapter-error.js` |
-| Inbound webhook receipt | `src/modules/marketplace-webhook-ingestion/application/receive-marketplace-webhook.js` |
-| Order ingestion service | `src/modules/marketplace-order-ingestion/application/marketplace-order-ingestion-service.js` |
-| Webhook delivery | `src/modules/webhooks/application/webhook-delivery-service.js` |
-| Webhook signing | `src/modules/webhooks/application/webhook-request-signer.js` |
-| Webhook response classification | `src/modules/webhooks/application/classify-webhook-http-response.js` |
+| External identifier resolution | `src/modules/compatibility/services/compatibility-external-id-resolution.js` |
+| Order status machine | `src/modules/orders/models/order-status.js` |
+| Order fulfilment coordination | `src/modules/orders/services/order-fulfillment-service.js` |
+| Channel order equivalence | `src/modules/orders/services/channel-order-request-equivalence.js` |
+| Inventory balance invariant | `src/modules/inventory/models/inventory-balance.js` |
+| Shipment inventory consumption | `src/modules/shipments/services/fulfill-inventory-when-shipment-shipped.js` |
+| Catalog sync planning | `src/modules/integration-catalog-sync/services/plan-catalog-sync-jobs.js` |
+| Catalog sync execution | `src/modules/integration-catalog-sync/services/execute-catalog-sync-job.js` |
+| Catalog sync job identifiers | `src/modules/integration-catalog-sync/services/build-catalog-sync-job-id.js` |
+| Adapter runtime factory | `src/modules/marketplaces/services/marketplace-adapter-runtime-factory.js` |
+| Adapter error classification | `src/modules/marketplaces/services/map-marketplace-error-to-adapter-error.js` |
+| Inbound webhook receipt | `src/modules/marketplace-webhook-ingestion/services/receive-marketplace-webhook.js` |
+| Order ingestion service | `src/modules/marketplace-order-ingestion/services/marketplace-order-ingestion-service.js` |
+| Webhook delivery | `src/modules/webhooks/services/webhook-delivery-service.js` |
+| Webhook signing | `src/modules/webhooks/services/webhook-request-signer.js` |
+| Webhook response classification | `src/modules/webhooks/services/classify-webhook-http-response.js` |
 | SSRF validation | `src/shared/security/validate-outbound-https-url.js`, `ssrf-validator.js` |
 | Postgres pool and transactions | `src/infrastructure/postgres/postgres-database.js` |
 | Migration runner | `src/infrastructure/postgres/migrator.js` |

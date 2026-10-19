@@ -1,10 +1,10 @@
-import { CreateApiKeyUseCase } from './application/use-cases/create-api-key.js';
-import { ListApiKeysUseCase } from './application/use-cases/list-api-keys.js';
-import { RevokeApiKeyUseCase } from './application/use-cases/revoke-api-key.js';
-import { RotateApiKeyUseCase } from './application/use-cases/rotate-api-key.js';
-import { VerifyApiKeyUseCase } from './application/use-cases/verify-api-key.js';
-import { PostgresApiKeyRepository } from './infrastructure/postgres-api-key-repository.js';
-import apiKeyRoutes from './presentation/api-key.routes.js';
+import { CreateApiKeyUseCase } from './services/use-cases/create-api-key.js';
+import { ListApiKeysUseCase } from './services/use-cases/list-api-keys.js';
+import { RevokeApiKeyUseCase } from './services/use-cases/revoke-api-key.js';
+import { RotateApiKeyUseCase } from './services/use-cases/rotate-api-key.js';
+import { VerifyApiKeyUseCase } from './services/use-cases/verify-api-key.js';
+import { PostgresApiKeyRepository } from './repositories/postgres-api-key-repository.js';
+import apiKeyRoutes from './views/api-key.routes.js';
 export function createApiKeysModule(deps) {
     const apiKeys = new PostgresApiKeyRepository();
     const createApiKey = new CreateApiKeyUseCase({

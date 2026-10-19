@@ -1,7 +1,6 @@
 # Function-Based MVC Migration — Audit and Plan
 
-**Status:** Stage 0 complete (audit + baselines). Stage 1 in progress (config facade, composition patterns, pilot use case).  
-**Branch:** `fix/final-nest-runtime-validation`  
+**Status:** Physical MVC folder rename complete for remaining business modules (`models` / `services` / `repositories` / `views` / `controllers/nest`). Nest feature modules colocated under each module. Root deprecated `nest/` stub removed.  
 **Constraint:** Structural refactor only — no business-rule, API, or persisted-identifier changes.
 
 ## Executive summary
@@ -78,7 +77,7 @@ Enforced by: `tests/unit/architecture/returns-mvc-structure.test.js`.
 | `modules/*/repositories/` | **`modules/*/infrastructure/postgres-*-repository.js`** |
 | `modules/*/models/` | **`modules/*/domain/`** |
 | `modules/*/views/` | **`modules/*/presentation/*mapper*`**, DTO helpers in application |
-| `integrations/marketplace/` | **`modules/marketplaces/infrastructure/adapters/`** |
+| `integrations/marketplace/` | **`modules/marketplaces/repositories/adapters/`** |
 | `database/` | **`src/infrastructure/postgres/`** + migrations |
 
 ## Configuration (centralized today)

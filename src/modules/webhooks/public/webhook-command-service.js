@@ -59,4 +59,4 @@
  * Internal delivery persistence for worker dispatch.
  */
 
-export { DefaultWebhookCommandService } from '../application/webhook-command-service.js';
+export { DefaultWebhookCommandService } from '../services/webhook-command-service.js';

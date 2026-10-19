@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { MarketplaceWebhookAdapterRegistry } from '../../../src/modules/marketplace-webhook-ingestion/public/marketplace-webhook-adapter-registry.js';
-import { registerMarketplaceWebhookAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-webhook-adapters.js';
-import { AmazonWebhookAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-webhook-adapter.js';
-import { NamshiWebhookAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-webhook-adapter.js';
-import { NoonWebhookAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-webhook-adapter.js';
+import { registerMarketplaceWebhookAdapters } from '../../../src/modules/marketplaces/repositories/adapters/register-marketplace-webhook-adapters.js';
+import { AmazonWebhookAdapter } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-webhook-adapter.js';
+import { NamshiWebhookAdapter } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-webhook-adapter.js';
+import { NoonWebhookAdapter } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-webhook-adapter.js';
 
 describe('registerMarketplaceWebhookAdapters', () => {
     it('registers provider-neutral inbound adapters without optional Shopify deps', () => {

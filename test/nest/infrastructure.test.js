@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from '@jest/globals';
 import { loadConfigFromEnvironment } from '../../src/app/config/index.js';
-import { createNestInfrastructure } from '../../src/nest/bootstrap/create-nest-infrastructure.js';
-import { buildAppModule } from '../../src/nest/app.module.js';
-import { WASL_CONFIG } from '../../src/nest/config/config.module.js';
-import { WASL_DATABASE, WASL_LOGGER } from '../../src/nest/database/database.module.js';
-import { DatabaseService } from '../../src/nest/database/database.service.js';
+import { createNestInfrastructure } from '../../src/app/create-nest-infrastructure.js';
+import { buildAppModule } from '../../src/app/app.module.js';
+import { WASL_CONFIG } from '../../src/app/config/wasl-config.module.js';
+import { WASL_DATABASE, WASL_LOGGER } from '../../src/app/database/database.module.js';
+import { DatabaseService } from '../../src/app/database/database.service.js';
 import { Test } from '@nestjs/testing';
 import { createPinoLogger } from '../../src/infrastructure/observability/pino-logger.js';
 import { noopMetricsRecorder } from '../../src/shared/metrics/index.js';

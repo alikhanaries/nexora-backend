@@ -9,7 +9,7 @@ import { describeErrorForLog } from '../shared/errors/index.js';
 import { createIntegrationEventConsumers } from './create-integration-event-consumers.js';
 import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
 import { CatalogSyncEnqueueHandler } from './handlers/catalog-sync-enqueue.handler.js';
-import { CatalogSyncReconciliationScheduler } from '../modules/integration-catalog-sync/application/catalog-sync-reconciliation-scheduler.js';
+import { CatalogSyncReconciliationScheduler } from '../modules/integration-catalog-sync/services/catalog-sync-reconciliation-scheduler.js';
 import { wireIntegrationCatalogSync } from './bootstrap/wire-integration-catalog-sync.js';
 import { wireMarketplaceLifecycleWorker } from './bootstrap/wire-marketplace-lifecycle-worker.js';
 import { createWorkerMarketplaceCommerceDeps } from './bootstrap/create-worker-marketplace-commerce-deps.js';

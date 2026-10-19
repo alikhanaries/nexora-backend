@@ -3,4 +3,4 @@ export {
     MarketplaceWebhookPermanentError,
     MarketplaceWebhookRetryableError,
     MarketplaceWebhookUnsupportedError,
-} from '../application/marketplace-webhook-errors.js';
+} from '../services/marketplace-webhook-errors.js';

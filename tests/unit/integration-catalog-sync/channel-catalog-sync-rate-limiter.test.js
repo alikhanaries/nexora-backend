@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { IntegrationCatalogSyncRateLimiter } from '../../../src/modules/integration-catalog-sync/application/integration-catalog-sync-rate-limiter.js';
+import { IntegrationCatalogSyncRateLimiter } from '../../../src/modules/integration-catalog-sync/services/integration-catalog-sync-rate-limiter.js';
 import { CATALOG_SYNC_RATE_LIMIT_POLICY } from '../../../src/shared/auth/rate-limit-policies.js';
 
 describe('IntegrationCatalogSyncRateLimiter', () => {

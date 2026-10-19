@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     mapCompatV2IntegrationProductCollection,
     mapCompatV2IntegrationProductItem,
-} from '../../../src/modules/compatibility/application/mappers/compat-v2-integration-product.mapper.js';
+} from '../../../src/modules/compatibility/services/mappers/compat-v2-integration-product.mapper.js';
 
 describe('compat-v2-integration-product.mapper', () => {
     it('maps offer status to CE IntegrationStatus strings StockConnect stores', () => {

@@ -1,8 +1,8 @@
-import { MarketplaceOrderLifecycleProcessor } from '../../modules/marketplace-webhook-ingestion/application/marketplace-order-lifecycle-processor.js';
-import { MarketplaceLifecycleEnqueueService } from '../../modules/marketplace-order-ingestion/application/marketplace-lifecycle-enqueue-service.js';
-import { ExecuteMarketplaceLifecycleJob } from '../../modules/marketplace-order-ingestion/application/execute-marketplace-lifecycle-job.js';
-import { FetchAndEnqueueMarketplaceOrderLifecycle } from '../../modules/marketplace-order-ingestion/application/fetch-and-enqueue-marketplace-order-lifecycle.js';
-import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/application/enqueue-outbound-marketplace-order-lifecycle-command.js';
+import { MarketplaceOrderLifecycleProcessor } from '../../modules/marketplace-webhook-ingestion/services/marketplace-order-lifecycle-processor.js';
+import { MarketplaceLifecycleEnqueueService } from '../../modules/marketplace-order-ingestion/services/marketplace-lifecycle-enqueue-service.js';
+import { ExecuteMarketplaceLifecycleJob } from '../../modules/marketplace-order-ingestion/services/execute-marketplace-lifecycle-job.js';
+import { FetchAndEnqueueMarketplaceOrderLifecycle } from '../../modules/marketplace-order-ingestion/services/fetch-and-enqueue-marketplace-order-lifecycle.js';
+import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/services/enqueue-outbound-marketplace-order-lifecycle-command.js';
 
 /**
  * @param {object} deps
@@ -11,10 +11,10 @@ import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../../modules/m
  * @param {import('../../shared/metrics/metrics-recorder.js').MetricsRecorder} deps.metrics
  * @param {import('../../shared/logging/logger.port.js').Logger} deps.logger
  * @param {import('../../app/config/config.js').loadConfig extends (...args: never) => infer R ? R : never} deps.config
- * @param {import('../../modules/marketplace-order-ingestion/application/ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
- * @param {import('../../modules/marketplace-order-ingestion/application/marketplace-order-lifecycle-service.js').MarketplaceOrderLifecycleService} deps.lifecycleService
- * @param {import('../../modules/marketplace-order-ingestion/application/process-marketplace-lifecycle-payload.js').ProcessMarketplaceLifecyclePayload} [deps.processMarketplaceLifecyclePayload]
- * @param {import('../../modules/marketplaces/application/execute-outbound-marketplace-order-lifecycle-command.js').ExecuteOutboundMarketplaceOrderLifecycleCommand} [deps.executeOutboundMarketplaceOrderLifecycle]
+ * @param {import('../../modules/marketplace-order-ingestion/services/ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
+ * @param {import('../../modules/marketplace-order-ingestion/services/marketplace-order-lifecycle-service.js').MarketplaceOrderLifecycleService} deps.lifecycleService
+ * @param {import('../../modules/marketplace-order-ingestion/services/process-marketplace-lifecycle-payload.js').ProcessMarketplaceLifecyclePayload} [deps.processMarketplaceLifecyclePayload]
+ * @param {import('../../modules/marketplaces/services/execute-outbound-marketplace-order-lifecycle-command.js').ExecuteOutboundMarketplaceOrderLifecycleCommand} [deps.executeOutboundMarketplaceOrderLifecycle]
  * @param {import('../../modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
  * @param {import('../../modules/integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
  * @param {import('../../modules/commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService

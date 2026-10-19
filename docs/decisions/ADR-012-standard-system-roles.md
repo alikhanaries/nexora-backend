@@ -51,5 +51,5 @@ Removing a role that grants `tenant.admin` from the last active membership holdi
 ## Related
 
 - Migration `0007_roles_and_permissions.sql`
-- `src/modules/authorization/application/system-role-seeder.ts`
-- `src/modules/authorization/domain/system-role-templates.ts`
+- `src/modules/authorization/services/system-role-seeder.ts`
+- `src/modules/authorization/models/system-role-templates.ts`

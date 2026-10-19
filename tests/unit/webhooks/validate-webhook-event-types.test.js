@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ValidationError } from '../../../src/shared/errors/index.js';
-import { validateWebhookEventTypes } from '../../../src/modules/webhooks/application/validate-webhook-event-types.js';
+import { validateWebhookEventTypes } from '../../../src/modules/webhooks/services/validate-webhook-event-types.js';
 
 describe('validateWebhookEventTypes', () => {
     it('accepts externally deliverable event types', () => {

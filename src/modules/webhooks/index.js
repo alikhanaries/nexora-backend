@@ -1,12 +1,12 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { DefaultWebhookCommandService } from './application/webhook-command-service.js';
-import { DefaultWebhookQueryService } from './application/webhook-query-service.js';
+import { DefaultWebhookCommandService } from './services/webhook-command-service.js';
+import { DefaultWebhookQueryService } from './services/webhook-query-service.js';
 import { validateOutboundWebhookUrl } from '../../shared/security/ssrf-validator.js';
-import { WebhookDeliveryService } from './application/webhook-delivery-service.js';
-import { WebhookDispatchService } from './application/webhook-dispatch-service.js';
-import { PostgresWebhookDeliveryRepository } from './infrastructure/postgres-webhook-delivery-repository.js';
-import { PostgresWebhookSubscriptionRepository } from './infrastructure/postgres-webhook-subscription-repository.js';
-import webhookRoutes from './presentation/webhook.routes.js';
+import { WebhookDeliveryService } from './services/webhook-delivery-service.js';
+import { WebhookDispatchService } from './services/webhook-dispatch-service.js';
+import { PostgresWebhookDeliveryRepository } from './repositories/postgres-webhook-delivery-repository.js';
+import { PostgresWebhookSubscriptionRepository } from './repositories/postgres-webhook-subscription-repository.js';
+import webhookRoutes from './views/webhook.routes.js';
 
 export function createWebhooksModule(deps) {
     const subscriptions = new PostgresWebhookSubscriptionRepository();

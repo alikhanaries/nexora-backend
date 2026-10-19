@@ -1,7 +1,7 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { ActivateCommerceIntegration, CreateCommerceIntegration, DeactivateCommerceIntegration, CommerceIntegrationQueryService, GetCommerceIntegration, ListCommerceIntegrations, SuspendCommerceIntegration, UpdateCommerceIntegration, } from './application/index.js';
-import { PostgresCommerceIntegrationRepository } from './infrastructure/index.js';
-import commerceIntegrationRoutes from './presentation/commerce-integration.routes.js';
+import { ActivateCommerceIntegration, CreateCommerceIntegration, DeactivateCommerceIntegration, CommerceIntegrationQueryService, GetCommerceIntegration, ListCommerceIntegrations, SuspendCommerceIntegration, UpdateCommerceIntegration, } from './services/index.js';
+import { PostgresCommerceIntegrationRepository } from './repositories/index.js';
+import commerceIntegrationRoutes from './views/commerce-integration.routes.js';
 export function createCommerceIntegrationsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const repository = new PostgresCommerceIntegrationRepository();
@@ -41,4 +41,4 @@ export function createCommerceIntegrationsModule(deps) {
         routes: commerceIntegrationRoutes,
     };
 }
-export { CommerceIntegration, IntegrationStatus } from './domain/index.js';
+export { CommerceIntegration, IntegrationStatus } from './models/index.js';

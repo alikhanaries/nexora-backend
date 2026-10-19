@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';
-import { mapCoreErrorToExternalApiResponse } from '../../src/modules/compatibility/application/errors/map-core-error.js';
+import { mapCoreErrorToExternalApiResponse } from '../../src/modules/compatibility/services/errors/map-core-error.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 
 describe('StockConnect CE production readiness (Phase 52)', () => {

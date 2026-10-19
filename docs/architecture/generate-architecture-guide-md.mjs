@@ -443,7 +443,7 @@ flowchart TD
   E --> M[GlobalExceptionFilter on error]
 \`\`\`
 
-**Files:** \`src/nest/common/guards/auth.guard.js\`, \`src/modules/identity/application/authenticate-access-token.js\`, \`src/shared/context/request-context.js\`, controllers/services under \`src/nest/<feature>/\`.
+**Files:** \`src/nest/common/guards/auth.guard.js\`, \`src/modules/identity/services/authenticate-access-token.js\`, \`src/shared/context/request-context.js\`, controllers/services under \`src/nest/<feature>/\`.
 
 ### 5.2 Database read/write
 

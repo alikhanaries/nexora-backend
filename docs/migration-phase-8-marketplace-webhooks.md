@@ -14,7 +14,7 @@ Migrate the **inbound marketplace webhook** HTTP ingress and wiring into NestJS 
 
 | Route ID | Method | Path | Source |
 |----------|--------|------|--------|
-| R-0026 | POST | `/api/v1/inbound/marketplace-webhooks/:ingressToken` | `src/modules/marketplace-webhook-ingestion/presentation/marketplace-webhook.routes.js` |
+| R-0026 | POST | `/api/v1/inbound/marketplace-webhooks/:ingressToken` | `src/modules/marketplace-webhook-ingestion/views/marketplace-webhook.routes.js` |
 
 No other Fastify marketplace webhook HTTP routes were found in the codebase audit.
 

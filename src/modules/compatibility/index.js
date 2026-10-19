@@ -1,29 +1,27 @@
-import { CatalogCompatibilityCommand } from './application/catalog-compatibility-command.js';
-import { CatalogCompatibilityQuery } from './application/catalog-compatibility-query.js';
-import { CancellationCompatibilityCommand } from './application/cancellation-compatibility-command.js';
-import { CancellationCompatibilityQuery } from './application/cancellation-compatibility-query.js';
-import { ReturnCompatibilityCommand } from './application/return-compatibility-command.js';
-import { ReturnCompatibilityQuery } from './application/return-compatibility-query.js';
-import { OrderCompatibilityCommand } from './application/order-compatibility-command.js';
-import { OrderCompatibilityQuery } from './application/order-compatibility-query.js';
-import { ShipmentCompatibilityCommand } from './application/shipment-compatibility-command.js';
-import { ShipmentCompatibilityQuery } from './application/shipment-compatibility-query.js';
-import compatibilityRoutes from './presentation/compatibility.routes.js';
-import compatV2Routes from './presentation/compat-v2.routes.js';
-import { CompatV2OrderQuery } from './application/compat-v2-order-query.js';
-import { CompatV2IntegrationListQuery } from './application/compat-v2-integration-list-query.js';
-import { CompatV2CatalogCommand } from './application/compat-v2-catalog-command.js';
-import { CompatV2ShipmentDeliveryCommand } from './application/compat-v2-shipment-delivery-command.js';
-import { CompatV2IntegrationProductsQuery } from './application/compat-v2-integration-products-query.js';
-import { CompatV2ProductsQuery } from './application/compat-v2-products-query.js';
-import { CompatV2OrderInvoiceQuery } from './application/compat-v2-order-invoice-query.js';
+import { CatalogCompatibilityCommand } from './services/catalog-compatibility-command.js';
+import { CatalogCompatibilityQuery } from './services/catalog-compatibility-query.js';
+import { CancellationCompatibilityCommand } from './services/cancellation-compatibility-command.js';
+import { CancellationCompatibilityQuery } from './services/cancellation-compatibility-query.js';
+import { ReturnCompatibilityCommand } from './services/return-compatibility-command.js';
+import { ReturnCompatibilityQuery } from './services/return-compatibility-query.js';
+import { OrderCompatibilityCommand } from './services/order-compatibility-command.js';
+import { OrderCompatibilityQuery } from './services/order-compatibility-query.js';
+import { ShipmentCompatibilityCommand } from './services/shipment-compatibility-command.js';
+import { ShipmentCompatibilityQuery } from './services/shipment-compatibility-query.js';
+import { CompatV2OrderQuery } from './services/compat-v2-order-query.js';
+import { CompatV2IntegrationListQuery } from './services/compat-v2-integration-list-query.js';
+import { CompatV2CatalogCommand } from './services/compat-v2-catalog-command.js';
+import { CompatV2ShipmentDeliveryCommand } from './services/compat-v2-shipment-delivery-command.js';
+import { CompatV2IntegrationProductsQuery } from './services/compat-v2-integration-products-query.js';
+import { CompatV2ProductsQuery } from './services/compat-v2-products-query.js';
+import { CompatV2OrderInvoiceQuery } from './services/compat-v2-order-invoice-query.js';
 
 /**
  * @param {object} deps
- * @param {import('./application/core-contracts.js').CompatibilityCoreContracts} deps.coreContracts
+ * @param {import('./services/core-contracts.js').CompatibilityCoreContracts} deps.coreContracts
  * @param {import('../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
  * @param {import('../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
- * @param {import('./application/catalog-compatibility-contracts.js').CompatibilityCatalogCommands} deps.catalogCommands
+ * @param {import('./services/catalog-compatibility-contracts.js').CompatibilityCatalogCommands} deps.catalogCommands
  * @param {import('../../infrastructure/redis/redis-rate-limiter.js').RedisRateLimiter} deps.rateLimiter
  */
 export function createCompatibilityModule(deps) {
@@ -125,12 +123,7 @@ export function createCompatibilityModule(deps) {
         productQueryService: deps.coreContracts.productQueryService,
         getProductContent: deps.catalogCommands.getProductContent,
     });
-    const registerCompatibilityRoutes = async (app, routeDeps) => {
-        await compatibilityRoutes(app, routeDeps);
-        await compatV2Routes(app, routeDeps);
-    };
     return {
-        routes: registerCompatibilityRoutes,
         routeDeps: {
             orderCompatibilityQuery,
             compatV2OrderQuery,

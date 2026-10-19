@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/domain/sync-operation.js';
-import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/domain/sync-target.js';
-import { SyncChannelInventory } from '../../../src/modules/integration-catalog-sync/application/sync-integration-inventory.js';
-import { CatalogSyncRetryError } from '../../../src/modules/integration-catalog-sync/application/catalog-sync-errors.js';
-import { MarketplaceCatalogAdapterRetryError } from '../../../src/modules/integration-catalog-sync/application/catalog-sync-adapter-errors.js';
+import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/models/sync-operation.js';
+import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/models/sync-target.js';
+import { SyncChannelInventory } from '../../../src/modules/integration-catalog-sync/services/sync-integration-inventory.js';
+import { CatalogSyncRetryError } from '../../../src/modules/integration-catalog-sync/services/catalog-sync-errors.js';
+import { MarketplaceCatalogAdapterRetryError } from '../../../src/modules/integration-catalog-sync/services/catalog-sync-adapter-errors.js';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
 const otherTenantId = '99999999-9999-4999-8999-999999999999';

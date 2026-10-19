@@ -1,16 +1,16 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';
 import { createMarketplaceOrderIngestionModule } from '../../src/modules/marketplace-order-ingestion/index.js';
-import { MarketplaceOrderLifecycleOperation } from '../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';
-import { NormalizedMarketplaceOrderStatus } from '../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-order-status.js';
+import { MarketplaceOrderLifecycleOperation } from '../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
+import { NormalizedMarketplaceOrderStatus } from '../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
 import { MarketplaceOrderLifecycleUnsupportedError } from '../../src/modules/marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../../src/modules/marketplaces/public/index.js';
-import { PostgresMarketplaceEntityMappingRepository } from '../../src/modules/marketplaces/infrastructure/postgres-marketplace-entity-mapping-repository.js';
-import { PostgresMarketplaceRepository } from '../../src/modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
+import { PostgresMarketplaceEntityMappingRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-entity-mapping-repository.js';
+import { PostgresMarketplaceRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-repository.js';
 import { PostgresOrderRepository } from '../../src/modules/orders/repositories/postgres-order-repository.js';
 import { DefaultProductQueryService } from '../../src/modules/products/public/index.js';
-import { PostgresProductRepository } from '../../src/modules/products/infrastructure/postgres-product-repository.js';
+import { PostgresProductRepository } from '../../src/modules/products/repositories/postgres-product-repository.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 

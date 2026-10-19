@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { IdempotentRequestInProgressError } from '../../../src/shared/errors/index.js';
-import { ReceiveMarketplaceWebhook } from '../../../src/modules/marketplace-webhook-ingestion/application/receive-marketplace-webhook.js';
+import { ReceiveMarketplaceWebhook } from '../../../src/modules/marketplace-webhook-ingestion/services/receive-marketplace-webhook.js';
 import { MarketplaceWebhookAdapterRegistry } from '../../../src/modules/marketplace-webhook-ingestion/public/marketplace-webhook-adapter-registry.js';
-import { MarketplaceWebhookAuthenticationError, MarketplaceWebhookRetryableError, MarketplaceWebhookUnsupportedError, } from '../../../src/modules/marketplace-webhook-ingestion/application/marketplace-webhook-errors.js';
-import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/domain/marketplace-webhook-event-kind.js';
-import { normalizedMarketplaceWebhookEventSchema } from '../../../src/modules/marketplace-webhook-ingestion/application/normalized-marketplace-webhook-event.schema.js';
+import { MarketplaceWebhookAuthenticationError, MarketplaceWebhookRetryableError, MarketplaceWebhookUnsupportedError, } from '../../../src/modules/marketplace-webhook-ingestion/services/marketplace-webhook-errors.js';
+import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/models/marketplace-webhook-event-kind.js';
+import { normalizedMarketplaceWebhookEventSchema } from '../../../src/modules/marketplace-webhook-ingestion/services/normalized-marketplace-webhook-event.schema.js';
 import {
     buildTestWebhookPayload,
     createTestMarketplaceWebhookAdapter,

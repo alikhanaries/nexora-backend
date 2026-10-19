@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../../src/modules/marketplaces/application/marketplace-outbound-order-lifecycle-adapter-registry.js';
-import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
+import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../../src/modules/marketplaces/services/marketplace-outbound-order-lifecycle-adapter-registry.js';
+import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../../src/modules/marketplaces/repositories/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
 import { MARKETPLACE_OUTBOUND_ORDER_LIFECYCLE_PROVIDER_KEYS } from '../../../src/modules/marketplaces/public/marketplace-outbound-order-lifecycle-providers.js';
 
 describe('marketplace outbound order lifecycle registration', () => {

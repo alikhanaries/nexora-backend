@@ -1,83 +1,41 @@
 # Source Code Layout
 
-Top-level organisation of `src/`. Phase 1 implements platform layers; `modules/` is reserved for business domains.
-
-## Directory map
-
 ```
 src/
-├── app/              Application entry, HTTP server, config
-├── infrastructure/   Shared adapters (Postgres, Redis, S3, BullMQ, …)
-├── shared/           Ports, types, utilities — no I/O
-├── modules/          Business modules (empty in Phase 1)
-└── workers/          Background worker entrypoint
+├── nest/             NestJS bootstrap, auth, health, StockConnect, legacy compat
+├── modules/          Business features (MVC: models / services / repositories / views / controllers)
+├── app/              Config loaders, shared HTTP helpers, migration CLIs
+├── infrastructure/   Postgres, Redis, BullMQ, S3, observability adapters
+├── workers/          Background worker process entry + handlers
+├── shared/           Cross-cutting utilities (errors, validation, metrics, …)
+├── common/           Alias docs → prefer `shared/`
+├── config/           Stage-1 config facade → `app/config` + naming
+└── integrations/     StockConnect mappers (compatibility)
 ```
 
-## `app/`
+## Modules (MVC)
 
-Wires the running API process.
+See [modules/README.md](modules/README.md). Each feature uses:
 
-| Path             | Role                                                               |
-| ---------------- | ------------------------------------------------------------------ |
-| `main.js`        | Process entry — load config, create infra, start HTTP server       |
-| `bootstrap/`     | `createInfrastructure`, `createApplication`, shutdown, migrate CLI |
-| `config/`        | Zod schema, env parsing — **only** place that reads `process.env`  |
-| `http/`          | Fastify server factory, plugins, routes                            |
-| `errors/`        | HTTP error envelope and mapper                                     |
-| `observability/` | Readiness probes                                                   |
+- `models/` — entities and rules  
+- `services/` — use cases  
+- `repositories/` — persistence / adapters  
+- `views/` — schemas and mappers  
+- `controllers/nest/` — Nest HTTP adapters  
 
-## `infrastructure/`
+## Nest vs modules
 
-Implements `shared/` ports with concrete technology:
-
-- `postgres/` — database pool, migrations, outbox, inbox, idempotency
-- `redis/` — cache, locks, rate limiter, key naming
-- `queue/` — BullMQ producer and worker runtime
-- `storage/` — S3/MinIO provider
-- `observability/` — Pino logger, Prometheus metrics, OpenTelemetry
-- `http/` — Fetch-based outbound HTTP client
-
-**Rule:** must not import from `modules/` or `app/`.
-
-## `shared/`
-
-Cross-cutting contracts and pure utilities:
-
-- `cache/`, `events/`, `http/`, `idempotency/`, `logging/`, `metrics/`, `queue/`, `rate-limit/`, `storage/`, `validation/`, `errors/`, `context/`, `pagination/`, `persistence/`
-
-**Rule:** must not import from `app/`, `infrastructure/`, `modules/`, or `workers/`.
-
-## `modules/`
-
-Business bounded contexts — see [modules/README.md](modules/README.md). Empty in Phase 1.
-
-## `workers/`
-
-Separate Node process for BullMQ consumers. Shares bootstrap with API via `createInfrastructure()`.
+| Concern | Location |
+| ------- | -------- |
+| Process entry (`start:nest`) | `src/nest/bootstrap.mjs` |
+| Feature HTTP (products, orders, …) | `src/modules/<feature>/controllers/nest/` |
+| Auth guard, health, StockConnect | `src/nest/` |
 
 ## Dependency flow
 
 ```
-app ──► infrastructure ──► shared
-  │                        ▲
-  └──► modules ────────────┘
-         domain → application → infrastructure/presentation
+nest / workers / app ──► modules ──► shared
+                └──► infrastructure ──► shared
 ```
 
-Run `npm run arch:check` to verify.
-
-## Adding code
-
-| Change type                 | Location                                |
-| --------------------------- | --------------------------------------- |
-| New env variable            | `app/config/schema.ts` + `.env.example` |
-| New shared port             | `shared/<concern>/`                     |
-| New adapter                 | `infrastructure/<tech>/`                |
-| New HTTP route (foundation) | `app/http/routes/`                      |
-| New business feature        | `modules/<name>/` (Phase 2+)            |
-| New migration               | `infrastructure/postgres/migrations/`   |
-
-## Related
-
-- [docs/architecture/module-boundaries.md](../docs/architecture/module-boundaries.md)
-- [tests/README.md](../tests/README.md)
+Run `npm run arch:check` to verify boundaries.

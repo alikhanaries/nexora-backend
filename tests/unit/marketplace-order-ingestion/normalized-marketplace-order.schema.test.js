@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { normalizedMarketplaceOrderSchema } from '../../../src/modules/marketplace-order-ingestion/application/normalized-marketplace-order.schema.js';
-import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-order-status.js';
+import { normalizedMarketplaceOrderSchema } from '../../../src/modules/marketplace-order-ingestion/services/normalized-marketplace-order.schema.js';
+import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
 
 const baseLine = {
     quantity: 1,

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-order-status.js';
-import { FetchAndIngestMarketplaceOrders } from '../../../src/modules/marketplace-order-ingestion/application/fetch-and-ingest-marketplace-orders.js';
+import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
+import { FetchAndIngestMarketplaceOrders } from '../../../src/modules/marketplace-order-ingestion/services/fetch-and-ingest-marketplace-orders.js';
 import { MarketplaceOrderAdapterRegistry } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js';
 
 const STOCK_LOCATION_ID = '00000000-0000-4000-8000-000000000020';

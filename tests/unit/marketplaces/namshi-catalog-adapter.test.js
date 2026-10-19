@@ -1,9 +1,9 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { NamshiCatalogAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-catalog-adapter.js';
-import { NamshiApiClient } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-api-client.js';
-import { NamshiAuthSessionProvider } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-auth-session.js';
-import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/infrastructure/http/marketplace-http-client.js';
+import { NamshiCatalogAdapter } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-catalog-adapter.js';
+import { NamshiApiClient } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-api-client.js';
+import { NamshiAuthSessionProvider } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-auth-session.js';
+import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/repositories/http/marketplace-http-client.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,

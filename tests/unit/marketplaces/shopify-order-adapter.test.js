@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MarketplaceCatalogAdapterPermanentError } from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
-import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-order-status.js';
-import { mapShopifyOrderToNormalized } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/map-shopify-order-to-normalized.js';
-import { mapShopifyOrderStatus } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-order-status.js';
-import { ShopifyOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-order-adapter.js';
-import { ShopifyGraphqlClient } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-graphql-client.js';
-import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/infrastructure/http/marketplace-http-client.js';
-import { MarketplaceValidationError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
+import { NormalizedMarketplaceOrderStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
+import { mapShopifyOrderToNormalized } from '../../../src/modules/marketplaces/repositories/adapters/shopify/map-shopify-order-to-normalized.js';
+import { mapShopifyOrderStatus } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-order-status.js';
+import { ShopifyOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-order-adapter.js';
+import { ShopifyGraphqlClient } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-graphql-client.js';
+import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/repositories/http/marketplace-http-client.js';
+import { MarketplaceValidationError } from '../../../src/modules/marketplaces/models/marketplace-errors.js';
 import { buildShopifyGraphqlOrder } from './shopify-order-fixtures.js';
 
 const STOCK_LOCATION_ID = '00000000-0000-4000-8000-000000000010';

@@ -5,11 +5,11 @@
 
 ## Context
 
-Phases 3–4 delivered a PostgreSQL-authoritative inventory engine ([ADR-013](ADR-013-inventory-concurrency.md), [ADR-016](ADR-016-phase-4-commerce-contracts.md)) with `reserve` / `release`, reference-based idempotency, and transactional outbox events. [ADR-017](ADR-017-phase-4-orders-fulfillment.md) wires **reserve on order creation** and **release on cancellation**; returns use **`recordReturn` on receive** ([`receive-return.js`](../../src/modules/returns/application/receive-return.js)).
+Phases 3–4 delivered a PostgreSQL-authoritative inventory engine ([ADR-013](ADR-013-inventory-concurrency.md), [ADR-016](ADR-016-phase-4-commerce-contracts.md)) with `reserve` / `release`, reference-based idempotency, and transactional outbox events. [ADR-017](ADR-017-phase-4-orders-fulfillment.md) wires **reserve on order creation** and **release on cancellation**; returns use **`recordReturn` on receive** ([`receive-return.js`](../../src/modules/returns/services/receive-return.js)).
 
-Shipments already update order-line `shippedQuantity` at **`CreateShipment`** ([`create-shipment.js`](../../src/modules/shipments/application/create-shipment.js)) and transition to **`SHIPPED`** via **`ShipShipment`** or compatibility **`UpdateShipmentTracking`** ([`ship-shipment.js`](../../src/modules/shipments/application/ship-shipment.js), [`update-shipment-tracking.js`](../../src/modules/shipments/application/update-shipment-tracking.js)). **No shipment path calls `InventoryService` today.** `recordSale` exists but is unused from orders/shipments.
+Shipments already update order-line `shippedQuantity` at **`CreateShipment`** ([`create-shipment.js`](../../src/modules/shipments/services/create-shipment.js)) and transition to **`SHIPPED`** via **`ShipShipment`** or compatibility **`UpdateShipmentTracking`** ([`ship-shipment.js`](../../src/modules/shipments/services/ship-shipment.js), [`update-shipment-tracking.js`](../../src/modules/shipments/services/update-shipment-tracking.js)). **No shipment path calls `InventoryService` today.** `recordSale` exists but is unused from orders/shipments.
 
-[ADR-020](ADR-020-phase-7-channel-inbound-integration.md) **channel-fulfilled** ingest **skips reservation** but still **create + ship** in one transaction ([`create-channel-fulfilled-order.js`](../../src/modules/orders/application/create-channel-fulfilled-order.js)).
+[ADR-020](ADR-020-phase-7-channel-inbound-integration.md) **channel-fulfilled** ingest **skips reservation** but still **create + ship** in one transaction ([`create-channel-fulfilled-order.js`](../../src/modules/orders/services/create-channel-fulfilled-order.js)).
 
 Phase 14 closes the gap: **when a shipment is marked shipped, inventory must reflect goods leaving stock**, without duplicating the reservation engine or introducing an `allocated` quantity dimension.
 
@@ -19,7 +19,7 @@ Phase 14 closes the gap: **when a shipment is marked shipped, inventory must ref
 
 Reserved stock (`on_hand` unchanged, `reserved` ↑, `available` ↓) must transition to sold/consumed stock (`on_hand` ↓, `reserved` ↓) at the correct fulfillment trigger, safely under concurrency and partial multi-shipment orders, while preserving ADR-013 invariants and ADR-017 cancellation/return semantics.
 
-The current `release()` implementation **always marks the reservation row `RELEASED`** after any release quantity ([`default-inventory-service.js`](../../src/modules/inventory/application/default-inventory-service.js)), which is **incompatible** with partial multi-shipment fulfillment if implemented as `release` + `recordSale` (Option B). Phase 14 therefore requires a **single atomic fulfillment mutation** on the existing model (Option A), not a new `allocated` concept (Option C rejected).
+The current `release()` implementation **always marks the reservation row `RELEASED`** after any release quantity ([`default-inventory-service.js`](../../src/modules/inventory/services/default-inventory-service.js)), which is **incompatible** with partial multi-shipment fulfillment if implemented as `release` + `recordSale` (Option B). Phase 14 therefore requires a **single atomic fulfillment mutation** on the existing model (Option A), not a new `allocated` concept (Option C rejected).
 
 ---
 
@@ -58,7 +58,7 @@ Inventory consumption runs in the **same PostgreSQL transaction** as the shipmen
 | **`DeliverShipment`**, **`IN_TRANSIT`** | **No additional consumption** — goods already left stock at `SHIPPED` |
 | **`CancelShipment`** while `CREATED` / `READY_TO_SHIP` | **No consumption reversal** — nothing was consumed at ship; order `reverseShipmentQuantities` only (existing) |
 
-**Rationale:** Shipment `CREATED` represents a fulfillment record and order-line allocation, not necessarily physical dispatch. `SHIPPED` is the domain event aligned with stock leaving the location ([`Shipment.ship()`](../../src/modules/shipments/domain/shipment.js)). Channel-fulfilled flows already call `ShipShipment` immediately after create in one transaction, so inventory still updates at ship without changing ADR-020 sequencing.
+**Rationale:** Shipment `CREATED` represents a fulfillment record and order-line allocation, not necessarily physical dispatch. `SHIPPED` is the domain event aligned with stock leaving the location ([`Shipment.ship()`](../../src/modules/shipments/models/shipment.js)). Channel-fulfilled flows already call `ShipShipment` immediately after create in one transaction, so inventory still updates at ship without changing ADR-020 sequencing.
 
 ---
 
@@ -91,7 +91,7 @@ Per ADR-020, **no `reserve` at ingest**. At the same **`SHIPPED`** trigger, call
 
 ### `release()` role unchanged
 
-- **Cancellation** of unshipped quantity — existing **`release`** with `ORDER` or `CANCELLATION` reference ([`create-cancellation.js`](../../src/modules/cancellations/application/create-cancellation.js)).
+- **Cancellation** of unshipped quantity — existing **`release`** with `ORDER` or `CANCELLATION` reference ([`create-cancellation.js`](../../src/modules/cancellations/services/create-cancellation.js)).
 - **Not** used to “convert” reservation to sale at shipment.
 
 ---
@@ -156,7 +156,7 @@ Unchanged ADR-017: **`release`** on cancellable quantity only (`cancellableQuant
 
 ### Cancellation after partial shipment
 
-Order cancellation only applies to **cancellable** quantity ([`order-line.cancellableQuantity()`](../../src/modules/orders/domain/order-line.js) = `quantity - cancelled - shipped`). Already-**fulfilled** units are **not** released via `release()`; reversing them requires **return** flow (below).
+Order cancellation only applies to **cancellable** quantity ([`order-line.cancellableQuantity()`](../../src/modules/orders/models/order-line.js) = `quantity - cancelled - shipped`). Already-**fulfilled** units are **not** released via `release()`; reversing them requires **return** flow (below).
 
 ### Return after shipment
 
@@ -217,7 +217,7 @@ Do **not** call `release()` for quantities already fulfilled via **`fulfillReser
 
 ## 8. Stock locations
 
-1. **Reservation location** is fixed at order create from each line’s **`stockLocationId`** ([`create-order.js`](../../src/modules/orders/application/create-order.js)); channel ingest uses **`defaultStockLocationId`** / compatibility resolution ([ADR-022](ADR-022-phase-9-channel-default-stock-location.md)) **before** reserve.
+1. **Reservation location** is fixed at order create from each line’s **`stockLocationId`** ([`create-order.js`](../../src/modules/orders/services/create-order.js)); channel ingest uses **`defaultStockLocationId`** / compatibility resolution ([ADR-022](ADR-022-phase-9-channel-default-stock-location.md)) **before** reserve.
 2. **Fulfillment** uses **`order_line.stock_location_id`** for the shipment line’s order line — **must equal** the location on the active ORDER reservation for that product.
 3. If shipment line location ≠ reservation location → **`BusinessRuleError`** (no silent transfer).
 4. Shipment APIs do not accept an override stock location in Phase 14.
@@ -239,7 +239,7 @@ No new movement types in Phase 14.
 
 ## 10. Events / outbox
 
-- Emit existing **`inventory.inventory_changed`** with balance snapshot (same pattern as `recordSale` / `recordReturn` in [`default-inventory-service.js`](../../src/modules/inventory/application/default-inventory-service.js)).
+- Emit existing **`inventory.inventory_changed`** with balance snapshot (same pattern as `recordSale` / `recordReturn` in [`default-inventory-service.js`](../../src/modules/inventory/services/default-inventory-service.js)).
 - Do **not** emit **`inventory.inventory_released`** for fulfillment consumption (stock is sold, not released to available pool).
 - Shipment events (`shipment.shipped`, etc.) remain owned by shipment module; inventory and shipment outbox rows commit in the **same transaction** when orchestrated from shipment use case.
 

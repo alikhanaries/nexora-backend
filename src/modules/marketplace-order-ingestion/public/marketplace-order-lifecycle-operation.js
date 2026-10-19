@@ -1,1 +1,1 @@
-export { MarketplaceOrderLifecycleOperation } from '../domain/marketplace-order-lifecycle-operation.js';
+export { MarketplaceOrderLifecycleOperation } from '../models/marketplace-order-lifecycle-operation.js';

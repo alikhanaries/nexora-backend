@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';
-import { AmazonOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-order-adapter.js';
-import { mapAmazonOrderStatusToLifecycleTarget } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-order-status.js';
-import { mapAmazonOrderChangeToLifecycleCommand } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/map-amazon-order-change-to-lifecycle-command.js';
-import { mapAmazonSpApiOrderToLifecycleCommand } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/map-amazon-sp-api-order-to-lifecycle-command.js';
-import { MarketplaceValidationError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
+import { AmazonOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-order-adapter.js';
+import { mapAmazonOrderStatusToLifecycleTarget } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-order-status.js';
+import { mapAmazonOrderChangeToLifecycleCommand } from '../../../src/modules/marketplaces/repositories/adapters/amazon/map-amazon-order-change-to-lifecycle-command.js';
+import { mapAmazonSpApiOrderToLifecycleCommand } from '../../../src/modules/marketplaces/repositories/adapters/amazon/map-amazon-sp-api-order-to-lifecycle-command.js';
+import { MarketplaceValidationError } from '../../../src/modules/marketplaces/models/marketplace-errors.js';
 import { buildAmazonOrderChangeNotification } from './amazon-order-change-fixtures.js';
 
 describe('mapAmazonOrderStatusToLifecycleTarget', () => {

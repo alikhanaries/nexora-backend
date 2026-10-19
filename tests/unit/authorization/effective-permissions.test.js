@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveEffectivePermissions } from '../../../src/modules/authorization/domain/effective-permissions.js';
+import { resolveEffectivePermissions } from '../../../src/modules/authorization/models/effective-permissions.js';
 describe('resolveEffectivePermissions', () => {
     it('returns the union of permissions from all active roles', () => {
         const permissions = resolveEffectivePermissions({

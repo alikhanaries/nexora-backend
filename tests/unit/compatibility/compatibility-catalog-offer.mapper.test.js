@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     mapCeOfferPriceRequest,
     mapCeOfferStockLine,
-} from '../../../src/modules/compatibility/application/mappers/compatibility-catalog-offer.mapper.js';
+} from '../../../src/modules/compatibility/services/mappers/compatibility-catalog-offer.mapper.js';
 
 describe('compatibility catalog offer mapper', () => {
     it('maps offer price request to minor units', () => {

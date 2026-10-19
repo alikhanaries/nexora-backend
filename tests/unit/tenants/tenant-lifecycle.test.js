@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BusinessRuleError } from '../../../src/shared/errors/index.js';
-import { Tenant } from '../../../src/modules/tenants/domain/tenant.js';
-import { TenantStatus } from '../../../src/modules/tenants/domain/tenant-status.js';
+import { Tenant } from '../../../src/modules/tenants/models/tenant.js';
+import { TenantStatus } from '../../../src/modules/tenants/models/tenant-status.js';
 const BASE_TIME = new Date('2026-01-01T00:00:00.000Z');
 const LATER = new Date('2026-01-02T00:00:00.000Z');
 function activeTenant() {

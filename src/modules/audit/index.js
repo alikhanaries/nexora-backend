@@ -1,8 +1,8 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { AuditService } from './application/audit-service.js';
-import { DefaultAuditRecorder } from './application/default-audit-recorder.js';
-import { PostgresAuditRepository } from './infrastructure/postgres-audit-repository.js';
-import auditRoutes from './presentation/audit.routes.js';
+import { AuditService } from './services/audit-service.js';
+import { DefaultAuditRecorder } from './services/default-audit-recorder.js';
+import { PostgresAuditRepository } from './repositories/postgres-audit-repository.js';
+import auditRoutes from './views/audit.routes.js';
 export function createAuditModule(deps) {
     const repository = new PostgresAuditRepository();
     const auditRecorder = new DefaultAuditRecorder(repository);

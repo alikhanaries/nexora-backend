@@ -11,12 +11,12 @@ import { createPricingModule } from '../../modules/pricing/index.js';
 import { createProductsModule } from '../../modules/products/index.js';
 import { createReturnsModule } from '../../modules/returns/index.js';
 import { createShipmentsModule } from '../../modules/shipments/index.js';
-import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
-import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
+import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/services/marketplace-adapter-runtime-factory.js';
+import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/repositories/postgres-marketplace-connection-repository.js';
 import { PostgresOrderRepository } from '../../modules/orders/repositories/postgres-order-repository.js';
-import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
-import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../modules/marketplaces/application/marketplace-outbound-order-lifecycle-adapter-registry.js';
-import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/application/execute-outbound-marketplace-order-lifecycle-command.js';
+import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../modules/marketplaces/repositories/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
+import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../modules/marketplaces/services/marketplace-outbound-order-lifecycle-adapter-registry.js';
+import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/services/execute-outbound-marketplace-order-lifecycle-command.js';
 import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestion.js';
 
 /**

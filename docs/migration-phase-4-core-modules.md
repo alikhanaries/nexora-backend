@@ -9,8 +9,8 @@ Migrate foundational **identity (auth)** and **tenants** HTTP endpoints into Nes
 | Nest module | Legacy source |
 |-------------|---------------|
 | `HealthModule` | Already on Nest (Phase 2/3) |
-| `AuthModule` | `src/modules/identity/presentation/auth.routes.js` |
-| `TenantsModule` | `src/modules/tenants/presentation/tenant.routes.js` |
+| `AuthModule` | `src/modules/identity/views/auth.routes.js` |
+| `TenantsModule` | `src/modules/tenants/views/tenant.routes.js` |
 | `CoreDomainModule` | Wired via `wire-core-domain.js` (same factories as Fastify) |
 | Global `AuthGuard` | `src/app/http/plugins/authentication.plugin.js` |
 
@@ -66,7 +66,7 @@ Migrate foundational **identity (auth)** and **tenants** HTTP endpoints into Nes
 - `src/nest/main.js` — wire core domain, Redis shutdown
 - `src/nest/bootstrap/create-nest-application.js` — optional `coreDomain`
 - `src/nest/bootstrap/create-nest-infrastructure.js` — Redis + rate limiter for auth
-- `src/modules/identity/presentation/auth.routes.js` — export body schemas for Nest
+- `src/modules/identity/views/auth.routes.js` — export body schemas for Nest
 - `test/nest/helpers/create-test-nest-app.js` — optional mock `coreDomain`
 
 ## Tests added

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/domain/sync-operation.js';
-import { resolveProductSyncOperation } from '../../../src/modules/integration-catalog-sync/application/resolve-product-sync-operation.js';
+import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/models/sync-operation.js';
+import { resolveProductSyncOperation } from '../../../src/modules/integration-catalog-sync/services/resolve-product-sync-operation.js';
 
 describe('resolveProductSyncOperation', () => {
     it('uses sync for create and update events', () => {

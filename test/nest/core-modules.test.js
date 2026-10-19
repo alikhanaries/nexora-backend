@@ -15,14 +15,14 @@ describe('Nest core modules (auth + tenants)', () => {
   });
 
   it('POST /api/v1/auth/login is public and returns the standard envelope', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.identity.useCases.login.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.identity.useCases.login.execute.mockResolvedValue({
       accessToken: 'access',
       refreshToken: 'refresh',
       expiresIn: 3600,
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -42,7 +42,7 @@ describe('Nest core modules (auth + tenants)', () => {
         expiresIn: 3600,
       },
     });
-    expect(coreDomain.identity.useCases.login.execute).toHaveBeenCalledWith({
+    expect(coreServices.identity.useCases.login.execute).toHaveBeenCalledWith({
       tenantSlug: 'acme',
       email: 'user@example.com',
       password: 'secret',
@@ -50,18 +50,18 @@ describe('Nest core modules (auth + tenants)', () => {
   });
 
   it('GET /api/v1/auth/me requires authentication', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer()).get('/api/v1/auth/me').expect(401);
     expect(response.body.success).toBe(false);
-    expect(coreDomain.identity.useCases.getCurrentUser.execute).not.toHaveBeenCalled();
+    expect(coreServices.identity.useCases.getCurrentUser.execute).not.toHaveBeenCalled();
   });
 
   it('GET /api/v1/auth/me returns user data when Bearer token is valid', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue({
       kind: 'user',
       id: '11111111-1111-4111-8111-111111111111',
       tenantId: '22222222-2222-4222-8222-222222222222',
@@ -69,7 +69,7 @@ describe('Nest core modules (auth + tenants)', () => {
       authenticationMethod: 'password',
       email: 'user@example.com',
     });
-    coreDomain.identity.useCases.getCurrentUser.execute.mockResolvedValue({
+    coreServices.identity.useCases.getCurrentUser.execute.mockResolvedValue({
       id: '11111111-1111-4111-8111-111111111111',
       email: 'user@example.com',
       status: 'active',
@@ -77,7 +77,7 @@ describe('Nest core modules (auth + tenants)', () => {
       membershipStatus: 'active',
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -87,16 +87,16 @@ describe('Nest core modules (auth + tenants)', () => {
 
     expect(response.body.success).toBe(true);
     expect(response.body.data.email).toBe('user@example.com');
-    expect(coreDomain.authenticateAccessToken.execute).toHaveBeenCalled();
-    expect(coreDomain.identity.useCases.getCurrentUser.execute).toHaveBeenCalledWith({
+    expect(coreServices.authenticateAccessToken.execute).toHaveBeenCalled();
+    expect(coreServices.identity.useCases.getCurrentUser.execute).toHaveBeenCalledWith({
       accessToken: 'test-token',
     });
   });
 
   it('POST /api/v1/tenants is public and returns 201', async () => {
-    const coreDomain = createMockCoreDomain();
+    const coreServices = createMockCoreDomain();
     const tenantId = '33333333-3333-4333-8333-333333333333';
-    coreDomain.tenants.useCases.createTenant.execute.mockResolvedValue({
+    coreServices.tenants.useCases.createTenant.execute.mockResolvedValue({
       tenant: {
         id: tenantId,
         slug: 'new-co',
@@ -107,7 +107,7 @@ describe('Nest core modules (auth + tenants)', () => {
       },
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())

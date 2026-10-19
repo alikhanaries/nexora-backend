@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
-import { CompatV2OrderInvoiceQuery } from '../../../src/modules/compatibility/application/compat-v2-order-invoice-query.js';
+import { CompatV2OrderInvoiceQuery } from '../../../src/modules/compatibility/services/compat-v2-order-invoice-query.js';
 
 describe('CompatV2OrderInvoiceQuery', () => {
     it('returns PDF for an order in the tenant', async () => {

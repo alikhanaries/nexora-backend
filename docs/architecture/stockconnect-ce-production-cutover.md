@@ -40,7 +40,7 @@ Phase 53 (#67, branch `feat/phase-53-stockconnect-ce-staging-e2e`) recorded **do
 
 ## Production route inventory (actual code)
 
-Verified from `src/modules/compatibility/presentation/stockconnect-ce.routes.js` and `tests/integration/stockconnect-ce-route-inventory.test.js`.
+Verified from `src/modules/compatibility/views/stockconnect-ce.routes.js` and `tests/integration/stockconnect-ce-route-inventory.test.js`.
 
 | Method | Wasl route |
 | ------ | ------------- |

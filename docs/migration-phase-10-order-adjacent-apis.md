@@ -8,9 +8,9 @@ Migrate existing **cancellation**, **shipment**, and **return** HTTP APIs to Nes
 
 All routes from:
 
-- `src/modules/cancellations/presentation/cancellation.routes.js`
-- `src/modules/shipments/presentation/shipment.routes.js`
-- `src/modules/returns/presentation/return.routes.js`
+- `src/modules/cancellations/views/cancellation.routes.js`
+- `src/modules/shipments/views/shipment.routes.js`
+- `src/modules/returns/views/return.routes.js`
 
 **Out of scope:** compatibility `/api/v2/orders*`, outbound tenant webhooks, new providers.
 

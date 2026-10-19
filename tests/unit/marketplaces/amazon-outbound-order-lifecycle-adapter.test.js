@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MarketplaceCatalogAdapterPermanentError } from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
-import { MarketplaceRateLimitError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
-import { AmazonOutboundOrderLifecycleAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-outbound-order-lifecycle-adapter.js';
-import { mapMarketplaceFulfillmentToAmazonConfirmShipment } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/map-marketplace-fulfillment-to-amazon-confirm-shipment.js';
+import { MarketplaceRateLimitError } from '../../../src/modules/marketplaces/models/marketplace-errors.js';
+import { AmazonOutboundOrderLifecycleAdapter } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-outbound-order-lifecycle-adapter.js';
+import { mapMarketplaceFulfillmentToAmazonConfirmShipment } from '../../../src/modules/marketplaces/repositories/adapters/amazon/map-marketplace-fulfillment-to-amazon-confirm-shipment.js';
 
 const runtime = {
     marketplaceKey: 'amazon',

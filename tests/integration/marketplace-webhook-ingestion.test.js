@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';
-import { PostgresMarketplaceConnectionRepository } from '../../src/modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
-import { generateWebhookIngressToken, hashWebhookIngressToken } from '../../src/modules/marketplace-webhook-ingestion/application/webhook-ingress-token.js';
+import { PostgresMarketplaceConnectionRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-connection-repository.js';
+import { generateWebhookIngressToken, hashWebhookIngressToken } from '../../src/modules/marketplace-webhook-ingestion/services/webhook-ingress-token.js';
 import {
     buildTestWebhookPayload,
     createTestMarketplaceWebhookAdapter,

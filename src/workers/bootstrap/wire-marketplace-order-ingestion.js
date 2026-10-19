@@ -1,12 +1,12 @@
 import { CommerceIntegrationQueryService } from '../../modules/commerce-integrations/public/index.js';
-import { PostgresCommerceIntegrationRepository } from '../../modules/commerce-integrations/infrastructure/postgres-commerce-integration-repository.js';
-import { PostgresMarketplaceRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
+import { PostgresCommerceIntegrationRepository } from '../../modules/commerce-integrations/repositories/postgres-commerce-integration-repository.js';
+import { PostgresMarketplaceRepository } from '../../modules/marketplaces/repositories/postgres-marketplace-repository.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../../modules/marketplaces/public/index.js';
-import { PostgresMarketplaceEntityMappingRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-entity-mapping-repository.js';
-import { registerMarketplaceOrderAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-order-adapters.js';
+import { PostgresMarketplaceEntityMappingRepository } from '../../modules/marketplaces/repositories/postgres-marketplace-entity-mapping-repository.js';
+import { registerMarketplaceOrderAdapters } from '../../modules/marketplaces/repositories/adapters/register-marketplace-order-adapters.js';
 import { createMarketplaceOrderIngestionModule } from '../../modules/marketplace-order-ingestion/index.js';
 import { DefaultProductQueryService } from '../../modules/products/public/index.js';
-import { PostgresProductRepository } from '../../modules/products/infrastructure/postgres-product-repository.js';
+import { PostgresProductRepository } from '../../modules/products/repositories/postgres-product-repository.js';
 
 /**
  * @param {object} deps

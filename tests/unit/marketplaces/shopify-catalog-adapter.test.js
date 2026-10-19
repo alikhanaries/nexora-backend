@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ShopifyCatalogAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-catalog-adapter.js';
-import { normalizeShopDomain } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-config.js';
-import { ShopifyGraphqlClient } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-graphql-client.js';
-import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/infrastructure/http/marketplace-http-client.js';
+import { ShopifyCatalogAdapter } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-catalog-adapter.js';
+import { normalizeShopDomain } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-config.js';
+import { ShopifyGraphqlClient } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-graphql-client.js';
+import { MarketplaceHttpClient } from '../../../src/modules/marketplaces/repositories/http/marketplace-http-client.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,

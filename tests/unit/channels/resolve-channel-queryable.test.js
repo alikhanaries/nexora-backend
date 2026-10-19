@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { withChannelQueryable } from '../../../src/modules/channels/application/resolve-channel-queryable.js';
-import { DefaultChannelQueryService } from '../../../src/modules/channels/application/channel-query-service.js';
+import { withChannelQueryable } from '../../../src/modules/channels/services/resolve-channel-queryable.js';
+import { DefaultChannelQueryService } from '../../../src/modules/channels/services/channel-query-service.js';
 
 describe('withChannelQueryable tenant context', () => {
   it('uses database.withTenant when no tx is provided', async () => {

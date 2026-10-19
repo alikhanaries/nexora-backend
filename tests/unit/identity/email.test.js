@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Email } from '../../../src/modules/identity/domain/email.js';
+import { Email } from '../../../src/modules/identity/models/email.js';
 import { normalizeEmail } from '../../../src/shared/security/index.js';
 describe('Email normalization', () => {
     it('trims and lowercases via normalizeEmail', () => {

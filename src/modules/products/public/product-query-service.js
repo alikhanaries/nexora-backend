@@ -5,4 +5,4 @@
  * @property {(tenantId: string, productIds: string[], tx?: object) => Promise<object[]>} getProductsByIds
  * @property {(tenantId: string, productId: string, tx?: object) => Promise<boolean>} verifyProductBelongsToTenant
  */
-export { DefaultProductQueryService } from '../application/default-product-query-service.js';
+export { DefaultProductQueryService } from '../services/default-product-query-service.js';

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { mapMarketplaceErrorToAdapterError } from '../../../src/modules/marketplaces/application/map-marketplace-error-to-adapter-error.js';
+import { mapMarketplaceErrorToAdapterError } from '../../../src/modules/marketplaces/services/map-marketplace-error-to-adapter-error.js';
 import {
     MarketplaceAuthenticationError,
     MarketplaceRateLimitError,
     MarketplaceTransientError,
     MarketplaceUnsupportedError,
-} from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
+} from '../../../src/modules/marketplaces/models/marketplace-errors.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,

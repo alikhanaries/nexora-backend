@@ -1,5 +1,5 @@
 /**
- * @param {ReturnType<import('../../../modules/commerce-integrations/presentation/commerce-integration.mapper.js').toCommerceIntegrationResponse>} channel
+ * @param {ReturnType<import('../../../modules/commerce-integrations/views/commerce-integration.mapper.js').toCommerceIntegrationResponse>} channel
  */
 export function toStockConnectChannel(channel) {
   return {

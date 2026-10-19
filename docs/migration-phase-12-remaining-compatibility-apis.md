@@ -8,8 +8,8 @@ Migrate all Fastify-only `/api/v2/*` and `/api/v2/ce/*` compatibility routes **e
 
 Registered in:
 
-- `src/modules/compatibility/presentation/compatibility.routes.js`
-- `src/modules/compatibility/presentation/stockconnect-ce.routes.js`
+- `src/modules/compatibility/views/compatibility.routes.js`
+- `src/modules/compatibility/views/stockconnect-ce.routes.js`
 
 ### Phase 11 (excluded — already on Nest)
 

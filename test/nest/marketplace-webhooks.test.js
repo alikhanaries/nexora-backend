@@ -1,8 +1,8 @@
 import { createHmac } from 'node:crypto';
 import request from 'supertest';
 import { afterEach, describe, expect, it } from '@jest/globals';
-import { MarketplaceWebhookAuthenticationError } from '../../src/modules/marketplace-webhook-ingestion/application/marketplace-webhook-errors.js';
-import { verifyShopifyStyleHmac } from '../../src/nest/bootstrap/configure-express.js';
+import { MarketplaceWebhookAuthenticationError } from '../../src/modules/webhooks/marketplace/services/marketplace-webhook-errors.js';
+import { verifyShopifyStyleHmac } from '../../src/app/http/configure-express.js';
 import { createTestNestApp } from './helpers/create-test-nest-app.js';
 import { createMockCoreDomain } from './helpers/mock-core-domain.js';
 
@@ -20,8 +20,8 @@ describe('Nest marketplace webhooks module', () => {
   });
 
   it('POST /api/v1/inbound/marketplace-webhooks/:ingressToken is public (no bearer)', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())
@@ -32,13 +32,13 @@ describe('Nest marketplace webhooks module', () => {
   });
 
   it('returns success envelope with outcome and replayed flag', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute.mockResolvedValue({
       data: { outcome: 'enqueued', externalOrderReference: 'ext-99' },
       replayed: false,
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -55,8 +55,8 @@ describe('Nest marketplace webhooks module', () => {
   });
 
   it('passes ingress token, lower-cased headers, and raw body to the use case', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const payload = '{"shop_id":1,"order_id":99}\n';
@@ -68,7 +68,7 @@ describe('Nest marketplace webhooks module', () => {
       .expect(200);
 
     expect(
-      coreDomain.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute,
+      coreServices.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute,
     ).toHaveBeenCalledWith(
       expect.objectContaining({
         ingressToken: VALID_INGRESS_TOKEN,
@@ -89,8 +89,8 @@ describe('Nest marketplace webhooks module', () => {
   });
 
   it('rejects ingress token shorter than 16 characters', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())
@@ -100,17 +100,17 @@ describe('Nest marketplace webhooks module', () => {
       .expect(400);
 
     expect(
-      coreDomain.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute,
+      coreServices.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute,
     ).not.toHaveBeenCalled();
   });
 
   it('maps authentication failures from the use case to HTTP 401', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute.mockRejectedValue(
+    const coreServices = createMockCoreDomain();
+    coreServices.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute.mockRejectedValue(
       new MarketplaceWebhookAuthenticationError('invalid signature'),
     );
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -123,13 +123,13 @@ describe('Nest marketplace webhooks module', () => {
   });
 
   it('returns replayed true when idempotency replays the webhook', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.marketplaceWebhookIngestion.receiveMarketplaceWebhook.execute.mockResolvedValue({
       data: { outcome: 'enqueued', externalOrderReference: 'order-dup' },
       replayed: true,
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -144,10 +144,10 @@ describe('Nest marketplace webhooks module', () => {
 describe('Marketplace webhook provider registration (existing adapters)', () => {
   it('registers Amazon, Namshi, Noon, and Shopify when runtime deps are supplied', async () => {
     const { MarketplaceWebhookAdapterRegistry } = await import(
-      '../../src/modules/marketplace-webhook-ingestion/public/marketplace-webhook-adapter-registry.js'
+      '../../src/modules/webhooks/marketplace/public/marketplace-webhook-adapter-registry.js'
     );
     const { registerMarketplaceWebhookAdapters } = await import(
-      '../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-webhook-adapters.js'
+      '../../src/modules/marketplaces/repositories/adapters/register-marketplace-webhook-adapters.js'
     );
 
     const registry = new MarketplaceWebhookAdapterRegistry();

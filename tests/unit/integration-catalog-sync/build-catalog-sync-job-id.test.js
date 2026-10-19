@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildCatalogSyncJobId } from '../../../src/modules/integration-catalog-sync/application/build-catalog-sync-job-id.js';
-import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/domain/sync-operation.js';
-import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/domain/sync-target.js';
+import { buildCatalogSyncJobId } from '../../../src/modules/integration-catalog-sync/services/build-catalog-sync-job-id.js';
+import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/models/sync-operation.js';
+import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/models/sync-target.js';
 
 describe('buildCatalogSyncJobId', () => {
     const base = {

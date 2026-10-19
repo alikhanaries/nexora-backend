@@ -3,7 +3,7 @@ import {
     mapExternalShipment,
     mapEmptyShipmentPageToExternalCollection,
     mapShipmentPageToExternalCollection,
-} from '../../../src/modules/compatibility/application/mappers/compatibility-shipment.mapper.js';
+} from '../../../src/modules/compatibility/services/mappers/compatibility-shipment.mapper.js';
 
 const createdAt = new Date('2026-01-15T10:00:00.000Z');
 const updatedAt = new Date('2026-01-16T10:00:00.000Z');

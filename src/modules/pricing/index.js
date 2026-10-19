@@ -1,7 +1,7 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { CreatePrice, DeactivatePrice, DefaultPricingService, GetPrice, ListPrices, UpdatePrice, } from './application/index.js';
-import { PostgresPriceRepository } from './infrastructure/index.js';
-import priceRoutes, {} from './presentation/price.routes.js';
+import { CreatePrice, DeactivatePrice, DefaultPricingService, GetPrice, ListPrices, UpdatePrice, } from './services/index.js';
+import { PostgresPriceRepository } from './repositories/index.js';
+import priceRoutes, {} from './views/price.routes.js';
 export function createPricingModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const prices = new PostgresPriceRepository();
@@ -36,4 +36,4 @@ export function createPricingModule(deps) {
         routes: priceRoutes,
     };
 }
-export { Price, PriceStatus } from './domain/index.js';
+export { Price, PriceStatus } from './models/index.js';

@@ -2,9 +2,9 @@ import { createAuditModule } from '../../modules/audit/index.js';
 import { createApiKeysModule } from '../../modules/api-keys/index.js';
 import { createAuthorizationModule } from '../../modules/authorization/index.js';
 import { AuthorizationMembershipPermissionResolver } from '../../modules/authorization/public/index.js';
-import { PostgresMembershipRoleRepository } from '../../modules/authorization/infrastructure/postgres-membership-role-repository.js';
+import { PostgresMembershipRoleRepository } from '../../modules/authorization/repositories/postgres-membership-role-repository.js';
 import { createIdentityModule } from '../../modules/identity/index.js';
-import { AuthenticateAccessTokenUseCase } from '../../modules/identity/application/authenticate-access-token.js';
+import { AuthenticateAccessTokenUseCase } from '../../modules/identity/services/authenticate-access-token.js';
 import { createMfaModule } from '../../modules/mfa/index.js';
 import { createCommerceIntegrationsModule } from '../../modules/commerce-integrations/index.js';
 import { createInventoryModule } from '../../modules/inventory/index.js';
@@ -21,21 +21,21 @@ import { createCompatibilityModule } from '../../modules/compatibility/index.js'
 import {
     createExternalCompatibilityReadinessProbe,
     createCompatV2CompatibilityReadinessProbe,
-} from '../../modules/compatibility/application/compat-v2-readiness.js';
-import { createStockConnectCeCompatibilityReadinessProbe } from '../../modules/compatibility/application/stockconnect-ce-readiness.js';
+} from '../../modules/compatibility/services/compat-v2-readiness.js';
+import { createStockConnectCeCompatibilityReadinessProbe } from '../../modules/compatibility/services/stockconnect-ce-readiness.js';
 import { createExternalIdMappingModule } from '../../modules/external-id-mapping/index.js';
 import { createWebhooksModule } from '../../modules/webhooks/index.js';
 import { createMarketplaceWebhookIngestionModule } from '../../modules/marketplace-webhook-ingestion/index.js';
-import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
-import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
-import { PostgresMarketplaceRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
-import { registerMarketplaceWebhookAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-webhook-adapters.js';
-import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
-import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../modules/marketplaces/application/marketplace-outbound-order-lifecycle-adapter-registry.js';
-import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/application/execute-outbound-marketplace-order-lifecycle-command.js';
-import { MarketplaceLifecycleEnqueueService } from '../../modules/marketplace-order-ingestion/application/marketplace-lifecycle-enqueue-service.js';
-import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/application/enqueue-outbound-marketplace-order-lifecycle-command.js';
-import { ShopifyOrderAdapter } from '../../modules/marketplaces/infrastructure/adapters/shopify/shopify-order-adapter.js';
+import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/services/marketplace-adapter-runtime-factory.js';
+import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/repositories/postgres-marketplace-connection-repository.js';
+import { PostgresMarketplaceRepository } from '../../modules/marketplaces/repositories/postgres-marketplace-repository.js';
+import { registerMarketplaceWebhookAdapters } from '../../modules/marketplaces/repositories/adapters/register-marketplace-webhook-adapters.js';
+import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../modules/marketplaces/repositories/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
+import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../modules/marketplaces/services/marketplace-outbound-order-lifecycle-adapter-registry.js';
+import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/services/execute-outbound-marketplace-order-lifecycle-command.js';
+import { MarketplaceLifecycleEnqueueService } from '../../modules/marketplace-order-ingestion/services/marketplace-lifecycle-enqueue-service.js';
+import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../../modules/marketplaces/services/enqueue-outbound-marketplace-order-lifecycle-command.js';
+import { ShopifyOrderAdapter } from '../../modules/marketplaces/repositories/adapters/shopify/shopify-order-adapter.js';
 import { PostgresOrderRepository } from '../../modules/orders/repositories/postgres-order-repository.js';
 import { DefaultAuthorizationService } from '../../modules/authorization/public/index.js';
 import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestion.js';

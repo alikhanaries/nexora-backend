@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../../src/modules/marketplaces/public/index.js';
-import { PostgresMarketplaceEntityMappingRepository } from '../../src/modules/marketplaces/infrastructure/postgres-marketplace-entity-mapping-repository.js';
-import { PostgresMarketplaceRepository } from '../../src/modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
-import { PostgresProductRepository } from '../../src/modules/products/infrastructure/postgres-product-repository.js';
+import { PostgresMarketplaceEntityMappingRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-entity-mapping-repository.js';
+import { PostgresMarketplaceRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-repository.js';
+import { PostgresProductRepository } from '../../src/modules/products/repositories/postgres-product-repository.js';
 import { DefaultProductQueryService } from '../../src/modules/products/public/index.js';
 import { createMarketplaceOrderIngestionModule } from '../../src/modules/marketplace-order-ingestion/index.js';
-import { NormalizedMarketplaceOrderStatus } from '../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-order-status.js';
+import { NormalizedMarketplaceOrderStatus } from '../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-order-status.js';
 import { MarketplaceOrderIngestionPermanentError } from '../../src/modules/marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { applyMarketplaceSyncMappings } from '../../../src/modules/integration-catalog-sync/application/apply-marketplace-sync-mappings.js';
+import { applyMarketplaceSyncMappings } from '../../../src/modules/integration-catalog-sync/services/apply-marketplace-sync-mappings.js';
 
 describe('applyMarketplaceSyncMappings', () => {
     it('no-ops when recorder is undefined', async () => {

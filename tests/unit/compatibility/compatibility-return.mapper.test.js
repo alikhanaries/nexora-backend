@@ -11,7 +11,7 @@ import {
     mapReturnMutationResultToExternalResponse,
     mapReturnResultToExternalResponse,
     returnMatchesReceiveRequest,
-} from '../../../src/modules/compatibility/application/mappers/compatibility-return.mapper.js';
+} from '../../../src/modules/compatibility/services/mappers/compatibility-return.mapper.js';
 
 describe('compatibility return mapper', () => {
     it('maps MerchantOrderNo and reason fields', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceTransientError, MarketplaceValidationError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
-import { mapMarketplaceFulfillmentToNoonCreateShipment } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/map-marketplace-fulfillment-to-noon-create-shipment.js';
-import { NoonOutboundOrderLifecycleAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-outbound-order-lifecycle-adapter.js';
+import { MarketplaceTransientError, MarketplaceValidationError } from '../../../src/modules/marketplaces/models/marketplace-errors.js';
+import { mapMarketplaceFulfillmentToNoonCreateShipment } from '../../../src/modules/marketplaces/repositories/adapters/noon/map-marketplace-fulfillment-to-noon-create-shipment.js';
+import { NoonOutboundOrderLifecycleAdapter } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-outbound-order-lifecycle-adapter.js';
 
 const runtime = {
     marketplaceKey: 'noon',

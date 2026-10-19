@@ -3,4 +3,4 @@ export {
     CatalogSyncRetryError,
     CatalogSyncSkippedError,
     UnsupportedMarketplaceAdapterError,
-} from '../application/catalog-sync-errors.js';
+} from '../services/catalog-sync-errors.js';

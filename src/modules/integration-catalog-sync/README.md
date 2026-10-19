@@ -37,7 +37,7 @@ Inventory jobs (`target = inventory` or `channel_inventory_resync`) run through 
 
 Jobs coalesce per `(tenant, channel, product)`; execution always re-reads current inventory so older queued events cannot publish stale quantities.
 
-Shopify, Amazon, Noon, and Namshi adapters implement verified inventory/price HTTP surfaces (Namshi: stock-update and **local** pricing upsert; see [namshi/README.md](../marketplaces/infrastructure/adapters/namshi/README.md)). The foundation stub remains a no-op for CI.
+Shopify, Amazon, Noon, and Namshi adapters implement verified inventory/price HTTP surfaces (Namshi: stock-update and **local** pricing upsert; see [namshi/README.md](../marketplaces/repositories/adapters/namshi/README.md)). The foundation stub remains a no-op for CI.
 
 ## Pricing synchronization (Phase 18)
 

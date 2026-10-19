@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { normalizedMarketplaceLifecycleCommandSchema } from '../../../src/modules/marketplace-order-ingestion/application/normalized-marketplace-lifecycle-command.schema.js';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';
+import { normalizedMarketplaceLifecycleCommandSchema } from '../../../src/modules/marketplace-order-ingestion/services/normalized-marketplace-lifecycle-command.schema.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
 
 describe('normalized marketplace lifecycle command schema', () => {
     it('parses status_sync command', () => {

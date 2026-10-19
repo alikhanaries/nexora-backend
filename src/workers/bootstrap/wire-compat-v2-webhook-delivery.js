@@ -1,4 +1,4 @@
-import { createCompatV2WebhookBodyBuilder } from '../../modules/compatibility/application/build-compat-v2-webhook-body.js';
+import { createCompatV2WebhookBodyBuilder } from '../../modules/compatibility/services/build-compat-v2-webhook-body.js';
 
 /**
  * @deprecated Prefer {@link wireExternalConsumerWebhookPayloadStrategies} for worker webhook wiring.

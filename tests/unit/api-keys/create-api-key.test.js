@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CreateApiKeyUseCase } from '../../../src/modules/api-keys/application/use-cases/create-api-key.js';
+import { CreateApiKeyUseCase } from '../../../src/modules/api-keys/services/use-cases/create-api-key.js';
 import { AuthorizationError } from '../../../src/shared/errors/index.js';
 
 function createDeps() {

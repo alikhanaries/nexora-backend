@@ -1,14 +1,14 @@
 import { Test } from '@nestjs/testing';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
-import { buildAppModule } from '../../../src/nest/app.module.js';
-import { configureExpress } from '../../../src/nest/bootstrap/configure-express.js';
+import { buildAppModule } from '../../../src/app/app.module.js';
+import { configureExpress } from '../../../src/app/http/configure-express.js';
 import { loadConfigFromEnvironment } from '../../../src/app/config/index.js';
 import { createPinoLogger } from '../../../src/infrastructure/observability/pino-logger.js';
 import { noopMetricsRecorder } from '../../../src/shared/metrics/index.js';
 
 /**
- * @param {{ extraControllers?: unknown[], connectDatabase?: boolean, coreDomain?: object | null }} [options]
+ * @param {{ extraControllers?: unknown[], connectDatabase?: boolean, coreServices?: object | null }} [options]
  */
 export async function createTestNestApp(options = {}) {
   const config = loadConfigFromEnvironment();
@@ -21,8 +21,8 @@ export async function createTestNestApp(options = {}) {
     database: null,
   };
 
-  const coreDomain = options.coreDomain ?? null;
-  const AppModule = buildAppModule(infra, coreDomain);
+  const coreServices = options.coreServices ?? null;
+  const AppModule = buildAppModule(infra, coreServices);
 
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule],

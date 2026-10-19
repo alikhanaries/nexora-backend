@@ -8,7 +8,7 @@ import {
     resolveExternalIntegerId,
     resolveOrderForCompatibility,
     resolveOrderLineForCompatibility,
-} from '../../../src/modules/compatibility/application/compatibility-external-id-resolution.js';
+} from '../../../src/modules/compatibility/services/compatibility-external-id-resolution.js';
 
 function buildQueryService(resourceId = '11111111-1111-4111-8111-111111111111') {
     return {

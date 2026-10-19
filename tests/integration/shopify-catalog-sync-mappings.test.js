@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { applyMarketplaceSyncMappings } from '../../src/modules/integration-catalog-sync/application/apply-marketplace-sync-mappings.js';
-import { ShopifyCatalogAdapter } from '../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-catalog-adapter.js';
-import { ShopifyGraphqlClient } from '../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-graphql-client.js';
-import { createMarketplaceEntityMappingRecorder } from '../../src/modules/marketplaces/application/create-marketplace-entity-mapping-recorder.js';
-import { MarketplaceHttpClient } from '../../src/modules/marketplaces/infrastructure/http/marketplace-http-client.js';
+import { applyMarketplaceSyncMappings } from '../../src/modules/integration-catalog-sync/services/apply-marketplace-sync-mappings.js';
+import { ShopifyCatalogAdapter } from '../../src/modules/marketplaces/repositories/adapters/shopify/shopify-catalog-adapter.js';
+import { ShopifyGraphqlClient } from '../../src/modules/marketplaces/repositories/adapters/shopify/shopify-graphql-client.js';
+import { createMarketplaceEntityMappingRecorder } from '../../src/modules/marketplaces/services/create-marketplace-entity-mapping-recorder.js';
+import { MarketplaceHttpClient } from '../../src/modules/marketplaces/repositories/http/marketplace-http-client.js';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { seedCommerceFixture } from './compatibility-helpers.js';

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CatalogSyncReconciliationService } from '../../../src/modules/integration-catalog-sync/application/catalog-sync-reconciliation-service.js';
+import { CatalogSyncReconciliationService } from '../../../src/modules/integration-catalog-sync/services/catalog-sync-reconciliation-service.js';
 import { IntegrationStatus } from '../../../src/modules/commerce-integrations/public/index.js';
-import { buildCatalogSyncJobId } from '../../../src/modules/integration-catalog-sync/application/build-catalog-sync-job-id.js';
-import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/domain/sync-target.js';
+import { buildCatalogSyncJobId } from '../../../src/modules/integration-catalog-sync/services/build-catalog-sync-job-id.js';
+import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/models/sync-target.js';
 
 describe('CatalogSyncReconciliationService', () => {
     const tenantA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -129,7 +129,7 @@ describe('CatalogSyncReconciliationService', () => {
 
     it('uses deterministic job ids via enqueue service (coalescing with event path)', async () => {
         const enqueue = vi.fn().mockResolvedValue({ id: 'job-1' });
-        const { CatalogSyncEnqueueService } = await import('../../../src/modules/integration-catalog-sync/application/catalog-sync-enqueue-service.js');
+        const { CatalogSyncEnqueueService } = await import('../../../src/modules/integration-catalog-sync/services/catalog-sync-enqueue-service.js');
         const enqueueService = new CatalogSyncEnqueueService({
             queue: { enqueue },
             offerQueryService: {},

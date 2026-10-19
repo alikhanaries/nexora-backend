@@ -1,8 +1,8 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { applyMarketplaceSyncMappings } from '../../src/modules/integration-catalog-sync/application/apply-marketplace-sync-mappings.js';
-import { NoonCatalogAdapter } from '../../src/modules/marketplaces/infrastructure/adapters/noon/noon-catalog-adapter.js';
-import { createMarketplaceEntityMappingRecorder } from '../../src/modules/marketplaces/application/create-marketplace-entity-mapping-recorder.js';
+import { applyMarketplaceSyncMappings } from '../../src/modules/integration-catalog-sync/services/apply-marketplace-sync-mappings.js';
+import { NoonCatalogAdapter } from '../../src/modules/marketplaces/repositories/adapters/noon/noon-catalog-adapter.js';
+import { createMarketplaceEntityMappingRecorder } from '../../src/modules/marketplaces/services/create-marketplace-entity-mapping-recorder.js';
 import { createApplication } from '../../src/app/bootstrap/create-application.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { seedCommerceFixture } from './compatibility-helpers.js';

@@ -26,16 +26,16 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
   });
 
   it('GET /api/v1/permissions requires authentication', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
     await request(app.getHttpServer()).get('/api/v1/permissions').expect(401);
   });
 
   it('GET /api/v1/permissions returns data when authenticated', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
-    coreDomain.authorization.routes.options.listPermissions.execute.mockResolvedValue([
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    coreServices.authorization.routes.options.listPermissions.execute.mockResolvedValue([
       {
         id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
         key: 'roles:read',
@@ -44,7 +44,7 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
       },
     ]);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -57,9 +57,9 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
   });
 
   it('GET /api/v1/audit lists events for authenticated tenant', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
-    coreDomain.audit.routes.options.auditService.listEvents.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    coreServices.audit.routes.options.auditService.listEvents.mockResolvedValue({
       total: 1,
       events: [
         {
@@ -78,7 +78,7 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
       ],
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -92,11 +92,11 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
   });
 
   it('GET /api/v1/api-keys returns tenant keys when authenticated', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
-    coreDomain.apiKeys.useCases.listApiKeys.execute.mockResolvedValue([]);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    coreServices.apiKeys.useCases.listApiKeys.execute.mockResolvedValue([]);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -105,12 +105,12 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
       .expect(200);
 
     expect(response.body).toEqual({ success: true, data: [] });
-    expect(coreDomain.apiKeys.useCases.listApiKeys.execute).toHaveBeenCalled();
+    expect(coreServices.apiKeys.useCases.listApiKeys.execute).toHaveBeenCalled();
   });
 
   it('POST /api/v1/mfa/verify requires a user session', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue({
       kind: 'api-key',
       id: 'key-id',
       tenantId: actorPrincipal.tenantId,
@@ -120,7 +120,7 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
       scopes: [],
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -133,11 +133,11 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
   });
 
   it('DELETE /api/v1/memberships/:membershipId/roles/:roleId returns removed envelope', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
-    coreDomain.authorization.routes.options.removeRole.execute.mockResolvedValue(undefined);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
+    coreServices.authorization.routes.options.removeRole.execute.mockResolvedValue(undefined);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const roleId = '11111111-1111-4111-8111-111111111111';

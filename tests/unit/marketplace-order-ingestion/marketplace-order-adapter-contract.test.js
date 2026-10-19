@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { MarketplaceOrderAdapterRegistry } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-adapter-registry.js';
 import { MarketplaceOrderIngestionPermanentError } from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-ingestion-errors.js';
-import { registerMarketplaceCatalogAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-catalog-adapters.js';
-import { registerMarketplaceOrderAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-order-adapters.js';
+import { registerMarketplaceCatalogAdapters } from '../../../src/modules/marketplaces/repositories/adapters/register-marketplace-catalog-adapters.js';
+import { registerMarketplaceOrderAdapters } from '../../../src/modules/marketplaces/repositories/adapters/register-marketplace-order-adapters.js';
 import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/integration-catalog-sync/public/marketplace-catalog-adapter-registry.js';
-import { AmazonOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-order-adapter.js';
-import { NamshiOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-order-adapter.js';
-import { NoonOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-order-adapter.js';
-import { ShopifyOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-order-adapter.js';
+import { AmazonOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-order-adapter.js';
+import { NamshiOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-order-adapter.js';
+import { NoonOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-order-adapter.js';
+import { ShopifyOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-order-adapter.js';
 
 /**
  * @param {import('../../../src/modules/marketplace-order-ingestion/public/marketplace-order-adapter.port.js').MarketplaceOrderAdapter} adapter
@@ -72,7 +72,7 @@ describe('marketplace order adapter registry', () => {
 
 describe('ingest fetch guard', () => {
     it('fetch without adapter is permanent', async () => {
-        const { IngestNormalizedMarketplaceOrder } = await import('../../../src/modules/marketplace-order-ingestion/application/ingest-normalized-marketplace-order.js');
+        const { IngestNormalizedMarketplaceOrder } = await import('../../../src/modules/marketplace-order-ingestion/services/ingest-normalized-marketplace-order.js');
         const useCase = new IngestNormalizedMarketplaceOrder({
             ingestionService: { ingest: async () => ({}) },
             orderAdapterRegistry: new MarketplaceOrderAdapterRegistry(),

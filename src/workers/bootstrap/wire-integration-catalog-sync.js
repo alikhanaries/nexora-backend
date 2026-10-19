@@ -1,19 +1,19 @@
 import { CommerceIntegrationQueryService } from '../../modules/commerce-integrations/public/index.js';
-import { PostgresCommerceIntegrationRepository } from '../../modules/commerce-integrations/infrastructure/postgres-commerce-integration-repository.js';
+import { PostgresCommerceIntegrationRepository } from '../../modules/commerce-integrations/repositories/postgres-commerce-integration-repository.js';
 import { DefaultOfferQueryService } from '../../modules/offers/public/offer-query-service.js';
-import { PostgresOfferRepository } from '../../modules/offers/infrastructure/postgres-offer-repository.js';
-import { PostgresMarketplaceRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-repository.js';
+import { PostgresOfferRepository } from '../../modules/offers/repositories/postgres-offer-repository.js';
+import { PostgresMarketplaceRepository } from '../../modules/marketplaces/repositories/postgres-marketplace-repository.js';
 import { createIntegrationCatalogSyncModule } from '../../modules/integration-catalog-sync/index.js';
-import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
-import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
-import { registerMarketplaceCatalogAdapters } from '../../modules/marketplaces/infrastructure/adapters/register-marketplace-catalog-adapters.js';
-import { createMarketplaceEntityMappingRecorder } from '../../modules/marketplaces/application/create-marketplace-entity-mapping-recorder.js';
+import { MarketplaceAdapterRuntimeFactory } from '../../modules/marketplaces/services/marketplace-adapter-runtime-factory.js';
+import { PostgresMarketplaceConnectionRepository } from '../../modules/marketplaces/repositories/postgres-marketplace-connection-repository.js';
+import { registerMarketplaceCatalogAdapters } from '../../modules/marketplaces/repositories/adapters/register-marketplace-catalog-adapters.js';
+import { createMarketplaceEntityMappingRecorder } from '../../modules/marketplaces/services/create-marketplace-entity-mapping-recorder.js';
 import { DefaultInventoryService } from '../../modules/inventory/public/index.js';
-import { PostgresInventoryRepository, PostgresStockLocationRepository, } from '../../modules/inventory/infrastructure/index.js';
+import { PostgresInventoryRepository, PostgresStockLocationRepository, } from '../../modules/inventory/repositories/index.js';
 import { DefaultProductQueryService } from '../../modules/products/public/index.js';
-import { PostgresProductRepository } from '../../modules/products/infrastructure/postgres-product-repository.js';
+import { PostgresProductRepository } from '../../modules/products/repositories/postgres-product-repository.js';
 import { DefaultPricingService } from '../../modules/pricing/public/index.js';
-import { PostgresPriceRepository } from '../../modules/pricing/infrastructure/index.js';
+import { PostgresPriceRepository } from '../../modules/pricing/repositories/index.js';
 
 /**
  * Worker-only wiring for channel catalog sync query ports (composition root).
