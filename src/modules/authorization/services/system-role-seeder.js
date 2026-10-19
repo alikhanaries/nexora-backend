@@ -1,22 +1,28 @@
 import { expandPermissionPatterns } from '../models/permission-pattern.js';
 import { SYSTEM_ROLE_TEMPLATES } from '../models/system-role-templates.js';
+import { requireAuthorizationDeps } from './require-deps.js';
+
 /**
  * Idempotently seeds the seven standard system roles for a tenant.
+ *
+ * @param {{ permissions: object, roles: object, database: object }} deps
+ * @returns {{ execute: Function }}
  */
-export class SystemRoleSeeder {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        const catalogKeys = await this.deps.permissions.listKeys();
-        return this.deps.database.execute(async (tx) => {
+export function createSystemRoleSeeder(deps) {
+    requireAuthorizationDeps(deps, 'createSystemRoleSeeder', ['permissions', 'roles', 'database']);
+
+    /**
+     * @param {{ tenantId: string }} input
+     */
+    async function execute(input) {
+        const catalogKeys = await deps.permissions.listKeys();
+        return deps.database.execute(async (tx) => {
             const seeded = [];
             let createdCount = 0;
             for (const template of SYSTEM_ROLE_TEMPLATES) {
-                const existing = await this.deps.roles.findSystemRoleByKey(input.tenantId, template.systemKey, tx);
+                const existing = await deps.roles.findSystemRoleByKey(input.tenantId, template.systemKey, tx);
                 if (existing !== null) {
-                    const permissions = await this.deps.roles.listPermissionsForRole(existing.id, tx);
+                    const permissions = await deps.roles.listPermissionsForRole(existing.id, tx);
                     seeded.push({
                         ...existing,
                         permissionKeys: permissions.map((permission) => permission.key),
@@ -24,7 +30,7 @@ export class SystemRoleSeeder {
                     continue;
                 }
                 const permissionKeys = expandPermissionPatterns(template.patterns, catalogKeys);
-                const role = await this.deps.roles.create({
+                const role = await deps.roles.create({
                     tenantId: input.tenantId,
                     name: template.name,
                     permissionKeys,
@@ -36,5 +42,17 @@ export class SystemRoleSeeder {
             }
             return { roles: seeded, createdCount };
         }, { tenantId: input.tenantId });
+    }
+
+    return { execute };
+}
+
+/** @deprecated Prefer {@link createSystemRoleSeeder}; kept for existing import sites. */
+export class SystemRoleSeeder {
+    /**
+     * @param {object} deps
+     */
+    constructor(deps) {
+        return createSystemRoleSeeder(deps);
     }
 }

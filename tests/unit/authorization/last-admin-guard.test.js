@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BusinessRuleError } from '../../../src/shared/errors/index.js';
-import { LastAdminGuard } from '../../../src/modules/authorization/services/last-admin-guard.js';
+import {
+    createLastAdminGuard,
+    LastAdminGuard,
+} from '../../../src/modules/authorization/services/last-admin-guard.js';
+
 const tx = {};
-function createGuard(overrides) {
+
+function createGuardDeps(overrides) {
     const roles = {
         create: vi.fn(),
         findById: vi.fn(),
@@ -26,40 +31,64 @@ function createGuard(overrides) {
         membershipHasAdminViaOtherRoles: vi.fn(async () => overrides.hasAdminViaOtherRoles ?? false),
     };
     return {
-        guard: new LastAdminGuard({ roles, membershipRoles }),
-        lockAdminCapableMemberships,
-        membershipRoles,
         roles,
+        membershipRoles,
+        lockAdminCapableMemberships,
     };
 }
-describe('LastAdminGuard', () => {
+
+describe('createLastAdminGuard', () => {
+    it('fails fast when required dependencies are missing', () => {
+        expect(() => createLastAdminGuard({})).toThrow('createLastAdminGuard requires deps.roles');
+        expect(() => createLastAdminGuard({ roles: {} })).toThrow(
+            'createLastAdminGuard requires deps.membershipRoles',
+        );
+    });
+
     it('allows removing a role that does not grant tenant.admin', async () => {
-        const { guard } = createGuard({ grantsAdmin: false });
+        const deps = createGuardDeps({ grantsAdmin: false });
+        const guard = createLastAdminGuard(deps);
         await expect(guard.assertCanRemoveRole('tenant-1', 'membership-1', 'role-1', tx)).resolves.toBeUndefined();
     });
+
     it('allows removing admin when membership retains admin via another role', async () => {
-        const { guard } = createGuard({
+        const deps = createGuardDeps({
             grantsAdmin: true,
             adminMembershipCount: 1,
             hasAdminViaOtherRoles: true,
         });
+        const guard = createLastAdminGuard(deps);
         await expect(guard.assertCanRemoveRole('tenant-1', 'membership-1', 'role-1', tx)).resolves.toBeUndefined();
     });
+
     it('blocks removing the last admin-capable membership role', async () => {
-        const { guard, lockAdminCapableMemberships } = createGuard({
+        const deps = createGuardDeps({
             grantsAdmin: true,
             adminMembershipCount: 1,
             hasAdminViaOtherRoles: false,
         });
+        const guard = createLastAdminGuard(deps);
         await expect(guard.assertCanRemoveRole('tenant-1', 'membership-1', 'role-1', tx)).rejects.toBeInstanceOf(BusinessRuleError);
-        expect(lockAdminCapableMemberships).toHaveBeenCalledWith('tenant-1', tx);
+        expect(deps.lockAdminCapableMemberships).toHaveBeenCalledWith('tenant-1', tx);
     });
+
     it('allows removing admin when another membership still has tenant.admin', async () => {
-        const { guard } = createGuard({
+        const deps = createGuardDeps({
             grantsAdmin: true,
             adminMembershipCount: 2,
             hasAdminViaOtherRoles: false,
         });
+        const guard = createLastAdminGuard(deps);
         await expect(guard.assertCanRemoveRole('tenant-1', 'membership-1', 'role-1', tx)).resolves.toBeUndefined();
+    });
+
+    it('compatibility wrapper preserves last-admin protection', async () => {
+        const deps = createGuardDeps({
+            grantsAdmin: true,
+            adminMembershipCount: 1,
+            hasAdminViaOtherRoles: false,
+        });
+        const guard = new LastAdminGuard(deps);
+        await expect(guard.assertCanRemoveRole('tenant-1', 'membership-1', 'role-1', tx)).rejects.toBeInstanceOf(BusinessRuleError);
     });
 });
