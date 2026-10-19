@@ -1,4 +1,4 @@
-import { toErrorMessage } from '../../shared/errors/index.js';
+import { AppError, describeErrorForLog, toErrorMessage } from '../../shared/errors/index.js';
 import { recordRetentionCleanupFailure, recordRetentionCleanupOutcome, } from '../../shared/metrics/record-retention-cleanup.js';
 const MS_PER_DAY = 86_400_000;
 /**
@@ -50,33 +50,33 @@ export class RetentionCleanupService {
             stats.outboxDeleted = await this.purgeOutbox(computeRetentionCutoff(this.config.outboxDays, now));
         }
         catch (error) {
-            failures.push({ resource: 'outbox', reason: toErrorMessage(error) });
+            failures.push({ resource: 'outbox', reason: retentionFailureSummary(error) });
             recordRetentionCleanupFailure(this.metrics, 'outbox');
-            this.logger.error({ resource: 'outbox', reason: toErrorMessage(error) }, 'Outbox retention cleanup failed');
+            this.logger.error({ resource: 'outbox', err: describeErrorForLog(error) }, 'Outbox retention cleanup failed');
         }
         try {
             stats.inboxDeleted = await this.purgeInbox(computeRetentionCutoff(this.config.inboxDays, now));
         }
         catch (error) {
-            failures.push({ resource: 'inbox', reason: toErrorMessage(error) });
+            failures.push({ resource: 'inbox', reason: retentionFailureSummary(error) });
             recordRetentionCleanupFailure(this.metrics, 'inbox');
-            this.logger.error({ resource: 'inbox', reason: toErrorMessage(error) }, 'Inbox retention cleanup failed');
+            this.logger.error({ resource: 'inbox', err: describeErrorForLog(error) }, 'Inbox retention cleanup failed');
         }
         try {
             stats.idempotencyDeleted = await this.purgeIdempotency(computeRetentionCutoff(this.config.idempotencyDays, now));
         }
         catch (error) {
-            failures.push({ resource: 'idempotency', reason: toErrorMessage(error) });
+            failures.push({ resource: 'idempotency', reason: retentionFailureSummary(error) });
             recordRetentionCleanupFailure(this.metrics, 'idempotency');
-            this.logger.error({ resource: 'idempotency', reason: toErrorMessage(error) }, 'Idempotency retention cleanup failed');
+            this.logger.error({ resource: 'idempotency', err: describeErrorForLog(error) }, 'Idempotency retention cleanup failed');
         }
         try {
             stats.webhookDeliveriesDeleted = await this.purgeWebhookDeliveries(computeRetentionCutoff(this.config.webhookDeliveryDays, now));
         }
         catch (error) {
-            failures.push({ resource: 'webhook_deliveries', reason: toErrorMessage(error) });
+            failures.push({ resource: 'webhook_deliveries', reason: retentionFailureSummary(error) });
             recordRetentionCleanupFailure(this.metrics, 'webhook_deliveries');
-            this.logger.error({ resource: 'webhook_deliveries', reason: toErrorMessage(error) }, 'Webhook delivery retention cleanup failed');
+            this.logger.error({ resource: 'webhook_deliveries', err: describeErrorForLog(error) }, 'Webhook delivery retention cleanup failed');
         }
         const durationSeconds = (Date.now() - startedAt) / 1_000;
         if (failures.length === 0) {
@@ -122,6 +122,13 @@ export class RetentionCleanupService {
         } while (deleted === this.config.batchSize);
         return total;
     }
+}
+function retentionFailureSummary(error) {
+    const message = toErrorMessage(error);
+    if (AppError.isAppError(error) && error.safeDetails?.operation !== undefined) {
+        return `${message} (operation=${String(error.safeDetails.operation)})`;
+    }
+    return message;
 }
 export class RetentionCleanupError extends Error {
     failures;

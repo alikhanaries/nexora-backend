@@ -13,7 +13,7 @@ import { CatalogSyncReconciliationScheduler } from '../modules/integration-catal
 import { wireIntegrationCatalogSync } from './bootstrap/wire-integration-catalog-sync.js';
 import { wireMarketplaceLifecycleWorker } from './bootstrap/wire-marketplace-lifecycle-worker.js';
 import { createWorkerMarketplaceCommerceDeps } from './bootstrap/create-worker-marketplace-commerce-deps.js';
-import { createWorkerObservabilityHttpServer } from './observability/create-worker-observability-http-server.js';
+import { startWorkerObservabilityHttp } from './observability/start-worker-observability-http.js';
 async function main() {
     const config = loadConfigFromEnvironment();
     const infra = await createInfrastructure(config, { processKind: 'worker' });
@@ -92,31 +92,14 @@ async function main() {
         queue: infra.queue,
         workerRuntime: infra.workerRuntime,
     }));
-    let workerObservabilityHttp;
-    if (config.workerObservability.httpEnabled) {
-        workerObservabilityHttp = await createWorkerObservabilityHttpServer({
-            readiness,
-            metrics: infra.metrics,
-            metricsEnabled: config.observability.metricsEnabled,
-        });
-        await new Promise((resolve, reject) => {
-            workerObservabilityHttp.listen(
-                config.workerObservability.port,
-                config.workerObservability.host,
-                (error) => {
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
-                    resolve();
-                },
-            );
-        });
-        infra.logger.info({
-            host: config.workerObservability.host,
-            port: config.workerObservability.port,
-        }, 'Worker observability HTTP started');
-    }
+    const workerObservabilityHttp = await startWorkerObservabilityHttp({
+        workerObservability: config.workerObservability,
+        serverPort: config.server.port,
+        readiness,
+        metrics: infra.metrics,
+        metricsEnabled: config.observability.metricsEnabled,
+        logger: infra.logger,
+    });
     infra.retentionCleanupScheduler.start();
     catalogSyncReconciliationScheduler.start();
     const poolMetricsTimer = setInterval(() => {

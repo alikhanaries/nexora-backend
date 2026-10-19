@@ -13,7 +13,7 @@ describe('worker observability configuration', () => {
         const config = loadConfig({ ...baseEnv, NODE_ENV: 'test' });
         expect(config.workerObservability.httpEnabled).toBe(true);
         expect(config.workerObservability.host).toBe('127.0.0.1');
-        expect(config.workerObservability.port).toBe(3001);
+        expect(config.workerObservability.port).toBe(3002);
         expect(config.workerObservability.otelServiceName).toBe('wasl-backend-worker');
     });
     it('accepts custom host, port, and disable flag', () => {

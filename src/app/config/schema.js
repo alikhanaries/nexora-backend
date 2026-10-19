@@ -74,7 +74,7 @@ export const configSchema = z.object({
     OTEL_SERVICE_NAME: envString(WASL_NAMING.defaultOtelServiceName),
     WORKER_OBSERVABILITY_HTTP_ENABLED: envBoolean(true),
     WORKER_OBSERVABILITY_HOST: envString('127.0.0.1'),
-    WORKER_OBSERVABILITY_PORT: envInteger({ default: 3001, min: 1, max: 65_535 }),
+    WORKER_OBSERVABILITY_PORT: envInteger({ default: 3002, min: 1, max: 65_535 }),
     WORKER_OTEL_SERVICE_NAME: envOptionalString(),
     HTTP_CLIENT_TIMEOUT_MS: envInteger({ default: 10_000, min: 100, max: 300_000 }),
     WEBHOOK_DELIVERY_TIMEOUT_MS: envInteger({ default: 10_000, min: 100, max: 300_000 }),

@@ -1,0 +1,697 @@
+
+--- PAGE 1 ---
+N E XO R A  B AC K E N D  ·  P L A N N I N G
+StockConnect ChannelEngine Replacement —
+Implementation Roadmap
+Complete technical audit, preservation requirements, API compatibility matrix, M1–M8
+milestones, estimates, risks, and cutover plan. Investigation-only baseline; extends Nexora
+without removing existing functionality.
+Document: stockconnect-channelengine-replacement-roadmap.md
+Repository: nexora-backend
+Audit date: 2026-09-28
+Classification: Internal engineering / product planning
+Nexora — StockConnect CE Replacement Roadmap Page 1 of 20
+
+--- PAGE 2 ---
+StockConnect ChannelEngine Replacement — Nexora
+Implementation Roadmap
+Document type: Architecture & planning (audit-only; no implementation performed)
+Audience: Engineering, product, operations, StockConnect integration team
+Repository: nexora-backend
+Audit date: 2026-09-28
+Scope: Replace only ChannelEngine capabilities StockConnect uses today — not a full ChannelEngine clone.
+Primary references
+Source Role
+StockConnect ChannelEngine Replacement Master Plan (2026-09-24) CE domains, 13 queued ops, Wave-1 marketplaces
+StockConnect Replace ChannelEngine Roadmap Presentation (slides 1–21) M0–M8 milestones, KPIs, cutover
+StockConnect Marketplace Integrations Guide SC ↔ CE data flows, preserve Mongo contracts
+docs/architecture/compatibility-matrix.md CE Merchant /api/v2  scope vs Nexora
+docs/marketplaces/capability-matrix.md Catalog adapter truth
+docs/marketplaces/order-lifecycle-matrix.md Inbound/outbound lifecycle truth
+docs/marketplaces/onboarding.md Adapter registration surfaces
+1. Executive Summary
+Nexora is a multi-tenant modular monolith with a mature commerce core (products, offers, inventory, pricing,
+orders, shipments, cancellations, returns), four marketplace adapters (Amazon, Noon, Namshi, Shopify), event-driven
+catalog sync, marketplace webhook ingress, inbound/outbound order lifecycle, and a ChannelEngine
+Merchant-compatible /api/v2  surface for orders, shipments, cancellations, and returns.
+Conclusion: Nexora can extend to replace StockConnect’s ChannelEngine hub without removing or rewriting
+existing functionality, but cannot today serve as a drop-in CHANNEL_ENGINE_BASE_URL  swap. The largest gaps are CE
+Merchant catalog/offer APIs, Wave-1 marketplace order creation (Amazon/Noon/Namshi), invoices, GET
+/channels, CE-style queue administration, Namshi outbound fulfillment, product freeze/bulk-delete/extra-
+data, outbound returns, and Trendyol.
+Preservation rule: All work in this roadmap is additive and backward-compatible. Existing /api/v1 , marketplace
+adapters, workers, and /api/v2  endpoints must remain functional; each milestone includes regression gates ( npm run
+verify , integration suite, affected compatibility tests).
+Estimated calendar (after audit):
+Nexora — StockConnect CE Replacement Roadmap Page 2 of 20
+
+--- PAGE 3 ---
+Team Realistic
+duration Person-months (indicative)
+1 senior backend + 0.5 QA 14–18 months ~18–22 PM
+2 backend + 0.5 QA + 0.25
+DevOps
+8–11 months ~22–28 PM (parallelism limited by SC integration and marketplace
+sandboxes)
+Aligns with StockConnect’s own 10–13 month realistic plan when SC-side rewiring and shadow validation are
+included.
+2. Existing Nexora Capability Inventory
+Evidence from code and authoritative matrices, not stale READMEs alone.
+2.1 Platform & SaaS foundation
+Capability Status Evidence
+JWT + API key auth Implemented src/modules/identity/ , src/app/http/plugins/auth.js
+RBAC / permissions Implemented src/modules/authorization/
+Multi-tenant Postgres RLS Implemented migration 0030 , integration postgres-rls.test.js
+Tenants lifecycle Implemented src/modules/tenants/
+MFA / step-up Implemented src/modules/mfa/
+Idempotency ledger Implemented src/shared/idempotency/ , compat + webhook routes
+Outbox / inbox Implemented src/infrastructure/postgres/outbox , worker consumers
+Rate limiting Implemented src/infrastructure/redis/redis-rate-limiter.js
+Audit Implemented src/modules/audit/
+Health / readiness / metrics Implemented health.routes.js , GET /internal/metrics
+Migrations (47 applied in integration setup) Implemented src/infrastructure/postgres/migrations/
+Partial / not HTTP-exposed: password-reset/register HTTP (use cases may exist without routes); tenant list API.
+2.2 Commerce domains ( /api/v1 )
+Domain Routes module Core services Integration tests
+Products products/presentation/product.routes.js Product CRUD, content,
+archive
+commerce-
+foundation.test.js
+Nexora — StockConnect CE Replacement Roadmap Page 3 of 20
+
+--- PAGE 4 ---
+Domain Routes module Core services Integration tests
+Offers offers/presentation/offer.routes.js activate/deactivate/suspend catalog-sync unit tests
+Pricing pricing/presentation/price.routes.js effective pricing sync-channel-price
+tests
+Inventory inventory/presentation/inventory.routes.js reservations, receipts,
+adjustments
+commerce-
+inventory.test.js
+Channels channels/presentation/channel.routes.js CRUD + marketplace-
+connection (5 routes)
+channel-default-
+stock-
+location.test.js
+Marketplaces marketplaces/presentation/marketplace.routes.js global marketplace registry connection/mapping
+tests
+Orders orders/presentation/order.routes.js create, confirm, list phase4-
+orders.test.js ,
+phase 7 ingest
+Shipments shipments/presentation/shipment.routes.js create, ship, deliver, cancel compatibility-
+shipments
+Cancellations cancellations/presentation/cancellation.routes.js create, list compatibility-
+cancellations
+Returns returns/presentation/return.routes.js full return workflow compatibility-returns
+Outbound
+webhooks
+(tenant)
+webhooks/presentation/webhook.routes.js subscriptions, delivery webhooks-admin-
+api.test.js
+2.3 Marketplace pipeline (no dedicated public REST for poll/outbound)
+Pipeline Entry Worker Tests
+Catalog
+sync
+Integration events → channel-catalog-sync  queue src/workers/main.js  +
+wire-channel-catalog-
+sync.js
+*-catalog-sync-
+mappings.test.js , unit
+catalog-sync
+Order
+ingest
+wireMarketplaceOrderIngestion  in create-
+application.js
+Not wired in worker
+main.js
+marketplace-order-
+ingestion.test.js ,
+shopify-order-
+ingestion.test.js
+Webhook
+ingress
+POST /api/v1/inbound/marketplace-
+webhooks/:ingressToken
+n/a (HTTP) marketplace-webhook-
+ingestion.test.js
+Inbound
+lifecycle
+ProcessMarketplaceLifecyclePayload via webhook processor marketplace-order-
+lifecycle.test.js ,
+namshi-order-
+lifecycle.test.js
+Nexora — StockConnect CE Replacement Roadmap Page 4 of 20
+
+--- PAGE 5 ---
+Pipeline Entry Worker Tests
+Outbound
+lifecycle
+ExecuteOutboundMarketplaceOrderLifecycleCommand No HTTP route; bootstrap
+only
+unit outbound adapter
+tests
+Queues (closed set): integration-events , webhook-deliveries , channel-catalog-sync  —
+src/infrastructure/queue/queue-names.js .
+2.4 Compatibility layer ( /api/v2 )
+Implemented routes ( compatibility.routes.js ):
+GET /api/v2/foundation/ping
+GET /api/v2/orders , GET /api/v2/orders/new
+POST /api/v2/orders , POST /api/v2/orders/channel-fulfilled , POST /api/v2/orders/acknowledge
+GET/POST /api/v2/shipments/merchant , POST /api/v2/shipments , PUT /api/v2/shipments/:merchantShipmentNo
+GET/POST /api/v2/cancellations/merchant , POST /api/v2/cancellations
+GET/POST/PUT /api/v2/returns/*  (merchant list, create, acknowledge, receive)
+Not implemented on /api/v2 : Merchant catalog ( POST /products , freeze, bulk delete, extra-data), offer stock/price,
+GET /channels, invoices, CE queue admin.
+2.5 Per-marketplace actual capabilities (summary)
+See docs/marketplaces/capability-matrix.md  and order-lifecycle-matrix.md .
+Provider Catalog Order create (MP→Nexora) Inbound lifecycle Outbound
+Shopify Full product sync Poll + webhook
+( supportsOrdersInbound: true )
+status, cancel cancel, refund, fulfill
+Amazon Partial product;
+offer/inv/price
+No ( supportsOrdersInbound: false ) SNS
+ORDER_CHANGE
+fulfill (MFN) only
+Noon No product create;
+offer/inv/price
+No FBPI ORDER_SYNC fulfill (FBPI
+shipment/create)
+Namshi Same as Noon No FBPI ORDER_SYNC None (outbound
+registry)
+3. Existing Feature Preservation Matrix
+Policy: Every row is PRESERVE — future work must not remove or break.
+Module / feature Preservation Regression anchor
+All /api/v1  commerce routes PRESERVE commerce-foundation , phase4/7 tests
+Nexora — StockConnect CE Replacement Roadmap Page 5 of 20
+
+--- PAGE 6 ---
+Module / feature Preservation Regression anchor
+/api/v2  compatibility PRESERVE + extend only compatibility-*.test.js
+Amazon catalog/order/lifecycle/outbound PRESERVE amazon catalog + outbound unit tests
+Noon catalog/order/lifecycle/outbound PRESERVE noon catalog + outbound unit tests
+Namshi catalog/order/lifecycle PRESERVE namshi-order-lifecycle tests
+Shopify catalog/order/lifecycle/outbound/webhook PRESERVE shopify-* tests
+channel-catalog-sync worker pipeline PRESERVE catalog-sync unit + integration
+marketplace webhook ingress PRESERVE marketplace-webhook-ingestion
+Tenant RLS + isolation PRESERVE tenant-isolation, postgres-rls
+external_integer_id_mappings (compat_v2) PRESERVE external-id-mapping integration
+Outbound tenant webhooks PRESERVE webhook-delivery-worker
+Identity / MFA / API keys PRESERVE auth-flow, api-keys, mfa
+Marketplace connections + entity mappings PRESERVE marketplace-connection-entity-mapping
+Extension-only areas (no replacement):
+Add CE Merchant catalog/offer routes alongside native /api/v1  and existing sync jobs.
+Add order-create paths on existing adapters without removing lifecycle-only paths.
+Add ops/queue admin new module or routes — do not repurpose existing queues destructively.
+4. Complete StockConnect ChannelEngine Usage Inventory
+From StockConnect PDFs (2026-09-24). 13 queued operation families via channelEnginePush  → BullMQ →
+channelEngineWorker .
+# CE operation (SC) CE Merchant API (typical) SC module touchpoint
+1 PRODUCTS_PUSH POST .../products productService.pushBatch
+2 PRODUCTS_FREEZE freeze endpoints productService
+3 PRODUCTS_BULK_DELETE bulk delete ceService , productService
+4 PRODUCTS_EXTRA_DATA PATCH products/extra-data/bulk ceService , priceService  (noon/namshi prices)
+5 OFFER_STOCK PUT .../offer/stock InventoryService.sendStockBatch
+Nexora — StockConnect CE Replacement Roadmap Page 6 of 20
+
+--- PAGE 7 ---
+# CE operation (SC) CE Merchant API (typical) SC module touchpoint
+6 OFFER_PRICE PUT .../offer priceService.sendPriceBatch
+7 Order download GET .../orders orderService  / poll fallback
+8 ORDER_ACKNOWLEDGE POST acknowledge orderService  (409 = success)
+9 ORDER_CANCELLATION POST cancellations orderService , UniCommerce side effects
+10 SHIPMENT_CREATE POST shipments shipmentService
+11 SHIPMENT_DELIVERY_STATE PUT delivery state shipmentService
+12 RETURN_MERCHANT_* POST/PUT returns return flows
+13 RETURN_ACCEPT_REJECT accept/reject lines return flows
+Additional CE usage
+Capability CE API SC usage
+Channel registry GET /channels channelService.getAllChannelsFromChannelPartner  → Mongo channels
+Invoices GET invoice invoiceService  (medium criticality)
+Inbound webhooks CE → SC channelengine-webhook  → processOrders
+Queue ops n/a /api/channel-engine-queue/*  stats, failed jobs, retry
+Wave-1 marketplaces (SC program): Noon V2, Namshi, Amazon SA (TBC). Also live via CE today: Trendyol.int SA
+( ALLOWEDMARKETPLACES ). OCP: direct API — out of CE replacement scope.
+5. ChannelEngine-to-Nexora API Compatibility Matrix
+Statuses: FC = FULLY COMPATIBLE · CWM = COMPATIBLE WITH MAPPING · PART = PARTIALLY IMPLEMENTED · IMPR
+= IMPLEMENTED BUT REQUIRES IMPROVEMENT · NI = NOT IMPLEMENTED · NR = NOT REQUIRED FOR
+STOCKCONNECT · BC = REQUIRES BUSINESS CONFIRMATION
+SC workflow CE endpoint /
+op Nexora endpoint / mechanism Status Priority Notes
+Catalog push POST
+/products
+/api/v1/products  + channel-catalog-
+sync  → adapter
+CWM P0 SC client expects CE
+Merchant shape; map or
+add compat routes
+Product freeze CE freeze offer deactivate / MP-specific delist PART P1 Semantics differ by MP;
+no CE freeze API
+Nexora — StockConnect CE Replacement Roadmap Page 7 of 20
+
+--- PAGE 8 ---
+SC workflow CE endpoint /
+op Nexora endpoint / mechanism Status Priority Notes
+Bulk delete CE bulkdelete no bulk CE-compat NI P1 May map to batch
+deactivate + adapter
+Extra-data
+(noon/namshi
+price attrs)
+PATCH extra-
+data/bulk
+pricing on /api/v1/prices  only NI P1 SC stores attrs on Product
+in Mongo
+Offer stock PUT
+offer/stock
+catalog sync syncInventory CWM P0 Async job not
+synchronous CE PUT
+Offer price PUT /offer catalog sync syncPrice CWM P0 Same
+Order list / new GET /orders,
+/orders/new
+GET /api/v2/orders , /orders/new FC P0 Filter gaps documented
+in compat matrix
+Order ack POST
+acknowledge
+POST /api/v2/orders/acknowledge FC P0 Idempotency-Key
+required
+Channel order
+create
+(Channel API) POST /api/v2/orders FC P0 For SC-normalized ingest
+Order cancel POST
+cancellations
+POST /api/v2/cancellations  + MP
+outbound (Shopify)
+CWM P0 MP-specific outbound
+varies
+Shipment create POST
+shipments
+POST /api/v2/shipments  + outbound fulfill CWM P0 Namshi outbound gap
+Shipment
+tracking /
+delivery
+PUT
+shipments
+PUT
+/api/v2/shipments/:merchantShipmentNo
++ native ship/deliver
+PART P1 Validate CE delivery-state
+parity
+Returns
+pull/create/ack
+GET/POST
+returns
+/api/v2/returns/* CWM P0 Outbound return to MP
+NI all MPs
+Refunds (not in SC
+PDF domains)
+Shopify outbound refund only BC P2 Confirm if SC needs CE
+refund path
+GET channels GET /channels /api/v1/channels  (different contract) NI P0 Add Merchant GET
+/channels compat
+Invoices GET invoice none NI P1 BC: Nexora vs external
+provider
+CE webhooks →
+SC
+inbound Nexora can emit tenant webhooks; SC expects
+CE shape
+PART P0 Normalization layer in SC
+or Nexora
+Queue admin /api/channel-
+engine-queue
+BullMQ internal only NI P1 New ops API mirroring SC
+ops needs
+MP order create
+(Amazon)
+via CE lifecycle only today NI P0 Extend adapter + ingest
+Nexora — StockConnect CE Replacement Roadmap Page 8 of 20
+
+--- PAGE 9 ---
+SC workflow CE endpoint /
+op Nexora endpoint / mechanism Status Priority Notes
+MP order create
+(Noon/Namshi)
+via CE FBPI webhook → lifecycle only NI P0 Extend to
+CreateChannelOrder
+on first sync
+Trendyol via CE no adapter NI P2 BC Wave scope
+6. Verified Gap Analysis (StockConnect need × codebase)
+Gap Needed by
+SC? Nexora today Work type
+CE Merchant catalog/offer
+HTTP
+Yes Native v1 + async sync only New compat routes or SC
+rewrite to v1+webhooks
+Synchronous stock/price batch
+response
+Yes (queued
+today)
+Async catalog jobs Compat façade enqueue + job
+status or sync mode
+Amazon/Noon/Namshi first
+order ingest
+Yes Lifecycle without create Adapter + ingest extension
+(backward compatible)
+Namshi outbound fulfill Yes (Wave-1) Client/docs only Thin outbound adapter (Phase
+39 pattern)
+GET /channels Yes v1 channels differ Compat mapper
+Invoices Medium Missing New module or integration —
+BC
+Freeze / bulk delete / extra-
+data
+Yes Partial via deactivate/sync Explicit CE ops mapping
+Outbound returns Yes Deferred all MPs Per-MP outbound return when
+APIs verified
+CE queue admin parity Yes (ops) 3 internal queues Ops module — read/retry/DLQ
+Order poll worker Yes (fallback) FetchAndIngestMarketplaceOrders  unused
+in worker
+Worker job + optional HTTP
+Trendyol Live in SC
+filter
+No adapter New adapter or NR if business
+drops
+Shadow/compare tooling Cutover Not in repo SC + Nexora joint — not
+Nexora-only
+Nexora — StockConnect CE Replacement Roadmap Page 9 of 20
+
+--- PAGE 10 ---
+7. Dependency and System Ownership Map
+┌─────────────────────────────────────────────────────────────────┐
+│                        StockConnect (owner)                      │
+│  MongoDB SoT: Product, Price, Inventory, channelengineorders,    │
+│  SellerOrder, Shipment, Returns, Channel, UserChannelProducts    │
+│  ERP: Sentos, Shopify Admin (Catch/Exquise/Xokids), UniCommerce…   │
+│  Carriers: Omniful, AyMakan (marketplace-facing via hub today)   │
+│  OCP: direct API (NOT via CE)                                    │
+│  CE client: channelEnginePush, webhooks, channel registry sync   │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ CE Merchant API (today)
+                            │ Target: Nexora /api/v2 + compat catalog
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Nexora (extension target)                    │
+│  Postgres SoT: tenants, commerce, mappings, idempotency           │
+│  Workers: catalog sync, webhook delivery, integration events     │
+│  Adapters: Amazon, Noon, Namshi, Shopify → marketplace APIs      │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ Partner / SP-API / GraphQL / FBPI
+                            ▼
+              Noon, Namshi, Amazon, Shopify, (Trendyol TBD)
+Source of truth (target state — requires business sign-off)
+Entity SC today Nexora today Cutover recommendation
+Product master (ERP
+brands)
+Mongo Postgres (per tenant) Dual-write or SC-led until shadow parity
+Channel listing state CE + Mongo syncedAt Postgres offers +
+mappings
+Nexora after parity
+Orders (marketplace) Mongo
+channelengineorders
+Postgres orders SC continues Mongo with Nexora as hub or
+migrate — BC
+Stock/price on MP CE-mediated Nexora sync jobs Nexora after soak
+Shipments (carriers) SC SC + Nexora
+/api/v2
+SC carriers unchanged
+Channel registry CE GET /channels → Mongo Postgres channels Compat sync to Mongo during transition
+8. Prioritized P0 / P1 / P2 Task Breakdown
+P0 — Required for agreed Wave-1 CE replacement
+ID Task Est. (1 dev h) Est. (2 dev h)
+P0-01 Architecture & CE contract workshop; OpenAPI diff Merchant vs Nexora 40 24
+Nexora — StockConnect CE Replacement Roadmap Page 10 of 20
+
+--- PAGE 11 ---
+ID Task Est. (1 dev h) Est. (2 dev h)
+P0-02 CE-compat catalog push façade (POST /products) → existing catalog sync 120 80
+P0-03 CE-compat offer stock/price (PUT offer/stock, PUT /offer) 80 56
+P0-04 GET /api/v2/channels (Merchant) mapped from channels + marketplaces 48 32
+P0-05 Amazon order create from SP-API / ORDER_CHANGE → ingest 80 56
+P0-06 Noon FBPI order create on ORDER_SYNC (GetOrder → ingest if missing) 64 48
+P0-07 Namshi FBPI order create (same pattern) 48 40
+P0-08 Namshi outbound fulfill adapter (FBPI shipment/create) 56 40
+P0-09 SC integration layer: base URL swap + payload normalization spike 80 56
+P0-10 Shadow comparison harness (orders, stock, price) — joint SC 64 48
+P0-11 Idempotency parity for all new compat mutations 32 24
+P0-12 Regression suite gate for every PR (verify + integration serial) 24 16
+P0 subtotal (indicative): ~736 h (1 dev) · ~520 h (2 dev parallel)
+P1 — Operational completeness & rollout
+ID Task Est. (1 dev h) Est. (2 dev h)
+P1-01 Product freeze/unfreeze CE mapping 48 32
+P1-02 Bulk delete + extra-data bulk 64 48
+P1-03 Invoice retrieval (module or provider bridge) 80 56
+P1-04 Ops queue admin API (failed jobs, retry, stats) 72 48
+P1-05 Order poll worker + Shopify/Amazon scheduled fetch 56 40
+P1-06 Shipment delivery-state CE parity audit + fixes 40 32
+P1-07 Outbound return_order (Shopify first, then Noon/Amazon if APIs verified) 96 72
+P1-08 Amazon outbound cancel (if SC requires beyond CE today) 40 32
+P1-09 Documentation + runbooks for support without CE 32 24
+P1-10 Load/rate-limit soak tests vs CE baseline +10% 48 32
+P1 subtotal: ~576 h · ~416 h
+Nexora — StockConnect CE Replacement Roadmap Page 11 of 20
+
+--- PAGE 12 ---
+P2 — Additional marketplaces & enhancements
+ID Task Est. (1 dev h) Est. (2 dev h)
+P2-01 Trendyol adapter (catalog + orders TBC) 160 120
+P2-02 Wave-2 channels (6thStreet, Styli, …) BC BC
+P2-03 HTTP trigger for outbound lifecycle (internal ops) 24 16
+P2-04 Enhanced Merchant filter parity on GET /orders 40 32
+P2-05 Connector self-service / onboarding UI NR (SC/Nexora product) —
+9. M1–M8 Implementation Roadmap
+M1 — Architecture, Contract and Requirements Validation
+Field Content
+Objective Lock SC↔Nexora contracts, preserve matrix sign-off, Wave-1 channel list from prod CE
+Reuse Entire existing Nexora platform; compatibility matrix as baseline
+Extend Gap matrix (this doc), OpenAPI diff, RACI, feature flags design
+New SC integration spike repo branch; shadow KPI definitions
+API/DB changes None
+Dependencies Legal (direct MP APIs), prod CE channel export
+Roles Tech lead, SC lead, PM
+Estimates Dev 120h · Integration 80h · QA 40h · Review 16h
+Risks Hidden CE behavior → mitigation: shadow diffs per op
+Acceptance Signed scope doc; P0 list frozen; preservation matrix approved
+DoD No code required; optional spike behind flag only
+Regression Baseline: record current verify  + integration 308 pass
+M2 — Catalog, Product and Offer API Parity
+Field Content
+Objective SC PRODUCTS_* , OFFER_*  callable against Nexora without CE
+Nexora — StockConnect CE Replacement Roadmap Page 12 of 20
+
+--- PAGE 13 ---
+Field Content
+Reuse channel-catalog-sync , all 4 catalog adapters, entity mappings, /api/v1  CRUD
+Extend Compatibility routes: POST /products, PUT offer/stock, PUT /offer (Merchant shapes)
+New Job status correlation IDs for async batches; optional sync mode for small batches
+API/DB Optional compat_job  table or reuse idempotency metadata — additive migration only
+Dependencies M1 contracts
+Estimates Dev 320h · Integration 120h · QA 160h · Review 40h
+Acceptance ≥99% SKU parity vs CE in staging (SC KPI); no regression on catalog-sync integration tests
+DoD Contract tests for each CE op; Amazon/Noon/Namshi/Shopify sync paths unchanged when compat not used
+M3 — Marketplace Order Ingestion and Lifecycle
+Field Content
+Objective Wave-1 MP orders land in Nexora/SC contract; ack/cancel/lifecycle idempotent
+Reuse Webhook ingress, lifecycle service, /api/v2  orders, Shopify ingest
+Extend Amazon/Noon/Namshi create on first event; poll worker for Shopify (+ Amazon if needed)
+New Scheduled FetchAndIngestMarketplaceOrders  worker registration
+Dependencies M2 optional (SKU must exist for lines)
+Estimates Dev 280h · Integration 160h · QA 120h
+Acceptance Shadow order match; duplicate webhook → idempotent; tenant isolation tests pass
+Regression namshi-order-lifecycle , marketplace-order-lifecycle , shopify-order-ingestion
+M4 — Shipment, Fulfillment and Cancellation Compatibility
+Field Content
+Objective SHIPMENT_* and ORDER_CANCELLATION parity; Namshi fulfill
+Reuse /api/v2/shipments , outbound adapters (Amazon, Noon, Shopify), cancellation commands
+Extend Namshi outbound adapter; delivery-state mapping audit
+New None if Namshi is only net-new adapter work
+Estimates Dev 200h · Integration 80h · QA 100h
+Nexora — StockConnect CE Replacement Roadmap Page 13 of 20
+
+--- PAGE 14 ---
+Field Content
+Acceptance Sandbox order→ship→track on each Wave-1 MP
+Regression compatibility-shipments, outbound unit tests
+M5 — Invoices, Channels, Returns and Refunds
+Field Content
+Objective GET /channels, returns merchant ops, invoice medium priority
+Reuse /api/v2/returns/* , return command service
+Extend GET /channels compat; outbound returns where verified
+New Invoice module or external provider adapter (BC)
+Estimates Dev 240h · Integration 80h · QA 80h
+Acceptance SC channel registry sync works; return samples signed by ops/finance
+Regression compatibility-returns*
+M6 — Queue Administration and Operational Parity
+Field Content
+Objective Support diagnoses jobs without CE admin
+Reuse BullMQ, existing metrics, worker observability HTTP
+New /api/v1/ops/queues  or SC-compatible /api/channel-engine-queue  subset
+Estimates Dev 120h · Integration 40h · QA 60h
+Acceptance Failed job retry; 429 backoff visible; MTTR drills
+M7 — StockConnect Integration, Regression and E2E Testing
+Field Content
+Objective SC feature flags per seller; full E2E on staging
+Reuse All prior milestones
+New SC integrations/marketplace/hub  client; dual-run shadow
+Estimates Dev 160h (split SC/Nexora) · QA 200h
+Acceptance Full regression green; SC E2E scripts pass
+Nexora — StockConnect CE Replacement Roadmap Page 14 of 20
+
+--- PAGE 15 ---
+M8 — Migration, Staging Validation and Production Cutover
+Field Content
+Objective 8a shadow → 8b pilot → 8c rollout → 8d CE decommission
+Reuse Rollback to CE env vars documented
+Estimates Dev 80h · QA 120h · Ops 80h
+Acceptance 30 days zero Hub P1; CE read-only fallback tested
+10. Development and QA Estimates (summary)
+Milestone Backend (h) Integration (h) QA (h) 1-dev calendar (~35h/w) 2-dev calendar
+M1 120 80 40 2 w 1.5 w
+M2 320 120 160 8 w 5 w
+M3 280 160 120 7 w 4 w
+M4 200 80 100 5 w 3 w
+M5 240 80 80 5 w 3.5 w
+M6 120 40 60 3 w 2 w
+M7 160 160 200 6 w 4 w
+M8 80 80 120 4 w 3 w
+Total ~1520 ~800 ~880 ~40 w ≈ 10 mo ~26 w ≈ 6.5 mo
+Add 15–20% contingency for marketplace API churn and CE shadow diffs.
+11. Risk Register
+ID Risk Impact Likelihood Mitigation
+R1 Undocumented CE behavior High Med Shadow per op; parity tests
+R2 SC Mongo vs Nexora Postgres dual SoT High Med Explicit entity ownership; reconciliation jobs
+R3 Amazon/Noon/Namshi order create semantics High Med Adapter spikes; idempotent external refs
+Nexora — StockConnect CE Replacement Roadmap Page 15 of 20
+
+--- PAGE 16 ---
+ID Risk Impact Likelihood Mitigation
+R4 Async catalog vs sync CE client Med High Compat layer returns job IDs; SC queue
+semantics
+R5 Namshi outbound API edge cases Med Med Sandbox AWB tests; feature flag
+R6 Scope creep (full CE clone) High Med Change control against Master Plan
+R7 Integration test flakiness (parallel) Med Med CI --maxWorkers=1 ; document 5432/5433
+R8 Legal/direct MP API agreements High Low M0 gate
+R9 Trendyol in ALLOWEDMARKETPLACES but no
+adapter
+Med High Business: Wave-1 vs P2
+R10 Rollback failure High Low Keep CE until M8 criteria; rehearse env swap
+12. Testing and Regression Strategy
+Every milestone must:
+1. npm run verify  (lint, arch:check, 525+ unit tests)
+2. npm run build
+3. npm run test:integration -- --maxWorkers=1  with Postgres/Redis/MinIO
+4. Targeted marketplace + compatibility suites for touched adapters
+Additional test types by gap area
+Area Test type
+New /api/v2  catalog/offer Contract tests vs Merchant OpenAPI fixtures
+Order create Webhook replay, duplicate SNS/FBPI, tenant isolation
+Outbound fulfill Unit adapter + integration with mocked HTTP
+Idempotency Duplicate Idempotency-Key and lifecycle externalEventId
+Queue ops Enqueue failure, retry, DLQ visibility
+SC E2E Staging: ERP trigger → SC → Nexora → MP sandbox
+Measurable acceptance (align SC KPIs)
+Catalog publish success ≥ 99.5% (pilot SKUs)
+Stock/price p95 ≤ CE baseline +10%
+Order sync p95 ≤ 15 min (TBC with ops)
+Nexora — StockConnect CE Replacement Roadmap Page 16 of 20
+
+--- PAGE 17 ---
+Failed job MTTR ≤ 30 min
+13. Data Consistency and Integration Plan
+No destructive migrations on SC Mongo or Nexora Postgres.
+Additive Nexora migrations only (e.g. compat job metadata, invoice tables if approved).
+Idempotency: preserve existing routes; extend fingerprints for new compat ops.
+External IDs: continue external_integer_id_mappings  ( compat_v2 ) for CE integer IDs.
+Marketplace mappings: marketplace_entity_mappings  remain authoritative for SKU/partner_sku/GIDs.
+Reconciliation: scheduled jobs compare SC syncedAt , Nexora offer status, and MP sandbox reads during shadow.
+Webhooks: preserve ingress token model; SC may still receive normalized orders via /api/v2  polling until
+webhook contract unified.
+Pagination: compat layer keeps Page/ItemsPerPage mapping; do not break cursor /api/v1 .
+14. Staging and Production Migration Plan
+1. Inventory — CE channels, credentials, SC seller flags (M1).
+2. Staging — Nexora + SC pointing at sandbox MPs; run M2–M6 features.
+3. Shadow (8a) — CE authority; Nexora compares stock/price/orders/shipments/returns.
+4. Pilot (8b) — 1–2 sellers; feature flag hubProvider=nexora .
+5. Rollout (8c) — phased sellers; monitor KPI dashboard.
+6. CE decommission (8d) — read-only CE fallback 30 days; cancel subscription after KPI sign-off.
+Environment: NEXORA_BASE_URL , credentials in vault mirroring CE key pattern; per-channel feature flags in SC Mongo.
+15. Rollback and Operational Readiness Checklist
+ CE CHANNEL_ENGINE_BASE_URL  + API key validated rollback (< 1h)
+ Drain Nexora-queued jobs before cutover window
+ Runbook: wrong order duplicate → idempotency key recovery
+ Runbook: stock mismatch → disable compat offer routes, re-enable CE OFFER_*
+ Support trained on Nexora ops queue API (M6)
+ P1 incident path documented
+ Post-cutover: 30-day war room for Hub-related tickets
+Nexora — StockConnect CE Replacement Roadmap Page 17 of 20
+
+--- PAGE 18 ---
+16. Odoo Ticket Breakdown (implementation backlog)
+Epics map to milestones. Sizes: S ≤16h · M ≤40h · L ≤80h · XL >80h.
+Ticket Epic Title Size Priority
+ODOO-1001 M1 CE Merchant OpenAPI diff workshop & scope lock M P0
+ODOO-1002 M1 Preservation matrix sign-off in Confluence/Odoo S P0
+ODOO-2001 M2 POST /api/v2/products compat → catalog sync L P0
+ODOO-2002 M2 PUT /api/v2/offer/stock compat M P0
+ODOO-2003 M2 PUT /api/v2/offer compat (price) M P0
+ODOO-2004 M2 Async batch job status for SC queue semantics M P0
+ODOO-2005 M2 Contract tests Merchant catalog/offer M P0
+ODOO-3001 M3 Amazon order ingest on ORDER_CHANGE / SP-API getOrder L P0
+ODOO-3002 M3 Noon FBPI ingest create-if-missing M P0
+ODOO-3003 M3 Namshi FBPI ingest create-if-missing M P0
+ODOO-3004 M3 Register order poll worker in worker main M P1
+ODOO-3005 M3 Integration: duplicate webhook + tenant isolation M P0
+ODOO-4001 M4 Namshi outbound fulfill adapter + registry M P0
+ODOO-4002 M4 Shipment delivery-state CE parity audit M P1
+ODOO-5001 M5 GET /api/v2/channels Merchant compat M P0
+ODOO-5002 M5 Invoice design spike (BC) M P1
+ODOO-5003 M5 Outbound return_order Shopify (if confirmed) L P1
+ODOO-6001 M6 Ops queue list/stats/retry API L P1
+ODOO-6002 M6 Support runbook & dashboard hooks S P1
+ODOO-7001 M7 SC hub client feature flags L P0
+ODOO-7002 M7 Shadow comparison automation L P0
+ODOO-8001 M8 Pilot seller cutover playbook M P0
+ODOO-8002 M8 CE rollback drill S P0
+ODOO-9001 P2 Trendyol adapter discovery XL P2
+Nexora — StockConnect CE Replacement Roadmap Page 18 of 20
+
+--- PAGE 19 ---
+Ticket Epic Title Size Priority
+ODOO-9002 P2 PRODUCT freeze/bulk/extra-data CE ops L P1
+17. Open Questions and Business Decisions Required
+ID Question Owner Blocks
+BQ-01 Confirm Wave-1 production channel list (Amazon SA IDs) Product/Ops M1, M3
+BQ-02 After cutover, is Mongo or Postgres SoT for marketplace orders? SC architect Data plan
+BQ-03 Invoices: build in Nexora vs integrate existing provider? Finance/Ops M5
+BQ-04 Trendyol: Wave-1 or remain on CE temporarily? Product P2 scope
+BQ-05 UniCommerce cancel notification payload when CE removed SC backend M3 cancel
+BQ-06 Numeric SLAs (order sync minutes, publish %) final sign-off Ops M8
+BQ-07 CE contract end date vs roadmap buffer Management M8
+BQ-08 Direct marketplace API legal agreements status Legal M1
+BQ-09 Refunds: required for SC CE replacement (not in PDF domains)? Product M5
+BQ-10 SC rewrite depth: full CE Merchant client vs partial /api/v1  adoption SC + Nexora leads M2 effort
+Final Validation Checklist (Section 13 requirements)
+Check Status
+Every Nexora module audited Yes — §2, agent inventory 21 modules
+Preservation matrix complete Yes — §3
+Regression strategy covers existing features Yes — §12
+StockConnect CE ops inventoried Yes — §4
+Gaps validated against repo Yes — §5–6
+Capabilities assigned to M1–M8 or NR/BC Yes — §8–9
+SC-owned systems separated Yes — §7
+Estimates & acceptance documented Yes — §9–10
+Nexora — StockConnect CE Replacement Roadmap Page 19 of 20
+
+--- PAGE 20 ---
+Check Status
+No source code modified for this deliverable Confirmed
+Appendix A — Module route index (quick reference)
+/api/v1 : foundation, auth, tenants, permissions, roles, audit, api-keys, mfa, marketplaces, channels (+ marketplace-
+connection), products, prices, offers, inventory, orders, shipments, cancellations, returns, webhooks, inbound
+marketplace webhooks.
+/api/v2 : foundation ping; orders; shipments; cancellations; returns (see compatibility.routes.js ).
+Workers: catalog sync, integration events, webhook deliveries ( src/workers/main.js ).
+Appendix B — Related internal docs to keep updated during implementation
+docs/architecture/compatibility-matrix.md  — add catalog/offer/channels rows when built
+docs/marketplaces/capability-matrix.md  — per-MP truth
+docs/marketplaces/order-lifecycle-matrix.md  — Namshi outbound when added
+docs/api/README.md  — currently stale on /api/v2; update in M1/M2 doc task only
+End of planning package.
+Nexora — StockConnect CE Replacement Roadmap Page 20 of 20

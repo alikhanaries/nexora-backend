@@ -135,7 +135,7 @@ describe('retention cleanup integration', { timeout: 120_000 }, () => {
         expect(remainingIds).not.toContain(sharedOldId);
         expect(remainingIds).toContain(activeId);
     });
-    it('registers the scheduler and propagates cleanup failures', async () => {
+    it('records scheduler tick failures without rejecting the tick promise', async () => {
         const infra = await getTestInfrastructure();
         const failingOutbox = {
             purgePublishedBefore: async () => {
@@ -158,7 +158,8 @@ describe('retention cleanup integration', { timeout: 120_000 }, () => {
             batchSize: 100,
             intervalMs: 60_000,
         }, infra.logger, 300);
-        await expect(scheduler.tick()).rejects.toBeInstanceOf(RetentionCleanupError);
+        await expect(scheduler.tick()).resolves.toBeUndefined();
+        await expect(service.run()).rejects.toBeInstanceOf(RetentionCleanupError);
         const healthyScheduler = infra.retentionCleanupScheduler;
         expect(healthyScheduler).toBeDefined();
         expect(typeof healthyScheduler.start).toBe('function');

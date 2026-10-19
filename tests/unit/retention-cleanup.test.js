@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { computeRetentionCutoff, RetentionCleanupError, RetentionCleanupService, } from '../../src/infrastructure/postgres/retention-cleanup-service.js';
 import { RetentionCleanupScheduler } from '../../src/infrastructure/postgres/retention-cleanup-scheduler.js';
+import { WebhookDeliveryRetention } from '../../src/infrastructure/postgres/webhook-delivery-retention.js';
 describe('computeRetentionCutoff', () => {
     it('subtracts whole retention days from the reference time', () => {
         const now = new Date('2026-01-31T12:00:00.000Z');
@@ -108,5 +109,88 @@ describe('RetentionCleanupScheduler', () => {
         const result = await scheduler.tick();
         expect(result).toBeUndefined();
         expect(service.run).not.toHaveBeenCalled();
+    });
+    it('logs cleanup failures without rejecting tick()', async () => {
+        const service = {
+            run: vi.fn().mockRejectedValue(new RetentionCleanupError([{ resource: 'webhook_deliveries', reason: 'Database operation failed' }], {
+                outboxDeleted: 0,
+                inboxDeleted: 0,
+                idempotencyDeleted: 0,
+                webhookDeliveriesDeleted: 0,
+            })),
+        };
+        const lock = { withLock: vi.fn(async (_resource, _ttl, work) => work()) };
+        const logger = { info: vi.fn(), debug: vi.fn(), error: vi.fn() };
+        const scheduler = new RetentionCleanupScheduler(service, lock, {
+            outboxDays: 30,
+            inboxDays: 30,
+            idempotencyDays: 7,
+            webhookDeliveryDays: 30,
+            batchSize: 100,
+            intervalMs: 60_000,
+        }, logger, 300);
+        await expect(scheduler.tick()).resolves.toBeUndefined();
+        expect(logger.error).toHaveBeenCalled();
+        const healthy = { run: vi.fn().mockResolvedValue({ outboxDeleted: 0, inboxDeleted: 0, idempotencyDeleted: 0, webhookDeliveriesDeleted: 0 }) };
+        const recoveryScheduler = new RetentionCleanupScheduler(healthy, lock, {
+            outboxDays: 30,
+            inboxDays: 30,
+            idempotencyDays: 7,
+            webhookDeliveryDays: 30,
+            batchSize: 100,
+            intervalMs: 60_000,
+        }, logger, 300);
+        await expect(recoveryScheduler.tick()).resolves.toEqual(expect.objectContaining({ outboxDeleted: 0 }));
+    });
+    it('runScheduledTick swallows rejections from tick()', async () => {
+        const service = { run: vi.fn().mockRejectedValue(new Error('boom')) };
+        const lock = { withLock: vi.fn(async (_resource, _ttl, work) => work()) };
+        const logger = { info: vi.fn(), debug: vi.fn(), error: vi.fn() };
+        const scheduler = new RetentionCleanupScheduler(service, lock, {
+            outboxDays: 30,
+            inboxDays: 30,
+            idempotencyDays: 7,
+            webhookDeliveryDays: 30,
+            batchSize: 100,
+            intervalMs: 60_000,
+        }, logger, 300);
+        await expect(scheduler.runScheduledTick()).resolves.toBeUndefined();
+    });
+    it('does not overlap tick() executions while a run is in progress', async () => {
+        let resolveRun;
+        const runPromise = new Promise((resolve) => {
+            resolveRun = resolve;
+        });
+        const service = {
+            run: vi.fn(() => runPromise),
+        };
+        const lock = { withLock: vi.fn(async (_resource, _ttl, work) => work()) };
+        const logger = { info: vi.fn(), debug: vi.fn(), error: vi.fn() };
+        const scheduler = new RetentionCleanupScheduler(service, lock, {
+            outboxDays: 30,
+            inboxDays: 30,
+            idempotencyDays: 7,
+            webhookDeliveryDays: 30,
+            batchSize: 100,
+            intervalMs: 60_000,
+        }, logger, 300);
+        const first = scheduler.tick();
+        const second = await scheduler.tick();
+        expect(second).toBeUndefined();
+        expect(service.run).toHaveBeenCalledTimes(1);
+        resolveRun({ outboxDeleted: 0, inboxDeleted: 0, idempotencyDeleted: 0, webhookDeliveriesDeleted: 0 });
+        await first;
+    });
+});
+describe('WebhookDeliveryRetention', () => {
+    it('skips tenant-scoped deletes when no eligible rows exist', async () => {
+        const database = {
+            executeAsOwner: vi.fn(async (work) => work({ query: vi.fn().mockResolvedValue({ rows: [] }) })),
+            execute: vi.fn(),
+        };
+        const retention = new WebhookDeliveryRetention(database);
+        const deleted = await retention.purgeTerminalBefore(new Date('2020-01-01'), 100);
+        expect(deleted).toBe(0);
+        expect(database.execute).not.toHaveBeenCalled();
     });
 });

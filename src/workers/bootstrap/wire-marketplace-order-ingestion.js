@@ -38,7 +38,10 @@ export function wireMarketplaceOrderIngestion(deps) {
         }));
     const channelRepository = new PostgresCommerceIntegrationRepository();
     const commerceIntegrationQueryService = new CommerceIntegrationQueryService({
+        // Same as createChannelsModule: `database.withTenant` sets the RLS tenant
+        // from the validated job tenant, not from the webhook body.
         queryable: deps.database,
+        database: deps.database,
         getCommerceIntegrationById: (tenantId, channelId, queryable) => channelRepository.findById(queryable, tenantId, channelId),
         getCommerceIntegrationByExternalReference: (tenantId, externalReference, queryable) => channelRepository.findByExternalReference(queryable, tenantId, externalReference),
         listCommerceIntegrations: (tenantId, filters, queryable) => channelRepository.list(queryable, tenantId, filters),

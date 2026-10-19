@@ -1,0 +1,134 @@
+
+--- PAGE 1 ---
+REFERENCE GUIDE  ·  2026-09-24
+STOCK CONNECT BACKEND
+Marketplace
+Integrations
+How Noon, Namshi, Amazon, and Shopify relate to Stock Connect today — Channel Engine hub, ERP/
+Shopify sources, queues, and a Cursor prompt for direct adapters.
+Regenerate: node scripts/generate-stockconnect-marketplace-integrations-pdf.js
+
+--- PAGE 2 ---
+1. Executive summary
+Stock Connect does not call Noon, Namshi, or Amazon marketplace APIs directly for catalog, offers, orders, shipments, 
+or returns. Outbound marketplace selling goes through ChannelEngine (CE) as a single integration hub. Shopify in this 
+codebase is primarily an ERP/source-of-truth for some brands (products, stock, price into MongoDB); marketplace 
+listing still flows through CE unless you build new adapters.
+Use this document to brief engineers or Cursor when implementing direct Namshi, Noon, Amazon, or Shopify 
+(storefront) integrations while preserving existing MongoDB models and business flows.
+2. Architecture overview
+High-level data flow:
+•  Sources: ERP connectors (Sentos, Nebim, Gurmen, Entegra, etc.) and Shopify Admin API per seller under src/
+integrations/erp/.
+•  System of record in Stock Connect: MongoDB Product, Price, Inventory, channelengineorders, SellerOrder, 
+Shipment, Returns.
+•  Outbound to marketplaces: channelEnginePush !’ BullMQ !’ channelEngineWorker !’ CE Merchant API !’ Noon V2, 
+Namshi, Amazon SA, Trendyol, etc.
+•  Inbound orders: CE webhooks and/or GET /orders !’ orderService.processOrders !’ acknowledge via 
+ORDER_ACKNOWLEDGE queue op.
+ERP / Shopify  !’  MongoDB (Product, stock, price)  !’  CE queues  !’  Channel Engine  !’  Marketplaces
+3. Channel registry
+CE channel list is synced from GET {CHANNEL_ENGINE_BASE_URL}channels into the channels collection.
+•  Service: src/service/channelService.js (getAllChannelsFromChannelPartner).
+•  Model: src/models/Channel.js — channelId, channelName, globalChannelId, globalChannelName, countryCode.
+•  UI asset map (globalChannelId): Noon 1892, Namshi 1893, Amazon 1635/1733 — src/constants/common.js 
+CHANNEL_IMAGE_MAP .
+•  Sellers: UserChannels assigns channels; UserChannelProducts holds SKU lists per channelId for listing scope.
+4. Product catalog !’ marketplaces
+Step What happens
+Ingest ERP/Shopify adapters upsert Product (SKU, images, noonPrice, namshiPrice, amazonPrice, marketPlace comma-list).
+Map mapProductToChannelEngine() in src/helpers/ProductMapper.js — MerchantProductNo + custom attributes.
+Push POST .../products via channelEnginePush, op PRODUCTS_PUSH (productService.pushBatch).
+By channel Route push-product-to-channelengine/:channelId — OCP bypasses CE (direct OCP API).
+Freeze / delete PRODUCTS_FREEZE, PRODUCTS_BULK_DELETE (ceService, productService).
+After successful push, syncedAt is set on products so stock/price sync can target changed SKUs.
+Stock Connect — Marketplace Integrations Guide 1
+
+--- PAGE 3 ---
+5. Stock and price !’ marketplaces
+Stock
+•  PUT .../offer/stock — operation OFFER_STOCK (InventoryService.sendStockBatch, syncStockToChannelEngine).
+•  Typical chain: ERP sync completes !’ syncStockToChannelEngine(sellerId) (e.g. Sentos inventory controller).
+Price
+•  PUT .../offer — OFFER_PRICE (priceService.sendPriceBatch).
+•  PATCH products/extra-data/bulk — noonPrice and namshiPrice via PRODUCTS_EXTRA_DATA 
+(syncPriceToChannelEngine).
+•  Cron example: src/cronJobs/services/priceSyncService.js — ERP/Shopify price sync then 
+syncPriceToChannelEngine.
+Marketplace filter
+Only SKUs whose product.marketPlace matches ALLOWEDMARKETPLACES in src/constants/common.js: Amazon 
+channel name, Noon V2, Namshi, Trendyol.int SA. Regex ensures comma-separated lists include one of these names.
+6. Orders, shipments, returns
+Direction Mechanism
+Inbound orders POST/GET /api/orders/channelengine-webhook !’ orderWebhookService !’ processOrders !’ channelengineorders 
++ SellerOrder.
+Poll fallback GET .../orders if webhook body empty (orderService.getNewOrders).
+Acknowledge ORDER_ACKNOWLEDGE queued; deduped in ChannelEngineQueueJob; CE 409 treated as success.
+Cancel ORDER_CANCELLATION to CE; may notify UniCommerce (orderService.cancelOrder).
+Shipments SHIPMENT_CREATE, SHIPMENT_DELIVERY_STATE — shipmentService; Omniful/AyMakan remain in Stock 
+Connect.
+Returns RETURN_MERCHANT_* and RETURN_ACCEPT_REJECT — returnService; webhooks RETURNS_CREATE/
+CHANGE.
+7. Reliability — CE queue layer
+All CE HTTP mutations go through channelEnginePush (src/service/channelEngineClient.js):
+•  Persists ChannelEngineQueueJob in MongoDB; enqueues BullMQ on Redis.
+•  Five queue groups: ce-products, ce-stock, ce-price, ce-cancellations, ce-orders-shipments — src/constants/
+channelEngineQueue.js.
+•  13 operation types: PRODUCTS_*, OFFER_*, ORDER_*, SHIPMENT_*, RETURN_*.
+•  Worker: src/queues/channelEngineWorker.js !’ executeChannelEngineRequest; 429 rate-limit pause; retries.
+•  Ops APIs: /api/channel-engine-queue/* for stats, failed jobs, retry.
+•  Env: CHANNEL_ENGINE_BASE_URL, CHANNEL_ENGINE_API_KEY , Redis; worker via server or yarn worker:ce.
+8. Shopify — distinct role
+Stock Connect — Marketplace Integrations Guide 2
+
+--- PAGE 4 ---
+Role Location / behaviour
+Product & price source src/integrations/erp/shopify/{exquise,catch,xokids}/ — Admin API !’ Mongo Product.
+Seller config Seller.shopifyConfig (HTTPS myshopify.com URL, apiVersion, accessToken).
+Marketplace outbound Still Channel Engine for Noon/Namshi/Amazon unless new adapters exist.
+Orders to Shopify Catch/Exquise order sync creates/updates Shopify orders (fulfillment mirror), not CE listing.
+9. Key source files (read first)
+•  src/service/productService.js — push, freeze, channel push
+•  src/service/InventoryService.js — stock batches, syncStockToChannelEngine
+•  src/service/priceService.js — price + extra-data batches
+•  src/service/orderService.js — sync, ack, cancel
+•  src/service/shipmentService.js, src/service/returnService.js
+•  src/service/channel/ceService.js — bulk delete, extra-data helpers
+•  src/helpers/ProductMapper.js — CE product payload
+•  src/webhooks/channelengine/orderWebhookService.js
+•  src/integrations/erp/sentos/controllers/inventoryController.js — ERP then CE stock example
+Related PDF: docs/StockConnect-Channel-Engine-Integration.pdf and CE replacement master plan in docs/ 
+marketplace-platform/.
+10. Building direct Namshi / Noon / Amazon / Shopify adapters
+To replace or complement CE, implement the same business steps Stock Connect already performs, with either per- 
+marketplace folders or a hub interface that swaps channelEnginePush targets.
+Preserve these contracts
+•  Mongo models: Product, Orders/channelengineorders, Shipment, returns, Channel, UserChannelProducts.
+•  Triggers: after ERP sync !’ stock/price push; UI product push by channelId; webhook/poll !’ process !’ ack.
+•  Queue semantics: async batches, 429 backoff, idempotent order ack.
+Suggested layout
+src/integrations/marketplace/{noon,namshi,amazon,shopify}/
+  config.js, client.js, mappers.js, routes/
+Optional: marketplace hub interface replacing CE URLs per seller feature flag.
+Do not break CE path
+Use feature flags or per-seller/channel config until cutover. OCP channel remains a special direct path — do not 
+conflate with CE replacement.
+11. Cursor prompt (copy into a new agent chat)
+Paste the block below and adjust scope (CE replacement vs parallel adapters, wave-1 channels, Shopify as storefront 
+vs ERP-only).
+Stock Connect — Marketplace Integrations Guide 3
+
+--- PAGE 5 ---
+Context: Stock Connect uses ChannelEngine for all marketplace outbound (channelEnginePush,
+13 ops, channelEngineWorker). Inbound: /api/orders/channelengine-webhook. Catalog:
+mapProductToChannelEngine !’ POST /products. Stock/price: OFFER_STOCK, OFFER_PRICE,
+PRODUCTS_EXTRA_DATA; filter ALLOWEDMARKETPLACES on Product.marketPlace. Shopify under
+src/integrations/erp/shopify/* is ERP source into Mongo, not CE listing.
+Task: Implement direct adapters for Namshi, Noon, Amazon SA, Shopify (clarify storefront
+vs ERP). Follow seller-scoped routes, authMiddleware, verifySellerAccess. Add marketplace
+abstraction (pushProducts, updateStock, updatePrices, fetchOrders, acknowledgeOrder, etc.).
+Feature-flag per seller; normalize inbound orders to orderService.processOrders shape.
+Read productService, InventoryService, priceService, orderService, ProductMapper,
+orderWebhookService, sentos inventoryController. Deliver routes, env docs, Postman, migration
+note mapping each CE op to adapter methods.
+Stock Connect — Marketplace Integrations Guide 4
