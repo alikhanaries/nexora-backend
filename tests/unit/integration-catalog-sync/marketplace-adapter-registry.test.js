@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { UnsupportedMarketplaceAdapterError } from '../../../src/modules/integration-catalog-sync/application/catalog-sync-errors.js';
-import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/integration-catalog-sync/infrastructure/marketplace-catalog-adapter-registry.js';
+import { UnsupportedMarketplaceAdapterError } from '../../../src/modules/integration-catalog-sync/services/catalog-sync-errors.js';
+import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/integration-catalog-sync/repositories/marketplace-catalog-adapter-registry.js';
 import { FOUNDATION_STUB_MARKETPLACE_KEY } from '../../../src/modules/integration-catalog-sync/public/marketplace-catalog-adapter.port.js';
-import { FoundationStubMarketplaceCatalogAdapter } from '../../../src/modules/integration-catalog-sync/infrastructure/foundation-stub-marketplace-catalog-adapter.js';
+import { FoundationStubMarketplaceCatalogAdapter } from '../../../src/modules/integration-catalog-sync/repositories/foundation-stub-marketplace-catalog-adapter.js';
 
 describe('MarketplaceCatalogAdapterRegistry', () => {
     it('resolves registered adapters by marketplace key', () => {

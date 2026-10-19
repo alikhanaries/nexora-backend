@@ -1,18 +1,18 @@
 import { loadConfigFromEnvironment } from '../app/config/index.js';
-import { createInfrastructure } from '../app/bootstrap/create-infrastructure.js';
-import { gracefulShutdown } from '../app/bootstrap/shutdown.js';
+import { createInfrastructure } from '../app/create-infrastructure.js';
+import { gracefulShutdown } from '../app/shutdown.js';
 import { createWorkerReadinessProbes, ReadinessService, } from '../app/observability/readiness.js';
 import { AesSecretEncryptor } from '../infrastructure/auth/aes-secret-encryptor.js';
 import { createWebhookDeliveryService, createWebhookDispatchService } from '../modules/webhooks/index.js';
-import { wireExternalConsumerWebhookPayloadStrategies } from './bootstrap/wire-external-consumer-webhook-payload-strategies.js';
+import { wireExternalConsumerWebhookPayloadStrategies } from './wire-external-consumer-webhook-payload-strategies.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
 import { createIntegrationEventConsumers } from './create-integration-event-consumers.js';
 import { registerWorkerHandlers } from './handlers/queue-job-handlers.js';
 import { CatalogSyncEnqueueHandler } from './handlers/catalog-sync-enqueue.handler.js';
-import { CatalogSyncReconciliationScheduler } from '../modules/integration-catalog-sync/application/catalog-sync-reconciliation-scheduler.js';
-import { wireIntegrationCatalogSync } from './bootstrap/wire-integration-catalog-sync.js';
-import { wireMarketplaceLifecycleWorker } from './bootstrap/wire-marketplace-lifecycle-worker.js';
-import { createWorkerMarketplaceCommerceDeps } from './bootstrap/create-worker-marketplace-commerce-deps.js';
+import { CatalogSyncReconciliationScheduler } from '../modules/integration-catalog-sync/services/catalog-sync-reconciliation-scheduler.js';
+import { wireIntegrationCatalogSync } from './wire-integration-catalog-sync.js';
+import { wireMarketplaceLifecycleWorker } from './wire-marketplace-lifecycle-worker.js';
+import { createWorkerMarketplaceCommerceDeps } from './create-worker-marketplace-commerce-deps.js';
 import { startWorkerObservabilityHttp } from './observability/start-worker-observability-http.js';
 async function main() {
     const config = loadConfigFromEnvironment();

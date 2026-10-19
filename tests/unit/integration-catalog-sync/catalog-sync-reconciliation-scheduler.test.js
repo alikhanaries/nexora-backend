@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CatalogSyncReconciliationScheduler } from '../../../src/modules/integration-catalog-sync/application/catalog-sync-reconciliation-scheduler.js';
+import { CatalogSyncReconciliationScheduler } from '../../../src/modules/integration-catalog-sync/services/catalog-sync-reconciliation-scheduler.js';
 
 describe('CatalogSyncReconciliationScheduler', () => {
     it('does not start when disabled', () => {

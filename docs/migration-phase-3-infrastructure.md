@@ -30,11 +30,11 @@ Tests use `createNestInfrastructure(config, { connectDatabase: false })` so Jest
 
 ## Files
 
-- `src/nest/bootstrap/create-nest-infrastructure.js`
-- `src/nest/database/database.module.js`, `database.service.js`
-- `src/nest/common/nest-logger.service.js`
-- `src/nest/app.module.js` — `buildAppModule(infra)` dynamic module
-- `src/nest/main.js` — startup/shutdown with infra
+- `src/app/create-nest-infrastructure.js`
+- `src/app/database/database.module.js`, `database.service.js`
+- `src/app/common/nest-logger.service.js`
+- `src/app/app.module.js` — `buildAppModule(infra)` dynamic module
+- `src/app/nest-main.js` — startup/shutdown with infra
 
 ## Dependencies
 

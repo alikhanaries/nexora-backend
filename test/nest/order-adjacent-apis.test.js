@@ -90,19 +90,19 @@ describe('Nest order-adjacent APIs (Phase 10)', () => {
   });
 
   it('GET /api/v1/cancellations requires authentication', async () => {
-    const created = await createTestNestApp({ coreDomain: createMockCoreDomain() });
+    const created = await createTestNestApp({ coreServices: createMockCoreDomain() });
     app = created.app;
     await request(app.getHttpServer()).get('/api/v1/cancellations').expect(401);
   });
 
   it('POST /api/v1/orders/:orderId/cancel returns 201', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actor);
-    coreDomain.cancellations.useCases.createCancellation.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actor);
+    coreServices.cancellations.useCases.createCancellation.execute.mockResolvedValue({
       cancellation: buildCancellation(),
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -112,7 +112,7 @@ describe('Nest order-adjacent APIs (Phase 10)', () => {
       .expect(201);
 
     expect(response.body.success).toBe(true);
-    expect(coreDomain.cancellations.useCases.createCancellation.execute).toHaveBeenCalledWith(
+    expect(coreServices.cancellations.useCases.createCancellation.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         orderId,
         permission: 'orders.cancel',
@@ -121,10 +121,10 @@ describe('Nest order-adjacent APIs (Phase 10)', () => {
   });
 
   it('POST /api/v1/cancellations requires Idempotency-Key', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actor);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actor);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())
@@ -135,10 +135,10 @@ describe('Nest order-adjacent APIs (Phase 10)', () => {
   });
 
   it('GET /api/v1/shipments returns list envelope', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actor);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actor);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -150,10 +150,10 @@ describe('Nest order-adjacent APIs (Phase 10)', () => {
   });
 
   it('POST /api/v1/orders/:orderId/shipments requires Idempotency-Key', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actor);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actor);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())
@@ -164,13 +164,13 @@ describe('Nest order-adjacent APIs (Phase 10)', () => {
   });
 
   it('POST /api/v1/orders/:orderId/shipments returns 201 when idempotent', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actor);
-    coreDomain.shipments.useCases.createShipment.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actor);
+    coreServices.shipments.useCases.createShipment.execute.mockResolvedValue({
       shipment: buildShipment(),
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())
@@ -182,13 +182,13 @@ describe('Nest order-adjacent APIs (Phase 10)', () => {
   });
 
   it('POST /api/v1/shipments/:shipmentId/ship returns success', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actor);
-    coreDomain.shipments.useCases.shipShipment.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actor);
+    coreServices.shipments.useCases.shipShipment.execute.mockResolvedValue({
       shipment: { ...buildShipment(), status: 'SHIPPED' },
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -201,10 +201,10 @@ describe('Nest order-adjacent APIs (Phase 10)', () => {
   });
 
   it('POST /api/v1/orders/:orderId/returns requires Idempotency-Key', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actor);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actor);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())
@@ -215,13 +215,13 @@ describe('Nest order-adjacent APIs (Phase 10)', () => {
   });
 
   it('POST /api/v1/returns/:returnId/approve returns success', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actor);
-    coreDomain.returns.useCases.approveReturn.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actor);
+    coreServices.returns.useCases.approveReturn.execute.mockResolvedValue({
       return: { ...buildReturn(), status: 'APPROVED' },
     });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())

@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
-import { MarketplaceWebhookAuthenticationError } from '../../src/modules/marketplace-webhook-ingestion/application/marketplace-webhook-errors.js';
-import { MarketplaceWebhookEventKind } from '../../src/modules/marketplace-webhook-ingestion/domain/marketplace-webhook-event-kind.js';
-import { NormalizedMarketplaceOrderStatus } from '../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-order-status.js';
+import { MarketplaceWebhookAuthenticationError } from '../../src/modules/webhooks/marketplace/services/marketplace-webhook-errors.js';
+import { MarketplaceWebhookEventKind } from '../../src/modules/webhooks/marketplace/models/marketplace-webhook-event-kind.js';
+import { NormalizedMarketplaceOrderStatus } from '../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-order-status.js';
 
 export const TEST_WEBHOOK_HMAC_SECRET = 'phase-32-test-webhook-secret';
 

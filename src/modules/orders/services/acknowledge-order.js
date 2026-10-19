@@ -1,17 +1,16 @@
 import { NotFoundError } from '../../../shared/errors/index.js';
 import { requireOrdersUpdate } from './order-permissions.js';
 
-export class AcknowledgeOrder {
-    deps;
-
-    constructor(deps) {
-        this.deps = deps;
-    }
-
+/**
+ * Acknowledges an order by merchant order number (maps to Wasl `orderNumber`).
+ * Delegates confirmation semantics to {@link createConfirmOrder}.
+ *
+ * @param {object} deps
+ * @param {{ execute: Function }} deps.confirmOrder
+ * @returns {{ execute: Function }}
+ */
+export function createAcknowledgeOrder(deps) {
     /**
-     * Acknowledges an order by merchant order number (maps to Wasl `orderNumber`).
-     * Delegates confirmation semantics to {@link ConfirmOrder}.
-     *
      * @param {object} input
      * @param {string} input.tenantId
      * @param {string} input.actorId
@@ -20,18 +19,18 @@ export class AcknowledgeOrder {
      * @param {string} input.orderNumber
      * @param {object} [input.transaction]
      */
-    async execute(input) {
-        requireOrdersUpdate(this.deps.authorization, input.actorPermissions);
+    async function execute(input) {
+        requireOrdersUpdate(deps.authorization, input.actorPermissions);
 
         const work = async (tx) => {
-            const existing = await this.deps.orders.findByOrderNumber(tx, input.tenantId, input.orderNumber);
+            const existing = await deps.orders.findByOrderNumber(tx, input.tenantId, input.orderNumber);
             if (existing === null) {
                 throw new NotFoundError('Order was not found', {
                     tenantId: input.tenantId,
                     orderNumber: input.orderNumber,
                 });
             }
-            const { order } = await this.deps.confirmOrder.execute({
+            const { order } = await deps.confirmOrder.execute({
                 tenantId: input.tenantId,
                 actorId: input.actorId,
                 actorKind: input.actorKind,
@@ -47,7 +46,9 @@ export class AcknowledgeOrder {
             return { order };
         }
 
-        const order = await this.deps.database.execute(work, { tenantId: input.tenantId });
+        const order = await deps.database.execute(work, { tenantId: input.tenantId });
         return { order };
     }
+
+    return { execute };
 }

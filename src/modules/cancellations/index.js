@@ -1,12 +1,17 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { CreateCancellation, DefaultCancellationQueryService, GetCancellation, ListCancellations, } from './services/index.js';
-import { DefaultCancellationCommandService } from './public/cancellation-command-service.js';
+import {
+    createCreateCancellation,
+    createGetCancellation,
+    createListCancellations,
+    createCancellationQueryService,
+    createCancellationCommandService,
+} from './services/index.js';
 import { PostgresCancellationRepository } from './repositories/index.js';
 import cancellationRoutes, {} from './controllers/cancellation.routes.js';
 export function createCancellationsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const cancellations = new PostgresCancellationRepository();
-    const cancellationQueryService = new DefaultCancellationQueryService({
+    const cancellationQueryService = createCancellationQueryService({
         authorization,
         queryable: deps.database,
         cancellations,
@@ -23,15 +28,15 @@ export function createCancellationsModule(deps) {
         externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
-    const createCancellation = new CreateCancellation(lifecycleDeps);
-    const cancellationCommandService = new DefaultCancellationCommandService({
+    const createCancellation = createCreateCancellation(lifecycleDeps);
+    const cancellationCommandService = createCancellationCommandService({
         createCancellation,
         idempotency: deps.idempotency,
     });
     const useCases = {
         createCancellation,
-        getCancellation: new GetCancellation({ authorization, cancellationQueryService }),
-        listCancellations: new ListCancellations({
+        getCancellation: createGetCancellation({ authorization, cancellationQueryService }),
+        listCancellations: createListCancellations({
             authorization,
             queryable: deps.database,
             cancellations,

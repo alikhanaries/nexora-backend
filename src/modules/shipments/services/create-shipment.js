@@ -14,14 +14,39 @@ import { isEquivalentShipmentRequest, normalizeOptionalShipmentText, } from './s
 
 const EXTERNAL_REFERENCE_UNIQUE_CONSTRAINT = 'shipments_tenant_external_reference_unique';
 
-export class CreateShipment {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCreateShipment(deps) {
+    /**
+     * @param {object} tx
+     * @param {object} input
+     * @param {import('../models/shipment.js').Shipment} existing
+     * @param {Map<string, number>} requestedByLine
+     * @param {string|null} carrier
+     * @param {string|null} trackingNumber
+     */
+    async function resolveExistingExternalReferenceShipment(tx, input, existing, requestedByLine, carrier, trackingNumber) {
+        if (existing.orderId !== input.orderId) {
+            throw new ConflictError('Shipment external reference belongs to a different order', {
+                externalReference: existing.externalReference,
+                orderId: input.orderId,
+                existingOrderId: existing.orderId,
+            });
+        }
+        const existingLines = await deps.shipments.listShipmentLines(tx, input.tenantId, existing.id);
+        if (isEquivalentShipmentRequest(existing, existingLines, input, requestedByLine, carrier, trackingNumber)) {
+            return toShipmentDetailDto(existing, existingLines);
+        }
+        throw new ConflictError('Shipment external reference was reused with a different request', {
+            externalReference: existing.externalReference,
+        });
     }
-    async execute(input) {
+
+    async function execute(input) {
         if (input.skipAuthorization !== true) {
-            requireShipmentsCreate(this.deps.authorization, input.actorPermissions);
+            requireShipmentsCreate(deps.authorization, input.actorPermissions);
         }
         if (input.lines.length === 0) {
             throw new ValidationError('Shipment must contain at least one line');
@@ -41,13 +66,13 @@ export class CreateShipment {
             const externalReference = normalizeOptionalShipmentText(input.externalReference);
 
             if (externalReference !== null) {
-                const existing = await this.deps.shipments.findByExternalReference(tx, input.tenantId, externalReference);
+                const existing = await deps.shipments.findByExternalReference(tx, input.tenantId, externalReference);
                 if (existing !== null) {
-                    return this.resolveExistingExternalReferenceShipment(tx, input, existing, requestedByLine, carrier, trackingNumber);
+                    return resolveExistingExternalReferenceShipment(tx, input, existing, requestedByLine, carrier, trackingNumber);
                 }
             }
 
-            const lockedLines = await this.deps.orderFulfillmentService.lockOrderLinesForFulfillment(input.tenantId, input.orderId, tx);
+            const lockedLines = await deps.orderFulfillmentService.lockOrderLinesForFulfillment(input.tenantId, input.orderId, tx);
             const lockedById = new Map(lockedLines.map((line) => [line.id, line]));
             for (const orderLineId of requestedByLine.keys()) {
                 if (!lockedById.has(orderLineId)) {
@@ -60,9 +85,9 @@ export class CreateShipment {
             }
 
             if (externalReference !== null) {
-                const existing = await this.deps.shipments.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
+                const existing = await deps.shipments.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
                 if (existing !== null) {
-                    return this.resolveExistingExternalReferenceShipment(tx, input, existing, requestedByLine, carrier, trackingNumber);
+                    return resolveExistingExternalReferenceShipment(tx, input, existing, requestedByLine, carrier, trackingNumber);
                 }
             }
 
@@ -102,34 +127,34 @@ export class CreateShipment {
                 shipmentLines.push(shipmentLine);
             }
             try {
-                await this.deps.shipments.insertShipment(tx, created);
+                await deps.shipments.insertShipment(tx, created);
             }
             catch (error) {
                 if (externalReference !== null && isExternalReferenceUniqueViolation(error)) {
-                    const raced = await this.deps.shipments.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
+                    const raced = await deps.shipments.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
                     if (raced !== null) {
-                        return this.resolveExistingExternalReferenceShipment(tx, input, raced, requestedByLine, carrier, trackingNumber);
+                        return resolveExistingExternalReferenceShipment(tx, input, raced, requestedByLine, carrier, trackingNumber);
                     }
                 }
                 throw error;
             }
             for (const shipmentLine of shipmentLines) {
-                await this.deps.shipments.insertShipmentLine(tx, shipmentLine);
+                await deps.shipments.insertShipmentLine(tx, shipmentLine);
             }
-            await this.deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
+            await deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
                 tenantId: input.tenantId,
                 provider: ExternalIdMappingProvider.COMPAT_V2,
                 resourceType: ExternalIdMappingResourceType.SHIPMENT,
                 resourceId: created.id,
             });
-            await this.deps.orderFulfillmentService.applyShipmentQuantities(input.tenantId, input.orderId, [...requestedByLine.entries()].map(([orderLineId, quantity]) => ({
+            await deps.orderFulfillmentService.applyShipmentQuantities(input.tenantId, input.orderId, [...requestedByLine.entries()].map(([orderLineId, quantity]) => ({
                 orderLineId,
                 quantity,
             })), tx);
-            await this.deps.orderFulfillmentService.evaluateOrderShipmentState(input.tenantId, input.orderId, tx);
+            await deps.orderFulfillmentService.evaluateOrderShipmentState(input.tenantId, input.orderId, tx);
             const detail = toShipmentDetailDto(created, shipmentLines);
-            await this.deps.eventRecorder.record(tx, shipmentCreatedEvent(detail));
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.eventRecorder.record(tx, shipmentCreatedEvent(detail));
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: input.actorKind,
                 actorId: input.actorId,
@@ -148,33 +173,17 @@ export class CreateShipment {
         };
         const shipment = input.transaction !== undefined
             ? await work(input.transaction)
-            : await this.deps.database.execute(work, { tenantId: input.tenantId });
+            : await deps.database.execute(work, { tenantId: input.tenantId });
         return { shipment };
     }
 
-    /**
-     * @param {object} tx
-     * @param {object} input
-     * @param {import('../models/shipment.js').Shipment} existing
-     * @param {Map<string, number>} requestedByLine
-     * @param {string|null} carrier
-     * @param {string|null} trackingNumber
-     */
-    async resolveExistingExternalReferenceShipment(tx, input, existing, requestedByLine, carrier, trackingNumber) {
-        if (existing.orderId !== input.orderId) {
-            throw new ConflictError('Shipment external reference belongs to a different order', {
-                externalReference: existing.externalReference,
-                orderId: input.orderId,
-                existingOrderId: existing.orderId,
-            });
-        }
-        const existingLines = await this.deps.shipments.listShipmentLines(tx, input.tenantId, existing.id);
-        if (isEquivalentShipmentRequest(existing, existingLines, input, requestedByLine, carrier, trackingNumber)) {
-            return toShipmentDetailDto(existing, existingLines);
-        }
-        throw new ConflictError('Shipment external reference was reused with a different request', {
-            externalReference: existing.externalReference,
-        });
+    return { execute };
+}
+
+/** @deprecated Prefer createCreateShipment */
+export class CreateShipment {
+    constructor(deps) {
+        return createCreateShipment(deps);
     }
 }
 

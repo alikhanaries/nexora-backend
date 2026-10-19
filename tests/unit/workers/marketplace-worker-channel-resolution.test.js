@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ExecuteMarketplaceLifecycleJob } from '../../../src/modules/marketplace-order-ingestion/application/execute-marketplace-lifecycle-job.js';
-import { MarketplaceLifecycleJobSource } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-lifecycle-job-source.js';
-import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/domain/marketplace-webhook-event-kind.js';
-import { wireMarketplaceOrderIngestion } from '../../../src/workers/bootstrap/wire-marketplace-order-ingestion.js';
+import { ExecuteMarketplaceLifecycleJob } from '../../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
+import { MarketplaceLifecycleJobSource } from '../../../src/modules/orders/marketplace-ingestion/models/marketplace-lifecycle-job-source.js';
+import { MarketplaceWebhookEventKind } from '../../../src/modules/webhooks/marketplace/models/marketplace-webhook-event-kind.js';
+import { wireMarketplaceOrderIngestion } from '../../../src/workers/wire-marketplace-order-ingestion.js';
 
 const tenantA = '22222222-2222-4222-8222-222222222222';
 const tenantB = '99999999-9999-4999-8999-999999999999';
@@ -82,13 +82,15 @@ function wireChannels(rows) {
     const scoped = createTenantScopedDatabase(rows);
     const wired = wireMarketplaceOrderIngestion({
         database: scoped.database,
-        createChannelOrder: { execute: async () => ({ order: {} }) },
+        createIntegrationOrder: { execute: async () => ({ order: {} }) },
         registerMarketplaceOrderAdapters: () => {},
+        metrics: { increment: vi.fn(), histogram: vi.fn() },
+        logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), child: vi.fn(function child() { return this; }) },
     });
-    return { ...scoped, channelQueryService: wired.channelQueryService };
+    return { ...scoped, commerceIntegrationQueryService: wired.commerceIntegrationQueryService };
 }
 
-function buildExecutor(channelQueryService, marketplaceKey) {
+function buildExecutor(commerceIntegrationQueryService, marketplaceKey) {
     const orderLifecycleProcessor = {
         process: vi.fn(async () => ({ outcome: 'applied', externalOrderReference: null })),
     };
@@ -101,7 +103,7 @@ function buildExecutor(channelQueryService, marketplaceKey) {
     const executor = new ExecuteMarketplaceLifecycleJob({
         orderLifecycleProcessor,
         lifecycleService,
-        channelQueryService,
+        commerceIntegrationQueryService,
         marketplaceLookup,
     });
     return { executor, orderLifecycleProcessor, marketplaceLookup };
@@ -110,8 +112,8 @@ function buildExecutor(channelQueryService, marketplaceKey) {
 describe('marketplace worker tenant-aware channel resolution', () => {
     it('resolves a channel only inside the job tenant session and continues the lifecycle', async () => {
         const rows = new Map([[`${tenantA}|${channelA}`, channelRow(tenantA, channelA)]]);
-        const { withTenant, channelQueryService } = wireChannels(rows);
-        const { executor, orderLifecycleProcessor } = buildExecutor(channelQueryService, 'noon');
+        const { withTenant, commerceIntegrationQueryService } = wireChannels(rows);
+        const { executor, orderLifecycleProcessor } = buildExecutor(commerceIntegrationQueryService, 'noon');
 
         const result = await executor.execute(buildWebhookJob('noon'));
 
@@ -129,8 +131,8 @@ describe('marketplace worker tenant-aware channel resolution', () => {
 
     it('does not resolve another tenant channel through the job tenant', async () => {
         const rows = new Map([[`${tenantB}|${channelB}`, channelRow(tenantB, channelB)]]);
-        const { channelQueryService } = wireChannels(rows);
-        const { executor, orderLifecycleProcessor } = buildExecutor(channelQueryService, 'noon');
+        const { commerceIntegrationQueryService } = wireChannels(rows);
+        const { executor, orderLifecycleProcessor } = buildExecutor(commerceIntegrationQueryService, 'noon');
 
         const result = await executor.execute(buildWebhookJob('noon', { channelId: channelB }));
 
@@ -140,8 +142,8 @@ describe('marketplace worker tenant-aware channel resolution', () => {
 
     it('fails closed when the job tenant is missing or not a uuid', async () => {
         const rows = new Map([[`${tenantA}|${channelA}`, channelRow(tenantA, channelA)]]);
-        const { withTenant, channelQueryService } = wireChannels(rows);
-        const { executor, orderLifecycleProcessor } = buildExecutor(channelQueryService, 'noon');
+        const { withTenant, commerceIntegrationQueryService } = wireChannels(rows);
+        const { executor, orderLifecycleProcessor } = buildExecutor(commerceIntegrationQueryService, 'noon');
         const job = buildWebhookJob('noon');
 
         await expect(executor.execute({ ...job, tenantId: undefined })).rejects.toThrow();
@@ -155,8 +157,8 @@ describe('marketplace worker tenant-aware channel resolution', () => {
 
     it('forwards the same webhook deduplication key on a repeated delivery', async () => {
         const rows = new Map([[`${tenantA}|${channelA}`, channelRow(tenantA, channelA)]]);
-        const { channelQueryService } = wireChannels(rows);
-        const { executor, orderLifecycleProcessor } = buildExecutor(channelQueryService, 'noon');
+        const { commerceIntegrationQueryService } = wireChannels(rows);
+        const { executor, orderLifecycleProcessor } = buildExecutor(commerceIntegrationQueryService, 'noon');
         const job = buildWebhookJob('noon');
 
         await executor.execute(job);
@@ -173,9 +175,9 @@ describe('marketplace worker tenant-aware channel resolution', () => {
         'continues the %s lifecycle after the tenant channel resolves',
         async (marketplaceKey) => {
             const rows = new Map([[`${tenantA}|${channelA}`, channelRow(tenantA, channelA)]]);
-            const { channelQueryService } = wireChannels(rows);
+            const { commerceIntegrationQueryService } = wireChannels(rows);
             const { executor, orderLifecycleProcessor, marketplaceLookup } = buildExecutor(
-                channelQueryService,
+                commerceIntegrationQueryService,
                 marketplaceKey,
             );
 

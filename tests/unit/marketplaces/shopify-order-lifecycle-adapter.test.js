@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ShopifyOrderLifecycleAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-order-lifecycle-adapter.js';
+import { ShopifyOrderLifecycleAdapter } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-order-lifecycle-adapter.js';
 import { MarketplaceCatalogAdapterPermanentError } from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
 
 const runtime = {

@@ -18,6 +18,13 @@ const CROSS_MODULE_PRIVATE_LAYER = `(?:${LEGACY_CROSS_MODULE_PRIVATE}|${MVC_CROS
 /** Compatibility adapter may not import these private layers in other modules. */
 const COMPAT_FORBIDDEN_PRIVATE = '(domain|application|infrastructure|presentation|models|services|repositories|controllers|views)';
 
+/**
+ * Business module slug under src/modules/:
+ * - top-level: orders, products, …
+ * - ERP nest: erp/stock-connect, erp/<future>
+ */
+const MODULE = '(?:erp/[^/]+|[^/]+)';
+
 /** Packages that must never be reachable from a domain layer. */
 const INFRASTRUCTURE_PACKAGES = [
   '^fastify$',
@@ -52,89 +59,103 @@ module.exports = {
       name: 'domain-no-infrastructure-layer',
       severity: 'error',
       comment: 'Domain logic must not know how data is stored or transported.',
-      from: { path: '^src/modules/[^/]+/domain/' },
+      from: { path: `^src/modules/${MODULE}/domain/` },
       to: { path: '^src/(infrastructure|app)/' },
     },
     {
       name: 'domain-no-infrastructure-packages',
       severity: 'error',
       comment:
-        'Domain code must stay free of Fastify, PostgreSQL, Redis, BullMQ, S3, logging and validation libraries.',
-      from: { path: '^src/modules/[^/]+/domain/' },
+        'Domain code must stay free of HTTP frameworks, PostgreSQL, Redis, BullMQ, S3, logging and validation libraries.',
+      from: { path: `^src/modules/${MODULE}/domain/` },
       to: { dependencyTypes: ['npm'], path: INFRASTRUCTURE_PACKAGES },
     },
     {
       name: 'domain-no-module-infrastructure',
       severity: 'error',
       comment: 'A domain layer must not reach into its own module infrastructure.',
-      from: { path: '^src/modules/[^/]+/domain/' },
-      to: { path: '^src/modules/[^/]+/(infrastructure|presentation)/' },
+      from: { path: `^src/modules/${MODULE}/domain/` },
+      to: { path: `^src/modules/${MODULE}/(infrastructure|presentation)/` },
     },
     {
       name: 'models-no-infrastructure-layer',
       severity: 'error',
       comment: 'Model layer must not know how data is stored or transported.',
-      from: { path: '^src/modules/[^/]+/models/' },
+      from: { path: `^src/modules/${MODULE}/models/` },
       to: { path: '^src/(infrastructure|app)/' },
     },
     {
       name: 'models-no-infrastructure-packages',
       severity: 'error',
       comment: 'Model code must stay free of infrastructure libraries.',
-      from: { path: '^src/modules/[^/]+/models/' },
+      from: { path: `^src/modules/${MODULE}/models/` },
       to: { dependencyTypes: ['npm'], path: INFRASTRUCTURE_PACKAGES },
     },
     {
       name: 'models-no-module-repositories',
       severity: 'error',
       comment: 'Models must not depend on persistence or HTTP controllers.',
-      from: { path: '^src/modules/[^/]+/models/' },
-      to: { path: '^src/modules/[^/]+/(repositories|controllers)/' },
+      from: { path: `^src/modules/${MODULE}/models/` },
+      to: { path: `^src/modules/${MODULE}/(repositories|controllers)/` },
     },
     {
       name: 'application-no-presentation',
       severity: 'error',
       comment: 'Use cases must not depend on HTTP delivery details.',
-      from: { path: '^src/modules/[^/]+/application/' },
-      to: { path: '^src/modules/[^/]+/presentation/' },
+      from: { path: `^src/modules/${MODULE}/application/` },
+      to: { path: `^src/modules/${MODULE}/presentation/` },
     },
     {
       name: 'services-no-controllers',
       severity: 'error',
       comment: 'Application services must not depend on HTTP controllers.',
-      from: { path: '^src/modules/[^/]+/services/' },
-      to: { path: '^src/modules/[^/]+/controllers/' },
+      from: { path: `^src/modules/${MODULE}/services/` },
+      to: { path: `^src/modules/${MODULE}/controllers/` },
     },
     {
       name: 'services-no-nest',
       severity: 'error',
       comment: 'Application services must stay independent of NestJS.',
-      from: { path: '^src/modules/[^/]+/services/' },
+      from: { path: `^src/modules/${MODULE}/services/` },
       to: { dependencyTypes: ['npm'], path: '^@nestjs/' },
     },
     {
       name: 'views-no-repositories',
       severity: 'error',
       comment: 'API views/presenters must not perform persistence.',
-      from: { path: '^src/modules/[^/]+/views/' },
-      to: { path: '^src/modules/[^/]+/repositories/' },
+      from: { path: `^src/modules/${MODULE}/views/` },
+      to: { path: `^src/modules/${MODULE}/repositories/` },
     },
     {
       name: 'repositories-no-controllers',
       severity: 'error',
       comment: 'Repositories must not depend on HTTP controllers.',
-      from: { path: '^src/modules/[^/]+/repositories/' },
-      to: { path: '^src/modules/[^/]+/controllers/' },
+      from: { path: `^src/modules/${MODULE}/repositories/` },
+      to: { path: `^src/modules/${MODULE}/controllers/` },
     },
     {
       name: 'no-cross-module-internals',
       severity: 'error',
       comment:
-        'Modules integrate only through another module public interface, never private layer internals.',
-      from: { path: '^src/modules/([^/]+)/' },
+        'Modules integrate only through another module public interface, never private layer internals. ERP adapters under erp/ are Nest composition surfaces (like app/) and may wire core modules.',
+      from: {
+        path: `^src/modules/(${MODULE})/`,
+        pathNot: '^src/modules/erp/',
+      },
       to: {
-        path: `^src/modules/([^/]+)/${CROSS_MODULE_PRIVATE_LAYER}/`,
+        path: `^src/modules/(${MODULE})/${CROSS_MODULE_PRIVATE_LAYER}/`,
         pathNot: '^src/modules/$1/',
+      },
+    },
+    {
+      name: 'erp-modules-stay-separate',
+      severity: 'error',
+      comment:
+        'Each ERP under erp/<name> must stay isolated from other ERP adapters.',
+      from: { path: '^src/modules/erp/([^/]+)/' },
+      to: {
+        path: '^src/modules/erp/([^/]+)/',
+        pathNot: '^src/modules/erp/$1/',
       },
     },
     {
@@ -155,7 +176,7 @@ module.exports = {
         'The compatibility adapter translates to core public contracts; it must never touch repositories or the database directly.',
       from: { path: '^src/modules/compatibility/' },
       to: {
-        path: `^(src/infrastructure/postgres/|src/modules/[^/]+/(?:infrastructure|repositories)/)`,
+        path: `^(src/infrastructure/postgres/|src/modules/${MODULE}/(?:infrastructure|repositories)/)`,
       },
     },
     {
@@ -165,7 +186,7 @@ module.exports = {
         'Compatibility must integrate through another module public/ contracts, not its root index or private layers.',
       from: { path: '^src/modules/compatibility/' },
       to: {
-        path: '^src/modules/([^/]+)/index\\.js$',
+        path: `^src/modules/(${MODULE})/index\\.js$`,
         pathNot: '^src/modules/compatibility/',
       },
     },
@@ -176,7 +197,7 @@ module.exports = {
         'Compatibility must not import other modules private layers; public/ contracts are the only approved core entrypoint.',
       from: { path: '^src/modules/compatibility/' },
       to: {
-        path: `^src/modules/([^/]+)/${COMPAT_FORBIDDEN_PRIVATE}/`,
+        path: `^src/modules/(${MODULE})/${COMPAT_FORBIDDEN_PRIVATE}/`,
         pathNot: '^src/modules/compatibility/',
       },
     },

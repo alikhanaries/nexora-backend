@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     assertCompatV2CompatibilityWired,
     createCompatV2CompatibilityReadinessProbe,
-} from '../../../src/modules/compatibility/application/compat-v2-readiness.js';
+} from '../../../src/modules/compatibility/services/compat-v2-readiness.js';
 
 describe('StockConnect CE readiness', () => {
     it('passes when required route deps are present', async () => {

@@ -185,7 +185,7 @@ lines.push('');
 lines.push('## Reconciliation notes');
 lines.push('');
 lines.push('- Routes are registered in `src/app/http/create-server.js` via `app.register(moduleRoutes, deps)`.');
-lines.push('- Compatibility registers **both** `compatibility.routes.js` and `compat-v2.routes.js` (`/api/v2/*` and `/api/v2/ce/*`).');
+lines.push('- Compatibility HTTP is Nest-only under `controllers/nest/` (`/api/v2/*` and `/api/v2/ce/*`).');
 lines.push('- `GET /openapi.json`, `GET /api-docs.json`, and `GET /api-docs` (redirect to `/docs`) are registered in `create-server.js` when `DOCS_ENABLED` is true.');
 lines.push('- `GET /docs/*` is served by `@scalar/fastify-api-reference` when docs are enabled.');
 lines.push('- Authentication plugin public routes: see `src/app/http/plugins/authentication.plugin.js` (`PUBLIC_ROUTE_PATTERNS`).');

@@ -1,23 +1,23 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceWebhookPermanentError, MarketplaceWebhookUnsupportedError } from '../../../src/modules/marketplace-webhook-ingestion/application/marketplace-webhook-errors.js';
+import { MarketplaceWebhookPermanentError, MarketplaceWebhookUnsupportedError } from '../../../src/modules/webhooks/marketplace/services/marketplace-webhook-errors.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
 } from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
-import { MarketplaceTransientError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';
-import { MarketplaceWebhookEventKind } from '../../../src/modules/marketplace-webhook-ingestion/domain/marketplace-webhook-event-kind.js';
-import { normalizedMarketplaceWebhookEventSchema } from '../../../src/modules/marketplace-webhook-ingestion/application/normalized-marketplace-webhook-event.schema.js';
-import { MarketplaceValidationError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
-import { NamshiOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-order-adapter.js';
-import { NamshiWebhookAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-webhook-adapter.js';
+import { MarketplaceTransientError } from '../../../src/modules/marketplaces/models/marketplace-errors.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/orders/marketplace-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
+import { MarketplaceWebhookEventKind } from '../../../src/modules/webhooks/marketplace/models/marketplace-webhook-event-kind.js';
+import { normalizedMarketplaceWebhookEventSchema } from '../../../src/modules/webhooks/marketplace/services/normalized-marketplace-webhook-event.schema.js';
+import { MarketplaceValidationError } from '../../../src/modules/marketplaces/models/marketplace-errors.js';
+import { NamshiOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-order-adapter.js';
+import { NamshiWebhookAdapter } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-webhook-adapter.js';
 import {
     buildNamshiFbpiLifecycleEventId,
     mapNamshiFbpiOrderToLifecycleCommand,
-} from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/map-namshi-fbpi-order-to-lifecycle-command.js';
-import { deriveNamshiFbpiOrderTargetStatus, mapNamshiFbpiMpItemStatusToLifecycleTarget } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-fbpi-order-status.js';
-import { parseNamshiFbpiWebhookEvent } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/parse-namshi-fbpi-webhook-event.js';
+} from '../../../src/modules/marketplaces/repositories/adapters/namshi/map-namshi-fbpi-order-to-lifecycle-command.js';
+import { deriveNamshiFbpiOrderTargetStatus, mapNamshiFbpiMpItemStatusToLifecycleTarget } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-fbpi-order-status.js';
+import { parseNamshiFbpiWebhookEvent } from '../../../src/modules/marketplaces/repositories/adapters/namshi/parse-namshi-fbpi-webhook-event.js';
 import { buildNamshiFbpiGetOrderResponse, buildNamshiFbpiOrderSyncWebhook } from './namshi-fbpi-fixtures.js';
 
 describe('mapNamshiFbpiMpItemStatusToLifecycleTarget', () => {

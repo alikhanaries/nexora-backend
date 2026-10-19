@@ -1,6 +1,6 @@
 /**
- * Loads reflect-metadata and SWC ESM transforms so Nest decorator syntax in `src/nest/*.js`
- * runs under Node without a compile step. Used by `npm start`, `npm run dev`, and parity with tests.
+ * Loads reflect-metadata and SWC ESM transforms so Nest decorator syntax
+ * runs under Node without a compile step. Used by `npm start` / `npm run dev`.
  */
 import 'reflect-metadata';
 import { register } from 'node:module';

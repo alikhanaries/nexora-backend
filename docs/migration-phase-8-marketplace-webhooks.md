@@ -14,7 +14,7 @@ Migrate the **inbound marketplace webhook** HTTP ingress and wiring into NestJS 
 
 | Route ID | Method | Path | Source |
 |----------|--------|------|--------|
-| R-0026 | POST | `/api/v1/inbound/marketplace-webhooks/:ingressToken` | `src/modules/marketplace-webhook-ingestion/presentation/marketplace-webhook.routes.js` |
+| R-0026 | POST | `/api/v1/inbound/marketplace-webhooks/:ingressToken` | `src/modules/webhooks/marketplace/views/marketplace-webhook.routes.js` |
 
 No other Fastify marketplace webhook HTTP routes were found in the codebase audit.
 
@@ -52,7 +52,7 @@ No new providers or topics were added in this phase.
 
 ## Signature verification & raw body
 
-- **Express:** `marketplaceWebhookRawBodyMiddleware` in `src/nest/bootstrap/configure-express.js` (Phase 2) captures UTF-8 raw bytes before JSON parsing on webhook paths.
+- **Express:** `marketplaceWebhookRawBodyMiddleware` in `src/app/http/configure-express.js` (Phase 2) captures UTF-8 raw bytes before JSON parsing on webhook paths.
 - **Nest controller:** reads `request.marketplaceWebhookRawBody` (not `JSON.stringify(req.body)`).
 - **Verification:** delegated to existing marketplace webhook adapters (e.g. Shopify `X-Shopify-Hmac-Sha256` over raw body).
 
@@ -73,13 +73,13 @@ Unchanged `ResolveMarketplaceWebhookConnection` + `webhook-ingress-token.js` has
 ## Nest architecture
 
 ```text
-WebhooksModule → WebhooksController → WebhooksService → coreDomain.marketplaceWebhookIngestion.receiveMarketplaceWebhook
+WebhooksModule → WebhooksController → WebhooksService → coreServices.marketplaceWebhookIngestion.receiveMarketplaceWebhook
 ```
 
 Bootstrap:
 
 - `wire-marketplace-webhook-ingestion.js` — mirrors Fastify marketplace webhook module factory
-- `wire-core-domain.js` — exposes `marketplaceWebhookIngestion` on `CORE_DOMAIN`
+- `wire-core-services.js` — exposes `marketplaceWebhookIngestion` on `CORE_SERVICES`
 - `create-nest-infrastructure.js` — `idempotency`, `queue`, `queueConnection`
 - `app.module.js` — registers `WebhooksModule`
 
@@ -87,19 +87,19 @@ Bootstrap:
 
 **Created**
 
-- `src/nest/webhooks/webhooks.module.js`
-- `src/nest/webhooks/webhooks.controller.js`
-- `src/nest/webhooks/webhooks.service.js`
-- `src/nest/bootstrap/wire-marketplace-webhook-ingestion.js`
+- `src/app/webhooks/webhooks.module.js`
+- `src/app/webhooks/webhooks.controller.js`
+- `src/app/webhooks/webhooks.service.js`
+- `src/app/wire-marketplace-webhook-ingestion.js`
 - `test/nest/marketplace-webhooks.test.js`
 - `docs/migration-phase-8-marketplace-webhooks.md`
 
 **Changed**
 
-- `src/nest/app.module.js`
-- `src/nest/bootstrap/create-nest-infrastructure.js`
-- `src/nest/bootstrap/wire-core-domain.js`
-- `src/nest/main.js` (infra deps + graceful `queue.close()` on shutdown)
+- `src/app/app.module.js`
+- `src/app/create-nest-infrastructure.js`
+- `src/app/wire-core-services.js`
+- `src/app/nest-main.js` (infra deps + graceful `queue.close()` on shutdown)
 - `test/nest/helpers/mock-core-domain.js`
 
 **Unchanged (intentionally)**
@@ -124,7 +124,7 @@ Bootstrap:
 - Idempotency replay response shape
 - Adapter registration keys (amazon, namshi, noon, shopify)
 
-Deeper signature/idempotency/lifecycle behavior remains covered by existing Vitest suites under `tests/unit/marketplace-webhook-ingestion/` and provider adapter tests.
+Deeper signature/idempotency/lifecycle behavior remains covered by existing Vitest suites under `tests/unit/webhooks/marketplace/` and provider adapter tests.
 
 ## Startup verification
 
@@ -137,7 +137,7 @@ Fastify startup: NOT VERIFIED — same infrastructure dependency.
 
 - Phase 8 branch is stacked on Phase 6–7 Nest work (`migration/nest-express-phase-7` base) until PRs **#83** / **#84** merge into `dev`.
 - End-to-end webhook delivery against real Shopify/Amazon/Noon/Namshi was **not** run (no live connections in CI/local).
-- Integration test `tests/integration/marketplace-webhook-ingestion.test.js` was **not** re-run here (requires Postgres); unit/Jest coverage used instead.
+- Integration test `tests/integration/webhooks-marketplace.test.js` was **not** re-run here (requires Postgres); unit/Jest coverage used instead.
 
 ## Dependencies
 

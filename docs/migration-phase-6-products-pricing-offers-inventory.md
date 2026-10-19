@@ -53,10 +53,10 @@ Fastify startup: NOT VERIFIED — same
 
 ## Files changed (important)
 
-- `src/nest/bootstrap/wire-core-domain.js`
-- `src/nest/products/*`, `pricing/*`, `offers/*`, `inventory/*`
-- `src/nest/common/commerce-actor.js`
-- `src/nest/app.module.js`
+- `src/app/wire-core-services.js`
+- `src/app/products/*`, `pricing/*`, `offers/*`, `inventory/*`
+- `src/app/common/commerce-actor.js`
+- `src/app/app.module.js`
 - `test/nest/catalog-modules.test.js`, `helpers/mock-core-domain.js`
 
 ## Dependencies

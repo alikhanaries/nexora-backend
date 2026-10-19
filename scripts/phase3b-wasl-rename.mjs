@@ -173,8 +173,8 @@ copyModule('src/modules/channels', 'src/modules/commerce-integrations');
 copyModule('src/modules/channel-catalog-sync', 'src/modules/integration-catalog-sync');
 
 // 2) Rename nest/channels -> commerce-integrations
-const nestSrc = join(ROOT, 'src/nest/channels');
-const nestDest = join(ROOT, 'src/nest/commerce-integrations');
+const nestSrc = join(ROOT, 'src/app/channels');
+const nestDest = join(ROOT, 'src/app/commerce-integrations');
 if (existsSync(nestSrc)) {
   if (existsSync(nestDest)) rmSync(nestDest, { recursive: true, force: true });
   cpSync(nestSrc, nestDest, { recursive: true });
@@ -216,17 +216,17 @@ const sharedBridge = join(ROOT, 'src/shared/stockconnect/merchant-protocol-webho
 const sharedBridgeNew = join(ROOT, 'src/shared/stockconnect/compat-v2-webhook-bridge.js');
 if (existsSync(sharedBridge)) renameSync(sharedBridge, sharedBridgeNew);
 
-const nestCompat = join(ROOT, 'src/nest/legacy-compatibility/merchant-protocol.controller.js');
+const nestCompat = join(ROOT, 'src/modules/compatibility/controllers/nest/merchant-protocol.controller.js');
 if (existsSync(nestCompat)) {
-  renameSync(nestCompat, join(ROOT, 'src/nest/legacy-compatibility/compat-v2.controller.js'));
+  renameSync(nestCompat, join(ROOT, 'src/modules/compatibility/controllers/nest/compat-v2.controller.js'));
 }
-const nestOrders = join(ROOT, 'src/nest/legacy-orders/merchant-protocol-orders.controller.js');
+const nestOrders = join(ROOT, 'src/modules/compatibility/controllers/nest/merchant-protocol-orders.controller.js');
 if (existsSync(nestOrders)) {
-  renameSync(nestOrders, join(ROOT, 'src/nest/legacy-orders/compat-v2-orders.controller.js'));
+  renameSync(nestOrders, join(ROOT, 'src/modules/compatibility/controllers/nest/compat-v2-orders.controller.js'));
 }
 
 // 5) Remove old module dirs (after copies + global import updates)
-for (const old of ['src/modules/channels', 'src/modules/channel-catalog-sync', 'src/nest/channels']) {
+for (const old of ['src/modules/channels', 'src/modules/channel-catalog-sync', 'src/app/channels']) {
   if (existsSync(old)) rmSync(old, { recursive: true, force: true });
 }
 

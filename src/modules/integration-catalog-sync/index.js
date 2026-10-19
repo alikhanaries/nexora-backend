@@ -1,13 +1,13 @@
-import { CatalogSyncEnqueueService } from './application/catalog-sync-enqueue-service.js';
-import { CatalogSyncReconciliationService } from './application/catalog-sync-reconciliation-service.js';
-import { IntegrationCatalogSyncService } from './application/integration-catalog-sync-service.js';
-import { IntegrationCatalogSyncRateLimiter } from './application/integration-catalog-sync-rate-limiter.js';
-import { ExecuteCatalogSyncJob } from './application/execute-catalog-sync-job.js';
-import { SyncChannelInventory } from './application/sync-integration-inventory.js';
-import { SyncChannelPrice } from './application/sync-integration-price.js';
-import { SyncChannelProduct } from './application/sync-integration-product.js';
-import { SyncChannelOffer } from './application/sync-integration-offer.js';
-import { FoundationStubMarketplaceCatalogAdapter } from './infrastructure/foundation-stub-marketplace-catalog-adapter.js';
+import { CatalogSyncEnqueueService } from './services/catalog-sync-enqueue-service.js';
+import { CatalogSyncReconciliationService } from './services/catalog-sync-reconciliation-service.js';
+import { IntegrationCatalogSyncService } from './services/integration-catalog-sync-service.js';
+import { IntegrationCatalogSyncRateLimiter } from './services/integration-catalog-sync-rate-limiter.js';
+import { ExecuteCatalogSyncJob } from './services/execute-catalog-sync-job.js';
+import { SyncChannelInventory } from './services/sync-integration-inventory.js';
+import { SyncChannelPrice } from './services/sync-integration-price.js';
+import { SyncChannelProduct } from './services/sync-integration-product.js';
+import { SyncChannelOffer } from './services/sync-integration-offer.js';
+import { FoundationStubMarketplaceCatalogAdapter } from './repositories/foundation-stub-marketplace-catalog-adapter.js';
 import { MarketplaceCatalogAdapterRegistry } from './public/marketplace-catalog-adapter-registry.js';
 
 /**
@@ -19,11 +19,11 @@ import { MarketplaceCatalogAdapterRegistry } from './public/marketplace-catalog-
  * @param {import('../../shared/logging/logger.port.js').Logger} deps.logger
  * @param {import('../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
  * @param {import('../offers/public/offer-query-service.js').DefaultOfferQueryService} deps.offerQueryService
- * @param {import('./application/marketplace-lookup.port.js').MarketplaceLookup} deps.marketplaceLookup
+ * @param {import('./services/marketplace-lookup.port.js').MarketplaceLookup} deps.marketplaceLookup
  * @param {import('../inventory/public/inventory-service.js').DefaultInventoryService} deps.inventoryService
  * @param {import('../pricing/public/pricing-service.js').DefaultPricingService} deps.pricingService
  * @param {import('../products/public/product-query-service.js').DefaultProductQueryService} deps.productQueryService
- * @param {import('../marketplaces/application/marketplace-adapter-runtime-factory.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
+ * @param {import('../marketplaces/services/marketplace-adapter-runtime-factory.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
  * @param {(registry: MarketplaceCatalogAdapterRegistry) => void} [deps.registerMarketplaceAdapters]
  * @param {import('./public/marketplace-entity-mapping-recorder.port.js').MarketplaceEntityMappingRecorder} [deps.marketplaceEntityMappingRecorder]
  */
@@ -104,8 +104,8 @@ export function createIntegrationCatalogSyncModule(deps) {
     };
 }
 
-export { IntegrationCatalogSyncService } from './application/integration-catalog-sync-service.js';
+export { IntegrationCatalogSyncService } from './services/integration-catalog-sync-service.js';
 export { FOUNDATION_STUB_MARKETPLACE_KEY } from './public/marketplace-catalog-adapter.port.js';
-export { buildCatalogSyncJobId } from './application/build-catalog-sync-job-id.js';
-export { planCatalogSyncJobsFromEvent } from './application/plan-catalog-sync-jobs.js';
-export { catalogSyncJobPayloadSchema } from './application/catalog-sync-job.schema.js';
+export { buildCatalogSyncJobId } from './services/build-catalog-sync-job-id.js';
+export { planCatalogSyncJobsFromEvent } from './services/plan-catalog-sync-jobs.js';
+export { catalogSyncJobPayloadSchema } from './services/catalog-sync-job.schema.js';

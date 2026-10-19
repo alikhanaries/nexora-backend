@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CompatV2ProductsQuery } from '../../../src/modules/compatibility/application/compat-v2-products-query.js';
+import { CompatV2ProductsQuery } from '../../../src/modules/compatibility/services/compat-v2-products-query.js';
 
 describe('CompatV2ProductsQuery', () => {
     it('returns CE product rows without requiring product content', async () => {

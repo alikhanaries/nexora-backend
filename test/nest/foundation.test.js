@@ -7,7 +7,7 @@ import { loadConfigFromEnvironment } from '../../src/app/config/index.js';
 import {
   configureExpress,
   verifyShopifyStyleHmac,
-} from '../../src/nest/bootstrap/configure-express.js';
+} from '../../src/app/http/configure-express.js';
 import { NestDiagnosticsController } from './helpers/diagnostics.controller.js';
 import { createTestNestApp } from './helpers/create-test-nest-app.js';
 

@@ -3,17 +3,17 @@ import { toReturnResponse } from '../../views/return.mapper.js';
 import { requireActorContext } from '../../../../shared/context/require-principal.js';
 import { actorFingerprint } from '../../../../shared/http/actor-fingerprint.js';
 import { fingerprintRequest, requireIdempotencyKey } from '../../../../shared/idempotency/index.js';
-import { commerceActorFields } from '../../../../nest/common/commerce-actor.js';
-import { CORE_DOMAIN } from '../../../../nest/domain/core-domain.tokens.js';
+import { commerceActorFields } from '../../../../app/common/commerce-actor.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
 export @Injectable()
 class ReturnsService {
-  constructor(@Inject(CORE_DOMAIN) coreDomain) {
-    this.coreDomain = coreDomain;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.coreServices = coreServices;
   }
 
   get useCases() {
-    return this.coreDomain.returns.useCases;
+    return this.coreServices.returns.useCases;
   }
 
   /**

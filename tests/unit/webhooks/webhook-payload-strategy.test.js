@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { resolveWebhookRequestBody } from '../../../src/modules/webhooks/application/webhook-payload-strategy.js';
+import { resolveWebhookRequestBody } from '../../../src/modules/webhooks/outbound/services/webhook-payload-strategy.js';
 
 describe('resolveWebhookRequestBody', () => {
     const subscription = { description: 'erp-bridge-alpha' };

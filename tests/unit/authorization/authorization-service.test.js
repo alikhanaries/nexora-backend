@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AuthorizationError } from '../../../src/shared/errors/index.js';
-import { DefaultAuthorizationService } from '../../../src/modules/authorization/application/authorization-service.js';
+import { DefaultAuthorizationService } from '../../../src/modules/authorization/services/authorization-service.js';
 describe('DefaultAuthorizationService', () => {
     const authorization = new DefaultAuthorizationService();
     it('checks permissions by key rather than role names', () => {

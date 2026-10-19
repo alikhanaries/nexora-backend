@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyWebhookHttpResponse, parseRetryAfterSeconds } from '../../../src/modules/webhooks/application/classify-webhook-http-response.js';
+import { classifyWebhookHttpResponse, parseRetryAfterSeconds } from '../../../src/modules/webhooks/outbound/services/classify-webhook-http-response.js';
 
 describe('classifyWebhookHttpResponse', () => {
     it('treats 2xx responses as success', () => {

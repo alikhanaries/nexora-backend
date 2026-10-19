@@ -9,7 +9,7 @@ import {
     loadOrderExternalIdMaps,
     loadReturnExternalIdMaps,
     loadShipmentExternalIdMaps,
-} from '../../../src/modules/compatibility/application/compatibility-external-id-enrichment.js';
+} from '../../../src/modules/compatibility/services/compatibility-external-id-enrichment.js';
 
 function buildQueryService(implementation = {}) {
     return {

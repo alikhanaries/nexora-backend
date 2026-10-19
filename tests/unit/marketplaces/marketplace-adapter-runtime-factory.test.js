@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceAdapterRuntimeFactory } from '../../../src/modules/marketplaces/application/marketplace-adapter-runtime-factory.js';
+import { MarketplaceAdapterRuntimeFactory } from '../../../src/modules/marketplaces/services/marketplace-adapter-runtime-factory.js';
 import { FOUNDATION_STUB_MARKETPLACE_KEY } from '../../../src/modules/integration-catalog-sync/public/marketplace-catalog-adapter.port.js';
 import { CatalogSyncPermanentError } from '../../../src/modules/integration-catalog-sync/public/catalog-sync-errors.js';
 

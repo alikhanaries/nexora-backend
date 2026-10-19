@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DefaultShipmentCommandService } from '../../../src/modules/shipments/public/shipment-command-service.js';
+import {
+    createShipmentCommandService,
+    DefaultShipmentCommandService,
+} from '../../../src/modules/shipments/public/shipment-command-service.js';
 
 const shipmentDetail = {
     id: 'shipment-1',
@@ -12,12 +15,12 @@ const shipmentDetail = {
     lines: [{ orderLineId: 'line-1', quantity: 2 }],
 };
 
-describe('DefaultShipmentCommandService', () => {
+describe('createShipmentCommandService', () => {
     it('delegates createShipment to the CreateShipment use case', async () => {
         const createShipment = {
             execute: vi.fn().mockResolvedValue({ shipment: shipmentDetail }),
         };
-        const service = new DefaultShipmentCommandService({ createShipment });
+        const service = createShipmentCommandService({ createShipment });
 
         const result = await service.createShipment({
             tenantId: 'tenant-1',
@@ -52,7 +55,7 @@ describe('DefaultShipmentCommandService', () => {
                 return { kind: 'executed', value };
             }),
         };
-        const service = new DefaultShipmentCommandService({ createShipment, idempotency });
+        const service = createShipmentCommandService({ createShipment, idempotency });
 
         const result = await service.createShipment({
             tenantId: 'tenant-1',
@@ -73,5 +76,23 @@ describe('DefaultShipmentCommandService', () => {
             idempotencyKey: 'idem-ship-1',
         }, 'body-1', expect.any(Function), expect.any(Function), { useTransaction: true });
         expect(result.shipment).toMatchObject({ transactionProvided: true });
+    });
+
+    it('keeps DefaultShipmentCommandService constructor-return wrapper working', async () => {
+        const createShipment = {
+            execute: vi.fn().mockResolvedValue({ shipment: shipmentDetail }),
+        };
+        const service = new DefaultShipmentCommandService({ createShipment });
+
+        const result = await service.createShipment({
+            tenantId: 'tenant-1',
+            actorId: 'actor-1',
+            actorKind: 'user',
+            actorPermissions: ['shipments.create'],
+            orderId: 'order-1',
+            lines: [{ orderLineId: 'line-1', quantity: 2 }],
+        });
+
+        expect(result).toEqual({ shipment: shipmentDetail });
     });
 });

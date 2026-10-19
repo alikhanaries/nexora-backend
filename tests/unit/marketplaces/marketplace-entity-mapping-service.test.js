@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceEntityMappingService } from '../../../src/modules/marketplaces/application/marketplace-entity-mapping-service.js';
+import { MarketplaceEntityMappingService } from '../../../src/modules/marketplaces/services/marketplace-entity-mapping-service.js';
 import { ValidationError } from '../../../src/shared/errors/index.js';
 
 describe('MarketplaceEntityMappingService', () => {

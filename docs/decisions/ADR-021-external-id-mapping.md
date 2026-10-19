@@ -187,7 +187,7 @@ Historical resources created before Phase 8.2 automatic assignment may lack `com
 - Is **idempotent**: reruns create zero new mappings; existing rows and sequence values are not rewritten.
 - Relies on repository **unique constraints** and conflict handling for safe concurrent runs.
 
-**Execution:** `npm run backfill:external-ids` (optional `--tenant-id=<uuid>`). Implementation lives in `src/modules/external-id-mapping/` (`BackfillExternalIntegerIdMappings`, `PostgresExternalIdBackfillQueries`) and `src/app/bootstrap/external-id-backfill-cli.js`.
+**Execution:** `npm run backfill:external-ids` (optional `--tenant-id=<uuid>`). Implementation lives in `src/modules/external-id-mapping/` (`BackfillExternalIntegerIdMappings`, `PostgresExternalIdBackfillQueries`) and `src/app/external-id-backfill-cli.js`.
 
 **Semantics:** Nexora-assigned integers only (same PostgreSQL sequence mechanism as Phase 8.1). No import of legacy ChannelEngine IDs.
 

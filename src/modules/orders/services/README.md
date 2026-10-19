@@ -5,7 +5,7 @@ Authoritative structure for the **Orders** feature module:
 | Folder | Responsibility |
 |--------|----------------|
 | `models/` | Domain entities and rules (`Order`, `OrderStatus`, …) |
-| `services/` | Application use cases and orchestration (`createGetOrder`, `CreateOrder`, …) |
+| `services/` | Application use cases as factories (`createGetOrder`, `createCreateOrder`, …); deprecated class wrappers only where public consumers still import them |
 | `repositories/` | Persistence ports and PostgreSQL adapters |
 | `views/` | API DTO mapping, Zod schemas, serializers (`order.mapper.js`, `order.schemas.js`, `order-dto.js`) |
 | `controllers/` | HTTP entrypoints — legacy Fastify route table (`order.routes.js`) |

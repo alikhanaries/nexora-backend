@@ -4,22 +4,26 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
-const routeSource = readFileSync(
-  join(repoRoot, 'src/modules/compatibility/presentation/compat-v2.routes.js'),
-  'utf8',
-);
+
+const CONTROLLER_FILES = [
+  'src/modules/compatibility/controllers/nest/compat-v2.controller.js',
+  'src/modules/compatibility/controllers/nest/compat-v2-orders.controller.js',
+];
 
 const REQUIRED_PUBLIC_ROUTES = [
-  "typed.get('/api/v2/ce/orders'",
-  "typed.post('/api/v2/ce/orders/acknowledge'",
-  "typed.post('/api/v2/ce/cancellations'",
-  "typed.get('/api/v2/ce/channels'",
+  "/api/v2/ce/orders'",
+  "/api/v2/ce/orders/acknowledge'",
+  "/api/v2/ce/cancellations'",
+  "/api/v2/ce/channels'",
 ];
 
 describe('compat v2 route registration', () => {
-  it('keeps public /api/v2/ce/* handlers registered in Fastify compatibility routes', () => {
+  it('keeps public /api/v2/ce/* handlers on Nest compatibility controllers', () => {
+    const source = CONTROLLER_FILES.map((rel) =>
+      readFileSync(join(repoRoot, rel), 'utf8'),
+    ).join('\n');
     for (const snippet of REQUIRED_PUBLIC_ROUTES) {
-      expect(routeSource).toContain(snippet);
+      expect(source).toContain(snippet);
     }
   });
 });

@@ -38,7 +38,7 @@ Modules communicate through **public interfaces** exported from the module root 
     → modules/inventory/public/get-stock.ts
 
 ❌  modules/orders/services/create-order.ts
-    → modules/inventory/infrastructure/stock-repository.ts
+    → modules/inventory/repositories/stock-repository.ts
 ```
 
 ### Compatibility module (`/api/v2`)

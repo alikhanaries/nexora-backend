@@ -1,84 +1,65 @@
-# Business Modules
+# Business Modules (MVC)
 
-`src/modules/` holds **bounded contexts** — orders, products, commerce integrations, inventory, etc. This document defines conventions for module layout and boundaries.
+`src/modules/` holds **bounded contexts** — orders, products, commerce integrations, inventory, etc.
 
-## Module structure
+## Canonical module structure (MVC)
 
 Each module is a self-contained vertical slice:
 
 ```
 src/modules/<module-name>/
-├── domain/           Entities, value objects, domain services — pure TS
-├── application/      Use cases, command/query handlers
-├── infrastructure/   Module-specific repos, adapters (may use src/infrastructure)
-├── presentation/     Fastify route plugins for /api/v1
-├── public/           Exported interfaces for other modules (optional)
-└── index.ts          Public module API surface
+├── models/              Entities, value objects, domain rules
+├── services/            Use cases / application workflows
+├── repositories/        Postgres repositories + module adapters
+├── views/               HTTP mappers, Zod schemas, DTO helpers
+├── controllers/nest/    NestJS module / controller / service (HTTP)
+├── public/              Cross-module contracts
+├── <feature>/           Optional nested feature slice (same MVC layers)
+└── index.js             create<Module>Module composition root
 ```
 
-### Naming
+### Owned feature slices (do not create sibling top-level modules)
 
-- Module folder: lowercase, hyphenated (`compatibility`, `stock-reservations`)
-- Use case files: verb-noun (`create-order.ts`, `list-products.ts`)
-- Domain types: PascalCase (`Order`, `ProductSku`)
+| Concern | Location |
+| ------- | -------- |
+| Marketplace order ingestion / lifecycle | `orders/marketplace-ingestion/` |
+| Marketplace inbound webhooks | `webhooks/marketplace/` |
+| Merchant outbound webhooks (subscriptions / delivery) | `webhooks/outbound/` |
+| ERP adapters (StockConnect, future ERPs) | `erp/<erp-name>/` |
+
+See [erp/README.md](erp/README.md).
+
+### Mapping from the old layered names
+
+| Old | MVC |
+| ------------ | --- |
+| `domain/` | `models/` |
+| `application/` | `services/` |
+| `infrastructure/` | `repositories/` |
+| `presentation/` | `views/` (+ Nest under `controllers/nest/`) |
+
+Do **not** add new code under `domain/`, `application/`, `infrastructure/`, or `presentation/`.
+
+## Nest HTTP surface
+
+Feature Nest modules live under each business module’s `controllers/nest/` (auth → `identity`, Merchant/CE adapters → `compatibility`, StockConnect → `erp/stock-connect`, health → `health`, etc.).
+
+`src/app/` is the composition root (`main.js`, `app.module.js`, shared guards/filters, config DI module, database module, DI tokens). Import feature Nest modules from there — do not add feature controllers under `src/app/`.
 
 ## Layer rules (enforced)
 
-| From              | May import                                              |
-| ----------------- | ------------------------------------------------------- |
-| `domain/`         | `shared/` only                                          |
-| `application/`    | Own `domain/`, `shared/`, other modules' **public** API |
-| `infrastructure/` | Own `domain/`, `shared/`, `src/infrastructure/*`        |
-| `presentation/`   | Own `application/`, `shared/`                           |
+| From | May import |
+| ---- | ---------- |
+| `models/` | `shared/` only |
+| `services/` | Own `models/`, `shared/`, other modules’ **public** API |
+| `repositories/` | Own `models/`, `shared/`, `src/infrastructure/*` |
+| `views/` / `controllers/` | Own `services/`, `shared/` |
+| `controllers/nest/` | Module use cases via `CORE_SERVICES` / public APIs — no repository imports |
 
-Run `npm run arch:check` after every module change.
-
-## Cross-module communication
-
-**Allowed:**
-
-```typescript
-import { getAvailableStock } from '../inventory/public/stock-queries.js';
-```
-
-**Forbidden:**
-
-```typescript
-import { StockRepository } from '../inventory/infrastructure/stock-repository.js';
-```
-
-Prefer integration events (outbox) for async cross-module reactions; synchronous calls only when read consistency requires it.
-
-## HTTP routes
-
-- Native routes: register under `/api/v1/<resource>` in module `presentation/`
-- Register plugin in `src/app/http/create-server.ts`
-- Use Zod schemas for OpenAPI generation
-
-Merchant-compatible external API routes belong in the provider-neutral `compatibility` module under `/api/v2` — not in core domain modules. Native Wasl routes stay under `/api/v1`.
-
-## Persistence
-
-- Module-specific SQL in new migration files
-- Repositories in `modules/<name>/infrastructure/` using `PostgresDatabase`
-- Set tenant GUC at transaction start once auth exists
-
-## Testing
-
-- Unit tests: domain and application layers with mocked ports
-- Integration tests: `tests/integration/<module>.test.ts` against Docker services
-
-## First modules (planned)
-
-Order of implementation to be confirmed in Phase 2 planning:
-
-1. **Products** — catalog foundation
-2. **Inventory** — stock levels
-3. **Orders** — order lifecycle
-4. **Channels** — marketplace connections
-5. **compatibility** — Merchant-compatible `/api/v2` adapter (parallel with domain modules; provider-neutral internally)
+Run `npm run arch:check` after structural changes.
 
 ## Related
 
+- [docs/architecture/function-based-mvc-migration.md](../../docs/architecture/function-based-mvc-migration.md)
 - [docs/architecture/module-boundaries.md](../../docs/architecture/module-boundaries.md)
 - [docs/decisions/ADR-001-modular-monolith.md](../../docs/decisions/ADR-001-modular-monolith.md)

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 
 const REQUIRED_CE_ROUTES = [
@@ -28,6 +28,11 @@ const REQUIRED_CE_ROUTES = [
     'GET /api/v2/ce/orders/:merchantOrderNo/invoice',
 ];
 
+const CONTROLLER_FILES = [
+    'compat-v2.controller.js',
+    'compat-v2-orders.controller.js',
+];
+
 describe('StockConnect CE route inventory (Phase 50)', () => {
     let app;
     let routeSource;
@@ -37,20 +42,20 @@ describe('StockConnect CE route inventory (Phase 50)', () => {
         app = await createApplication(infra);
         await app.httpServer.ready();
         const thisDir = dirname(fileURLToPath(import.meta.url));
-        routeSource = readFileSync(
-            join(thisDir, '../../src/modules/compatibility/presentation/compat-v2.routes.js'),
-            'utf8',
-        );
+        const nestDir = join(thisDir, '../../src/modules/compatibility/controllers/nest');
+        routeSource = CONTROLLER_FILES.map((name) =>
+            readFileSync(join(nestDir, name), 'utf8'),
+        ).join('\n');
     });
 
     afterAll(async () => {
         await closeTestInfrastructure();
     });
 
-    it('registers every StockConnect-required CE route in source', () => {
+    it('registers every StockConnect-required CE route in Nest controllers', () => {
         for (const route of REQUIRED_CE_ROUTES) {
-            const [method, path] = route.split(' ');
-            expect(routeSource).toContain(`typed.${method.toLowerCase()}('${path}'`);
+            const [, path] = route.split(' ');
+            expect(routeSource, `missing ${route}`).toContain(`'${path}'`);
         }
     });
 

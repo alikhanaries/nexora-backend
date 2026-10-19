@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BusinessRuleError } from '../../../src/shared/errors/index.js';
-import { LastAdminGuard } from '../../../src/modules/authorization/application/last-admin-guard.js';
+import { LastAdminGuard } from '../../../src/modules/authorization/services/last-admin-guard.js';
 const tx = {};
 function createGuard(overrides) {
     const roles = {

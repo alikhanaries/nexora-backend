@@ -21,43 +21,48 @@ function clampPage(page) {
     return requested;
 }
 
-export class DefaultShipmentQueryService {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async getShipmentById(tenantId, shipmentId, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        const shipment = await this.deps.shipments.findById(queryable, tenantId, shipmentId);
+/**
+ * @param {object} deps
+ * @param {import('../../authorization/public/index.js').AuthorizationService} deps.authorization
+ * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresQueryable} deps.queryable
+ * @param {import('../repositories/postgres-shipment-repository.js').PostgresShipmentRepository} deps.shipments
+ */
+export function createShipmentQueryService(deps) {
+    async function getShipmentById(tenantId, shipmentId, tx) {
+        const queryable = tx ?? deps.queryable;
+        const shipment = await deps.shipments.findById(queryable, tenantId, shipmentId);
         if (shipment === null) {
             throw new NotFoundError('Shipment was not found', { tenantId, shipmentId });
         }
-        const lines = await this.deps.shipments.listShipmentLines(queryable, tenantId, shipmentId);
+        const lines = await deps.shipments.listShipmentLines(queryable, tenantId, shipmentId);
         return toShipmentDetailDto(shipment, lines);
     }
-    async getShipmentSummaryById(tenantId, shipmentId, tx) {
-        const queryable = tx ?? this.deps.queryable;
-        const shipment = await this.deps.shipments.findById(queryable, tenantId, shipmentId);
+
+    async function getShipmentSummaryById(tenantId, shipmentId, tx) {
+        const queryable = tx ?? deps.queryable;
+        const shipment = await deps.shipments.findById(queryable, tenantId, shipmentId);
         if (shipment === null) {
             throw new NotFoundError('Shipment was not found', { tenantId, shipmentId });
         }
         return toShipmentDto(shipment);
     }
-    async findShipmentByExternalReference(tenantId, externalReference, tx) {
-        const queryable = tx ?? this.deps.queryable;
+
+    async function findShipmentByExternalReference(tenantId, externalReference, tx) {
+        const queryable = tx ?? deps.queryable;
         const trimmed = externalReference.trim();
-        const shipment = await this.deps.shipments.findByExternalReference(queryable, tenantId, trimmed);
+        const shipment = await deps.shipments.findByExternalReference(queryable, tenantId, trimmed);
         if (shipment === null) {
             throw new NotFoundError('Shipment was not found', {
                 tenantId,
                 externalReference: trimmed,
             });
         }
-        const lines = await this.deps.shipments.listShipmentLines(queryable, tenantId, shipment.id);
+        const lines = await deps.shipments.listShipmentLines(queryable, tenantId, shipment.id);
         return toShipmentDetailDto(shipment, lines);
     }
-    async listShipments(input) {
-        requireShipmentsRead(this.deps.authorization, input.actorPermissions);
+
+    async function listShipments(input) {
+        requireShipmentsRead(deps.authorization, input.actorPermissions);
         const page = clampPage(input.page);
         const pageSize = clampPageSize(input.pageSize);
         const filters = {
@@ -77,10 +82,10 @@ export class DefaultShipmentQueryService {
             ...(input.deliveredBefore === undefined ? {} : { deliveredBefore: input.deliveredBefore }),
         };
         const sortDirection = input.sortDirection ?? 'asc';
-        const totalCount = await this.deps.shipments.count(this.deps.queryable, input.tenantId, filters);
-        const shipments = await this.deps.shipments.listPageOffset(this.deps.queryable, input.tenantId, filters, page, pageSize, sortDirection);
+        const totalCount = await deps.shipments.count(deps.queryable, input.tenantId, filters);
+        const shipments = await deps.shipments.listPageOffset(deps.queryable, input.tenantId, filters, page, pageSize, sortDirection);
         const items = await Promise.all(shipments.map(async (shipment) => {
-            const lines = await this.deps.shipments.listShipmentLines(this.deps.queryable, input.tenantId, shipment.id);
+            const lines = await deps.shipments.listShipmentLines(deps.queryable, input.tenantId, shipment.id);
             return toShipmentDetailDto(shipment, lines);
         }));
         return {
@@ -89,5 +94,19 @@ export class DefaultShipmentQueryService {
             page,
             pageSize,
         };
+    }
+
+    return {
+        getShipmentById,
+        getShipmentSummaryById,
+        findShipmentByExternalReference,
+        listShipments,
+    };
+}
+
+/** @deprecated Prefer {@link createShipmentQueryService}; kept for existing import sites and JSDoc typedefs. */
+export class DefaultShipmentQueryService {
+    constructor(deps) {
+        return createShipmentQueryService(deps);
     }
 }

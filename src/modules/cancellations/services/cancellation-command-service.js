@@ -20,27 +20,21 @@ function toCreateCancellationInput(command) {
     };
 }
 
-export class DefaultCancellationCommandService {
-    deps;
-
-    /**
-     * @param {object} deps
-     * @param {import('./create-cancellation.js').CreateCancellation} deps.createCancellation
-     * @param {import('../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
-     */
-    constructor(deps) {
-        this.deps = deps;
-    }
-
+/**
+ * @param {object} deps
+ * @param {{ execute: Function }} deps.createCancellation
+ * @param {import('../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
+ */
+export function createCancellationCommandService(deps) {
     /**
      * @param {import('../public/cancellation-command-service.js').CreateCancellationCommand} command
      * @returns {Promise<import('../public/cancellation-command-service.js').CreateCancellationResult>}
      */
-    async createCancellation(command) {
+    async function createCancellation(command) {
         const createInput = toCreateCancellationInput(command);
 
         if (command.transaction !== undefined) {
-            const { cancellation } = await this.deps.createCancellation.execute({
+            const { cancellation } = await deps.createCancellation.execute({
                 ...createInput,
                 transaction: command.transaction,
             });
@@ -48,19 +42,19 @@ export class DefaultCancellationCommandService {
         }
 
         if (command.idempotencyKey !== undefined) {
-            if (this.deps.idempotency === undefined) {
+            if (deps.idempotency === undefined) {
                 throw new Error('Idempotency service is required when idempotencyKey is provided');
             }
             if (command.principalFingerprint === undefined || command.requestFingerprint === undefined) {
                 throw new Error('principalFingerprint and requestFingerprint are required when idempotencyKey is provided');
             }
-            const outcome = await this.deps.idempotency.execute({
+            const outcome = await deps.idempotency.execute({
                 tenantId: command.tenantId,
                 principalFingerprint: command.principalFingerprint,
                 routeId: command.routeId ?? DEFAULT_CREATE_ROUTE_ID,
                 idempotencyKey: command.idempotencyKey,
             }, command.requestFingerprint, async (tx) => {
-                const { cancellation } = await this.deps.createCancellation.execute({
+                const { cancellation } = await deps.createCancellation.execute({
                     ...createInput,
                     transaction: tx,
                 });
@@ -69,7 +63,16 @@ export class DefaultCancellationCommandService {
             return outcome.value;
         }
 
-        const { cancellation } = await this.deps.createCancellation.execute(createInput);
+        const { cancellation } = await deps.createCancellation.execute(createInput);
         return { cancellation };
+    }
+
+    return { createCancellation };
+}
+
+/** @deprecated Prefer {@link createCancellationCommandService}; kept for existing import sites and tests. */
+export class DefaultCancellationCommandService {
+    constructor(deps) {
+        return createCancellationCommandService(deps);
     }
 }

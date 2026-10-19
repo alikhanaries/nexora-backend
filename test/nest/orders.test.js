@@ -66,17 +66,17 @@ describe('Nest orders module', () => {
   });
 
   it('GET /api/v1/orders requires authentication', async () => {
-    const coreDomain = createMockCoreDomain();
-    const created = await createTestNestApp({ coreDomain });
+    const coreServices = createMockCoreDomain();
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
     await request(app.getHttpServer()).get('/api/v1/orders').expect(401);
   });
 
   it('GET /api/v1/orders returns list envelope when authenticated', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorWithRead);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorWithRead);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -88,7 +88,7 @@ describe('Nest orders module', () => {
       success: true,
       data: { items: [], nextCursor: null, hasMore: false },
     });
-    expect(coreDomain.orders.useCases.listOrders.execute).toHaveBeenCalledWith(
+    expect(coreServices.orders.useCases.listOrders.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         tenantId,
         actorPermissions: actorWithRead.permissions,
@@ -97,10 +97,10 @@ describe('Nest orders module', () => {
   });
 
   it('GET /api/v1/orders forwards query filters to list use case', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorWithRead);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorWithRead);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())
@@ -117,7 +117,7 @@ describe('Nest orders module', () => {
       .set('Authorization', 'Bearer token')
       .expect(200);
 
-    expect(coreDomain.orders.useCases.listOrders.execute).toHaveBeenCalledWith(
+    expect(coreServices.orders.useCases.listOrders.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         limit: 10,
         status: 'NEW',
@@ -131,12 +131,12 @@ describe('Nest orders module', () => {
   });
 
   it('GET /api/v1/orders/:orderId returns order detail', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorWithRead);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorWithRead);
     const order = buildOrderDomain();
-    coreDomain.orders.useCases.getOrder.execute.mockResolvedValue({ order });
+    coreServices.orders.useCases.getOrder.execute.mockResolvedValue({ order });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -150,10 +150,10 @@ describe('Nest orders module', () => {
   });
 
   it('GET /api/v1/orders/:orderId rejects invalid orderId param', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorWithRead);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorWithRead);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())
@@ -163,10 +163,10 @@ describe('Nest orders module', () => {
   });
 
   it('POST /api/v1/orders requires Idempotency-Key header', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorWithCreate);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorWithCreate);
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())
@@ -181,12 +181,12 @@ describe('Nest orders module', () => {
   });
 
   it('POST /api/v1/orders returns 201 with idempotent envelope', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorWithCreate);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorWithCreate);
     const order = buildOrderDomain();
-    coreDomain.orders.useCases.createOrder.execute.mockResolvedValue({ order });
+    coreServices.orders.useCases.createOrder.execute.mockResolvedValue({ order });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -202,7 +202,7 @@ describe('Nest orders module', () => {
 
     expect(response.body.success).toBe(true);
     expect(response.body.data.orderNumber).toBe('ORD-1');
-    expect(coreDomain.orders.useCases.idempotency.execute).toHaveBeenCalledWith(
+    expect(coreServices.orders.useCases.idempotency.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         routeId: 'POST /api/v1/orders',
         idempotencyKey: 'create-order-key-1',
@@ -215,12 +215,12 @@ describe('Nest orders module', () => {
   });
 
   it('POST /api/v1/orders/:orderId/confirm returns updated order', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue(actorWithUpdate);
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue(actorWithUpdate);
     const order = { ...buildOrderDomain(), status: 'CONFIRMED' };
-    coreDomain.orders.useCases.confirmOrder.execute.mockResolvedValue({ order });
+    coreServices.orders.useCases.confirmOrder.execute.mockResolvedValue({ order });
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     const response = await request(app.getHttpServer())
@@ -233,16 +233,16 @@ describe('Nest orders module', () => {
   });
 
   it('propagates authorization failures from use cases', async () => {
-    const coreDomain = createMockCoreDomain();
-    coreDomain.authenticateAccessToken.execute.mockResolvedValue({
+    const coreServices = createMockCoreDomain();
+    coreServices.authenticateAccessToken.execute.mockResolvedValue({
       ...actorWithRead,
       permissions: [],
     });
-    coreDomain.orders.useCases.listOrders.execute.mockRejectedValue(
+    coreServices.orders.useCases.listOrders.execute.mockRejectedValue(
       new AuthorizationError('Missing permission'),
     );
 
-    const created = await createTestNestApp({ coreDomain });
+    const created = await createTestNestApp({ coreServices });
     app = created.app;
 
     await request(app.getHttpServer())

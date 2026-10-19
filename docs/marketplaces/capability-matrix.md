@@ -30,5 +30,5 @@ Authoritative summary of **implemented** adapter behavior. “Partial” means t
 | Noon | `noon_partner_sku`, `noon_offer`, `noon_catalog_sku` |
 | Namshi | `namshi_partner_sku`, `namshi_offer`, `namshi_catalog_sku` |
 
-Provider details: `src/modules/marketplaces/infrastructure/adapters/{shopify,amazon,noon,namshi}/README.md`.
+Provider details: `src/modules/marketplaces/repositories/adapters/{shopify,amazon,noon,namshi}/README.md`.
 

@@ -1,6 +1,6 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { createNoonLoginJwt } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-jwt.js';
+import { createNoonLoginJwt } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-jwt.js';
 
 describe('createNoonLoginJwt', () => {
     const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });

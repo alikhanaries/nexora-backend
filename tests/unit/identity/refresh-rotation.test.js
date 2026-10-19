@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateRefreshSession, RefreshSession, } from '../../../src/modules/identity/domain/index.js';
+import { evaluateRefreshSession, RefreshSession, } from '../../../src/modules/identity/models/index.js';
 function session(overrides = {}) {
     const now = new Date('2026-01-01T00:00:00Z');
     return RefreshSession.create({

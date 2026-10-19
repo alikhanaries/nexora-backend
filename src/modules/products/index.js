@@ -1,6 +1,6 @@
-import { ArchiveProduct, CreateProduct, DeactivateProduct, DefaultProductQueryService, GetProduct, GetProductContent, ListProducts, UpdateProduct, UpsertProductContent, } from './application/index.js';
-import { PostgresProductContentRepository, PostgresProductRepository, } from './infrastructure/index.js';
-import productRoutes, {} from './presentation/product.routes.js';
+import { ArchiveProduct, CreateProduct, DeactivateProduct, DefaultProductQueryService, GetProduct, GetProductContent, ListProducts, UpdateProduct, UpsertProductContent, } from './services/index.js';
+import { PostgresProductContentRepository, PostgresProductRepository, } from './repositories/index.js';
+import productRoutes, {} from './views/product.routes.js';
 export function createProductsModule(deps) {
     const products = new PostgresProductRepository();
     const productContent = new PostgresProductContentRepository();
@@ -46,4 +46,4 @@ export function createProductsModule(deps) {
         routes: productRoutes,
     };
 }
-export { Product, ProductContent, ProductStatus, ProductType, normalizeMerchantSku, } from './domain/index.js';
+export { Product, ProductContent, ProductStatus, ProductType, normalizeMerchantSku, } from './models/index.js';

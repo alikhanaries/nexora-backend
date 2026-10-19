@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapExternalStatusesToPlatformStatuses, mapOrderPageToExternalCollection, } from '../../../src/modules/compatibility/application/mappers/compatibility-order.mapper.js';
+import { mapExternalStatusesToPlatformStatuses, mapOrderPageToExternalCollection, } from '../../../src/modules/compatibility/services/mappers/compatibility-order.mapper.js';
 
 function buildOrder(overrides = {}) {
     const createdAt = new Date('2026-01-15T10:00:00.000Z');

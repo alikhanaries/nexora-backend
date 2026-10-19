@@ -1,11 +1,11 @@
 import { createHmac } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
-import { MarketplaceOrderLifecycleOperation } from '../../src/modules/marketplace-order-ingestion/index.js';
-import { MarketplaceOrderLifecycleUnsupportedError } from '../../src/modules/marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
-import { ShopifyGraphqlClient } from '../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-graphql-client.js';
-import { PostgresMarketplaceConnectionRepository } from '../../src/modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
-import { hashWebhookIngressToken } from '../../src/modules/marketplace-webhook-ingestion/application/webhook-ingress-token.js';
+import { createApplication } from '../../src/app/create-application.js';
+import { MarketplaceOrderLifecycleOperation } from '../../src/modules/orders/marketplace-ingestion/index.js';
+import { MarketplaceOrderLifecycleUnsupportedError } from '../../src/modules/orders/marketplace-ingestion/public/marketplace-order-lifecycle-errors.js';
+import { ShopifyGraphqlClient } from '../../src/modules/marketplaces/repositories/adapters/shopify/shopify-graphql-client.js';
+import { PostgresMarketplaceConnectionRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-connection-repository.js';
+import { hashWebhookIngressToken } from '../../src/modules/webhooks/marketplace/services/webhook-ingress-token.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { configureChannelForIngest } from './compatibility-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';

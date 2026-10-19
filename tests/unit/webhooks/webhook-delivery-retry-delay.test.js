@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveWebhookRetryDelayMs } from '../../../src/modules/webhooks/application/webhook-delivery-retry-delay.js';
+import { resolveWebhookRetryDelayMs } from '../../../src/modules/webhooks/outbound/services/webhook-delivery-retry-delay.js';
 
 describe('resolveWebhookRetryDelayMs', () => {
     it('returns null when Retry-After is absent', () => {

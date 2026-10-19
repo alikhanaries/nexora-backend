@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MarketplaceIntegrationEntityType,
   isMarketplaceIntegrationEntityType,
-} from '../../../src/modules/marketplaces/domain/marketplace-integration-entity-type.js';
+} from '../../../src/modules/marketplaces/models/marketplace-integration-entity-type.js';
 
 describe('marketplace-integration-entity-type', () => {
   it('accepts product, offer, and stock_location', () => {

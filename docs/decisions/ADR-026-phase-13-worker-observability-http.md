@@ -20,7 +20,7 @@ Authentication is bypassed for `/health/*` and `/internal/metrics` on the API ([
 The worker process **already records** worker-relevant metrics into the same in-process registry:
 
 - `queue_jobs_total`, `queue_job_duration_seconds` — BullMQ handlers ([`bullmq-worker-runtime.js`](../../src/infrastructure/queue/bullmq-worker-runtime.js))
-- `webhook_delivery_*` — HTTP delivery worker ([`webhook-delivery-service.js`](../../src/modules/webhooks/application/webhook-delivery-service.js))
+- `webhook_delivery_*` — HTTP delivery worker ([`webhook-delivery-service.js`](../../src/modules/webhooks/outbound/services/webhook-delivery-service.js))
 - `nexora_retention_cleanup_*` — retention sweeps ([`retention-cleanup-service.js`](../../src/infrastructure/postgres/retention-cleanup-service.js))
 - `db_*`, `redis_*`, Node.js default metrics — shared infrastructure adapters
 
@@ -218,7 +218,7 @@ No Kubernetes-specific resources are required by this ADR.
 | Metrics `render()` throws | `200` / `503` per readiness | Same | `500` empty or minimal error body; log error | Unchanged |
 | Observability HTTP disabled | N/A (connection refused) | N/A | N/A | Unchanged |
 
-Shutdown order (extends existing [`shutdown.js`](../../src/app/bootstrap/shutdown.js) for worker):
+Shutdown order (extends existing [`shutdown.js`](../../src/app/shutdown.js) for worker):
 
 1. `readiness.markNotReady()`
 2. Close worker observability HTTP server (stop probes returning success)

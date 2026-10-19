@@ -140,17 +140,17 @@ function shipmentEntity(status = 'CREATED') {
   };
 }
 
-function wireStockConnectMocks(coreDomain) {
-  coreDomain.authorization = {
-    ...coreDomain.authorization,
+function wireStockConnectMocks(coreServices) {
+  coreServices.authorization = {
+    ...coreServices.authorization,
     authorizationService: {
       requirePermission: jest.fn(),
     },
   };
-  coreDomain.products.productQueryService = {
+  coreServices.products.productQueryService = {
     getProductBySku: jest.fn().mockResolvedValue(productEntity()),
   };
-  coreDomain.orders.orderQueryService = {
+  coreServices.orders.orderQueryService = {
     getOrderLines: jest.fn().mockResolvedValue(orderEntity().lines),
     listOrders: jest.fn().mockResolvedValue({
       items: [orderEntity()],
@@ -159,29 +159,29 @@ function wireStockConnectMocks(coreDomain) {
       totalCount: 1,
     }),
   };
-  coreDomain.channelRouteDeps.listChannels.execute.mockResolvedValue({
+  coreServices.channelRouteDeps.listChannels.execute.mockResolvedValue({
     channels: [channelEntity()],
   });
-  coreDomain.products.useCases.listProducts.execute.mockResolvedValue({
+  coreServices.products.useCases.listProducts.execute.mockResolvedValue({
     items: [productEntity()],
     nextCursor: null,
     hasMore: false,
   });
-  coreDomain.products.useCases.createProduct.execute.mockResolvedValue({
+  coreServices.products.useCases.createProduct.execute.mockResolvedValue({
     product: productEntity(),
   });
-  coreDomain.products.useCases.getProduct.execute.mockResolvedValue({
+  coreServices.products.useCases.getProduct.execute.mockResolvedValue({
     product: productEntity(),
   });
-  coreDomain.products.useCases.updateProduct.execute.mockResolvedValue({
+  coreServices.products.useCases.updateProduct.execute.mockResolvedValue({
     product: productEntity({ externalReference: 'sc-ext' }),
   });
-  coreDomain.offers.useCases.listOffers.execute.mockResolvedValue({
+  coreServices.offers.useCases.listOffers.execute.mockResolvedValue({
     items: [],
     nextCursor: null,
     hasMore: false,
   });
-  coreDomain.offers.useCases.createOffer.execute.mockResolvedValue({
+  coreServices.offers.useCases.createOffer.execute.mockResolvedValue({
     offer: {
       id: '99999999-9999-4999-8999-999999999999',
       tenantId: TENANT_A,
@@ -192,7 +192,7 @@ function wireStockConnectMocks(coreDomain) {
       updatedAt: NOW,
     },
   });
-  coreDomain.offers.useCases.activateOffer.execute.mockResolvedValue({
+  coreServices.offers.useCases.activateOffer.execute.mockResolvedValue({
     offer: {
       id: '99999999-9999-4999-8999-999999999999',
       tenantId: TENANT_A,
@@ -203,7 +203,7 @@ function wireStockConnectMocks(coreDomain) {
       updatedAt: NOW,
     },
   });
-  coreDomain.inventory.useCases.getInventory.execute.mockResolvedValue({
+  coreServices.inventory.useCases.getInventory.execute.mockResolvedValue({
     balances: [
       {
         id: 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',
@@ -218,28 +218,28 @@ function wireStockConnectMocks(coreDomain) {
       },
     ],
   });
-  coreDomain.inventory.useCases.adjustInventory.execute.mockResolvedValue({
+  coreServices.inventory.useCases.adjustInventory.execute.mockResolvedValue({
     idempotent: false,
     balance: { onHand: 12, reserved: 2, available: 10 },
   });
-  coreDomain.orders.useCases.listOrders.execute.mockResolvedValue({
+  coreServices.orders.useCases.listOrders.execute.mockResolvedValue({
     items: [orderEntity()],
     nextCursor: null,
     hasMore: false,
   });
-  coreDomain.orders.useCases.getOrder.execute.mockResolvedValue({
+  coreServices.orders.useCases.getOrder.execute.mockResolvedValue({
     order: orderEntity(),
   });
-  coreDomain.cancellations.useCases.createCancellation.execute.mockResolvedValue({
+  coreServices.cancellations.useCases.createCancellation.execute.mockResolvedValue({
     cancellation: { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', status: 'COMPLETED' },
   });
-  coreDomain.shipments.useCases.createShipment.execute.mockResolvedValue({
+  coreServices.shipments.useCases.createShipment.execute.mockResolvedValue({
     shipment: shipmentEntity('CREATED'),
   });
-  coreDomain.shipments.useCases.getShipment.execute.mockResolvedValue({
+  coreServices.shipments.useCases.getShipment.execute.mockResolvedValue({
     shipment: shipmentEntity('CREATED'),
   });
-  coreDomain.shipments.useCases.shipShipment.execute.mockResolvedValue({
+  coreServices.shipments.useCases.shipShipment.execute.mockResolvedValue({
     shipment: shipmentEntity('SHIPPED'),
   });
 }
@@ -257,7 +257,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
 
   describe('authentication', () => {
     it('GET ping is public and returns stock-connect envelope', async () => {
-      const created = await createTestNestApp({ coreDomain: createMockCoreDomain() });
+      const created = await createTestNestApp({ coreServices: createMockCoreDomain() });
       app = created.app;
       const response = await request(app.getHttpServer())
         .get('/api/v2/stock-connect/ping')
@@ -270,15 +270,15 @@ describe('StockConnect ERP adapter HTTP contract', () => {
     });
 
     it('rejects missing Authorization on channels', async () => {
-      const created = await createTestNestApp({ coreDomain: createMockCoreDomain() });
+      const created = await createTestNestApp({ coreServices: createMockCoreDomain() });
       app = created.app;
       await request(app.getHttpServer()).get('/api/v2/stock-connect/channels').expect(401);
     });
 
     it('rejects invalid API key', async () => {
-      const coreDomain = createMockCoreDomain();
-      coreDomain.verifyApiKey.execute.mockRejectedValue(new AuthenticationError('Invalid API key'));
-      const created = await createTestNestApp({ coreDomain });
+      const coreServices = createMockCoreDomain();
+      coreServices.verifyApiKey.execute.mockRejectedValue(new AuthenticationError('Invalid API key'));
+      const created = await createTestNestApp({ coreServices });
       app = created.app;
       await request(app.getHttpServer())
         .get('/api/v2/stock-connect/channels')
@@ -287,25 +287,25 @@ describe('StockConnect ERP adapter HTTP contract', () => {
     });
 
     it('rejects malformed Bearer token as JWT failure', async () => {
-      const coreDomain = createMockCoreDomain();
-      coreDomain.authenticateAccessToken.execute.mockRejectedValue(
+      const coreServices = createMockCoreDomain();
+      coreServices.authenticateAccessToken.execute.mockRejectedValue(
         new AuthenticationError('Invalid token'),
       );
-      const created = await createTestNestApp({ coreDomain });
+      const created = await createTestNestApp({ coreServices });
       app = created.app;
       await request(app.getHttpServer())
         .get('/api/v2/stock-connect/channels')
         .set('Authorization', 'Bearer not-an-api-key')
         .expect(401);
-      expect(coreDomain.verifyApiKey.execute).not.toHaveBeenCalled();
-      expect(coreDomain.authenticateAccessToken.execute).toHaveBeenCalled();
+      expect(coreServices.verifyApiKey.execute).not.toHaveBeenCalled();
+      expect(coreServices.authenticateAccessToken.execute).toHaveBeenCalled();
     });
 
     it('authenticates Bearer nxk_ via verifyApiKey', async () => {
-      const coreDomain = createMockCoreDomain();
-      wireStockConnectMocks(coreDomain);
-      coreDomain.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal());
-      const created = await createTestNestApp({ coreDomain });
+      const coreServices = createMockCoreDomain();
+      wireStockConnectMocks(coreServices);
+      coreServices.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal());
+      const created = await createTestNestApp({ coreServices });
       app = created.app;
 
       const response = await request(app.getHttpServer())
@@ -313,17 +313,17 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .set('Authorization', `Bearer ${API_KEY}`)
         .expect(200);
 
-      expect(coreDomain.verifyApiKey.execute).toHaveBeenCalledWith({ rawKey: API_KEY });
-      expect(coreDomain.authenticateAccessToken.execute).not.toHaveBeenCalled();
+      expect(coreServices.verifyApiKey.execute).toHaveBeenCalledWith({ rawKey: API_KEY });
+      expect(coreServices.authenticateAccessToken.execute).not.toHaveBeenCalled();
       expect(response.body.success).toBe(true);
       expect(response.body.integration).toBe('stock-connect');
       expect(response.body.data.items).toHaveLength(1);
     });
 
     it('rejects mismatched X-Tenant-Id', async () => {
-      const coreDomain = createMockCoreDomain();
-      coreDomain.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal(TENANT_A));
-      const created = await createTestNestApp({ coreDomain });
+      const coreServices = createMockCoreDomain();
+      coreServices.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal(TENANT_A));
+      const created = await createTestNestApp({ coreServices });
       app = created.app;
 
       const response = await request(app.getHttpServer())
@@ -337,10 +337,10 @@ describe('StockConnect ERP adapter HTTP contract', () => {
     });
 
     it('accepts matching X-Tenant-Id', async () => {
-      const coreDomain = createMockCoreDomain();
-      wireStockConnectMocks(coreDomain);
-      coreDomain.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal(TENANT_A));
-      const created = await createTestNestApp({ coreDomain });
+      const coreServices = createMockCoreDomain();
+      wireStockConnectMocks(coreServices);
+      coreServices.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal(TENANT_A));
+      const created = await createTestNestApp({ coreServices });
       app = created.app;
 
       await request(app.getHttpServer())
@@ -351,16 +351,16 @@ describe('StockConnect ERP adapter HTTP contract', () => {
     });
 
     it('keeps JWT bearer path for non-nxk tokens', async () => {
-      const coreDomain = createMockCoreDomain();
-      wireStockConnectMocks(coreDomain);
-      coreDomain.authenticateAccessToken.execute.mockResolvedValue({
+      const coreServices = createMockCoreDomain();
+      wireStockConnectMocks(coreServices);
+      coreServices.authenticateAccessToken.execute.mockResolvedValue({
         kind: 'user',
         id: 'user-1',
         tenantId: TENANT_A,
         permissions: scPermissions,
         authenticationMethod: 'password',
       });
-      const created = await createTestNestApp({ coreDomain });
+      const created = await createTestNestApp({ coreServices });
       app = created.app;
 
       await request(app.getHttpServer())
@@ -368,23 +368,23 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .set('Authorization', 'Bearer eyJhbGciOiJIUzI1NiJ9.e30.sig')
         .expect(200);
 
-      expect(coreDomain.authenticateAccessToken.execute).toHaveBeenCalled();
-      expect(coreDomain.verifyApiKey.execute).not.toHaveBeenCalled();
+      expect(coreServices.authenticateAccessToken.execute).toHaveBeenCalled();
+      expect(coreServices.verifyApiKey.execute).not.toHaveBeenCalled();
     });
   });
 
   describe('products / channels / inventory', () => {
     async function authedApp() {
-      const coreDomain = createMockCoreDomain();
-      wireStockConnectMocks(coreDomain);
-      coreDomain.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal());
-      const created = await createTestNestApp({ coreDomain });
+      const coreServices = createMockCoreDomain();
+      wireStockConnectMocks(coreServices);
+      coreServices.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal());
+      const created = await createTestNestApp({ coreServices });
       app = created.app;
-      return coreDomain;
+      return coreServices;
     }
 
     it('lists products and filters by merchantSku', async () => {
-      const coreDomain = await authedApp();
+      const coreServices = await authedApp();
       const list = await request(app.getHttpServer())
         .get('/api/v2/stock-connect/products')
         .set('Authorization', `Bearer ${API_KEY}`)
@@ -395,7 +395,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .get('/api/v2/stock-connect/products?merchantSku=SC-SKU-001')
         .set('Authorization', `Bearer ${API_KEY}`)
         .expect(200);
-      expect(coreDomain.products.productQueryService.getProductBySku).toHaveBeenCalledWith(
+      expect(coreServices.products.productQueryService.getProductBySku).toHaveBeenCalledWith(
         TENANT_A,
         'SC-SKU-001',
       );
@@ -403,7 +403,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
     });
 
     it('creates, gets, patches, and publishes a product', async () => {
-      const coreDomain = await authedApp();
+      const coreServices = await authedApp();
 
       const createdProduct = await request(app.getHttpServer())
         .post('/api/v2/stock-connect/products')
@@ -411,7 +411,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .send({ merchantSku: 'SC-SKU-001' })
         .expect(201);
       expect(createdProduct.body.integration).toBe('stock-connect');
-      expect(coreDomain.products.useCases.createProduct.execute).toHaveBeenCalled();
+      expect(coreServices.products.useCases.createProduct.execute).toHaveBeenCalled();
 
       await request(app.getHttpServer())
         .get(`/api/v2/stock-connect/products/${PRODUCT_ID}`)
@@ -442,7 +442,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
     });
 
     it('reads inventory and applies adjustments', async () => {
-      const coreDomain = await authedApp();
+      const coreServices = await authedApp();
       const inv = await request(app.getHttpServer())
         .get(`/api/v2/stock-connect/inventory/${PRODUCT_ID}`)
         .set('Authorization', `Bearer ${API_KEY}`)
@@ -459,7 +459,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
           quantityDelta: 2,
         })
         .expect(200);
-      expect(coreDomain.inventory.useCases.adjustInventory.execute).toHaveBeenCalledWith(
+      expect(coreServices.inventory.useCases.adjustInventory.execute).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: TENANT_A,
           productId: PRODUCT_ID,
@@ -472,16 +472,16 @@ describe('StockConnect ERP adapter HTTP contract', () => {
 
   describe('orders / shipments', () => {
     async function authedApp() {
-      const coreDomain = createMockCoreDomain();
-      wireStockConnectMocks(coreDomain);
-      coreDomain.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal());
-      const created = await createTestNestApp({ coreDomain });
+      const coreServices = createMockCoreDomain();
+      wireStockConnectMocks(coreServices);
+      coreServices.verifyApiKey.execute.mockResolvedValue(apiKeyPrincipal());
+      const created = await createTestNestApp({ coreServices });
       app = created.app;
-      return coreDomain;
+      return coreServices;
     }
 
     it('lists, syncs, details, and cancels orders', async () => {
-      const coreDomain = await authedApp();
+      const coreServices = await authedApp();
 
       const list = await request(app.getHttpServer())
         .get('/api/v2/stock-connect/orders?limit=10')
@@ -494,7 +494,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .get('/api/v2/stock-connect/orders/sync?limit=50')
         .set('Authorization', `Bearer ${API_KEY}`)
         .expect(200);
-      expect(coreDomain.orders.orderQueryService.listOrders).toHaveBeenCalled();
+      expect(coreServices.orders.orderQueryService.listOrders).toHaveBeenCalled();
       expect(sync.body.data.items).toHaveLength(1);
 
       const detail = await request(app.getHttpServer())
@@ -508,7 +508,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .set('Authorization', `Bearer ${API_KEY}`)
         .send({ reason: 'customer request' })
         .expect(200);
-      expect(coreDomain.cancellations.useCases.createCancellation.execute).toHaveBeenCalledWith(
+      expect(coreServices.cancellations.useCases.createCancellation.execute).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: TENANT_A,
           orderId: ORDER_ID,
@@ -519,7 +519,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
     });
 
     it('creates, gets, and ships shipments', async () => {
-      const coreDomain = await authedApp();
+      const coreServices = await authedApp();
 
       const createdShipment = await request(app.getHttpServer())
         .post(`/api/v2/stock-connect/orders/${ORDER_ID}/shipments`)
@@ -532,7 +532,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         })
         .expect(201);
       expect(createdShipment.body.data.id).toBe(SHIPMENT_ID);
-      expect(coreDomain.shipments.useCases.createShipment.execute).toHaveBeenCalled();
+      expect(coreServices.shipments.useCases.createShipment.execute).toHaveBeenCalled();
 
       await request(app.getHttpServer())
         .get(`/api/v2/stock-connect/shipments/${SHIPMENT_ID}`)
@@ -545,7 +545,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .send({ trackingNumber: 'TRACK-1' })
         .expect(200);
       expect(shipped.body.data.status).toBe('SHIPPED');
-      expect(coreDomain.shipments.useCases.shipShipment.execute).toHaveBeenCalledWith(
+      expect(coreServices.shipments.useCases.shipShipment.execute).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: TENANT_A,
           shipmentId: SHIPMENT_ID,

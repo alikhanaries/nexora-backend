@@ -3,7 +3,7 @@ import {
     fingerprintAcknowledgeCommand,
     mapAcknowledgeResultToExternalResponse,
     mapExternalAcknowledgeRequest,
-} from '../../../src/modules/compatibility/application/mappers/compatibility-acknowledge.mapper.js';
+} from '../../../src/modules/compatibility/services/mappers/compatibility-acknowledge.mapper.js';
 
 describe('compatibility acknowledge mapper', () => {
     it('maps MerchantOrderNo to Wasl orderNumber', () => {

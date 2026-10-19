@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
-import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../../src/modules/marketplaces/application/marketplace-outbound-order-lifecycle-adapter-registry.js';
+import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../../../src/modules/marketplaces/repositories/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
+import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../../src/modules/marketplaces/services/marketplace-outbound-order-lifecycle-adapter-registry.js';
 
 const OUTBOUND_CAPABILITY_KEYS = [
     'supportsOutboundCancellation',

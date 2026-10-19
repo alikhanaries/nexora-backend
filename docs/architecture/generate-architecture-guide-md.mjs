@@ -54,7 +54,7 @@ const domainModules = readdirSync(join(ROOT, 'src/modules'), { withFileTypes: tr
   .map((d) => d.name)
   .sort();
 
-const nestModules = readdirSync(join(ROOT, 'src/nest'), { withFileTypes: true })
+const nestModules = readdirSync(join(ROOT, 'src/app'), { withFileTypes: true })
   .filter((d) => d.isDirectory())
   .map((d) => d.name)
   .sort();
@@ -115,12 +115,12 @@ const moduleSections = domainModules
 | --------- | ------ |
 | **Business purpose** | Domain logic for **${name}** (see \`${base}/application/\` use cases). |
 | **Folder** | \`${base}/\` with typical layers: ${sub.map((s) => `\`${s}/\``).join(', ') || '_(flat)_'}. |
-| **HTTP (Nest)** | ${nestMatch ? `\`src/nest/${nestMatch}/\` Nest module + controller(s).` : 'No dedicated Nest folder; may be wired via compatibility or worker paths.'} |
+| **HTTP (Nest)** | ${nestMatch ? `\`src/app/${nestMatch}/\` Nest module + controller(s).` : 'No dedicated Nest folder; may be wired via compatibility or worker paths.'} |
 | **Factory** | \`create${name.split('-').map((p) => p[0].toUpperCase() + p.slice(1)).join('')}Module\` or \`index.js\` export in \`${base}/\`. |
 | **Persistence** | PostgreSQL repositories under \`${base}/infrastructure/\` where present. |
 | **Tests** | \`tests/unit/**/${name}*\`, \`tests/integration/**/${name}*\` (search by module name). |
 
-**How it fits:** Domain modules are composed in \`src/app/bootstrap/create-application.js\` and injected into Nest via \`CoreDomainModule\` (\`src/nest/domain/\`). Controllers call thin Nest services that delegate to domain query/command services.
+**How it fits:** Domain modules are composed in \`src/app/create-application.js\` and injected into Nest via \`CoreServicesModule\` (\`src/app/di/\`). Controllers call thin Nest services that delegate to domain query/command services.
 `;
   })
   .join('\n');
@@ -183,8 +183,8 @@ Wasl is a **multi-tenant commerce and channel management platform**. The backend
 The codebase follows a **modular monolith** (see \`docs/decisions/ADR-001-modular-monolith.md\`):
 
 - **Domain modules** under \`src/modules/*\` — use cases, repositories, Zod schemas, legacy Fastify-style route modules (still present for wiring/tests in places).
-- **HTTP adapter** under \`src/nest/*\` — NestJS 11 controllers/services on **Express** (\`@nestjs/platform-express\`).
-- **Composition root** — \`src/app/bootstrap/create-application.js\` wires domain modules and passes a \`coreDomain\` object into Nest.
+- **HTTP adapter** under \`src/app/*\` — NestJS 11 controllers/services on **Express** (\`@nestjs/platform-express\`).
+- **Composition root** — \`src/app/create-application.js\` wires domain modules and passes a \`coreServices\` object into Nest.
 - **Infrastructure** — \`src/infrastructure/*\` (Postgres, Redis, BullMQ, S3, HTTP client, auth primitives).
 - **Workers** — separate process \`src/workers/main.js\` consuming BullMQ jobs (catalog sync, marketplace lifecycle, webhook delivery, etc.).
 
@@ -194,8 +194,8 @@ The codebase follows a **modular monolith** (see \`docs/decisions/ADR-001-modula
 | ------- | ----- | ---- |
 | API | \`src/app/main.js\` | Loads config → infrastructure → \`createApplication()\` → Nest HTTP listen |
 | Worker | \`src/workers/main.js\` | Same config/infra pattern; registers queue handlers + optional observability HTTP |
-| Migrations CLI | \`src/app/bootstrap/migrate-cli.js\` | Applies SQL in \`src/infrastructure/postgres/migrations/\` |
-| Standalone Nest bootstrap | \`src/nest/bootstrap.mjs\` | Alternate dev entry (\`npm run dev:nest\`); production path uses \`main.js\` |
+| Migrations CLI | \`src/app/migrate-cli.js\` | Applies SQL in \`src/infrastructure/postgres/migrations/\` |
+| API process entry | \`src/app/main.js\` | NestJS + Express (\`npm start\` / \`npm run dev\`) |
 
 ### 1.4 Repository statistics (scan)
 
@@ -206,7 +206,7 @@ The codebase follows a **modular monolith** (see \`docs/decisions/ADR-001-modula
 | \`src/**/*.js\` in inventory | ${srcCount} |
 | SQL migrations | ${migrationFiles.length} |
 | Domain modules (\`src/modules/\`) | ${domainModules.length} |
-| Nest feature areas (\`src/nest/\`) | ${nestModules.length} |
+| Nest feature areas (\`src/app/\`) | ${nestModules.length} |
 | Nest decorator routes (static scan) | ${endpointCount} |
 | Declared npm dependencies reviewed | ${Object.keys(pkg.dependencies ?? {}).length + Object.keys(pkg.devDependencies ?? {}).length} |
 
@@ -225,9 +225,9 @@ ${treeRoot}
 | Path | Purpose |
 | ---- | ------- |
 | \`src/app/main.js\` | API process entry: config, infra, \`createApplication\`, outbox publisher, pool metrics, graceful shutdown. |
-| \`src/app/bootstrap/create-application.js\` | **Composition root**: instantiates all domain modules, marketplace adapters, compatibility, webhooks; returns \`httpServer\` via \`createNestHttpServer\`. |
-| \`src/app/bootstrap/create-infrastructure.js\` | Database pool, Redis, BullMQ queue, S3 storage, logger, metrics, tracing, rate limiter, outbox. |
-| \`src/app/bootstrap/shutdown.js\` | Ordered teardown: readiness, HTTP, outbox, queue, Redis, DB, tracing. |
+| \`src/app/create-application.js\` | **Composition root**: instantiates all domain modules, marketplace adapters, compatibility, webhooks; returns \`httpServer\` via \`createNestHttpServer\`. |
+| \`src/app/create-infrastructure.js\` | Database pool, Redis, BullMQ queue, S3 storage, logger, metrics, tracing, rate limiter, outbox. |
+| \`src/app/shutdown.js\` | Ordered teardown: readiness, HTTP, outbox, queue, Redis, DB, tracing. |
 | \`src/app/config/schema.js\` | Zod schema — **single source of truth** for environment variables. |
 | \`src/app/config/config.js\` | Maps validated env to nested \`config\` object consumed by modules. |
 | \`src/app/http/create-nest-http-server.js\` | Creates Nest app; exposes \`inject()\` for Vitest integration tests (Supertest). |
@@ -245,20 +245,20 @@ Each module typically contains:
 - \`presentation/\` — Zod schemas and legacy \`*.routes.js\` (Fastify-era route registration; **HTTP is now primarily Nest**).
 - \`index.js\` — \`createXModule(deps)\` factory exporting services for composition root.
 
-**Used by:** \`create-application.js\`, workers, and Nest services via \`CORE_DOMAIN\` injection token.
+**Used by:** \`create-application.js\`, workers, and Nest services via \`CORE_SERVICES\` injection token.
 
-### 2.4 \`src/nest/\` — HTTP adapter (NestJS + Express)
+### 2.4 \`src/app/\` — HTTP adapter (NestJS + Express)
 
 | Area | Responsibility |
 | ---- | -------------- |
 | \`bootstrap/create-nest-application.js\` | \`NestFactory.create\` with \`ExpressAdapter\`, Helmet/body limits via \`configure-express.js\`. |
-| \`app.module.js\` | Dynamic \`buildAppModule(infra, coreDomain)\` — registers feature modules and global \`AuthGuard\` + \`GlobalExceptionFilter\`. |
-| \`domain/core-domain.module.js\` | Provides \`CORE_DOMAIN\` token with wired use cases. |
+| \`app.module.js\` | Dynamic \`buildAppModule(infra, coreServices)\` — registers feature modules and global \`AuthGuard\` + \`GlobalExceptionFilter\`. |
+| \`domain/core-services.module.js\` | Provides \`CORE_SERVICES\` token with wired use cases. |
 | \`common/guards/auth.guard.js\` | JWT, API key (\`X-Api-Key\`, \`ApiKey\`), merchant compat query keys, StockConnect Bearer \`nxk_\` keys. |
 | \`common/filters/global-exception.filter.js\` | Maps domain errors to HTTP responses. |
 | \`*/*.controller.js\` | Route handlers — see endpoint inventory. |
 | \`stock-connect-integration/\` | \`/api/v2/stock-connect/*\` integration API (when enabled). |
-| \`legacy-compatibility/\`, \`legacy-orders/\` | ChannelEngine / v1 compatibility surfaces. |
+| \`compatibility-http/\`, \`compatibility-orders/\` | ChannelEngine / v1 compatibility surfaces. |
 
 ### 2.5 \`src/infrastructure/\`
 
@@ -270,7 +270,7 @@ Queue consumer process: \`handlers/queue-job-handlers.js\`, marketplace lifecycl
 
 ### 2.7 \`src/shared/\` and \`src/integrations/\`
 
-Cross-cutting utilities (errors, context, auth route prefixes). \`src/integrations/stock-connect/\` holds StockConnect DTO mappers/schemas separate from Nest controllers.
+Cross-cutting utilities (errors, context, auth route prefixes). StockConnect ERP adapter lives under \`src/modules/erp/stock-connect/\` (Nest controllers, mappers, schemas).
 
 ### 2.8 \`tests/\`, \`test/\`, \`scripts/\`
 
@@ -290,7 +290,7 @@ Cross-cutting utilities (errors, context, auth route prefixes). \`src/integratio
 | \`package-lock.json\` | Locked dependency versions (see §3). |
 | \`vitest.config.js\` | Unit vs integration Vitest projects; SWC for Nest in integration tests. |
 | \`jest.config.js\` | Nest Jest suite under \`test/nest/\`. |
-| \`eslint.config.js\` | ESLint flat config; **ignores** \`src/nest/**\` for SWC decorator syntax. |
+| \`eslint.config.js\` | ESLint flat config; **ignores** \`src/app/**\` for SWC decorator syntax. |
 | \`.dependency-cruiser.cjs\` | Module boundary rules (\`npm run arch:check\`). |
 | \`Dockerfile\` | Multi-stage Node 24 Alpine image; default CMD \`node src/app/main.js\`; worker override documented in comments. |
 | \`docker-compose.yml\` | Local Postgres, Redis (BullMQ-safe), MinIO; optional observability profile. |
@@ -390,27 +390,27 @@ sequenceDiagram
   Main->>Config: schema.js Zod parse
   Main->>Infra: DB, Redis, queue, S3, logger
   Main->>App: wire domain modules
-  App->>Nest: coreDomain + infra
+  App->>Nest: coreServices + infra
   Nest->>Nest: NestFactory + ExpressAdapter
   Main->>Listen: SERVER_HOST/SERVER_PORT
 \`\`\`
 
-**Key files:** \`src/app/main.js\`, \`src/app/bootstrap/create-application.js\`, \`src/nest/bootstrap/create-nest-application.js\`, \`src/nest/app.module.js\`.
+**Key files:** \`src/app/main.js\`, \`src/app/create-application.js\`, \`src/app/http/create-nest-application.js\`, \`src/app/app.module.js\`.
 
 ### 4.2 Module registration
 
-When \`coreDomain !== null\`, \`buildAppModule\` registers (among others): Auth, Tenants, Authorization, Audit, ApiKeys, MFA, Products, Pricing, Offers, Inventory, Channels, Marketplaces, Webhooks, WebhookSubscriptions, Orders, Cancellations, Shipments, Returns, LegacyOrders, LegacyCompatibility, StockConnectIntegration.
+When \`coreServices !== null\`, \`buildAppModule\` registers (among others): Auth, Tenants, Authorization, Audit, ApiKeys, MFA, Products, Pricing, Offers, Inventory, Channels, Marketplaces, Webhooks, WebhookSubscriptions, Orders, Cancellations, Shipments, Returns, LegacyOrders, LegacyCompatibility, StockConnectIntegration.
 
 Global providers:
 
 - \`APP_FILTER\` → \`GlobalExceptionFilter\`
-- \`APP_GUARD\` → \`AuthGuard\` (skipped when \`coreDomain\` is null — e.g. minimal health-only boot)
+- \`APP_GUARD\` → \`AuthGuard\` (skipped when \`coreServices\` is null — e.g. minimal health-only boot)
 
 ### 4.3 Framework vs domain
 
 | Layer | Location | Responsibility |
 | ----- | -------- | -------------- |
-| HTTP routing / status codes | \`src/nest/**/*.controller.js\` | Map HTTP to service calls |
+| HTTP routing / status codes | \`src/app/**/*.controller.js\` | Map HTTP to service calls |
 | Authorization enforcement | \`AuthGuard\` + domain \`AuthorizationService\` | Authentication at edge; permission checks in use cases |
 | Business rules | \`src/modules/*/application/*\` | Pure domain logic |
 | Persistence | \`src/modules/*/infrastructure/*\` | SQL via \`pg\` |
@@ -443,7 +443,7 @@ flowchart TD
   E --> M[GlobalExceptionFilter on error]
 \`\`\`
 
-**Files:** \`src/nest/common/guards/auth.guard.js\`, \`src/modules/identity/application/authenticate-access-token.js\`, \`src/shared/context/request-context.js\`, controllers/services under \`src/nest/<feature>/\`.
+**Files:** \`src/app/common/guards/auth.guard.js\`, \`src/modules/identity/services/authenticate-access-token.js\`, \`src/shared/context/request-context.js\`, controllers/services under \`src/app/<feature>/\`.
 
 ### 5.2 Database read/write
 
@@ -482,11 +482,11 @@ Worker \`webhookDeliveryService\` loads subscriptions, signs payloads, delivers 
 
 ### 5.6 Health and readiness
 
-\`src/nest/health/health.controller.js\` exposes health/readiness endpoints (see Nest inventory). \`ReadinessService\` aggregates probe results from infrastructure components.
+\`src/modules/health/controllers/nest/health.controller.js\` exposes health/readiness endpoints (see Nest inventory). \`ReadinessService\` aggregates probe results from infrastructure components.
 
 ### 5.7 Application startup (outbox and metrics)
 
-After \`createApplication\` resolves, \`main.js\` starts \`infra.outboxPublisher\` and periodic database pool metrics before listening. On SIGTERM/SIGINT, \`gracefulShutdown\` drains HTTP, stops outbox/queue consumers, closes Redis and DB pools — see \`src/app/bootstrap/shutdown.js\`.
+After \`createApplication\` resolves, \`main.js\` starts \`infra.outboxPublisher\` and periodic database pool metrics before listening. On SIGTERM/SIGINT, \`gracefulShutdown\` drains HTTP, stops outbox/queue consumers, closes Redis and DB pools — see \`src/app/shutdown.js\`.
 
 \`\`\`mermaid
 flowchart LR
@@ -683,7 +683,7 @@ flowchart LR
 | Finding | Evidence | Impact |
 | ------- | -------- | ------ |
 | **Dual HTTP route representations** | Nest controllers vs legacy \`*.routes.js\`; stale \`audit-route-inventory.mjs\` | Wrong route docs if using old inventory |
-| **ESLint skips \`src/nest/**\`** | \`eslint.config.js\` | Nest decorator files not linted by default |
+| **ESLint skips \`src/app/**\`** | \`eslint.config.js\` | Nest decorator files not linted by default |
 | **Build syntax check skips Nest** | \`scripts/check-syntax.mjs\` | Nest files rely on SWC/runtime compile |
 | **Large surface area, uneven test depth** | 220+ integration test files but not all modules may have equal coverage | Regressions possible in untested paths |
 | **RLS and tenant context** | Postgres RLS migrations | Bugs in context setup cause data leaks or denials — requires careful review |
@@ -703,7 +703,7 @@ Separate **confirmed defects** from **risks**: items above are risks/documentati
 | **Offer** | Product listing on a channel with pricing |
 | **Outbox** | Transactional event table for reliable async dispatch |
 | **Inbox / idempotency** | Dedup for webhooks and retries |
-| **Core domain** | Object graph injected as \`CORE_DOMAIN\` into Nest |
+| **Core domain** | Object graph injected as \`CORE_SERVICES\` into Nest |
 | **Merchant compat** | ChannelEngine-style query-parameter API compatibility |
 | **StockConnect** | Integration API under \`/api/v2/stock-connect\` |
 

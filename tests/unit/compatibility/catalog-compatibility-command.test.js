@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CatalogCompatibilityCommand } from '../../../src/modules/compatibility/application/catalog-compatibility-command.js';
+import { CatalogCompatibilityCommand } from '../../../src/modules/compatibility/services/catalog-compatibility-command.js';
 
 function buildCommand(overrides = {}) {
     const authorization = {

@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 import { randomBytes } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/app/config/config.js';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 import { JobName, QueueName } from '../../src/infrastructure/queue/queue-names.js';
 import { createWebhookDispatchService } from '../../src/modules/webhooks/index.js';
 import { createIntegrationEventConsumers } from '../../src/workers/create-integration-event-consumers.js';

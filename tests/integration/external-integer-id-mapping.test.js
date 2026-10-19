@@ -11,7 +11,7 @@ import {
 import { createExternalIdMappingModule } from '../../src/modules/external-id-mapping/index.js';
 import { createTestTenant } from './auth-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
-import { createApplication } from '../../src/app/bootstrap/create-application.js';
+import { createApplication } from '../../src/app/create-application.js';
 
 function buildAppRoleUrl(databaseUrl) {
     const url = new URL(databaseUrl);

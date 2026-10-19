@@ -1,13 +1,13 @@
-import { StepUpService } from './application/step-up-verifier.js';
-import { ActivateTotpFactorUseCase } from './application/use-cases/activate-totp-factor.js';
-import { StartTotpEnrollmentUseCase } from './application/use-cases/start-totp-enrollment.js';
-import { UseRecoveryCodeUseCase } from './application/use-cases/use-recovery-code.js';
-import { VerifyMfaUseCase } from './application/use-cases/verify-mfa.js';
-import { VerifyTotpEnrollmentUseCase } from './application/use-cases/verify-totp-enrollment.js';
-import { PostgresMfaFactorRepository } from './infrastructure/postgres-mfa-factor-repository.js';
-import { PostgresRecoveryCodeRepository } from './infrastructure/postgres-recovery-code-repository.js';
-import { PostgresStepUpSessionRepository } from './infrastructure/postgres-step-up-session-repository.js';
-import mfaRoutes from './presentation/mfa.routes.js';
+import { StepUpService } from './services/step-up-verifier.js';
+import { ActivateTotpFactorUseCase } from './services/use-cases/activate-totp-factor.js';
+import { StartTotpEnrollmentUseCase } from './services/use-cases/start-totp-enrollment.js';
+import { UseRecoveryCodeUseCase } from './services/use-cases/use-recovery-code.js';
+import { VerifyMfaUseCase } from './services/use-cases/verify-mfa.js';
+import { VerifyTotpEnrollmentUseCase } from './services/use-cases/verify-totp-enrollment.js';
+import { PostgresMfaFactorRepository } from './repositories/postgres-mfa-factor-repository.js';
+import { PostgresRecoveryCodeRepository } from './repositories/postgres-recovery-code-repository.js';
+import { PostgresStepUpSessionRepository } from './repositories/postgres-step-up-session-repository.js';
+import mfaRoutes from './views/mfa.routes.js';
 export function createMfaModule(deps) {
     const mfaFactors = new PostgresMfaFactorRepository();
     const recoveryCodes = new PostgresRecoveryCodeRepository();

@@ -3,26 +3,36 @@ import { REQUEST_ID_HEADER } from '../../shared/context/request-id.js';
 import { ExternalServiceError, ExternalServiceTimeoutError } from '../../shared/errors/index.js';
 import { redactDeep, redactUrl } from '../../shared/logging/index.js';
 import { currentTraceId } from '../observability/tracing.js';
+
 const IDEMPOTENT_METHODS = new Set(['GET', 'HEAD', 'PUT', 'DELETE']);
+
 /**
  * Central outbound HTTP client.
  *
  * Retries are opt-in and limited to idempotent methods. POST is never retried
  * automatically.
+ *
+ * Note: `maxAttempts` is 2 only for GET/HEAD. PUT/DELETE are listed in
+ * `IDEMPOTENT_METHODS` but currently do not receive a second attempt (preserved
+ * contract; do not "fix" without a dedicated change).
+ *
+ * @param {{ config: { timeoutMs: number }, logger: { child: Function } }} dependencies
+ * @returns {{ send: (request: object) => Promise<object> }}
  */
-export class FetchHttpClient {
-    logger;
-    defaultTimeoutMs;
-    constructor({ config, logger }) {
-        this.logger = logger.child({ component: 'http-client' });
-        this.defaultTimeoutMs = config.timeoutMs;
-    }
-    async send(request) {
+export function createFetchHttpClient(dependencies = {}) {
+    const { config, logger: rootLogger } = dependencies;
+    const logger = rootLogger.child({ component: 'http-client' });
+    const defaultTimeoutMs = config.timeoutMs;
+
+    /**
+     * @param {object} request
+     */
+    async function send(request) {
         const maxAttempts = request.method === 'GET' || request.method === 'HEAD' ? 2 : 1;
         let lastError;
         for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
             try {
-                return await this.sendOnce(request);
+                return await sendOnce(request);
             }
             catch (error) {
                 lastError = error;
@@ -31,13 +41,17 @@ export class FetchHttpClient {
                     error instanceof ExternalServiceTimeoutError;
                 if (!retryable)
                     throw error;
-                this.logger.warn({ operation: request.operation, attempt }, 'Retrying idempotent request');
+                logger.warn({ operation: request.operation, attempt }, 'Retrying idempotent request');
             }
         }
         throw lastError;
     }
-    async sendOnce(request) {
-        const timeoutMs = request.timeoutMs ?? this.defaultTimeoutMs;
+
+    /**
+     * @param {object} request
+     */
+    async function sendOnce(request) {
+        const timeoutMs = request.timeoutMs ?? defaultTimeoutMs;
         const controller = new AbortController();
         const timer = setTimeout(() => {
             controller.abort();
@@ -56,7 +70,7 @@ export class FetchHttpClient {
         }
         const startedAt = Date.now();
         const body = serializeRequestBody(request.body, headers);
-        this.logger.debug({
+        logger.debug({
             operation: request.operation,
             method: request.method,
             url: redactUrl(request.url),
@@ -73,7 +87,7 @@ export class FetchHttpClient {
             const durationMs = Date.now() - startedAt;
             const responseHeaders = headersToRecord(response.headers);
             const parsedBody = await parseBody(response);
-            this.logger.debug({
+            logger.debug({
                 operation: request.operation,
                 status: response.status,
                 durationMs,
@@ -102,7 +116,25 @@ export class FetchHttpClient {
             clearTimeout(timer);
         }
     }
+
+    return {
+        send,
+    };
 }
+
+/**
+ * @deprecated Prefer {@link createFetchHttpClient}; kept for existing import sites.
+ * Constructor returns the factory result (same pattern as RedisKeyBuilder / Argon2PasswordHasher).
+ */
+export class FetchHttpClient {
+    /**
+     * @param {{ config: { timeoutMs: number }, logger: { child: Function } }} dependencies
+     */
+    constructor(dependencies) {
+        return createFetchHttpClient(dependencies);
+    }
+}
+
 async function parseBody(response) {
     const contentType = response.headers.get('content-type') ?? '';
     const text = await response.text();

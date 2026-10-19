@@ -42,7 +42,7 @@ Provider authenticity is enforced only inside the registered `MarketplaceWebhook
 
 ## Adapter contract
 
-See `src/modules/marketplace-webhook-ingestion/public/marketplace-webhook-adapter.port.js`.
+See `src/modules/webhooks/marketplace/public/marketplace-webhook-adapter.port.js`.
 
 **Amazon** (Phase 34) registers SNS-wrapped SP-API `ORDER_CHANGE`. **Noon** (Phase 35) registers Event Notifications `FBPI::ORDER_SYNC`. **Shopify** (Phase 33) registers Admin webhooks when runtime deps are passed to `registerMarketplaceWebhookAdapters` (HTTP app bootstrap). See [order-lifecycle-matrix.md](./order-lifecycle-matrix.md).
 

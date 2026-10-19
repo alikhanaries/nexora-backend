@@ -22,4 +22,7 @@
  * }) => Promise<{ items: object[], totalCount: number, page: number, pageSize: number }>} listReturns
  * Tenant-scoped page-based return listing with optional filters.
  */
-export { DefaultReturnQueryService } from '../services/return-query-service.js';
+export {
+    createReturnQueryService,
+    DefaultReturnQueryService,
+} from '../services/return-query-service.js';

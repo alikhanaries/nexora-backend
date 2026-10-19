@@ -1,11 +1,11 @@
-import { AssignExternalIntegerIdMapping } from './application/assign-external-integer-id-mapping.js';
-import { BackfillExternalIntegerIdMappings } from './application/backfill-external-integer-id-mappings.js';
-import { DefaultExternalIntegerIdMappingCommandService } from './application/external-integer-id-mapping-command-service.js';
-import { DefaultExternalIntegerIdMappingQueryService } from './application/external-integer-id-mapping-query-service.js';
+import { AssignExternalIntegerIdMapping } from './services/assign-external-integer-id-mapping.js';
+import { BackfillExternalIntegerIdMappings } from './services/backfill-external-integer-id-mappings.js';
+import { DefaultExternalIntegerIdMappingCommandService } from './services/external-integer-id-mapping-command-service.js';
+import { DefaultExternalIntegerIdMappingQueryService } from './services/external-integer-id-mapping-query-service.js';
 import {
     PostgresExternalIdBackfillQueries,
     PostgresExternalIntegerIdMappingRepository,
-} from './infrastructure/index.js';
+} from './repositories/index.js';
 
 function resolveModuleLogger(logger) {
     if (logger !== undefined) {

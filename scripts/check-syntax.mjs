@@ -2,6 +2,21 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+/**
+ * Nest decorator layers use SWC at runtime (`export @Injectable()`); skip `node --check`.
+ * @param {string} fullPath
+ */
+function isNestDecoratorLayer(fullPath) {
+  const normalized = fullPath.replace(/\\/g, '/');
+  if (normalized.includes('/controllers/nest/')) return true;
+  if (normalized.endsWith('src/app/app.module.js')) return true;
+  if (normalized.endsWith('src/app/config/wasl-config.module.js')) return true;
+  if (normalized.includes('src/app/common/')) return true;
+  if (normalized.includes('src/app/database/')) return true;
+  if (normalized.includes('src/app/di/')) return true;
+  return false;
+}
+
 function collectJsFiles(dir, files = []) {
   if (!fs.existsSync(dir)) {
     return files;
@@ -12,16 +27,15 @@ function collectJsFiles(dir, files = []) {
     if (entry.isDirectory()) {
       if (entry.name !== 'node_modules' && entry.name !== 'dist') {
         const parentBase = path.basename(dir);
-        if (entry.name === 'nest' && (parentBase === 'src' || parentBase === 'tests')) {
-          continue;
-        }
         if (entry.name === 'nest' && parentBase === 'controllers') {
           continue;
         }
         collectJsFiles(fullPath, files);
       }
     } else if (entry.name.endsWith('.js')) {
-      files.push(fullPath);
+      if (!isNestDecoratorLayer(fullPath)) {
+        files.push(fullPath);
+      }
     }
   }
 

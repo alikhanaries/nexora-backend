@@ -1,35 +1,36 @@
-import { CreateApiKeyUseCase } from './application/use-cases/create-api-key.js';
-import { ListApiKeysUseCase } from './application/use-cases/list-api-keys.js';
-import { RevokeApiKeyUseCase } from './application/use-cases/revoke-api-key.js';
-import { RotateApiKeyUseCase } from './application/use-cases/rotate-api-key.js';
-import { VerifyApiKeyUseCase } from './application/use-cases/verify-api-key.js';
-import { PostgresApiKeyRepository } from './infrastructure/postgres-api-key-repository.js';
-import apiKeyRoutes from './presentation/api-key.routes.js';
+import { createCreateApiKey } from './services/use-cases/create-api-key.js';
+import { createListApiKeys } from './services/use-cases/list-api-keys.js';
+import { createRevokeApiKey } from './services/use-cases/revoke-api-key.js';
+import { createRotateApiKey } from './services/use-cases/rotate-api-key.js';
+import { createVerifyApiKey } from './services/use-cases/verify-api-key.js';
+import { PostgresApiKeyRepository } from './repositories/postgres-api-key-repository.js';
+import apiKeyRoutes from './views/api-key.routes.js';
+
 export function createApiKeysModule(deps) {
     const apiKeys = new PostgresApiKeyRepository();
-    const createApiKey = new CreateApiKeyUseCase({
+    const createApiKey = createCreateApiKey({
         db: deps.database,
         apiKeys,
         rateLimiter: deps.rateLimiter,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     });
-    const rotateApiKey = new RotateApiKeyUseCase({
+    const rotateApiKey = createRotateApiKey({
         db: deps.database,
         apiKeys,
         stepUpVerifier: deps.stepUpVerifier,
         rateLimiter: deps.rateLimiter,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     });
-    const revokeApiKey = new RevokeApiKeyUseCase({
+    const revokeApiKey = createRevokeApiKey({
         db: deps.database,
         apiKeys,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     });
-    const listApiKeys = new ListApiKeysUseCase({
+    const listApiKeys = createListApiKeys({
         db: deps.database,
         apiKeys,
     });
-    const verifyApiKey = new VerifyApiKeyUseCase({
+    const verifyApiKey = createVerifyApiKey({
         db: deps.database,
         apiKeys,
     });

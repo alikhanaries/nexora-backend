@@ -8,9 +8,9 @@ Migrate existing **cancellation**, **shipment**, and **return** HTTP APIs to Nes
 
 All routes from:
 
-- `src/modules/cancellations/presentation/cancellation.routes.js`
-- `src/modules/shipments/presentation/shipment.routes.js`
-- `src/modules/returns/presentation/return.routes.js`
+- `src/modules/cancellations/views/cancellation.routes.js`
+- `src/modules/shipments/views/shipment.routes.js`
+- `src/modules/returns/views/return.routes.js`
 
 **Out of scope:** compatibility `/api/v2/orders*`, outbound tenant webhooks, new providers.
 
@@ -75,7 +75,7 @@ Same 18 routes implemented in:
 
 ## Wiring
 
-`wire-core-domain.js` mirrors Fastify `create-application.js` order-adjacent factories (after `createOrdersModule`):
+`wire-core-services.js` mirrors Fastify `create-application.js` order-adjacent factories (after `createOrdersModule`):
 
 - `createCancellationsModule` — order query/fulfillment + inventory + idempotency
 - `createShipmentsModule` — order fulfillment/query + inventory + idempotency
@@ -94,18 +94,18 @@ Same 18 routes implemented in:
 
 **Created**
 
-- `src/nest/cancellations/*`
-- `src/nest/shipments/*`
-- `src/nest/returns/*`
+- `src/app/cancellations/*`
+- `src/app/shipments/*`
+- `src/app/returns/*`
 - `test/nest/order-adjacent-apis.test.js`
 - `docs/migration-phase-10-order-adjacent-apis.md`
 
 **Changed**
 
-- `src/nest/app.module.js`
-- `src/nest/bootstrap/wire-core-domain.js`
-- `src/nest/orders/orders.controller.js` — `POST .../cancel`
-- `src/nest/orders/orders.module.js` — imports `CancellationsModule` for cancel DI
+- `src/app/app.module.js`
+- `src/app/wire-core-services.js`
+- `src/app/orders/orders.controller.js` — `POST .../cancel`
+- `src/app/orders/orders.module.js` — imports `CancellationsModule` for cancel DI
 - `test/nest/helpers/mock-core-domain.js`
 
 **Unchanged (Fastify)**

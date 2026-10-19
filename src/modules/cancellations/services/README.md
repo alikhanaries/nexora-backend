@@ -3,7 +3,7 @@
 | Folder | Responsibility |
 |--------|----------------|
 | `models/` | `Cancellation`, lines, status transitions |
-| `services/` | Create/list/get cancellations, command/query services |
+| `services/` | Factories (`createCreateCancellation`, `createGetCancellation`, …); deprecated class wrappers for public/`new` consumers |
 | `repositories/` | `PostgresCancellationRepository`, repository port |
 | `views/` | Zod schemas, HTTP mappers, internal DTO helpers |
 | `controllers/` | Legacy Fastify `cancellation.routes.js` |

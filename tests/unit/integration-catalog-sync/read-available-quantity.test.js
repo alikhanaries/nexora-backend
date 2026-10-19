@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readAvailableQuantityAtLocation } from '../../../src/modules/integration-catalog-sync/application/read-available-quantity.js';
+import { readAvailableQuantityAtLocation } from '../../../src/modules/integration-catalog-sync/services/read-available-quantity.js';
 
 describe('readAvailableQuantityAtLocation', () => {
     const stockLocationId = '44444444-4444-4444-8444-444444444444';

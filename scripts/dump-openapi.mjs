@@ -10,7 +10,7 @@ process.env.DOCS_ENABLED ??= 'true';
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createApplication } from '../src/app/bootstrap/create-application.js';
+import { createApplication } from '../src/app/create-application.js';
 import { closeTestInfrastructure, getTestInfrastructure } from '../tests/integration/helpers.js';
 
 const outPath = process.argv[2] ?? join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', '.openapi-snapshot.json');

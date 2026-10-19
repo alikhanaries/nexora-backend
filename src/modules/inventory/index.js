@@ -1,8 +1,8 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { AdjustInventory, CreateStockLocation, GetInventory, GetStockLocation, ListStockLocations, ReceiveInventory, ReleaseInventory, ReserveInventory, } from './application/index.js';
-import { DefaultInventoryService } from './application/default-inventory-service.js';
-import { PostgresInventoryRepository, PostgresStockLocationRepository, } from './infrastructure/index.js';
-import inventoryRoutes, {} from './presentation/inventory.routes.js';
+import { AdjustInventory, CreateStockLocation, GetInventory, GetStockLocation, ListStockLocations, ReceiveInventory, ReleaseInventory, ReserveInventory, } from './services/index.js';
+import { DefaultInventoryService } from './services/default-inventory-service.js';
+import { PostgresInventoryRepository, PostgresStockLocationRepository, } from './repositories/index.js';
+import inventoryRoutes, {} from './views/inventory.routes.js';
 export function createInventoryModule(deps) {
     const stockLocationRepository = new PostgresStockLocationRepository();
     const inventoryRepository = new PostgresInventoryRepository();

@@ -1,12 +1,15 @@
 import { requireReturnsRead } from './return-permissions.js';
-export class GetReturn {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireReturnsRead(this.deps.authorization, input.actorPermissions);
-        const returnDetail = await this.deps.returnQueryService.getReturnById(input.tenantId, input.returnId);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createGetReturn(deps) {
+    async function execute(input) {
+        requireReturnsRead(deps.authorization, input.actorPermissions);
+        const returnDetail = await deps.returnQueryService.getReturnById(input.tenantId, input.returnId);
         return { return: returnDetail };
     }
+
+    return { execute };
 }

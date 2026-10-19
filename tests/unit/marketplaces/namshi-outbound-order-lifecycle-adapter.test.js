@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceTransientError, MarketplaceValidationError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
-import { mapMarketplaceFulfillmentToNamshiCreateShipment } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/map-marketplace-fulfillment-to-namshi-create-shipment.js';
-import { NamshiOutboundOrderLifecycleAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-outbound-order-lifecycle-adapter.js';
+import { MarketplaceTransientError, MarketplaceValidationError } from '../../../src/modules/marketplaces/models/marketplace-errors.js';
+import { mapMarketplaceFulfillmentToNamshiCreateShipment } from '../../../src/modules/marketplaces/repositories/adapters/namshi/map-marketplace-fulfillment-to-namshi-create-shipment.js';
+import { NamshiOutboundOrderLifecycleAdapter } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-outbound-order-lifecycle-adapter.js';
 
 const runtime = {
     marketplaceKey: 'namshi',

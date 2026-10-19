@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { buildCompatV2WebhookBody } from '../../../src/modules/compatibility/application/build-compat-v2-webhook-body.js';
+import { buildCompatV2WebhookBody } from '../../../src/modules/compatibility/services/build-compat-v2-webhook-body.js';
 
 describe('buildCompatV2WebhookBody', () => {
     it('maps order.created to CE Content envelope', async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/domain/sync-target.js';
-import { planCatalogSyncJobsForReconciliationOffer } from '../../../src/modules/integration-catalog-sync/application/plan-catalog-sync-reconciliation-jobs.js';
+import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/models/sync-target.js';
+import { planCatalogSyncJobsForReconciliationOffer } from '../../../src/modules/integration-catalog-sync/services/plan-catalog-sync-reconciliation-jobs.js';
 
 describe('planCatalogSyncJobsForReconciliationOffer', () => {
     const tenantId = '11111111-1111-4111-8111-111111111111';

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AmazonCatalogAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-catalog-adapter.js';
-import { AmazonSpApiClient } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-sp-api-client.js';
+import { AmazonCatalogAdapter } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-catalog-adapter.js';
+import { AmazonSpApiClient } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-sp-api-client.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
@@ -116,8 +116,8 @@ describe('AmazonCatalogAdapter', () => {
 describe('AmazonCatalogAdapter HTTP errors', () => {
     it('maps 401 to permanent adapter error on connection test', async () => {
         const fetchImpl = vi.fn(async () => new Response('unauthorized', { status: 401 }));
-        const { MarketplaceHttpClient } = await import('../../../src/modules/marketplaces/infrastructure/http/marketplace-http-client.js');
-        const { AmazonLwaTokenProvider } = await import('../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-lwa-token-provider.js');
+        const { MarketplaceHttpClient } = await import('../../../src/modules/marketplaces/repositories/http/marketplace-http-client.js');
+        const { AmazonLwaTokenProvider } = await import('../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-lwa-token-provider.js');
         const lwa = new AmazonLwaTokenProvider({
             http: new MarketplaceHttpClient({
                 fetchImpl: vi.fn(async () => new Response(JSON.stringify({
@@ -136,8 +136,8 @@ describe('AmazonCatalogAdapter HTTP errors', () => {
 
     it('maps 500 to retry adapter error', async () => {
         const fetchImpl = vi.fn(async () => new Response('error', { status: 500 }));
-        const { MarketplaceHttpClient } = await import('../../../src/modules/marketplaces/infrastructure/http/marketplace-http-client.js');
-        const { AmazonLwaTokenProvider } = await import('../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-lwa-token-provider.js');
+        const { MarketplaceHttpClient } = await import('../../../src/modules/marketplaces/repositories/http/marketplace-http-client.js');
+        const { AmazonLwaTokenProvider } = await import('../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-lwa-token-provider.js');
         const lwa = new AmazonLwaTokenProvider({
             http: new MarketplaceHttpClient({
                 fetchImpl: vi.fn(async () => new Response(JSON.stringify({

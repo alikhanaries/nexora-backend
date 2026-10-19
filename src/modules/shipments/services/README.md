@@ -3,7 +3,7 @@
 | Folder | Responsibility |
 |--------|----------------|
 | `models/` | `Shipment`, lines, status rules |
-| `services/` | Create/ship/deliver/cancel, command/query services, inventory fulfillment hook |
+| `services/` | Factories (`createCreateShipment`, `createShipShipment`, …); deprecated class wrappers for public/`new` consumers; inventory fulfillment hook |
 | `repositories/` | `PostgresShipmentRepository`, port |
 | `views/` | Schemas, mappers, DTO helpers |
 | `controllers/` | Legacy Fastify `shipment.routes.js` |

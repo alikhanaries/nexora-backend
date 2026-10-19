@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/domain/marketplace-order-lifecycle-operation.js';
-import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/marketplace-order-ingestion/domain/normalized-marketplace-lifecycle-target-status.js';
-import { NoonOrderAdapter } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-order-adapter.js';
-import { mapNoonFbpiOrderToLifecycleCommand } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/map-noon-fbpi-order-to-lifecycle-command.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/orders/marketplace-ingestion/models/marketplace-order-lifecycle-operation.js';
+import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
+import { NoonOrderAdapter } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-order-adapter.js';
+import { mapNoonFbpiOrderToLifecycleCommand } from '../../../src/modules/marketplaces/repositories/adapters/noon/map-noon-fbpi-order-to-lifecycle-command.js';
 import {
     deriveNoonOrderLifecycleTargetFromItems,
     mapNoonMpItemStatusToLifecycleTarget,
-} from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-order-status.js';
-import { MarketplaceValidationError } from '../../../src/modules/marketplaces/domain/marketplace-errors.js';
+} from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-order-status.js';
+import { MarketplaceValidationError } from '../../../src/modules/marketplaces/models/marketplace-errors.js';
 import { buildNoonFbpiOrderSyncEvent, buildNoonGetFbpiOrderResponse } from './noon-event-fixtures.js';
 
 const lifecycleContext = {

@@ -1,1 +1,1 @@
-export { MarketplaceCatalogAdapterRegistry } from '../infrastructure/marketplace-catalog-adapter-registry.js';
+export { MarketplaceCatalogAdapterRegistry } from '../repositories/marketplace-catalog-adapter-registry.js';

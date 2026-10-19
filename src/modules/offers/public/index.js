@@ -1,2 +1,2 @@
-export { DefaultOfferQueryService, } from '../application/offer-query-service.js';
-export { OfferStatus } from '../domain/index.js';
+export { DefaultOfferQueryService, } from '../services/offer-query-service.js';
+export { OfferStatus } from '../models/index.js';

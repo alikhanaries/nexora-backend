@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildWebhookEventEnvelope } from '../../../src/modules/webhooks/application/build-webhook-event-envelope.js';
-import { signWebhookRequestBody, verifyWebhookRequestBody } from '../../../src/modules/webhooks/application/webhook-request-signer.js';
+import { buildWebhookEventEnvelope } from '../../../src/modules/webhooks/outbound/services/build-webhook-event-envelope.js';
+import { signWebhookRequestBody, verifyWebhookRequestBody } from '../../../src/modules/webhooks/outbound/services/webhook-request-signer.js';
 
 describe('webhook request signer', () => {
     it('produces deterministic HMAC signatures for known secret and body', () => {

@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DefaultOrderCommandService } from '../../../src/modules/orders/public/order-command-service.js';
+import {
+    createOrderCommandService,
+    DefaultOrderCommandService,
+} from '../../../src/modules/orders/public/order-command-service.js';
 import { AuthorizationError } from '../../../src/shared/errors/index.js';
 
 const baseCommand = {
@@ -39,14 +42,15 @@ const orderDetail = {
     customer: { id: 'customer-1', tenantId: 'tenant-1', orderId: 'order-1' },
 };
 
-describe('DefaultOrderCommandService', () => {
+describe('createOrderCommandService', () => {
     it('delegates createOrder to the CreateOrder use case', async () => {
         const createOrder = {
             execute: vi.fn().mockResolvedValue({ order: orderDetail }),
         };
-        const service = new DefaultOrderCommandService({
+        const service = createOrderCommandService({
             createOrder,
             createIntegrationOrder: { execute: vi.fn() },
+            createIntegrationFulfilledOrder: null,
             acknowledgeOrder: { execute: vi.fn() },
         });
 
@@ -72,9 +76,10 @@ describe('DefaultOrderCommandService', () => {
         const createOrder = {
             execute: vi.fn().mockRejectedValue(new AuthorizationError('Missing required permission: orders.create')),
         };
-        const service = new DefaultOrderCommandService({
+        const service = createOrderCommandService({
             createOrder,
             createIntegrationOrder: { execute: vi.fn() },
+            createIntegrationFulfilledOrder: null,
             acknowledgeOrder: { execute: vi.fn() },
         });
 
@@ -96,9 +101,11 @@ describe('DefaultOrderCommandService', () => {
                 return { kind: 'executed', value };
             }),
         };
-        const service = new DefaultOrderCommandService({
+        const service = createOrderCommandService({
             createOrder,
             createIntegrationOrder: { execute: vi.fn() },
+            createIntegrationFulfilledOrder: null,
+            acknowledgeOrder: { execute: vi.fn() },
             idempotency,
         });
 
@@ -125,9 +132,10 @@ describe('DefaultOrderCommandService', () => {
         const createOrder = {
             execute: vi.fn().mockResolvedValue({ order: orderDetail }),
         };
-        const service = new DefaultOrderCommandService({
+        const service = createOrderCommandService({
             createOrder,
             createIntegrationOrder: { execute: vi.fn() },
+            createIntegrationFulfilledOrder: null,
             acknowledgeOrder: { execute: vi.fn() },
         });
 
@@ -146,9 +154,10 @@ describe('DefaultOrderCommandService', () => {
         const acknowledgeOrder = {
             execute: vi.fn().mockResolvedValue({ order: { ...orderDetail, status: 'CONFIRMED' } }),
         };
-        const service = new DefaultOrderCommandService({
+        const service = createOrderCommandService({
             createOrder: { execute: vi.fn() },
             createIntegrationOrder: { execute: vi.fn() },
+            createIntegrationFulfilledOrder: null,
             acknowledgeOrder,
         });
 
@@ -171,9 +180,10 @@ describe('DefaultOrderCommandService', () => {
         const createIntegrationOrder = {
             execute: vi.fn().mockResolvedValue({ order: { ...orderDetail, status: 'NEW', confirmedAt: null } }),
         };
-        const service = new DefaultOrderCommandService({
+        const service = createOrderCommandService({
             createOrder: { execute: vi.fn() },
             createIntegrationOrder,
+            createIntegrationFulfilledOrder: null,
             acknowledgeOrder: { execute: vi.fn() },
         });
 
@@ -212,9 +222,11 @@ describe('DefaultOrderCommandService', () => {
                 return { kind: 'executed', value };
             }),
         };
-        const service = new DefaultOrderCommandService({
+        const service = createOrderCommandService({
             createOrder: { execute: vi.fn() },
             createIntegrationOrder,
+            createIntegrationFulfilledOrder: null,
+            acknowledgeOrder: { execute: vi.fn() },
             idempotency,
         });
 
@@ -252,8 +264,10 @@ describe('DefaultOrderCommandService', () => {
                 return { kind: 'executed', value };
             }),
         };
-        const service = new DefaultOrderCommandService({
+        const service = createOrderCommandService({
             createOrder: { execute: vi.fn() },
+            createIntegrationOrder: { execute: vi.fn() },
+            createIntegrationFulfilledOrder: null,
             acknowledgeOrder,
             idempotency,
         });
@@ -276,5 +290,20 @@ describe('DefaultOrderCommandService', () => {
             idempotencyKey: 'idem-ack-1',
         }, 'body-1', expect.any(Function), expect.any(Function), { useTransaction: true });
         expect(result.order).toMatchObject({ transactionProvided: true });
+    });
+
+    it('keeps DefaultOrderCommandService constructor-return wrapper working', async () => {
+        const createOrder = {
+            execute: vi.fn().mockResolvedValue({ order: orderDetail }),
+        };
+        const service = new DefaultOrderCommandService({
+            createOrder,
+            createIntegrationOrder: { execute: vi.fn() },
+            createIntegrationFulfilledOrder: null,
+            acknowledgeOrder: { execute: vi.fn() },
+        });
+
+        const result = await service.createOrder(baseCommand);
+        expect(result).toEqual({ order: orderDetail });
     });
 });

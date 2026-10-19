@@ -38,28 +38,22 @@ function toUpdateShipmentTrackingInput(command) {
     };
 }
 
-export class DefaultShipmentCommandService {
-    deps;
-
-    /**
-     * @param {object} deps
-     * @param {import('./create-shipment.js').CreateShipment} deps.createShipment
-     * @param {import('./update-shipment-tracking.js').UpdateShipmentTracking} deps.updateShipmentTracking
-     * @param {import('../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
-     */
-    constructor(deps) {
-        this.deps = deps;
-    }
-
+/**
+ * @param {object} deps
+ * @param {{ execute: Function }} deps.createShipment
+ * @param {{ execute: Function }} deps.updateShipmentTracking
+ * @param {import('../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
+ */
+export function createShipmentCommandService(deps) {
     /**
      * @param {import('../public/shipment-command-service.js').CreateShipmentCommand} command
      * @returns {Promise<import('../public/shipment-command-service.js').CreateShipmentResult>}
      */
-    async createShipment(command) {
+    async function createShipment(command) {
         const createInput = toCreateShipmentInput(command);
 
         if (command.transaction !== undefined) {
-            const { shipment } = await this.deps.createShipment.execute({
+            const { shipment } = await deps.createShipment.execute({
                 ...createInput,
                 transaction: command.transaction,
             });
@@ -67,19 +61,19 @@ export class DefaultShipmentCommandService {
         }
 
         if (command.idempotencyKey !== undefined) {
-            if (this.deps.idempotency === undefined) {
+            if (deps.idempotency === undefined) {
                 throw new Error('Idempotency service is required when idempotencyKey is provided');
             }
             if (command.principalFingerprint === undefined || command.requestFingerprint === undefined) {
                 throw new Error('principalFingerprint and requestFingerprint are required when idempotencyKey is provided');
             }
-            const outcome = await this.deps.idempotency.execute({
+            const outcome = await deps.idempotency.execute({
                 tenantId: command.tenantId,
                 principalFingerprint: command.principalFingerprint,
                 routeId: command.routeId ?? DEFAULT_CREATE_ROUTE_ID,
                 idempotencyKey: command.idempotencyKey,
             }, command.requestFingerprint, async (tx) => {
-                const { shipment } = await this.deps.createShipment.execute({
+                const { shipment } = await deps.createShipment.execute({
                     ...createInput,
                     transaction: tx,
                 });
@@ -88,7 +82,7 @@ export class DefaultShipmentCommandService {
             return outcome.value;
         }
 
-        const { shipment } = await this.deps.createShipment.execute(createInput);
+        const { shipment } = await deps.createShipment.execute(createInput);
         return { shipment };
     }
 
@@ -96,35 +90,44 @@ export class DefaultShipmentCommandService {
      * @param {import('../public/shipment-command-service.js').UpdateShipmentTrackingCommand} command
      * @returns {Promise<import('../public/shipment-command-service.js').UpdateShipmentTrackingResult>}
      */
-    async updateShipmentTracking(command) {
+    async function updateShipmentTracking(command) {
         const updateInput = toUpdateShipmentTrackingInput(command);
 
         if (command.transaction !== undefined) {
-            return this.deps.updateShipmentTracking.execute({
+            return deps.updateShipmentTracking.execute({
                 ...updateInput,
                 transaction: command.transaction,
             });
         }
 
         if (command.idempotencyKey !== undefined) {
-            if (this.deps.idempotency === undefined) {
+            if (deps.idempotency === undefined) {
                 throw new Error('Idempotency service is required when idempotencyKey is provided');
             }
             if (command.principalFingerprint === undefined || command.requestFingerprint === undefined) {
                 throw new Error('principalFingerprint and requestFingerprint are required when idempotencyKey is provided');
             }
-            const outcome = await this.deps.idempotency.execute({
+            const outcome = await deps.idempotency.execute({
                 tenantId: command.tenantId,
                 principalFingerprint: command.principalFingerprint,
                 routeId: command.routeId ?? DEFAULT_UPDATE_TRACKING_ROUTE_ID,
                 idempotencyKey: command.idempotencyKey,
-            }, command.requestFingerprint, async (tx) => this.deps.updateShipmentTracking.execute({
+            }, command.requestFingerprint, async (tx) => deps.updateShipmentTracking.execute({
                 ...updateInput,
                 transaction: tx,
             }), (result) => ({ statusCode: 200, body: result }), { useTransaction: true });
             return outcome.value;
         }
 
-        return this.deps.updateShipmentTracking.execute(updateInput);
+        return deps.updateShipmentTracking.execute(updateInput);
+    }
+
+    return { createShipment, updateShipmentTracking };
+}
+
+/** @deprecated Prefer {@link createShipmentCommandService}; kept for existing import sites and tests. */
+export class DefaultShipmentCommandService {
+    constructor(deps) {
+        return createShipmentCommandService(deps);
     }
 }

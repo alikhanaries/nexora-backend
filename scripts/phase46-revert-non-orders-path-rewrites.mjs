@@ -60,7 +60,7 @@ function fixTree(root) {
 
 fixTree(join(repoRoot, 'src/modules'));
 fixTree(join(repoRoot, 'tests'));
-fixTree(join(repoRoot, 'src/nest'));
+fixTree(join(repoRoot, 'src/app'));
 fixTree(join(repoRoot, 'src/workers'));
 fixTree(join(repoRoot, 'src/app'));
 fixTree(join(repoRoot, 'src/integrations'));

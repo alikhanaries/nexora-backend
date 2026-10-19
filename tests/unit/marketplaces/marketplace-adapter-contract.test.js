@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/integration-catalog-sync/public/marketplace-catalog-adapter-registry.js';
-import { registerMarketplaceCatalogAdapters } from '../../../src/modules/marketplaces/infrastructure/adapters/register-marketplace-catalog-adapters.js';
-import { SHOPIFY_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infrastructure/adapters/shopify/shopify-catalog-adapter.js';
-import { AMAZON_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infrastructure/adapters/amazon/amazon-catalog-adapter.js';
-import { NOON_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infrastructure/adapters/noon/noon-catalog-adapter.js';
-import { NAMSHI_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-catalog-adapter.js';
-import { createEmptyMarketplaceCapabilities } from '../../../src/modules/marketplaces/domain/marketplace-capabilities.js';
+import { registerMarketplaceCatalogAdapters } from '../../../src/modules/marketplaces/repositories/adapters/register-marketplace-catalog-adapters.js';
+import { SHOPIFY_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/repositories/adapters/shopify/shopify-catalog-adapter.js';
+import { AMAZON_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/repositories/adapters/amazon/amazon-catalog-adapter.js';
+import { NOON_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/repositories/adapters/noon/noon-catalog-adapter.js';
+import { NAMSHI_MARKETPLACE_KEY } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-catalog-adapter.js';
+import { createEmptyMarketplaceCapabilities } from '../../../src/modules/marketplaces/models/marketplace-capabilities.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
 } from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';

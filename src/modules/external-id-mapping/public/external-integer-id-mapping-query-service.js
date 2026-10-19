@@ -7,4 +7,4 @@
  * @property {(tenantId: string, provider: string, resourceType: string, resourceIds: readonly string[], tx?: object) => Promise<Map<string, number>>} findExternalIdsByResourceIds
  */
 
-export { DefaultExternalIntegerIdMappingQueryService } from '../application/external-integer-id-mapping-query-service.js';
+export { DefaultExternalIntegerIdMappingQueryService } from '../services/external-integer-id-mapping-query-service.js';

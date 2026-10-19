@@ -4,7 +4,7 @@ import {
     mapCeProductItemToUpsertCommands,
     mapProductToCeCatalogItem,
     mergeCeExtraDataAttributes,
-} from '../../../src/modules/compatibility/application/mappers/compatibility-catalog-product.mapper.js';
+} from '../../../src/modules/compatibility/services/mappers/compatibility-catalog-product.mapper.js';
 
 describe('compatibility catalog product mapper', () => {
     it('maps CE product item to upsert commands', () => {

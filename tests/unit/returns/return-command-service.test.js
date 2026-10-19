@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DefaultReturnCommandService } from '../../../src/modules/returns/public/return-command-service.js';
+import {
+    createReturnCommandService,
+    DefaultReturnCommandService,
+} from '../../../src/modules/returns/public/return-command-service.js';
 
 const returnDetail = {
     id: 'return-1',
@@ -12,12 +15,12 @@ const returnDetail = {
     lines: [{ orderLineId: 'line-1', quantity: 2 }],
 };
 
-describe('DefaultReturnCommandService', () => {
+describe('createReturnCommandService', () => {
     it('delegates createReturn to the CreateReturn use case', async () => {
         const createReturn = {
             execute: vi.fn().mockResolvedValue({ return: returnDetail }),
         };
-        const service = new DefaultReturnCommandService({ createReturn });
+        const service = createReturnCommandService({ createReturn });
 
         const result = await service.createReturn({
             tenantId: 'tenant-1',
@@ -52,7 +55,7 @@ describe('DefaultReturnCommandService', () => {
                 return { kind: 'executed', value };
             }),
         };
-        const service = new DefaultReturnCommandService({ createReturn, idempotency });
+        const service = createReturnCommandService({ createReturn, idempotency });
 
         const result = await service.createReturn({
             tenantId: 'tenant-1',
@@ -73,5 +76,23 @@ describe('DefaultReturnCommandService', () => {
             idempotencyKey: 'idem-return-1',
         }, 'body-1', expect.any(Function), expect.any(Function), { useTransaction: true });
         expect(result.return).toMatchObject({ transactionProvided: true });
+    });
+
+    it('keeps DefaultReturnCommandService constructor-return wrapper working', async () => {
+        const createReturn = {
+            execute: vi.fn().mockResolvedValue({ return: returnDetail }),
+        };
+        const service = new DefaultReturnCommandService({ createReturn });
+
+        const result = await service.createReturn({
+            tenantId: 'tenant-1',
+            actorId: 'actor-1',
+            actorKind: 'user',
+            actorPermissions: ['returns.create'],
+            orderId: 'order-1',
+            lines: [{ orderLineId: 'line-1', quantity: 2 }],
+        });
+
+        expect(result).toEqual({ return: returnDetail });
     });
 });

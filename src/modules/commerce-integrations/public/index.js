@@ -1,5 +1,5 @@
-export { CommerceIntegrationQueryService } from '../application/commerce-integration-query-service.js';
-export { CommerceIntegration, IntegrationStatus } from '../domain/index.js';
+export { CommerceIntegrationQueryService } from '../services/commerce-integration-query-service.js';
+export { CommerceIntegration, IntegrationStatus } from '../models/index.js';
 export {
     resolveChannelStockLocationId,
     requireChannelStockLocationId,

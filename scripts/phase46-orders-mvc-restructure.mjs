@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const ordersRoot = join(repoRoot, 'src/modules/orders');
-const nestOrders = join(repoRoot, 'src/nest/orders');
+const nestOrders = join(repoRoot, 'src/app/orders');
 
 function ensureDir(path) {
   if (!existsSync(path)) {
@@ -122,8 +122,8 @@ function patchNestControllerNestPaths(content) {
       "from '../../views/order.mapper.js'",
     )
     .replace("from '../cancellations/", "from '../../../../nest/cancellations/")
-    .replace("from '../common/", "from '../../../../nest/common/")
-    .replace("from '../domain/", "from '../../../../nest/domain/");
+    .replace("from '../common/", "from '../../../../app/common/")
+    .replace("from '../domain/", "from '../../../../app/di/");
 }
 
 // --- physical moves ---

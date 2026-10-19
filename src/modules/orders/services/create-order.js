@@ -10,14 +10,16 @@ import { orderCreatedEvent, orderConfirmedEvent } from './order-events.js';
 import { requireOrdersCreate } from './order-permissions.js';
 import { assignOrderCompatibilityExternalIds } from './assign-order-compatibility-external-ids.js';
 import { resolveOrderLines } from './resolve-order-lines.js';
+
 const ORDER_REFERENCE_TYPE = 'ORDER';
-export class CreateOrder {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireOrdersCreate(this.deps.authorization, input.actorPermissions);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCreateOrder(deps) {
+    async function execute(input) {
+        requireOrdersCreate(deps.authorization, input.actorPermissions);
         if (input.lines.length === 0) {
             throw new ValidationError('Order must contain at least one line');
         }
@@ -34,10 +36,10 @@ export class CreateOrder {
         if (!Number.isInteger(shippingMinor) || shippingMinor < 0) {
             throw new ValidationError('Shipping must be a non-negative integer');
         }
-        await this.deps.commerceIntegrationQueryService.verifyChannelUsable(input.tenantId, input.channelId);
+        await deps.commerceIntegrationQueryService.verifyChannelUsable(input.tenantId, input.channelId);
         const orderId = randomUUID();
-        const resolvedLines = await this.deps.database.withTenant(input.tenantId, (tx) =>
-            resolveOrderLines(this.deps, {
+        const resolvedLines = await deps.database.withTenant(input.tenantId, (tx) =>
+            resolveOrderLines(deps, {
                 tenantId: input.tenantId,
                 channelId: input.channelId,
                 currency,
@@ -54,7 +56,7 @@ export class CreateOrder {
             : input.externalOrderReference.trim() || null;
         const work = async (tx) => {
             for (const line of resolvedLines) {
-                await this.deps.inventoryService.reserve({
+                await deps.inventoryService.reserve({
                     tenantId: input.tenantId,
                     stockLocationId: line.input.stockLocationId,
                     productId: line.productId,
@@ -63,7 +65,7 @@ export class CreateOrder {
                     referenceId: orderId,
                 }, tx);
             }
-            const orderNumber = await this.deps.orders.allocateOrderNumber(tx, input.tenantId);
+            const orderNumber = await deps.orders.allocateOrderNumber(tx, input.tenantId);
             const now = new Date();
             const order = Order.create({
                 id: orderId,
@@ -79,7 +81,7 @@ export class CreateOrder {
                 totalMinor,
                 createdAt: now,
             });
-            await this.deps.orders.insertOrder(tx, order);
+            await deps.orders.insertOrder(tx, order);
             const orderLines = [];
             for (const line of resolvedLines) {
                 const orderLine = OrderLine.create({
@@ -98,7 +100,7 @@ export class CreateOrder {
                     lineTotalMinor: line.lineTotalMinor,
                     currency,
                 });
-                await this.deps.orders.insertOrderLine(tx, orderLine);
+                await deps.orders.insertOrderLine(tx, orderLine);
                 orderLines.push(orderLine);
             }
             const customerInput = input.customer ?? {};
@@ -116,18 +118,18 @@ export class CreateOrder {
                 shippingAddress: customerInput.shippingAddress ?? null,
                 metadata: customerInput.metadata ?? {},
             });
-            await this.deps.orders.insertCustomerSnapshot(tx, snapshot);
+            await deps.orders.insertCustomerSnapshot(tx, snapshot);
             await assignOrderCompatibilityExternalIds(
-                this.deps.externalIntegerIdMappingCommandService,
+                deps.externalIntegerIdMappingCommandService,
                 tx,
                 input.tenantId,
                 order.id,
                 orderLines,
             );
             const orderDto = toOrderDto(order);
-            await this.deps.eventRecorder.record(tx, orderCreatedEvent(orderDto));
-            await this.deps.eventRecorder.record(tx, orderConfirmedEvent(orderDto));
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.eventRecorder.record(tx, orderCreatedEvent(orderDto));
+            await deps.eventRecorder.record(tx, orderConfirmedEvent(orderDto));
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: input.actorKind,
                 actorId: input.actorId,
@@ -151,7 +153,9 @@ export class CreateOrder {
         };
         const detail = input.transaction !== undefined
             ? await work(input.transaction)
-            : await this.deps.database.execute(work, { tenantId: input.tenantId });
+            : await deps.database.execute(work, { tenantId: input.tenantId });
         return { order: detail };
     }
+
+    return { execute };
 }

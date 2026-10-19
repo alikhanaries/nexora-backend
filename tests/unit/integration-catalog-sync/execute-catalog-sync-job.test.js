@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import { IntegrationStatus } from '../../../src/modules/commerce-integrations/public/index.js';
-import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/domain/sync-operation.js';
-import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/domain/sync-target.js';
-import { ExecuteCatalogSyncJob } from '../../../src/modules/integration-catalog-sync/application/execute-catalog-sync-job.js';
-import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/integration-catalog-sync/infrastructure/marketplace-catalog-adapter-registry.js';
+import { CatalogSyncOperation } from '../../../src/modules/integration-catalog-sync/models/sync-operation.js';
+import { CatalogSyncTarget } from '../../../src/modules/integration-catalog-sync/models/sync-target.js';
+import { ExecuteCatalogSyncJob } from '../../../src/modules/integration-catalog-sync/services/execute-catalog-sync-job.js';
+import { MarketplaceCatalogAdapterRegistry } from '../../../src/modules/integration-catalog-sync/repositories/marketplace-catalog-adapter-registry.js';
 import { FOUNDATION_STUB_MARKETPLACE_KEY } from '../../../src/modules/integration-catalog-sync/public/marketplace-catalog-adapter.port.js';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
 import {
     MarketplaceCatalogAdapterPermanentError,
     MarketplaceCatalogAdapterRetryError,
 } from '../../../src/modules/integration-catalog-sync/public/catalog-sync-adapter-errors.js';
-import { CatalogSyncRetryError } from '../../../src/modules/integration-catalog-sync/application/catalog-sync-errors.js';
+import { CatalogSyncRetryError } from '../../../src/modules/integration-catalog-sync/services/catalog-sync-errors.js';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
 const otherTenantId = '99999999-9999-4999-8999-999999999999';

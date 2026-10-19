@@ -3,9 +3,9 @@
  */
 import { randomBytes, randomUUID } from 'node:crypto';
 import { config as loadEnv } from 'dotenv';
-import { createApplication } from '../src/app/bootstrap/create-application.js';
+import { createApplication } from '../src/app/create-application.js';
 import { PostgresMarketplaceConnectionRepository } from '../src/modules/marketplaces/infrastructure/postgres-marketplace-connection-repository.js';
-import { hashWebhookIngressToken } from '../src/modules/marketplace-webhook-ingestion/application/webhook-ingress-token.js';
+import { hashWebhookIngressToken } from '../src/modules/webhooks/marketplace/application/webhook-ingress-token.js';
 import { getTestInfrastructure } from '../tests/integration/helpers.js';
 import { buildNoonFbpiOrderSyncEvent } from '../tests/unit/marketplaces/noon-event-fixtures.js';
 

@@ -54,5 +54,5 @@ HTTP `createApplication` wires inbound lifecycle via `wireMarketplaceOrderIngest
 - Amazon FBA / label-purchased flows that reject confirmShipment
 - Noon/Namshi `UpdateOrder`, `GetShipment`, `CancelShipment`, `AddShipmentCourierAwbs`
 
-Provider READMEs: `src/modules/marketplaces/infrastructure/adapters/{amazon,shopify,noon,namshi}/README.md`.
+Provider READMEs: `src/modules/marketplaces/repositories/adapters/{amazon,shopify,noon,namshi}/README.md`.
 

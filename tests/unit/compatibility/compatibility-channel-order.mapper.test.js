@@ -5,7 +5,7 @@ import {
     mapExternalChannelFulfilledOrderRequest,
     mapExternalChannelOrderRequest,
     resolveChannelStockLocationId,
-} from '../../../src/modules/compatibility/application/mappers/compatibility-channel-order.mapper.js';
+} from '../../../src/modules/compatibility/services/mappers/compatibility-channel-order.mapper.js';
 import { BusinessRuleError } from '../../../src/shared/errors/index.js';
 
 describe('compatibility-channel-order.mapper', () => {

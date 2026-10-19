@@ -6,7 +6,7 @@ import {
     mapExternalCancellationLinesToOrderLines,
     mapExternalCancellationRequest,
     mapCancellationResultToExternalResponse,
-} from '../../../src/modules/compatibility/application/mappers/compatibility-cancellation.mapper.js';
+} from '../../../src/modules/compatibility/services/mappers/compatibility-cancellation.mapper.js';
 
 const createdAt = new Date('2026-01-15T10:00:00.000Z');
 

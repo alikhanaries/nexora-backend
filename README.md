@@ -1,6 +1,6 @@
 # Wasl Backend
 
-Commerce integration platform backend (`wasl-backend`) implemented in **JavaScript (ES Modules)** on **Node.js 24**. The runtime includes NestJS (Express) API, PostgreSQL persistence, Redis infrastructure, object storage, job queue, transactional outbox, inbox deduplication, and idempotency — plus identity, commerce, fulfillment, and marketplace integration modules.
+Commerce integration platform backend (`wasl-backend`) implemented in **JavaScript (ES Modules)** on **Node.js 24**. The HTTP API is **NestJS on Express**, with PostgreSQL persistence, Redis, object storage, job queue, transactional outbox, inbox deduplication, and idempotency — plus identity, commerce, fulfillment, and marketplace integration modules.
 
 ## Phase 1 scope
 
@@ -36,14 +36,14 @@ docker compose up -d
 # 4. Run migrations (also runs automatically on API startup)
 npm run migrate
 
-# 5. Start the API (Nest — recommended)
-npm run start:nest
+# 5. Start the API
+npm run start
 
 # 6. Start the worker (terminal 2)
 npm run dev:worker
 ```
 
-The Nest API listens on `http://localhost:3000` by default (`SERVER_PORT`). Legacy Fastify entry: `npm run dev`.
+The API listens on `http://localhost:3000` by default (`SERVER_PORT`).
 
 ## Verification
 
@@ -75,9 +75,7 @@ OpenAPI docs (when `DOCS_ENABLED=true`): [http://localhost:3000/docs](http://loc
 
 | Command                  | Purpose                       |
 | ------------------------ | ----------------------------- |
-| `npm run start:nest`     | Production-style Nest API     |
-| `npm run dev:nest`       | Nest API with file watch      |
-| `npm run dev`            | Legacy Fastify API (watch)    |
+| `npm start` / `npm run dev` | NestJS + Express API       |
 | `npm run dev:worker`     | Background worker (watch)     |
 | `npm run migrate`        | Apply database migrations     |
 | `npm run test:unit`      | Unit tests (Vitest)           |

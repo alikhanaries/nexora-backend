@@ -13,29 +13,68 @@
 const KEY_SCHEMA_VERSION = 1;
 /** Characters that would break the `:`-delimited layout or pattern matching. */
 const FORBIDDEN_SEGMENT = /[\s:*?[\]{}]/;
-export class RedisKeyBuilder {
-    root;
-    constructor(prefix, namespace) {
-        this.root = `${sanitise(prefix)}:${sanitise(namespace)}:v${KEY_SCHEMA_VERSION}`;
+
+/**
+ * @param {{ prefix: string, namespace: string }} dependencies
+ * @returns {{
+ *   root: string,
+ *   cache: (namespace: string, key: string) => string,
+ *   lock: (resource: string) => string,
+ *   rateLimit: (policy: string, subject: string) => string,
+ *   cacheNamespacePattern: (namespace: string) => string,
+ *   build: (kind: string, ...parts: string[]) => string,
+ * }}
+ */
+export function createRedisKeyBuilder(dependencies = {}) {
+    const { prefix, namespace } = dependencies;
+    const root = `${sanitise(prefix)}:${sanitise(namespace)}:v${KEY_SCHEMA_VERSION}`;
+
+    function build(kind, ...parts) {
+        return [root, kind, ...parts.map(sanitise)].join(':');
     }
-    cache(namespace, key) {
-        return this.build('cache', namespace, key);
+
+    function cache(cacheNamespace, key) {
+        return build('cache', cacheNamespace, key);
     }
-    lock(resource) {
-        return this.build('lock', resource);
+
+    function lock(resource) {
+        return build('lock', resource);
     }
-    rateLimit(policy, subject) {
+
+    function rateLimit(policy, subject) {
         // Subjects may contain tenant/user ids joined with reserved `:` separators.
-        return this.build('ratelimit', policy, encodeRateLimitSubject(subject));
+        return build('ratelimit', policy, encodeRateLimitSubject(subject));
     }
+
     /** Prefix for `SCAN MATCH`. Never use `KEYS` against a production instance. */
-    cacheNamespacePattern(namespace) {
-        return `${this.root}:cache:${sanitise(namespace)}:*`;
+    function cacheNamespacePattern(cacheNamespace) {
+        return `${root}:cache:${sanitise(cacheNamespace)}:*`;
     }
-    build(kind, ...parts) {
-        return [this.root, kind, ...parts.map(sanitise)].join(':');
+
+    return {
+        root,
+        cache,
+        lock,
+        rateLimit,
+        cacheNamespacePattern,
+        build,
+    };
+}
+
+/**
+ * @deprecated Prefer {@link createRedisKeyBuilder}; kept for existing import sites.
+ * Constructor returns the factory result (same pattern as Orders service wrappers).
+ */
+export class RedisKeyBuilder {
+    /**
+     * @param {string} prefix
+     * @param {string} namespace
+     */
+    constructor(prefix, namespace) {
+        return createRedisKeyBuilder({ prefix, namespace });
     }
 }
+
 /**
  * Rejects rather than rewrites malformed segments.
  *

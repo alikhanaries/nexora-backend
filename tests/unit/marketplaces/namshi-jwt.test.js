@@ -1,6 +1,6 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { createNamshiLoginJwt } from '../../../src/modules/marketplaces/infrastructure/adapters/namshi/namshi-jwt.js';
+import { createNamshiLoginJwt } from '../../../src/modules/marketplaces/repositories/adapters/namshi/namshi-jwt.js';
 
 describe('createNamshiLoginJwt', () => {
     const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });

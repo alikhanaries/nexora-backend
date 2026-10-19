@@ -4,23 +4,25 @@ import { ReturnStatus } from '../models/return-status.js';
 import { toReturnDetailDto } from '../views/return-dto.js';
 import { returnStatusChangedEvent } from './return-events.js';
 import { requireReturnsUpdate } from './return-permissions.js';
+
 const RETURN_REFERENCE_TYPE = 'RETURN';
-export class ReceiveReturn {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireReturnsUpdate(this.deps.authorization, input.actorPermissions);
-        const returnDetail = await this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.returns.lockForUpdate(tx, input.tenantId, input.returnId);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createReceiveReturn(deps) {
+    async function execute(input) {
+        requireReturnsUpdate(deps.authorization, input.actorPermissions);
+        const returnDetail = await deps.database.execute(async (tx) => {
+            const existing = await deps.returns.lockForUpdate(tx, input.tenantId, input.returnId);
             if (existing === null) {
                 throw new NotFoundError('Return was not found', {
                     tenantId: input.tenantId,
                     returnId: input.returnId,
                 });
             }
-            const lines = await this.deps.returns.listReturnLines(tx, input.tenantId, input.returnId);
+            const lines = await deps.returns.listReturnLines(tx, input.tenantId, input.returnId);
             if (existing.status === ReturnStatus.RECEIVED ||
                 existing.status === ReturnStatus.COMPLETED) {
                 return toReturnDetailDto(existing, lines);
@@ -31,7 +33,7 @@ export class ReceiveReturn {
                     status: existing.status,
                 });
             }
-            const orderLines = await this.deps.orders.lockOrderLinesForUpdate(tx, input.tenantId, existing.orderId);
+            const orderLines = await deps.orders.lockOrderLinesForUpdate(tx, input.tenantId, existing.orderId);
             const orderLineById = new Map(orderLines.map((line) => [line.id, line]));
             const now = new Date();
             for (const returnLine of lines) {
@@ -42,7 +44,7 @@ export class ReceiveReturn {
                         orderLineId: returnLine.orderLineId,
                     });
                 }
-                await this.deps.inventoryService.recordReturn({
+                await deps.inventoryService.recordReturn({
                     tenantId: input.tenantId,
                     stockLocationId: orderLine.stockLocationId,
                     productId: orderLine.productId,
@@ -51,7 +53,7 @@ export class ReceiveReturn {
                     referenceId: input.returnId,
                     idempotencyKey: returnLine.id,
                 }, tx);
-                await this.deps.orders.applyReturnReceivedOnOrderLine(
+                await deps.orders.applyReturnReceivedOnOrderLine(
                     tx,
                     input.tenantId,
                     orderLine.id,
@@ -61,11 +63,11 @@ export class ReceiveReturn {
             }
             const previousStatus = existing.status;
             const updated = existing.receive(now);
-            await this.deps.returns.updateReturn(tx, updated);
+            await deps.returns.updateReturn(tx, updated);
             const detail = toReturnDetailDto(updated, lines);
             if (previousStatus !== updated.status) {
-                await this.deps.eventRecorder.record(tx, returnStatusChangedEvent(detail, previousStatus));
-                await this.deps.auditRecorder?.record(tx, {
+                await deps.eventRecorder.record(tx, returnStatusChangedEvent(detail, previousStatus));
+                await deps.auditRecorder?.record(tx, {
                     tenantId: input.tenantId,
                     actorKind: input.actorKind,
                     actorId: input.actorId,
@@ -84,5 +86,14 @@ export class ReceiveReturn {
             return detail;
         }, { tenantId: input.tenantId });
         return { return: returnDetail };
+    }
+
+    return { execute };
+}
+
+/** @deprecated Prefer createReceiveReturn */
+export class ReceiveReturn {
+    constructor(deps) {
+        return createReceiveReturn(deps);
     }
 }

@@ -1,20 +1,22 @@
 import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { CancelShipment } from './services/cancel-shipment.js';
-import { CreateShipment } from './services/create-shipment.js';
-import { DeliverShipment } from './services/deliver-shipment.js';
-import { GetShipment } from './services/get-shipment.js';
-import { ListShipments } from './services/list-shipments.js';
-import { ShipShipment } from './services/ship-shipment.js';
+import {
+    createCreateShipment,
+    createGetShipment,
+    createListShipments,
+    createShipShipment,
+    createDeliverShipment,
+    createCancelShipment,
+    createUpdateShipmentTracking,
+    createShipmentQueryService,
+    createShipmentCommandService,
+} from './services/index.js';
 import { toShipmentDetailDto } from './views/shipment-dto.js';
-import { UpdateShipmentTracking } from './services/update-shipment-tracking.js';
-import { DefaultShipmentCommandService } from './public/shipment-command-service.js';
-import { DefaultShipmentQueryService } from './public/shipment-query-service.js';
 import { PostgresShipmentRepository } from './repositories/index.js';
 import shipmentRoutes, {} from './controllers/shipment.routes.js';
 export function createShipmentsModule(deps) {
     const authorization = new DefaultAuthorizationService();
     const shipments = new PostgresShipmentRepository();
-    const shipmentQueryService = new DefaultShipmentQueryService({
+    const shipmentQueryService = createShipmentQueryService({
         authorization,
         queryable: deps.database,
         shipments,
@@ -29,29 +31,29 @@ export function createShipmentsModule(deps) {
         orderQueryService: deps.orderQueryService,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
-    const createShipment = new CreateShipment({
+    const createShipment = createCreateShipment({
         ...lifecycleDeps,
         orderFulfillmentService: deps.orderFulfillmentService,
         externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
     });
-    const updateShipmentTracking = new UpdateShipmentTracking(lifecycleDeps);
-    const shipmentCommandService = new DefaultShipmentCommandService({
+    const updateShipmentTracking = createUpdateShipmentTracking(lifecycleDeps);
+    const shipmentCommandService = createShipmentCommandService({
         createShipment,
         updateShipmentTracking,
         idempotency: deps.idempotency,
     });
     const useCases = {
         createShipment,
-        listShipments: new ListShipments({
+        listShipments: createListShipments({
             authorization,
             queryable: deps.database,
             shipments,
         }),
-        getShipment: new GetShipment({ authorization, shipmentQueryService }),
-        shipShipment: new ShipShipment(lifecycleDeps),
+        getShipment: createGetShipment({ authorization, shipmentQueryService }),
+        shipShipment: createShipShipment(lifecycleDeps),
         updateShipmentTracking,
-        deliverShipment: new DeliverShipment(lifecycleDeps),
-        cancelShipment: new CancelShipment({
+        deliverShipment: createDeliverShipment(lifecycleDeps),
+        cancelShipment: createCancelShipment({
             ...lifecycleDeps,
             orderFulfillmentService: deps.orderFulfillmentService,
         }),

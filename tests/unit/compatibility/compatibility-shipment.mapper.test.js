@@ -8,7 +8,7 @@ import {
     mapExternalShipmentTrackingRequest,
     mapShipmentResultToExternalResponse,
     mapShipmentTrackingResultToExternalResponse,
-} from '../../../src/modules/compatibility/application/mappers/compatibility-shipment.mapper.js';
+} from '../../../src/modules/compatibility/services/mappers/compatibility-shipment.mapper.js';
 
 describe('compatibility shipment mapper', () => {
     it('maps MerchantOrderNo and tracking fields', () => {

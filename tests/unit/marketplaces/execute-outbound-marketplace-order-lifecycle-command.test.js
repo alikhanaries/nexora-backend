@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/marketplace-order-ingestion/index.js';
+import { MarketplaceOrderLifecycleOperation } from '../../../src/modules/orders/marketplace-ingestion/index.js';
 import {
     MarketplaceOrderLifecyclePermanentError,
     MarketplaceOrderLifecycleUnsupportedError,
-} from '../../../src/modules/marketplace-order-ingestion/public/marketplace-order-lifecycle-errors.js';
-import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../../src/modules/marketplaces/application/execute-outbound-marketplace-order-lifecycle-command.js';
-import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../../src/modules/marketplaces/application/marketplace-outbound-order-lifecycle-adapter-registry.js';
+} from '../../../src/modules/orders/marketplace-ingestion/public/marketplace-order-lifecycle-errors.js';
+import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../../../src/modules/marketplaces/services/execute-outbound-marketplace-order-lifecycle-command.js';
+import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../../../src/modules/marketplaces/services/marketplace-outbound-order-lifecycle-adapter-registry.js';
 
 const tenantA = '11111111-1111-4111-8111-111111111111';
 const tenantB = '22222222-2222-4222-8222-222222222222';

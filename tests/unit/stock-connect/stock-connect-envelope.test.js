@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stockConnectOk } from '../../../src/nest/stock-connect/stock-connect.envelope.js';
+import { stockConnectOk } from '../../../src/modules/erp/stock-connect/controllers/nest/stock-connect.envelope.js';
 
 describe('stockConnectOk', () => {
   it('wraps data in the StockConnect integration envelope', () => {

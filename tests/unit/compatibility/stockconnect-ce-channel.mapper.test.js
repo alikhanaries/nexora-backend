@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapIntegrationsToCompatV2Collection } from '../../../src/modules/compatibility/application/mappers/compat-v2-integration.mapper.js';
+import { mapIntegrationsToCompatV2Collection } from '../../../src/modules/compatibility/services/mappers/compat-v2-integration.mapper.js';
 
 describe('compat-v2-integration.mapper', () => {
     it('maps numeric external reference to ChannelId', () => {

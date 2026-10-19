@@ -14,13 +14,38 @@ import { isEquivalentReturnRequest, normalizeOptionalReturnText, } from './retur
 
 const EXTERNAL_REFERENCE_UNIQUE_CONSTRAINT = 'returns_tenant_external_reference_unique';
 
-export class CreateReturn {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCreateReturn(deps) {
+    /**
+     * @param {object} tx
+     * @param {object} input
+     * @param {import('../models/return.js').Return} existing
+     * @param {Map<string, number>} requestedByLine
+     * @param {string|null} reason
+     * @param {string|null} shipmentId
+     */
+    async function resolveExistingExternalReferenceReturn(tx, input, existing, requestedByLine, reason, shipmentId) {
+        if (existing.orderId !== input.orderId) {
+            throw new ConflictError('Return external reference belongs to a different order', {
+                externalReference: existing.externalReference,
+                orderId: input.orderId,
+                existingOrderId: existing.orderId,
+            });
+        }
+        const existingLines = await deps.returns.listReturnLines(tx, input.tenantId, existing.id);
+        if (isEquivalentReturnRequest(existing, existingLines, input, requestedByLine, reason, shipmentId)) {
+            return toReturnDetailDto(existing, existingLines);
+        }
+        throw new ConflictError('Return external reference was reused with a different request', {
+            externalReference: existing.externalReference,
+        });
     }
-    async execute(input) {
-        requireReturnsCreate(this.deps.authorization, input.actorPermissions);
+
+    async function execute(input) {
+        requireReturnsCreate(deps.authorization, input.actorPermissions);
         if (input.lines.length === 0) {
             throw new ValidationError('Return must contain at least one line');
         }
@@ -39,12 +64,12 @@ export class CreateReturn {
         const now = new Date();
         const work = async (tx) => {
             if (externalReference !== null) {
-                const existing = await this.deps.returns.findByExternalReference(tx, input.tenantId, externalReference);
+                const existing = await deps.returns.findByExternalReference(tx, input.tenantId, externalReference);
                 if (existing !== null) {
-                    return this.resolveExistingExternalReferenceReturn(tx, input, existing, requestedByLine, reason, shipmentId);
+                    return resolveExistingExternalReferenceReturn(tx, input, existing, requestedByLine, reason, shipmentId);
                 }
             }
-            const order = await this.deps.orders.findOrder(tx, input.tenantId, input.orderId);
+            const order = await deps.orders.findOrder(tx, input.tenantId, input.orderId);
             if (order === null) {
                 throw new NotFoundError('Order was not found', {
                     tenantId: input.tenantId,
@@ -52,7 +77,7 @@ export class CreateReturn {
                 });
             }
             if (shipmentId !== null) {
-                const valid = await this.deps.returns.verifyShipmentBelongsToOrder(tx, input.tenantId, input.orderId, shipmentId);
+                const valid = await deps.returns.verifyShipmentBelongsToOrder(tx, input.tenantId, input.orderId, shipmentId);
                 if (!valid) {
                     throw new NotFoundError('Shipment was not found for this order', {
                         tenantId: input.tenantId,
@@ -61,16 +86,16 @@ export class CreateReturn {
                     });
                 }
             }
-            const orderLines = await this.deps.orders.lockOrderLinesForUpdate(tx, input.tenantId, input.orderId);
+            const orderLines = await deps.orders.lockOrderLinesForUpdate(tx, input.tenantId, input.orderId);
             if (externalReference !== null) {
-                const existing = await this.deps.returns.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
+                const existing = await deps.returns.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
                 if (existing !== null) {
-                    return this.resolveExistingExternalReferenceReturn(tx, input, existing, requestedByLine, reason, shipmentId);
+                    return resolveExistingExternalReferenceReturn(tx, input, existing, requestedByLine, reason, shipmentId);
                 }
             }
             const orderLineById = new Map(orderLines.map((line) => [line.id, line]));
             const orderLineIds = [...requestedByLine.keys()];
-            const pendingByLine = await this.deps.returns.sumPendingQuantitiesByOrderLine(tx, input.tenantId, input.orderId, orderLineIds);
+            const pendingByLine = await deps.returns.sumPendingQuantitiesByOrderLine(tx, input.tenantId, input.orderId, orderLineIds);
             const returnLines = [];
             for (const [orderLineId, quantity] of requestedByLine) {
                 const orderLine = orderLineById.get(orderLineId);
@@ -116,29 +141,29 @@ export class CreateReturn {
                 createdAt: now,
             });
             try {
-                await this.deps.returns.insertReturn(tx, returnEntity);
+                await deps.returns.insertReturn(tx, returnEntity);
             }
             catch (error) {
                 if (externalReference !== null && isExternalReferenceUniqueViolation(error)) {
-                    const raced = await this.deps.returns.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
+                    const raced = await deps.returns.lockByExternalReferenceForUpdate(tx, input.tenantId, externalReference);
                     if (raced !== null) {
-                        return this.resolveExistingExternalReferenceReturn(tx, input, raced, requestedByLine, reason, shipmentId);
+                        return resolveExistingExternalReferenceReturn(tx, input, raced, requestedByLine, reason, shipmentId);
                     }
                 }
                 throw error;
             }
             for (const line of returnLines) {
-                await this.deps.returns.insertReturnLine(tx, line);
+                await deps.returns.insertReturnLine(tx, line);
             }
-            await this.deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
+            await deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
                 tenantId: input.tenantId,
                 provider: ExternalIdMappingProvider.COMPAT_V2,
                 resourceType: ExternalIdMappingResourceType.RETURN,
                 resourceId: returnEntity.id,
             });
             const detail = toReturnDetailDto(returnEntity, returnLines);
-            await this.deps.eventRecorder.record(tx, returnCreatedEvent(detail));
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.eventRecorder.record(tx, returnCreatedEvent(detail));
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: input.actorKind,
                 actorId: input.actorId,
@@ -157,33 +182,17 @@ export class CreateReturn {
         };
         const returnDetail = input.transaction !== undefined
             ? await work(input.transaction)
-            : await this.deps.database.execute(work, { tenantId: input.tenantId });
+            : await deps.database.execute(work, { tenantId: input.tenantId });
         return { return: returnDetail };
     }
 
-    /**
-     * @param {object} tx
-     * @param {object} input
-     * @param {import('../models/return.js').Return} existing
-     * @param {Map<string, number>} requestedByLine
-     * @param {string|null} reason
-     * @param {string|null} shipmentId
-     */
-    async resolveExistingExternalReferenceReturn(tx, input, existing, requestedByLine, reason, shipmentId) {
-        if (existing.orderId !== input.orderId) {
-            throw new ConflictError('Return external reference belongs to a different order', {
-                externalReference: existing.externalReference,
-                orderId: input.orderId,
-                existingOrderId: existing.orderId,
-            });
-        }
-        const existingLines = await this.deps.returns.listReturnLines(tx, input.tenantId, existing.id);
-        if (isEquivalentReturnRequest(existing, existingLines, input, requestedByLine, reason, shipmentId)) {
-            return toReturnDetailDto(existing, existingLines);
-        }
-        throw new ConflictError('Return external reference was reused with a different request', {
-            externalReference: existing.externalReference,
-        });
+    return { execute };
+}
+
+/** @deprecated Prefer createCreateReturn */
+export class CreateReturn {
+    constructor(deps) {
+        return createCreateReturn(deps);
     }
 }
 

@@ -46,8 +46,8 @@ describe('orders module physical MVC layout', () => {
     expect(content).toMatch(/views\/order\.mapper\.js/);
   });
 
-  it('does not duplicate src/nest/orders after migration', () => {
-    const legacyNestOrders = join(repoRoot, 'src/nest/orders');
+  it('does not duplicate src/app/orders after migration', () => {
+    const legacyNestOrders = join(repoRoot, 'src/app/orders');
     if (!existsSync(legacyNestOrders)) {
       return;
     }

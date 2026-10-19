@@ -23,4 +23,4 @@
  * @property {(transaction: object, command: AssignExternalIntegerIdMappingCommand) => Promise<AssignExternalIntegerIdMappingResult>} assignMapping
  */
 
-export { DefaultExternalIntegerIdMappingCommandService } from '../application/external-integer-id-mapping-command-service.js';
+export { DefaultExternalIntegerIdMappingCommandService } from '../services/external-integer-id-mapping-command-service.js';

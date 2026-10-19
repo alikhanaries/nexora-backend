@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeMarketplaceConnectionTestError } from '../../../src/modules/marketplaces/application/sanitize-marketplace-connection-test-error.js';
+import { sanitizeMarketplaceConnectionTestError } from '../../../src/modules/marketplaces/services/sanitize-marketplace-connection-test-error.js';
 
 describe('sanitizeMarketplaceConnectionTestError', () => {
     it('redacts obvious secret patterns', () => {

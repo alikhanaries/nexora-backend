@@ -6,7 +6,7 @@ Expose the existing **tenant-scoped order HTTP APIs** on NestJS (JavaScript only
 
 ## Scope
 
-In-scope routes are those defined in `src/modules/orders/presentation/order.routes.js` only.
+In-scope routes are those defined in `src/modules/orders/views/order.routes.js` only.
 
 **Out of scope (separate modules / later phases):**
 
@@ -67,7 +67,7 @@ No seller-specific HTTP routes exist on the core orders module; tenant isolation
 
 ## Validation
 
-Reused schemas from `src/modules/orders/presentation/order.schemas.js`:
+Reused schemas from `src/modules/orders/views/order.schemas.js`:
 
 - `createOrderBodySchema`
 - `listOrdersQuerySchema` (cursor, limit, status enum, channelId, filters, ISO datetimes)
@@ -77,7 +77,7 @@ Response mapping via existing `order.mapper.js` (`toOrderResponse`, `toOrderDeta
 
 ## Business logic reused
 
-- `createOrdersModule` wired in `wire-core-domain.js` with the same dependencies as `create-application.js` (products, channels, offers, pricing, inventory, idempotency, external integer id mapping, audit, outbox).
+- `createOrdersModule` wired in `wire-core-services.js` with the same dependencies as `create-application.js` (products, channels, offers, pricing, inventory, idempotency, external integer id mapping, audit, outbox).
 - Use cases: `CreateOrder`, `ListOrders`, `GetOrder`, `ConfirmOrder`, `PostgresIdempotencyService` (via `useCases.idempotency`).
 - **Not wired in Nest:** `wireChannelFulfilledOrder` (only needed for compatibility v2 routes, out of scope).
 
@@ -87,21 +87,21 @@ Marketplace lifecycle / webhook order creation paths are unchanged (Phase 8).
 
 **Created**
 
-- `src/nest/orders/orders.module.js`
-- `src/nest/orders/orders.controller.js`
-- `src/nest/orders/orders.service.js`
+- `src/app/orders/orders.module.js`
+- `src/app/orders/orders.controller.js`
+- `src/app/orders/orders.service.js`
 - `test/nest/orders.test.js`
 - `docs/migration-phase-9-orders.md`
 
 **Changed**
 
-- `src/nest/app.module.js` — register `OrdersModule`
-- `src/nest/bootstrap/wire-core-domain.js` — `createExternalIdMappingModule`, `createOrdersModule`, expose `orders`
+- `src/app/app.module.js` — register `OrdersModule`
+- `src/app/wire-core-services.js` — `createExternalIdMappingModule`, `createOrdersModule`, expose `orders`
 - `test/nest/helpers/mock-core-domain.js` — mock `orders.useCases`
 
 **Unchanged**
 
-- `src/modules/orders/presentation/order.routes.js` (Fastify)
+- `src/modules/orders/views/order.routes.js` (Fastify)
 
 ## Tests executed
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateCompatV2InvoicePdf } from '../../../src/modules/compatibility/application/generate-compat-v2-invoice-pdf.js';
+import { generateCompatV2InvoicePdf } from '../../../src/modules/compatibility/services/generate-compat-v2-invoice-pdf.js';
 
 describe('generateCompatV2InvoicePdf', () => {
     it('returns a PDF buffer containing compat v2 invoice metadata text', () => {

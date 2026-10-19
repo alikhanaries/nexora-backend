@@ -4,6 +4,13 @@ import { ReturnStatus } from '../models/return-status.js';
 import { toReturnDetailDto } from '../views/return-dto.js';
 import { returnStatusChangedEvent } from './return-events.js';
 import { requireReturnsUpdate } from './return-permissions.js';
+
+/**
+ * @param {object} deps
+ * @param {object} input
+ * @param {(returnEntity: import('../models/return.js').Return, at: Date) => import('../models/return.js').Return} transition
+ * @param {string} auditEventType
+ */
 async function transitionReturn(deps, input, transition, auditEventType) {
     requireReturnsUpdate(deps.authorization, input.actorPermissions);
     const returnDetail = await deps.database.execute(async (tx) => {
@@ -41,42 +48,66 @@ async function transitionReturn(deps, input, transition, auditEventType) {
     }, { tenantId: input.tenantId });
     return { return: returnDetail };
 }
-export class ApproveReturn {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
+
+/**
+ * Shared private helper for approve/reject/cancel transitions.
+ * @param {object} deps
+ * @param {(returnEntity: import('../models/return.js').Return, at: Date) => import('../models/return.js').Return} transition
+ * @param {string} auditEventType
+ * @returns {{ execute: Function }}
+ */
+function createTransitionReturn(deps, transition, auditEventType) {
+    function execute(input) {
+        return transitionReturn(deps, input, transition, auditEventType);
     }
-    execute(input) {
-        return transitionReturn(this.deps, input, (returnEntity, at) => returnEntity.approve(at), 'RETURN_APPROVED');
-    }
+    return { execute };
 }
-export class RejectReturn {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    execute(input) {
-        return transitionReturn(this.deps, input, (returnEntity, at) => returnEntity.reject(at), 'RETURN_REJECTED');
-    }
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createApproveReturn(deps) {
+    return createTransitionReturn(
+        deps,
+        (returnEntity, at) => returnEntity.approve(at),
+        'RETURN_APPROVED',
+    );
 }
-export class CancelReturn {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    execute(input) {
-        return transitionReturn(this.deps, input, (returnEntity, at) => returnEntity.cancel(at), 'RETURN_CANCELLED');
-    }
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createRejectReturn(deps) {
+    return createTransitionReturn(
+        deps,
+        (returnEntity, at) => returnEntity.reject(at),
+        'RETURN_REJECTED',
+    );
 }
-export class CompleteReturn {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireReturnsUpdate(this.deps.authorization, input.actorPermissions);
-        const returnDetail = await this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.returns.lockForUpdate(tx, input.tenantId, input.returnId);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCancelReturn(deps) {
+    return createTransitionReturn(
+        deps,
+        (returnEntity, at) => returnEntity.cancel(at),
+        'RETURN_CANCELLED',
+    );
+}
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCompleteReturn(deps) {
+    async function execute(input) {
+        requireReturnsUpdate(deps.authorization, input.actorPermissions);
+        const returnDetail = await deps.database.execute(async (tx) => {
+            const existing = await deps.returns.lockForUpdate(tx, input.tenantId, input.returnId);
             if (existing === null) {
                 throw new NotFoundError('Return was not found', {
                     tenantId: input.tenantId,
@@ -92,11 +123,11 @@ export class CompleteReturn {
             const previousStatus = existing.status;
             const now = new Date();
             const updated = existing.complete(now);
-            await this.deps.returns.updateReturn(tx, updated);
-            const lines = await this.deps.returns.listReturnLines(tx, input.tenantId, input.returnId);
+            await deps.returns.updateReturn(tx, updated);
+            const lines = await deps.returns.listReturnLines(tx, input.tenantId, input.returnId);
             const detail = toReturnDetailDto(updated, lines);
-            await this.deps.eventRecorder.record(tx, returnStatusChangedEvent(detail, previousStatus));
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.eventRecorder.record(tx, returnStatusChangedEvent(detail, previousStatus));
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: input.actorKind,
                 actorId: input.actorId,
@@ -113,5 +144,35 @@ export class CompleteReturn {
             return detail;
         }, { tenantId: input.tenantId });
         return { return: returnDetail };
+    }
+
+    return { execute };
+}
+
+/** @deprecated Prefer createApproveReturn */
+export class ApproveReturn {
+    constructor(deps) {
+        return createApproveReturn(deps);
+    }
+}
+
+/** @deprecated Prefer createRejectReturn */
+export class RejectReturn {
+    constructor(deps) {
+        return createRejectReturn(deps);
+    }
+}
+
+/** @deprecated Prefer createCancelReturn */
+export class CancelReturn {
+    constructor(deps) {
+        return createCancelReturn(deps);
+    }
+}
+
+/** @deprecated Prefer createCompleteReturn */
+export class CompleteReturn {
+    constructor(deps) {
+        return createCompleteReturn(deps);
     }
 }

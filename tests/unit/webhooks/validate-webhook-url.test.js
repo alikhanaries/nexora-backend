@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ValidationError } from '../../../src/shared/errors/index.js';
-import { validateWebhookUrl } from '../../../src/modules/webhooks/application/validate-webhook-url.js';
+import { validateWebhookUrl } from '../../../src/modules/webhooks/outbound/services/validate-webhook-url.js';
 
 describe('validateWebhookUrl', () => {
     it('accepts HTTPS URLs that pass SSRF validation', async () => {

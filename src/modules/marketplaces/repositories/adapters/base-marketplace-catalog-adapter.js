@@ -1,0 +1,73 @@
+import { mapMarketplaceErrorToAdapterError } from '../../services/map-marketplace-error-to-adapter-error.js';
+import { MarketplaceUnsupportedError } from '../../models/marketplace-errors.js';
+
+/**
+ * @typedef {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} MarketplaceAdapterRuntime
+ */
+
+export class BaseMarketplaceCatalogAdapter {
+    marketplaceKey;
+
+    /**
+     * @param {string} marketplaceKey
+     */
+    constructor(marketplaceKey) {
+        this.marketplaceKey = marketplaceKey;
+    }
+
+    /** @returns {import('../../models/marketplace-capabilities.js').MarketplaceCatalogCapabilities} */
+    getCapabilities() {
+        throw new MarketplaceUnsupportedError('Capabilities are not defined for this adapter');
+    }
+
+    /**
+     * @param {MarketplaceAdapterRuntime} runtime
+     */
+    async testConnection(_runtime) {
+        throw new MarketplaceUnsupportedError('Connection test is not supported');
+    }
+
+    /**
+     * @param {() => Promise<void>} operation
+     */
+    async run(operation) {
+        await this.runWithResult(async () => {
+            await operation();
+        });
+    }
+
+    /**
+     * @template T
+     * @param {() => Promise<T>} operation
+     * @returns {Promise<T>}
+     */
+    async runWithResult(operation) {
+        try {
+            return await operation();
+        }
+        catch (error) {
+            throw mapMarketplaceErrorToAdapterError(error);
+        }
+    }
+
+    /**
+     * @param {MarketplaceAdapterRuntime | undefined} runtime
+     * @param {string} operationName
+     */
+    assertRuntime(runtime, operationName) {
+        if (runtime === undefined) {
+            throw new MarketplaceUnsupportedError(`Missing marketplace runtime for ${operationName}`);
+        }
+    }
+
+    /**
+     * @param {import('../../models/marketplace-capabilities.js').MarketplaceCatalogCapabilities} capabilities
+     * @param {keyof import('../../models/marketplace-capabilities.js').MarketplaceCatalogCapabilities} flag
+     * @param {string} operationName
+     */
+    assertCapability(capabilities, flag, operationName) {
+        if (!capabilities[flag]) {
+            throw new MarketplaceUnsupportedError(`${operationName} is not supported for ${this.marketplaceKey}`);
+        }
+    }
+}

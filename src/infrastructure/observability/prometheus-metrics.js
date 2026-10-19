@@ -8,7 +8,7 @@ const retentionMetrics = WASL_NAMING.observability.metrics;
  *
  * Every label below is bounded by construction:
  *
- * - `route` is the Fastify route template, never the raw URL (`/orders/:id`,
+ * - `route` is the route template, never the raw URL (`/orders/:id`,
  *   not `/orders/8f2c...`).
  * - `status_code` is bucketed into a status class as well, so dashboards do
  *   not have to enumerate codes.

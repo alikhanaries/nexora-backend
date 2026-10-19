@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { WebhookDeliveryRetryError } from '../../../src/modules/webhooks/application/webhook-delivery-errors.js';
+import { WebhookDeliveryRetryError } from '../../../src/modules/webhooks/outbound/services/webhook-delivery-errors.js';
 import { registerWorkerHandlers } from '../../../src/workers/handlers/queue-job-handlers.js';
 
 describe('queue job handlers', () => {

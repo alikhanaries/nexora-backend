@@ -7,7 +7,7 @@ import {
     formatAmzDate,
     getSignatureKey,
     sha256Hex,
-} from '../../../src/modules/marketplaces/infrastructure/http/aws-sigv4-request-signer.js';
+} from '../../../src/modules/marketplaces/repositories/http/aws-sigv4-request-signer.js';
 
 describe('AwsSigV4RequestSigner', () => {
     it('formats x-amz-date without punctuation', () => {

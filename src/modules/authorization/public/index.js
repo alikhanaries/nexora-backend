@@ -1,5 +1,5 @@
-export { DefaultAuthorizationService } from '../application/authorization-service.js';
-export { resolveEffectivePermissions } from '../domain/effective-permissions.js';
-export { TENANT_ADMIN_PERMISSION } from '../domain/permission.js';
-export { SystemRoleSeeder } from '../application/system-role-seeder.js';
-export { AuthorizationMembershipPermissionResolver } from '../application/membership-permission-resolver.js';
+export { DefaultAuthorizationService } from '../services/authorization-service.js';
+export { resolveEffectivePermissions } from '../models/effective-permissions.js';
+export { TENANT_ADMIN_PERMISSION } from '../models/permission.js';
+export { SystemRoleSeeder } from '../services/system-role-seeder.js';
+export { AuthorizationMembershipPermissionResolver } from '../services/membership-permission-resolver.js';
