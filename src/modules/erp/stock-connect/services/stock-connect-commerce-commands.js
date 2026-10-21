@@ -14,12 +14,17 @@ import { commerceActorFields } from '../../../../app/common/commerce-actor.js';
  * @param {object} coreServices
  */
 export function createStockConnectCommerceCommands(coreServices) {
+  /** @returns {object} Order module use cases. */
   const orders = () => coreServices.orders.useCases;
+  /** @returns {object} Shipment module use cases. */
   const shipments = () => coreServices.shipments.useCases;
+  /** @returns {object} Cancellation module use cases. */
   const cancellations = () => coreServices.cancellations.useCases;
+  /** @returns {object} Commerce integration (channel) route dependencies. */
   const channels = () => coreServices.channelRouteDeps;
 
   return {
+    /** Paginated order list with Stock Connect filter fields and date coercion. */
     async listOrders(query) {
       const actor = requireActorContext();
       const page = await orders().listOrders.execute({
@@ -45,6 +50,7 @@ export function createStockConnectCommerceCommands(coreServices) {
       };
     },
 
+    /** Order detail for the current tenant. */
     async getOrder(orderId) {
       const actor = requireActorContext();
       const { order } = await orders().getOrder.execute({
@@ -120,6 +126,7 @@ export function createStockConnectCommerceCommands(coreServices) {
       return outcome.value;
     },
 
+    /** Shipment detail for the current tenant. */
     async getShipment(shipmentId) {
       const actor = requireActorContext();
       const { shipment } = await shipments().getShipment.execute({
@@ -131,6 +138,7 @@ export function createStockConnectCommerceCommands(coreServices) {
     },
 
     /**
+     * Marks a shipment shipped with optional carrier metadata.
      * @param {string} shipmentId
      * @param {{ carrier?: string, service?: string, trackingNumber?: string }} body
      */
@@ -150,6 +158,7 @@ export function createStockConnectCommerceCommands(coreServices) {
       return toShipmentDetailResponse(shipment);
     },
 
+    /** Lists commerce integrations (sales channels) for the current tenant. */
     async listCommerceIntegrations(query = {}) {
       const actor = requireActorContext();
       const { channels: items } = await channels().listCommerceIntegrations.execute({

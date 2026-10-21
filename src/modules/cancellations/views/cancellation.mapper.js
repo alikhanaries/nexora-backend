@@ -1,3 +1,4 @@
+/** Maps an internal cancellation shape into an API-safe CancellationLineResponse object (dates serialized where needed). */
 function toCancellationLineResponse(line) {
     return {
         id: line.id,
@@ -8,6 +9,7 @@ function toCancellationLineResponse(line) {
         createdAt: line.createdAt.toISOString(),
     };
 }
+/** Maps an internal cancellation shape into an API-safe CancellationResponse object (dates serialized where needed). */
 export function toCancellationResponse(cancellation) {
     return {
         id: cancellation.id,
@@ -20,6 +22,7 @@ export function toCancellationResponse(cancellation) {
         completedAt: cancellation.completedAt?.toISOString() ?? null,
     };
 }
+/** Maps an internal cancellation shape into an API-safe CancellationDetailResponse object (dates serialized where needed). */
 export function toCancellationDetailResponse(cancellation) {
     return {
         ...toCancellationResponse(cancellation),

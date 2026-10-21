@@ -4,7 +4,13 @@ import { WebhookSubscriptionStatus } from '../models/webhook-subscription-status
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
 import { requireWebhooksRead } from './webhook-permissions.js';
 
+/**
+ * Factory closing over shared deps for webhook module services.
+ */
 export function createGetWebhookSubscription(deps) {
+    /**
+     * Tenant-scoped webhook subscription/delivery command; enforces webhooks.manage where required.
+     */
     async function execute(input) {
         requireWebhooksRead(deps.authorization, input.actorPermissions);
         const rateLimit = await deps.rateLimiter.consume({

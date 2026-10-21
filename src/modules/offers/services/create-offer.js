@@ -11,6 +11,7 @@ import { requireOffersCreate } from './offer-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createCreateOffer(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requireOffersCreate(deps.authorization, input.actorPermissions);
         const product = await deps.productQueryService.getProductById(input.tenantId, input.productId);

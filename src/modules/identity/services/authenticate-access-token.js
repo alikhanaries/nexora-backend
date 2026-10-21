@@ -1,3 +1,6 @@
+/**
+ * Validates JWT access tokens, active refresh sessions, and membership permissions for the global auth guard.
+ */
 import { AuthenticationError } from '../../../shared/errors/index.js';
 import { canAuthenticate, isRefreshSessionExpired } from '../models/index.js';
 
@@ -6,6 +9,7 @@ import { canAuthenticate, isRefreshSessionExpired } from '../models/index.js';
  * @returns {{ execute: Function }}
  */
 export function createAuthenticateAccessToken(deps) {
+    /** Verifies JWT, active session, user status, and non-empty membership permissions. */
     async function execute(input) {
         let payload;
         try {

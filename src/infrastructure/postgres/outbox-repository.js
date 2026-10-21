@@ -23,6 +23,7 @@ const outboxRowSchema = z.object({
     attempt_count: z.number().int(),
 });
 const outboxReadRowSchema = outboxRowSchema.omit({ attempt_count: true });
+/** Maps a validated outbox row to the integration event shape. */
 function toIntegrationEvent(row) {
     return {
         id: row.id,
@@ -38,12 +39,15 @@ function toIntegrationEvent(row) {
 }
 export class PostgresOutboxRepository {
     database;
+    /** @param {import('./postgres-database.js').PostgresDatabase} database */
     constructor(database) {
         this.database = database;
     }
+    /** Inserts one outbox row in the caller's transaction (same commit as business data). */
     async record(transaction, event) {
         await this.recordMany(transaction, [event]);
     }
+    /** Batch insert of outbox events within one SQL statement. */
     async recordMany(transaction, events) {
         if (events.length === 0)
             return;
@@ -127,6 +131,7 @@ export class PostgresOutboxRepository {
          AND claimed_at < now() - make_interval(secs => $1)`, [staleAfterMs / 1_000], { operation: 'outbox.release_stale_claims' });
         return result.rowCount;
     }
+    /** Count of unpublished, non-dead-lettered outbox rows (backlog gauge). */
     async countPending() {
         const result = await this.database.query(`SELECT count(*)::int AS pending
        FROM outbox_events

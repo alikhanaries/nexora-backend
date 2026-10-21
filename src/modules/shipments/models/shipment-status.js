@@ -24,14 +24,17 @@ const LEGAL_TRANSITIONS = {
     [ShipmentStatus.FAILED]: [],
     [ShipmentStatus.CANCELLED]: [],
 };
+/** Returns whether the shipment status graph allows moving from `from` to `to`. */
 export function canTransitionShipmentStatus(from, to) {
     return LEGAL_TRANSITIONS[from].includes(to);
 }
+/** Throws when a shipment lifecycle transition is not allowed. */
 export function assertShipmentTransition(from, to) {
     if (!canTransitionShipmentStatus(from, to)) {
         throw new Error(`Invalid shipment status transition from ${from} to ${to}`);
     }
 }
+/** True when shipment status still permits cancellation (inventory release may follow). */
 export function isShipmentCancellable(status) {
     return status === ShipmentStatus.CREATED || status === ShipmentStatus.READY_TO_SHIP;
 }

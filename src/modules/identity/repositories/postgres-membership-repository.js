@@ -9,6 +9,7 @@ import { mapMembershipRow } from './row-mappers.js';
  */
 export function createPostgresMembershipRepository() {
     return {
+        /** Membership by id or null. */
         async findById(tx, id) {
             const result = await tx.query(`SELECT id, tenant_id, user_id, status, created_at, updated_at
        FROM tenant_memberships WHERE id = $1`, [id], { operation: 'identity.memberships.find_by_id' });
@@ -18,6 +19,7 @@ export function createPostgresMembershipRepository() {
             return mapMembershipRow(result.rows[0]);
         },
 
+        /** Unique membership for tenant + user (login gate). */
         async findByTenantAndUser(tx, tenantId, userId) {
             const result = await tx.query(`SELECT id, tenant_id, user_id, status, created_at, updated_at
        FROM tenant_memberships WHERE tenant_id = $1 AND user_id = $2`, [tenantId, userId], { operation: 'identity.memberships.find_by_tenant_user' });
@@ -27,6 +29,7 @@ export function createPostgresMembershipRepository() {
             return mapMembershipRow(result.rows[0]);
         },
 
+        /** Upserts membership status/timestamps. */
         async save(tx, membership) {
             await tx.query(`INSERT INTO tenant_memberships (id, tenant_id, user_id, status, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6)

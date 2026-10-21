@@ -1,3 +1,7 @@
+/**
+ * Commerce integrations (sales channels): CRUD, lifecycle (activate/deactivate/suspend), and query service.
+ * Re-exports integration entity helpers from `./models`.
+ */
 import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import {
     createActivateCommerceIntegration,
@@ -11,6 +15,15 @@ import {
 } from './services/index.js';
 import { createPostgresCommerceIntegrationRepository } from './repositories/index.js';
 
+/**
+ * @param {object} deps
+ * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @param {import('../../shared/events/event-recorder.port.js').EventRecorderPort} deps.eventRecorder
+ * @param {{ execute: Function }} deps.verifyMarketplaceExists
+ * @param {import('../inventory/public/index.js').DefaultInventoryService} deps.inventoryService
+ * @param {import('../audit/public/index.js').AuditRecorder} [deps.auditRecorder]
+ * @returns {{ useCases: object, commerceIntegrationQueryService: object }}
+ */
 export function createCommerceIntegrationsModule(deps) {
     const authorization = createDefaultAuthorizationService();
     const repository = createPostgresCommerceIntegrationRepository();

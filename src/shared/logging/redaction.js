@@ -54,14 +54,17 @@ const PII_KEYS = [
     'zipcode',
     'postalcode',
 ];
+/** Lowercases and strips `-`, `_`, spaces for key classification. */
 function normaliseKey(key) {
     return key.toLowerCase().replace(/[-_\s]/g, '');
 }
 const SENSITIVE_SET = new Set(SENSITIVE_KEYS);
 const PII_SET = new Set(PII_KEYS);
+/** True when the field name matches a secret/credential key list. */
 export function isSensitiveKey(key) {
     return SENSITIVE_SET.has(normaliseKey(key));
 }
+/** True when the field name matches a PII key list. */
 export function isPiiKey(key) {
     return PII_SET.has(normaliseKey(key));
 }
@@ -116,6 +119,7 @@ export function maskTail(value, visible = 4) {
         return REDACTED;
     return `${REDACTED}${value.slice(-visible)}`;
 }
+/** Masks PII string values (email partial mask, else redacted). */
 function maskPiiValue(key, value) {
     const normalised = normaliseKey(key);
     if (normalised === 'email' || normalised === 'emailaddress')

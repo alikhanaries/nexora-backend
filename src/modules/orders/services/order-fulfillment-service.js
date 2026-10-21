@@ -16,6 +16,9 @@ import { orderCancelledEvent, orderStatusChangedEvent } from './order-events.js'
  * @param {object} deps.eventRecorder
  */
 export function createOrderFulfillmentService(deps) {
+    /**
+     * Mutates locked order lines and order status from shipment/cancel domain events (same tx).
+     */
     async function applyCancellation(transaction, input) {
         const order = await deps.orders.lockOrderForUpdate(transaction, input.tenantId, input.orderId);
         if (order === null) {
@@ -98,6 +101,9 @@ export function createOrderFulfillmentService(deps) {
         };
     }
 
+    /**
+     * Mutates locked order lines and order status from shipment/cancel domain events (same tx).
+     */
     async function lockOrderLinesForFulfillment(tenantId, orderId, tx) {
         const order = await deps.orders.lockOrderForUpdate(tx, tenantId, orderId);
         if (order === null) {
@@ -118,6 +124,9 @@ export function createOrderFulfillmentService(deps) {
         return deps.orders.lockOrderLinesForUpdate(tx, tenantId, orderId);
     }
 
+    /**
+     * Mutates locked order lines and order status from shipment/cancel domain events (same tx).
+     */
     async function applyShipmentQuantities(tenantId, orderId, lines, tx) {
         if (lines.length === 0) {
             throw new ValidationError('At least one shipment line is required');
@@ -156,6 +165,9 @@ export function createOrderFulfillmentService(deps) {
         }
     }
 
+    /**
+     * Mutates locked order lines and order status from shipment/cancel domain events (same tx).
+     */
     async function reverseShipmentQuantities(tenantId, orderId, lines, tx) {
         const locked = await lockOrderLinesForFulfillment(tenantId, orderId, tx);
         const byId = new Map(locked.map((line) => [line.id, line]));
@@ -190,6 +202,9 @@ export function createOrderFulfillmentService(deps) {
         }
     }
 
+    /**
+     * Mutates locked order lines and order status from shipment/cancel domain events (same tx).
+     */
     async function evaluateOrderShipmentState(tenantId, orderId, tx) {
         const order = await deps.orders.findById(tx, tenantId, orderId);
         if (order === null) {

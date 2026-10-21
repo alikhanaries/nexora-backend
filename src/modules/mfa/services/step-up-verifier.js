@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
  */
 export function createStepUpService(deps) {
     return {
+        /** Checks step-up session TTL for user/tenant/refresh session. */
         async hasValidStepUp(context) {
             const now = new Date();
             return deps.db.execute(async (tx) => deps.stepUpSessions.findValid(tx, {
@@ -15,6 +16,7 @@ export function createStepUpService(deps) {
                 now,
             }), { tenantId: context.tenantId });
         },
+        /** Upserts step-up session after successful MFA verification. */
         async recordStepUp(context) {
             const now = new Date();
             const expiresAt = new Date(now.getTime() + deps.stepUpTtlSeconds * 1_000);

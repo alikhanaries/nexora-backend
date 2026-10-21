@@ -5,6 +5,7 @@ import { NotFoundError } from '../../../../shared/errors/index.js';
  * @returns {{ execute: Function }}
  */
 export function createGetStockLocation(deps) {
+/** HTTP use-case entry: enforces permissions, scopes to tenant, delegates to domain service. */
     async function execute(input) {
         deps.authorization.requirePermission(input.actorPermissions, 'inventory.read');
         const location = await deps.stockLocations.findById(deps.queryable, input.tenantId, input.stockLocationId);

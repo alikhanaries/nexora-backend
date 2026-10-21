@@ -17,13 +17,16 @@ import { OFFER_ROUTES } from '../../routes/offer.routes.js';
 /**
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
+ * Route family `/api/v1/offers` (OFFER_ROUTES); handlers call `CORE_SERVICES.offers.useCases`.
  */
 @Controller()
 class OffersController {
+/** Binds `CORE_SERVICES` offer use cases for this HTTP adapter. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.offers.useCases;
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to offer use case `list`. */
   @Get(OFFER_ROUTES.list.path)
   async list(@Query() query) {
     const parsed = parseOrThrow(listOffersQuerySchema, query, 'list query');
@@ -47,6 +50,7 @@ class OffersController {
     };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to offer use case `create`. */
   @Post(OFFER_ROUTES.create.path)
   @HttpCode(201)
   async create(@Body() body) {
@@ -66,6 +70,7 @@ class OffersController {
     return { success: true, data: toOfferResponse(offer) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to offer use case `getById`. */
   @Get(OFFER_ROUTES.getById.path)
   async getById(@Param() params) {
     const { offerId } = parseOrThrow(offerIdParamsSchema, params, 'offer params');
@@ -78,6 +83,7 @@ class OffersController {
     return { success: true, data: toOfferResponse(offer) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to offer use case `patch`. */
   @Patch(OFFER_ROUTES.patch.path)
   @HttpCode(200)
   async patch(@Param() params, @Body() body) {
@@ -127,6 +133,7 @@ class OffersController {
     return { success: true, data: toOfferResponse(offer) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to offer use case `activate`. */
   @Post(OFFER_ROUTES.activate.path)
   @HttpCode(200)
   async activate(@Param() params, @Body() body) {

@@ -48,6 +48,7 @@ export function createArgon2PasswordHasher(dependencies = {}) {
  * Constructor returns the factory result (same pattern as RedisKeyBuilder / Orders wrappers).
  */
 export class Argon2PasswordHasher {
+    /** Returns a configured Argon2 hasher instance (factory delegation). */
     constructor() {
         return createArgon2PasswordHasher();
     }

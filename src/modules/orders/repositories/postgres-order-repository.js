@@ -82,6 +82,9 @@ const customerRowSchema = z.object({
     metadata: z.record(z.unknown()),
     created_at: z.date(),
 });
+/**
+ * Coerces JSON address snapshot columns to nullable field objects for customer snapshots.
+ */
 function normalizeAddress(value) {
     if (value === null) {
         return null;
@@ -105,6 +108,9 @@ const orderLineSelect = `id, tenant_id, order_id, product_id, offer_id, stock_lo
   merchant_sku, product_type_snapshot, quantity, cancelled_quantity, shipped_quantity,
   returned_quantity, unit_price_minor, discount_minor, tax_minor, line_total_minor, currency,
   status, created_at, updated_at`;
+/**
+ * Maps validated SQL row to domain reconstitute* (tenant_id enforced at query layer).
+ */
 function toOrder(row) {
     return reconstituteOrder({
         id: row.id,
@@ -127,6 +133,9 @@ function toOrder(row) {
         deliveredAt: row.delivered_at,
     });
 }
+/**
+ * Maps validated SQL row to domain reconstitute* (tenant_id enforced at query layer).
+ */
 function toOrderLine(row) {
     return reconstituteOrderLine({
         id: row.id,
@@ -151,6 +160,9 @@ function toOrderLine(row) {
         updatedAt: row.updated_at,
     });
 }
+/**
+ * Maps validated SQL row to domain reconstitute* (tenant_id enforced at query layer).
+ */
 function toCustomerSnapshot(row) {
     return reconstituteCustomerSnapshot({
         id: row.id,
@@ -168,6 +180,9 @@ function toCustomerSnapshot(row) {
         createdAt: row.created_at,
     });
 }
+/**
+ * Builds parameterized WHERE fragments for tenant order list/count (includes line stock-location filter).
+ */
 function buildListConditions(tenantId, filters) {
         const conditions = ['o.tenant_id = $1'];
         const params = [tenantId];
@@ -244,8 +259,14 @@ function buildListConditions(tenantId, filters) {
     }
 
 
+/**
+ * Postgres repository factory; all queries scoped by tenant_id where applicable.
+ */
 export function createPostgresOrderRepository() {
     return {
+        /**
+         * Loads order header by tenant + id; null if missing.
+         */
         async findById(queryable, tenantId, orderId) {
         const result = await queryable.query(`SELECT ${orderSelect} FROM orders WHERE tenant_id = $1 AND id = $2`, [tenantId, orderId], { operation: 'orders.find_by_id' });
         const row = result.rows[0];
@@ -253,6 +274,9 @@ export function createPostgresOrderRepository() {
             return null;
         return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
         },
+        /**
+         * SELECT FOR UPDATE on order row within caller transaction (command serialization).
+         */
         async lockOrderForUpdate(transaction, tenantId, orderId) {
         const result = await transaction.query(`SELECT ${orderSelect}
        FROM orders
@@ -263,6 +287,9 @@ export function createPostgresOrderRepository() {
             return null;
         return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
         },
+        /**
+         * Tenant-scoped lookup by human-readable order number.
+         */
         async findByOrderNumber(queryable, tenantId, orderNumber) {
         const result = await queryable.query(`SELECT ${orderSelect} FROM orders WHERE tenant_id = $1 AND order_number = $2`, [tenantId, orderNumber], { operation: 'orders.find_by_order_number' });
         const row = result.rows[0];
@@ -270,6 +297,9 @@ export function createPostgresOrderRepository() {
             return null;
         return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
         },
+        /**
+         * Idempotency key for marketplace ingest: tenant + channel + external order ref.
+         */
         async findByChannelAndExternalReference(queryable, tenantId, channelId, externalOrderReference) {
         const result = await queryable.query(`SELECT ${orderSelect}
        FROM orders
@@ -279,6 +309,9 @@ export function createPostgresOrderRepository() {
             return null;
         return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
         },
+        /**
+         * Row lock for concurrent ingest of same external marketplace order reference.
+         */
         async lockByChannelAndExternalReferenceForUpdate(transaction, tenantId, channelId, externalOrderReference) {
         const result = await transaction.query(`SELECT ${orderSelect}
        FROM orders
@@ -289,6 +322,9 @@ export function createPostgresOrderRepository() {
             return null;
         return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
         },
+        /**
+         * Cursor-paginated order list with optional filters (tenant_id always first predicate).
+         */
         async list(queryable, tenantId, filters, limit, cursor) {
         const conditions = ['tenant_id = $1'];
         const params = [tenantId];
@@ -337,6 +373,9 @@ export function createPostgresOrderRepository() {
        LIMIT $${paramIndex}`, params, { operation: 'orders.list' });
         return result.rows.map((row) => toOrder(parseOrThrow(orderRowSchema, row, 'orders row')));
         },
+        /**
+         * Filtered order count for page-based list APIs.
+         */
         async count(queryable, tenantId, filters) {
         const { conditions, params } = buildListConditions(tenantId, filters);
         const result = await queryable.query(`SELECT COUNT(*)::int AS total
@@ -345,6 +384,9 @@ export function createPostgresOrderRepository() {
         const row = result.rows[0];
         return Number(row?.total ?? 0);
         },
+        /**
+         * Offset page of orders using buildListConditions filters.
+         */
         async listPage(queryable, tenantId, filters, page, pageSize) {
         const { conditions, params, nextParamIndex } = buildListConditions(tenantId, filters);
         const offset = (page - 1) * pageSize;
@@ -358,6 +400,9 @@ export function createPostgresOrderRepository() {
        LIMIT $${limitParam} OFFSET $${offsetParam}`, listParams, { operation: 'orders.list_page' });
         return result.rows.map((row) => toOrder(parseOrThrow(orderRowSchema, row, 'orders row')));
         },
+        /**
+         * Inserts order header; caller must run in transaction with lines/snapshot.
+         */
         async insertOrder(transaction, order) {
         const p = order;
         await transaction.query(`INSERT INTO orders (
@@ -385,6 +430,9 @@ export function createPostgresOrderRepository() {
             p.deliveredAt,
         ], { operation: 'orders.insert' });
         },
+        /**
+         * Updates status and lifecycle timestamps on existing tenant order.
+         */
         async updateOrder(transaction, order) {
         const p = order;
         await transaction.query(`UPDATE orders SET
@@ -401,6 +449,9 @@ export function createPostgresOrderRepository() {
             p.deliveredAt,
         ], { operation: 'orders.update' });
         },
+        /**
+         * Persists fulfillment quantities and line status under tenant_id constraint.
+         */
         async insertOrderLine(transaction, line) {
         const p = line;
         await transaction.query(`INSERT INTO order_lines (
@@ -431,6 +482,9 @@ export function createPostgresOrderRepository() {
             p.updatedAt,
         ], { operation: 'order_lines.insert' });
         },
+        /**
+         * Persists fulfillment quantities and line status under tenant_id constraint.
+         */
         async updateOrderLine(transaction, line) {
         const p = line;
         await transaction.query(`UPDATE order_lines SET
@@ -446,15 +500,24 @@ export function createPostgresOrderRepository() {
             p.updatedAt,
         ], { operation: 'order_lines.update' });
         },
+        /**
+         * Increments returned qty on a line (returns module gateway).
+         */
         async updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt) {
         await transaction.query(`UPDATE order_lines
        SET returned_quantity = $3, updated_at = $4
        WHERE tenant_id = $1 AND id = $2`, [tenantId, orderLineId, returnedQuantity, updatedAt], { operation: 'order_lines.update_returned_quantity' });
         },
+        /**
+         * All lines for an order within tenant.
+         */
         async listOrderLines(queryable, tenantId, orderId) {
         const result = await queryable.query(`SELECT ${orderLineSelect} FROM order_lines WHERE tenant_id = $1 AND order_id = $2 ORDER BY created_at`, [tenantId, orderId], { operation: 'order_lines.list' });
         return result.rows.map((row) => toOrderLine(parseOrThrow(orderLineRowSchema, row, 'order_lines row')));
         },
+        /**
+         * Line-level FOR UPDATE locks for shipment/cancel/return commands.
+         */
         async lockOrderLinesForUpdate(transaction, tenantId, orderId) {
         const result = await transaction.query(`SELECT ${orderLineSelect}
        FROM order_lines
@@ -462,6 +525,9 @@ export function createPostgresOrderRepository() {
        FOR UPDATE`, [tenantId, orderId], { operation: 'order_lines.lock_for_update' });
         return result.rows.map((row) => toOrderLine(parseOrThrow(orderLineRowSchema, row, 'order_lines row')));
         },
+        /**
+         * Line-level FOR UPDATE locks for shipment/cancel/return commands.
+         */
         async lockOrderLineForUpdate(transaction, tenantId, orderLineId) {
         const result = await transaction.query(`SELECT ${orderLineSelect}
        FROM order_lines
@@ -472,6 +538,9 @@ export function createPostgresOrderRepository() {
             return null;
         return toOrderLine(parseOrThrow(orderLineRowSchema, row, 'order_lines row'));
         },
+        /**
+         * Immutable customer/shipping snapshot tied to order (PII at rest in JSON columns).
+         */
         async insertCustomerSnapshot(transaction, snapshot) {
         const p = snapshot;
         await transaction.query(`INSERT INTO order_customer_snapshots (
@@ -493,6 +562,9 @@ export function createPostgresOrderRepository() {
             p.createdAt,
         ], { operation: 'order_customer_snapshots.insert' });
         },
+        /**
+         * Immutable customer/shipping snapshot tied to order (PII at rest in JSON columns).
+         */
         async findCustomerSnapshot(queryable, tenantId, orderId) {
         const result = await queryable.query(`SELECT id, tenant_id, order_id, external_customer_reference, first_name, last_name,
               email, phone, company_name, billing_address, shipping_address, metadata, created_at
@@ -503,6 +575,9 @@ export function createPostgresOrderRepository() {
             return null;
         return toCustomerSnapshot(parseOrThrow(customerRowSchema, row, 'order_customer_snapshots row'));
         },
+        /**
+         * Atomically increments per-tenant sequence inside transaction (ORD-######## format).
+         */
         async allocateOrderNumber(transaction, tenantId) {
         const result = await transaction.query(`INSERT INTO tenant_order_sequences (tenant_id, last_value)
        VALUES ($1, 1)
@@ -519,6 +594,9 @@ export function createPostgresOrderRepository() {
         },
     };
 }
+/**
+ * Encodes (createdAt, id) tuple for stable descending list pagination.
+ */
 export function orderListCursor(order) {
     return encodeCursor([order.createdAt.toISOString(), order.id]);
 }

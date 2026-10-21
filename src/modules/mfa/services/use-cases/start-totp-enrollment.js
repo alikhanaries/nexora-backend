@@ -7,6 +7,7 @@ import { AuthorizationError, ConflictError } from '../../../../shared/errors/ind
  */
 export function createStartTotpEnrollment(deps) {
     return {
+        /** Creates PENDING factor and otpauth URI. Authz: `mfa.manage`. Rejects if ACTIVE exists. */
         async execute(input) {
             if (!input.actorPermissions.includes('mfa.manage')) {
                 throw new AuthorizationError('Missing required permission: mfa.manage');

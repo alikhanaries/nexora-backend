@@ -1,3 +1,6 @@
+/**
+ * Express middleware stack applied before Nest routing (security, context, JSON, CORS, metrics).
+ */
 import express from 'express';
 import helmet from 'helmet';
 import { createHmac } from 'node:crypto';

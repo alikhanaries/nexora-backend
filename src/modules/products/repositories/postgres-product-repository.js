@@ -1,7 +1,9 @@
 import { PRODUCT_SELECT_COLUMNS, toProduct } from './row-mappers.js';
 
+/** Postgres persistence factory; every query is scoped by `tenant_id`. */
 export function createPostgresProductRepository() {
     return {
+/** Loads one product by id within the tenant; returns null when missing. */
         async findById(queryable, tenantId, productId) {
             const result = await queryable.query(`SELECT ${PRODUCT_SELECT_COLUMNS}
        FROM products
@@ -9,6 +11,7 @@ export function createPostgresProductRepository() {
             const row = result.rows[0];
             return row === undefined ? null : toProduct(row);
         },
+/** Repository operation on product data (tenant-isolated SQL). */
         async findBySku(queryable, tenantId, merchantSku) {
             const result = await queryable.query(`SELECT ${PRODUCT_SELECT_COLUMNS}
        FROM products
@@ -16,6 +19,7 @@ export function createPostgresProductRepository() {
             const row = result.rows[0];
             return row === undefined ? null : toProduct(row);
         },
+/** Repository operation on product data (tenant-isolated SQL). */
         async findByIds(queryable, tenantId, productIds) {
             if (productIds.length === 0)
                 return [];
@@ -24,6 +28,7 @@ export function createPostgresProductRepository() {
        WHERE tenant_id = $1 AND id = ANY($2::uuid[])`, [tenantId, [...productIds]], { operation: 'products.find_by_ids' });
             return result.rows.map(toProduct);
         },
+/** Persists a new product row (and related lines when applicable) in the current transaction. */
         async insert(transaction, product) {
             await transaction.query(`INSERT INTO products
          (id, tenant_id, merchant_sku, external_reference, product_type, status, created_at, updated_at)
@@ -38,6 +43,7 @@ export function createPostgresProductRepository() {
                 product.updatedAt,
             ], { operation: 'products.insert' });
         },
+/** Updates mutable product columns; `tenant_id` and id constrain the row. */
         async update(transaction, product) {
             await transaction.query(`UPDATE products
        SET external_reference = $3,
@@ -53,6 +59,7 @@ export function createPostgresProductRepository() {
                 product.updatedAt,
             ], { operation: 'products.update' });
         },
+/** Keyset (cursor) page of products ordered by created time within the tenant. */
         async listPage(queryable, tenantId, filter, limit, cursorCreatedAt, cursorId) {
             const conditions = ['tenant_id = $1'];
             const params = [tenantId];

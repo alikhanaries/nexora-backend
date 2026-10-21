@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 const storage = new AsyncLocalStorage();
+/** Initial per-request context before auth enrichment. */
 export function createRequestContext(input) {
     return {
         requestId: input.requestId,
@@ -26,6 +27,7 @@ export function runWithRequestContext(context, fn) {
 export function enterRequestContext(context) {
     storage.enterWith({ context });
 }
+/** Returns the active request context when inside ALS scope. */
 export function getRequestContext() {
     return storage.getStore()?.context;
 }

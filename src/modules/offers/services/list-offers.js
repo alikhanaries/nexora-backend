@@ -8,6 +8,7 @@ import { requireOffersRead } from './offer-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createListOffers(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requireOffersRead(deps.authorization, input.actorPermissions);
         const limit = clampCursorLimit(input.limit);

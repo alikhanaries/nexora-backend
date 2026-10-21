@@ -3,6 +3,7 @@ import { auditRequestFields } from '../../../audit/public/index.js';
 import { AuthorizationError, NotFoundError } from '../../../../shared/errors/index.js';
 import { hashSecret } from '../../../../shared/security/index.js';
 const RECOVERY_CODE_COUNT = 10;
+/** Generates plaintext recovery codes and hashed storage form. */
 function generateRecoveryCodes() {
     const plaintext = [];
     const hashes = [];
@@ -19,6 +20,7 @@ function generateRecoveryCodes() {
  */
 export function createActivateTotpFactor(deps) {
     return {
+        /** Activates verified PENDING factor, rotates recovery codes. Authz: `mfa.manage`. */
         async execute(input) {
             if (!input.actorPermissions.includes('mfa.manage')) {
                 throw new AuthorizationError('Missing required permission: mfa.manage');

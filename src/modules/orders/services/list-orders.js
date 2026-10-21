@@ -2,6 +2,9 @@ import { clampCursorLimit, decodeCursor, encodeCursor, } from '../../../shared/p
 import { toOrderDto } from '../views/order-dto.js';
 import { requireOrdersRead } from './order-permissions.js';
 
+/**
+ * Service-layer cursor encoding wrapping repository tuple.
+ */
 function encodeOrderListCursor(order) {
     return encodeCursor([order.createdAt.toISOString(), order.id]);
 }
@@ -15,6 +18,9 @@ function encodeOrderListCursor(order) {
  * @param {import('../repositories/postgres-order-repository.js').PostgresOrderRepository} deps.orders
  */
 export function createListOrders(deps) {
+    /**
+     * Order command/query step: tenant isolation on all repository calls; may emit order.* events for outbound webhooks.
+     */
     async function execute(input) {
         requireOrdersRead(deps.authorization, input.actorPermissions);
         const limit = clampCursorLimit(input.limit);

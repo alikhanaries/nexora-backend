@@ -1,3 +1,7 @@
+/**
+ * Legacy and v2 compatibility API layer: adapts core domain services to older client contracts
+ * (orders, shipments, cancellations, returns, catalog). Exposes `routeDeps` for Nest compat controllers.
+ */
 import { CatalogCompatibilityCommand } from './services/catalog-compatibility-command.js';
 import { CatalogCompatibilityQuery } from './services/catalog-compatibility-query.js';
 import { CancellationCompatibilityCommand } from './services/cancellation-compatibility-command.js';
@@ -23,6 +27,7 @@ import { CompatV2OrderInvoiceQuery } from './services/compat-v2-order-invoice-qu
  * @param {import('../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
  * @param {import('./services/catalog-compatibility-contracts.js').CompatibilityCatalogCommands} deps.catalogCommands
  * @param {import('../../infrastructure/redis/redis-rate-limiter.js').RedisRateLimiter} deps.rateLimiter
+ * @returns {{ routeDeps: object, coreContracts: import('./services/core-contracts.js').CompatibilityCoreContracts }}
  */
 export function createCompatibilityModule(deps) {
     const orderCompatibilityQuery = new OrderCompatibilityQuery({

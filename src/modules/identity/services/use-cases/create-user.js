@@ -1,3 +1,6 @@
+/**
+ * Registers a user record and password credential within a tenant bootstrap flow.
+ */
 import { randomUUID } from 'node:crypto';
 import { ConflictError } from '../../../../shared/errors/index.js';
 import { validatePassword } from '../../../../shared/security/index.js';
@@ -8,6 +11,7 @@ import { createUserEntity, parseEmail } from '../../models/index.js';
  * @returns {{ execute: Function }}
  */
 export function createCreateUser(deps) {
+    /** Registers user + password hash (tenant bootstrap / admin invite flows). */
     async function execute(input) {
         validatePassword(input.password, deps.passwordPolicy);
         const email = parseEmail(input.email);

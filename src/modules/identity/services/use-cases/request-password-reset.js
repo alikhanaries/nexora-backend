@@ -13,6 +13,7 @@ const RESET_TOKEN_TTL_SECONDS = 3_600;
  * @returns {{ execute: Function }}
  */
 export function createRequestPasswordReset(deps) {
+    /** Issues reset token and notifies adapter; always succeeds from caller view (no enumeration). */
     async function execute(input) {
         let email;
         try {

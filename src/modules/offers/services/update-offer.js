@@ -10,6 +10,7 @@ import { requireOffersUpdate } from './offer-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createUpdateOffer(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requireOffersUpdate(deps.authorization, input.actorPermissions);
         const externalReference = input.externalReference === undefined

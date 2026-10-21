@@ -5,6 +5,7 @@ import { requireShipmentsRead } from './shipment-permissions.js';
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
 
+/** Validates and bounds offset-pagination inputs (defaults and max page size). */
 function clampPageSize(pageSize) {
     const requested = pageSize ?? DEFAULT_PAGE_SIZE;
     if (!Number.isInteger(requested) || requested < 1) {
@@ -13,6 +14,7 @@ function clampPageSize(pageSize) {
     return Math.min(requested, MAX_PAGE_SIZE);
 }
 
+/** Validates and bounds offset-pagination inputs (defaults and max page size). */
 function clampPage(page) {
     const requested = page ?? 1;
     if (!Number.isInteger(requested) || requested < 1) {
@@ -28,6 +30,11 @@ function clampPage(page) {
  * @param {import('../repositories/postgres-shipment-repository.js').PostgresShipmentRepository} deps.shipments
  */
 export function createShipmentQueryService(deps) {
+/**
+     * Loads shipment detail with lines for the tenant.
+     * @param {string} tenantId Tenant scope.
+     * @param {string} shipmentId Shipment id.
+     */
     async function getShipmentById(tenantId, shipmentId, tx) {
         const queryable = tx ?? deps.queryable;
         const shipment = await deps.shipments.findById(queryable, tenantId, shipmentId);
@@ -38,6 +45,11 @@ export function createShipmentQueryService(deps) {
         return toShipmentDetailDto(shipment, lines);
     }
 
+/**
+     * Loads shipment header without lines.
+     * @param {string} tenantId Tenant scope.
+     * @param {string} shipmentId Shipment id.
+     */
     async function getShipmentSummaryById(tenantId, shipmentId, tx) {
         const queryable = tx ?? deps.queryable;
         const shipment = await deps.shipments.findById(queryable, tenantId, shipmentId);
@@ -47,6 +59,11 @@ export function createShipmentQueryService(deps) {
         return toShipmentDto(shipment);
     }
 
+/**
+     * Finds a shipment by tenant-scoped external reference (webhook/idempotent create).
+     * @param {string} tenantId Tenant scope.
+     * @param {string} externalReference External shipment key.
+     */
     async function findShipmentByExternalReference(tenantId, externalReference, tx) {
         const queryable = tx ?? deps.queryable;
         const trimmed = externalReference.trim();
@@ -61,6 +78,10 @@ export function createShipmentQueryService(deps) {
         return toShipmentDetailDto(shipment, lines);
     }
 
+/**
+     * Offset-paginated shipment listing with optional order/status filters.
+     * @param {object} input Tenant, actor permissions, pagination, filters.
+     */
     async function listShipments(input) {
         requireShipmentsRead(deps.authorization, input.actorPermissions);
         const page = clampPage(input.page);

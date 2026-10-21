@@ -9,6 +9,7 @@ import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-pol
  */
 export function createVerifyMfa(deps) {
     return {
+        /** Validates TOTP and records step-up session. Rate-limited per user/tenant. */
         async execute(input) {
             const rateLimit = await deps.rateLimiter.consume({
                 policy: AUTH_RATE_LIMIT_POLICIES.mfaVerify,

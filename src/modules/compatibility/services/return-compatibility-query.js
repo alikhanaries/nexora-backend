@@ -11,23 +11,32 @@ import {
 
 const DEFAULT_PAGE_SIZE = 50;
 
+/** Return list/ack flows for merchant compatibility v2 and CE read paths. */
 export class ReturnCompatibilityQuery {
     deps;
+    /** @param {object} deps Return, order, commerce integration, and external id mapping services. */
     constructor(deps) {
         this.deps = deps;
     }
+    /** Delegates to listReturns preserving caller-provided external status filters. */
     async listMerchantReturns(input) {
         return this.listReturns({
             ...input,
             externalStatuses: input.externalStatuses,
         });
     }
+    /** `/api/v2/returns/merchant/new` — applies new-return external status preset (IN_PROGRESS platform filter). */
     async listNewMerchantReturns(input) {
         return this.listReturns({
             ...input,
             externalStatuses: mapNewReturnStatusFilter(),
         });
     }
+    /**
+     * Loads returns for one merchant order number; 404 when order missing.
+     * @param {object} input tenantId, permissions, merchantOrderNo.
+     * @returns {Promise<object>} Single-order return collection with external integer ids.
+     */
     async listReturnsByMerchantOrderNo(input) {
         const order = await this.deps.orderQueryService.findOrderByOrderNumber(input.tenantId, input.merchantOrderNo);
         if (order === null) {
@@ -48,6 +57,11 @@ export class ReturnCompatibilityQuery {
         );
         return mapSingleOrderReturnCollection(result.items, ordersById, externalIdMaps);
     }
+    /**
+     * Core return listing: maps external statuses, loads orders/channels, attaches external id maps.
+     * @param {object} input Tenant-scoped filters and pagination.
+     * @returns {Promise<object>} Return page envelope.
+     */
     async listReturns(input) {
         const pageSize = input.pageSize ?? DEFAULT_PAGE_SIZE;
         const page = input.page ?? 1;

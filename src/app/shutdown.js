@@ -1,8 +1,14 @@
+/**
+ * Ordered teardown for API and worker processes (HTTP, queues, Redis, Postgres, tracing).
+ */
+
+/** Runs shutdown steps with per-step timeouts and marks readiness not-ready first. */
 export async function gracefulShutdown(targets) {
     const { logger, timeoutMs } = targets;
     logger.info({}, 'Graceful shutdown started');
     targets.readiness?.markNotReady();
     const deadline = Date.now() + timeoutMs;
+    /** Runs one shutdown step, logging success or a warn on failure without aborting later steps. */
     const runStep = async (name, step) => {
         try {
             await step();
@@ -49,9 +55,11 @@ export async function gracefulShutdown(targets) {
     await targets.logger.flush();
     logger.info({}, 'Graceful shutdown finished');
 }
+/** Milliseconds left until the global shutdown deadline (never negative). */
 function remaining(deadline) {
     return Math.max(0, deadline - Date.now());
 }
+/** Races `promise` against a timer; rejects when time budget is exhausted. */
 async function withTimeout(promise, timeoutMs, label) {
     if (timeoutMs <= 0) {
         throw new Error(`${label} timed out during shutdown`);

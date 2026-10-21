@@ -10,6 +10,9 @@ const marketplaceRowSchema = z.object({
     created_at: z.date(),
     updated_at: z.date(),
 });
+/**
+ * Maps marketplaces table row to domain aggregate.
+ */
 function toMarketplace(row) {
     return Marketplace.reconstitute({
         id: row.id,
@@ -21,6 +24,9 @@ function toMarketplace(row) {
     });
 }
 export class PostgresMarketplaceRepository {
+    /**
+     * Global marketplace catalog row by UUID.
+     */
     async findById(queryable, id) {
         const result = await queryable.query(`SELECT id, key, name, status, created_at, updated_at
        FROM marketplaces
@@ -30,6 +36,9 @@ export class PostgresMarketplaceRepository {
             return null;
         return toMarketplace(parseOrThrow(marketplaceRowSchema, row, 'marketplaces row'));
     }
+    /**
+     * Lookup by stable adapter routing key.
+     */
     async findByKey(queryable, key) {
         const result = await queryable.query(`SELECT id, key, name, status, created_at, updated_at
        FROM marketplaces
@@ -39,6 +48,9 @@ export class PostgresMarketplaceRepository {
             return null;
         return toMarketplace(parseOrThrow(marketplaceRowSchema, row, 'marketplaces row'));
     }
+    /**
+     * Lists catalog marketplaces with optional status filter.
+     */
     async list(queryable, filters) {
         const conditions = [];
         const parameters = [];
@@ -53,6 +65,9 @@ export class PostgresMarketplaceRepository {
        ORDER BY key ASC`, parameters, { operation: 'marketplaces.list' });
         return result.rows.map((row) => toMarketplace(parseOrThrow(marketplaceRowSchema, row, 'marketplaces row')));
     }
+    /**
+     * Writes marketplace catalog row (not tenant connections).
+     */
     async insert(transaction, marketplace) {
         await transaction.query(`INSERT INTO marketplaces (id, key, name, status, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6)`, [
@@ -64,6 +79,9 @@ export class PostgresMarketplaceRepository {
             marketplace.updatedAt,
         ], { operation: 'marketplaces.insert' });
     }
+    /**
+     * Writes marketplace catalog row (not tenant connections).
+     */
     async update(transaction, marketplace) {
         await transaction.query(`UPDATE marketplaces
        SET name = $2, status = $3, updated_at = $4

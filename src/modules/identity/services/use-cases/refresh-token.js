@@ -1,3 +1,6 @@
+/**
+ * Rotates refresh tokens: validates session family, re-issues access token, rate-limited.
+ */
 import { auditRequestFields } from '../../../audit/public/index.js';
 import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-policies.js';
 import { refreshRateLimitSubject } from '../../../../shared/auth/rate-limit-subject.js';
@@ -15,6 +18,7 @@ import { createRefreshSessionDraft } from '../auth-tokens.js';
  * @returns {{ execute: Function }}
  */
 export function createRefreshToken(deps) {
+    /** Validates refresh token hash, rotates session, issues new access token. Rate-limited. */
     async function execute(input) {
         if (deps.rateLimiter !== undefined) {
             const rateLimit = await deps.rateLimiter.consume({

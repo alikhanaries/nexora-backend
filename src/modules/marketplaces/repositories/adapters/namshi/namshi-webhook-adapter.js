@@ -11,6 +11,9 @@ import { buildNamshiFbpiLifecycleEventId } from './map-namshi-fbpi-order-to-life
 export class NamshiWebhookAdapter {
     marketplaceKey = NAMSHI_MARKETPLACE_KEY;
 
+    /**
+     * Webhook verification and normalized event kinds supported at ingress.
+     */
     getWebhookCapabilities() {
         return { supportsInboundWebhooks: true };
     }

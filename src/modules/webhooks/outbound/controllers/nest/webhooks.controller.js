@@ -10,6 +10,9 @@ const ingressTokenParamsSchema = z.object({
   ingressToken: z.string().min(16).max(128),
 });
 
+/**
+ * Lowercases incoming header names for adapter signature verification.
+ */
 function normalizeHeaders(headers) {
   const normalized = {};
   for (const [key, value] of Object.entries(headers)) {
@@ -24,13 +27,18 @@ function normalizeHeaders(headers) {
 /**
  * Thin Nest HTTP adapter for inbound marketplace webhook ingress.
  * Business rules live in webhooks/marketplace services; paths live in routes/.
+ * Route `/api/v1/inbound/marketplace-webhooks/:ingressToken`; handlers call `CORE_SERVICES.marketplaceWebhookIngestion`.
  */
 @Controller()
 class WebhooksController {
+  /** Resolves marketplace webhook ingestion use cases from core DI. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.marketplaceWebhookIngestion;
   }
 
+  /**
+   * Public ingress for signed marketplace webhooks; resolves tenant connection, enqueues async processing (no outbound fan-out here).
+   */
   @Public()
   @Post(MARKETPLACE_WEBHOOK_INGRESS_ROUTES.receiveMarketplaceWebhook.path)
   @HttpCode(200)

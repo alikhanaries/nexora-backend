@@ -19,6 +19,7 @@ const fullRowSchema = summaryRowSchema.extend({
     revoked_at: z.coerce.date().nullable(),
     rotated_from_id: z.string().uuid().nullable(),
 });
+/** Maps a DB row to a client-safe API key summary (no secret hash). */
 function mapSummary(row) {
     return {
         id: row.id,
@@ -34,6 +35,7 @@ function mapSummary(row) {
         updatedAt: row.updated_at,
     };
 }
+/** Maps a DB row including secret hash and rotation/revocation metadata for auth flows. */
 function mapFull(row) {
     return {
         ...mapSummary(row),
@@ -48,6 +50,7 @@ function mapFull(row) {
  * @returns {object}
  */
 export function createPostgresApiKeyRepository() {
+    /** Inserts a new ACTIVE key row; caller supplies id, prefix, hashed secret, scopes. */
     async function create(tx, record) {
         const result = await tx.query(`INSERT INTO api_keys (
          id, tenant_id, name, prefix, secret_hash, key_type, scopes, expires_at, rotated_from_id
@@ -66,6 +69,7 @@ export function createPostgresApiKeyRepository() {
         ], { operation: 'api_keys.create' });
         return mapSummary(parseOrThrow(summaryRowSchema, result.rows[0], 'api key row'));
     }
+    /** Lookup by public prefix (authentication path). Returns full row or null. */
     async function findByPrefix(tx, prefix) {
         const result = await tx.query(`SELECT id, tenant_id, name, prefix, secret_hash, key_type, scopes, status,
               channel_id, expires_at, last_used_at, created_at, updated_at,
@@ -75,6 +79,7 @@ export function createPostgresApiKeyRepository() {
             return null;
         return mapFull(parseOrThrow(fullRowSchema, result.rows[0], 'api key row'));
     }
+    /** Loads one key by id for tenant-scoped manage/revoke/rotate flows. */
     async function findById(tx, id) {
         const result = await tx.query(`SELECT id, tenant_id, name, prefix, secret_hash, key_type, scopes, status,
               channel_id, expires_at, last_used_at, created_at, updated_at,
@@ -84,6 +89,7 @@ export function createPostgresApiKeyRepository() {
             return null;
         return mapFull(parseOrThrow(fullRowSchema, result.rows[0], 'api key row'));
     }
+    /** Lists summary rows for a tenant, newest first. */
     async function listByTenant(tx, tenantId) {
         const result = await tx.query(`SELECT id, tenant_id, name, prefix, key_type, scopes, status,
               expires_at, last_used_at, created_at, updated_at
@@ -92,16 +98,19 @@ export function createPostgresApiKeyRepository() {
        ORDER BY created_at DESC`, [tenantId], { operation: 'api_keys.list_by_tenant' });
         return result.rows.map((row) => mapSummary(parseOrThrow(summaryRowSchema, row, 'api key row')));
     }
+    /** Marks ACTIVE key REVOKED; no-op if not ACTIVE. */
     async function revoke(tx, id, revokedAt) {
         await tx.query(`UPDATE api_keys
        SET status = 'REVOKED', revoked_at = $2, updated_at = $2
        WHERE id = $1 AND status = 'ACTIVE'`, [id, revokedAt], { operation: 'api_keys.revoke' });
     }
+    /** Same status transition as revoke; used when superseded by rotation (audit semantics differ upstream). */
     async function markRotated(tx, id, revokedAt) {
         await tx.query(`UPDATE api_keys
        SET status = 'REVOKED', revoked_at = $2, updated_at = $2
        WHERE id = $1 AND status = 'ACTIVE'`, [id, revokedAt], { operation: 'api_keys.mark_rotated' });
     }
+    /** Updates last_used_at after successful API key authentication. */
     async function touchLastUsed(tx, id, usedAt) {
         await tx.query(`UPDATE api_keys SET last_used_at = $2, updated_at = $2 WHERE id = $1`, [id, usedAt], { operation: 'api_keys.touch_last_used' });
     }

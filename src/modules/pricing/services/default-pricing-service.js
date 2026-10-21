@@ -11,6 +11,7 @@ import { priceChangedEvent, priceCreatedEvent, priceUpdatedEvent } from './price
  * @param {object} deps
  */
 export function createDefaultPricingService(deps) {
+/** Resolves the active price for a product/channel at a point in time within the tenant. */
     async function getEffectivePrice(tenantId, productId, channelId, currency, at = new Date(), tx) {
         const queryable = tx ?? deps.queryable;
         const normalizedCurrency = parseCurrency(currency);
@@ -18,6 +19,11 @@ export function createDefaultPricingService(deps) {
         return price === null ? null : toPriceDto(price);
     }
 
+/**
+     * Creates a price row after product (and optional channel) tenant checks; emits price events.
+     * @param {object} input Tenant, product, channel, currency, amount, validity window.
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function createPrice(input, tx) {
         const belongs = await deps.productQueryService.verifyProductBelongsToTenant(input.tenantId, input.productId, tx);
         if (!belongs) {
@@ -41,6 +47,10 @@ export function createDefaultPricingService(deps) {
             ...(input.channelId === undefined ? {} : { channelId: input.channelId }),
             createdAt: now,
         });
+/**
+     * Transaction step: insert price and record created/changed integration events.
+     * @param {object} transaction Active SQL transaction.
+     */
         const save = async (transaction) => {
             await deps.prices.insert(transaction, price);
             const dto = toPriceDto(price);
@@ -54,7 +64,16 @@ export function createDefaultPricingService(deps) {
         return deps.transactionManager.execute(save, { tenantId: input.tenantId });
     }
 
+/**
+     * Patches an existing price; records update events when amount or validity changes.
+     * @param {object} input Tenant, priceId, optional patch fields.
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function updatePrice(input, tx) {
+/**
+     * Inner transactional update/deactivate body (shared pattern for update and deactivate).
+     * @param {object} transaction Active SQL transaction.
+     */
         const mutate = async (transaction) => {
             const existing = await deps.prices.findById(transaction, input.tenantId, input.priceId);
             if (existing === null) {
@@ -108,7 +127,16 @@ export function createDefaultPricingService(deps) {
         return deps.transactionManager.execute(mutate, { tenantId: input.tenantId });
     }
 
+/**
+     * Marks a price inactive and emits deactivated/changed events.
+     * @param {object} input Tenant and priceId.
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function deactivatePrice(input, tx) {
+/**
+     * Transaction step: load price, apply deactivation, emit status/changed events.
+     * @param {object} transaction Active SQL transaction.
+     */
         const mutate = async (transaction) => {
             const existing = await deps.prices.findById(transaction, input.tenantId, input.priceId);
             if (existing === null) {
@@ -130,6 +158,10 @@ export function createDefaultPricingService(deps) {
         return deps.transactionManager.execute(mutate, { tenantId: input.tenantId });
     }
 
+/**
+     * Cursor-paginated price list filtered by product/channel/currency/status within the tenant.
+     * @param {object} input Tenant, filters, optional cursor/limit.
+     */
     async function listPrices(input, tx) {
         const queryable = tx ?? deps.queryable;
         const limit = clampCursorLimit(input.limit);

@@ -57,6 +57,7 @@ export async function injectExpress(app, options) {
                             headers: res.headers,
                             body: text,
                             rawPayload,
+                            /** Parses response body as JSON; empty body → null. */
                             json() {
                                 if (text.length === 0) {
                                     return null;

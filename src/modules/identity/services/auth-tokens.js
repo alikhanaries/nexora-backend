@@ -1,6 +1,10 @@
+/**
+ * Refresh-session drafting and access/refresh token pair issuance for identity flows.
+ */
 import { randomUUID } from 'node:crypto';
 import { generateSecureToken, hashSecret } from '../../../shared/security/index.js';
 const TOKEN_VERSION = 1;
+/** Builds a new refresh session row and plaintext refresh token before persistence. */
 export function createRefreshSessionDraft(input, refreshTokenTtlSeconds) {
     const refreshToken = generateSecureToken(32);
     const tokenHash = hashSecret(refreshToken);
@@ -25,6 +29,7 @@ export function createRefreshSessionDraft(input, refreshTokenTtlSeconds) {
         },
     };
 }
+/** Signs access JWT and pairs it with a persisted refresh session. */
 export async function issueTokenPair(deps, input) {
     const accessToken = await deps.accessTokenService.sign({
         sub: input.userId,

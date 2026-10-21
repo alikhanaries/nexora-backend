@@ -20,6 +20,9 @@ export class AmazonOrderAdapter extends BaseMarketplaceOrderAdapter {
         });
     }
 
+    /**
+     * Order pull/ack capabilities exposed to marketplace order ingestion.
+     */
     getOrderCapabilities() {
         return {
             supportsOrdersInbound: false,
@@ -28,6 +31,9 @@ export class AmazonOrderAdapter extends BaseMarketplaceOrderAdapter {
         };
     }
 
+    /**
+     * Inbound lifecycle command types supported for webhook/queue processing.
+     */
     getOrderLifecycleCapabilities() {
         return amazonOrderLifecycleCapabilities();
     }

@@ -13,6 +13,9 @@ import {
 export class NoonWebhookAdapter {
     marketplaceKey = NOON_MARKETPLACE_KEY;
 
+    /**
+     * Webhook verification and normalized event kinds supported at ingress.
+     */
     getWebhookCapabilities() {
         return { supportsInboundWebhooks: true };
     }

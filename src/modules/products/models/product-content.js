@@ -67,6 +67,7 @@ export function upsertProductContentEntity(props) {
     };
 }
 
+/** Validates BCP-47 locale strings for product content upserts. */
 export function validateLocale(locale) {
     if (!LOCALE_PATTERN.test(locale)) {
         throw new ValidationError('Locale must match BCP-47 format (e.g. en or en-US)');

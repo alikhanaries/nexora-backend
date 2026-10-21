@@ -9,6 +9,7 @@ import { hashSecret } from '../../../../shared/security/index.js';
  */
 export function createUseRecoveryCode(deps) {
     return {
+        /** Validates recovery code hash, marks used, records step-up. Rate-limited. */
         async execute(input) {
             const rateLimit = await deps.rateLimiter.consume({
                 policy: AUTH_RATE_LIMIT_POLICIES.mfaVerify,

@@ -6,6 +6,7 @@ import { activateMembershipEntity } from '../../models/index.js';
  * @returns {{ execute: Function }}
  */
 export function createActivateMembership(deps) {
+    /** Moves membership from PENDING to ACTIVE. Tenant-scoped. */
     async function execute(input) {
         return deps.db.execute(async (tx) => {
             const membership = await deps.memberships.findById(tx, input.membershipId);

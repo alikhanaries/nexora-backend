@@ -19,13 +19,16 @@ import { SHIPMENT_ROUTES } from '../../routes/shipment.routes.js';
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  * Idempotency orchestration stays here (HTTP adaptation).
+ * Routes under `/api/v1/shipments` and order-nested shipments (SHIPMENT_ROUTES); handlers call `CORE_SERVICES.shipments.useCases`.
  */
 @Controller()
 class ShipmentsController {
+/** Binds `CORE_SERVICES` shipment use cases for this HTTP adapter. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.shipments.useCases;
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to shipment use case `createForOrder`. */
   @Post(SHIPMENT_ROUTES.createForOrder.path)
   @HttpCode(201)
   async createForOrder(
@@ -74,6 +77,7 @@ class ShipmentsController {
     return outcome.value;
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to shipment use case `list`. */
   @Get(SHIPMENT_ROUTES.list.path)
   async list(@Query() query) {
     const parsed = parseOrThrow(listShipmentsQuerySchema, query, 'list query');
@@ -97,6 +101,7 @@ class ShipmentsController {
     };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to shipment use case `getById`. */
   @Get(SHIPMENT_ROUTES.getById.path)
   async getById(@Param() params) {
     const { shipmentId } = parseOrThrow(shipmentIdParamsSchema, params, 'shipment params');
@@ -109,6 +114,7 @@ class ShipmentsController {
     return { success: true, data: toShipmentDetailResponse(shipment) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to shipment use case `ship`. */
   @Post(SHIPMENT_ROUTES.ship.path)
   @HttpCode(200)
   async ship(@Param() params, @Body() body) {
@@ -129,6 +135,7 @@ class ShipmentsController {
     return { success: true, data: toShipmentDetailResponse(shipment) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to shipment use case `deliver`. */
   @Post(SHIPMENT_ROUTES.deliver.path)
   @HttpCode(200)
   async deliver(@Param() params) {
@@ -145,6 +152,7 @@ class ShipmentsController {
     return { success: true, data: toShipmentDetailResponse(shipment) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to shipment use case `cancel`. */
   @Post(SHIPMENT_ROUTES.cancel.path)
   @HttpCode(200)
   async cancel(@Param() params) {

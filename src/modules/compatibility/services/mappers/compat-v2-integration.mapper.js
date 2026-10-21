@@ -33,6 +33,11 @@ export function mapIntegrationsToCompatV2Collection(channels) {
     };
 }
 
+/**
+ * Parses integration external reference to external integer channel id when numeric.
+ * @param {unknown} value Channel external reference or id string from core integration row.
+ * @returns {number|undefined} Positive integer or undefined when not parseable.
+ */
 function parseCompatV2Integer(value) {
     if (typeof value !== 'string' || value.trim().length === 0) {
         return undefined;

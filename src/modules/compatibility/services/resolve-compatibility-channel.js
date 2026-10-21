@@ -1,3 +1,6 @@
+/**
+ * Resolves commerce integration channel + stock location for compatibility v2 catalog/order calls.
+ */
 import { ValidationError } from '../../../shared/errors/index.js';
 import { resolveChannelStockLocationId } from '../../commerce-integrations/public/index.js';
 

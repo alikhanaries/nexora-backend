@@ -59,6 +59,7 @@ export const putOfferStockBodySchema = z.union([
     }).passthrough(),
 ]);
 
+/** Zod helper: repeat or single query param → optional string array (compatibility list filters). */
 function optionalQueryStringArray(schema) {
     return z.preprocess((value) => {
         if (value === undefined) {

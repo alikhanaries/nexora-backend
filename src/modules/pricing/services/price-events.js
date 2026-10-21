@@ -1,7 +1,9 @@
 import { getRequestContext } from '../../../shared/context/request-context.js';
+/** Reads the current request id from async context for outbound domain events. */
 function correlationId() {
     return getRequestContext()?.requestId ?? null;
 }
+/** Serializes price record fields needed by downstream consumers (tenant id included). */
 function pricePayload(price) {
     return {
         id: price.id,
@@ -15,6 +17,7 @@ function pricePayload(price) {
         status: price.status,
     };
 }
+/** Builds a versioned integration event envelope for the price record aggregate. */
 export function priceCreatedEvent(price) {
     return {
         type: 'price.created',
@@ -26,6 +29,7 @@ export function priceCreatedEvent(price) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the price record aggregate. */
 export function priceUpdatedEvent(price, changes) {
     return {
         type: 'price.updated',
@@ -40,6 +44,7 @@ export function priceUpdatedEvent(price, changes) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the price record aggregate. */
 export function priceChangedEvent(price, reason) {
     return {
         type: 'price.changed',

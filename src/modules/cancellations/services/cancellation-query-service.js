@@ -5,6 +5,7 @@ import { requireCancellationsRead } from './cancellation-permissions.js';
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
 
+/** Validates and bounds offset-pagination inputs (defaults and max page size). */
 function clampPageSize(pageSize) {
     const requested = pageSize ?? DEFAULT_PAGE_SIZE;
     if (!Number.isInteger(requested) || requested < 1) {
@@ -13,6 +14,7 @@ function clampPageSize(pageSize) {
     return Math.min(requested, MAX_PAGE_SIZE);
 }
 
+/** Validates and bounds offset-pagination inputs (defaults and max page size). */
 function clampPage(page) {
     const requested = page ?? 1;
     if (!Number.isInteger(requested) || requested < 1) {
@@ -28,6 +30,12 @@ function clampPage(page) {
  * @param {import('../repositories/postgres-cancellation-repository.js').PostgresCancellationRepository} deps.cancellations
  */
 export function createCancellationQueryService(deps) {
+/**
+     * Loads cancellation header and lines; throws when not found in the tenant.
+     * @param {string} tenantId Tenant scope.
+     * @param {string} cancellationId Cancellation primary key.
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function getCancellationById(tenantId, cancellationId, tx) {
         const queryable = tx ?? deps.queryable;
         const cancellation = await deps.cancellations.findById(queryable, tenantId, cancellationId);
@@ -41,6 +49,12 @@ export function createCancellationQueryService(deps) {
         };
     }
 
+/**
+     * Loads cancellation header only (no lines) for lightweight reads.
+     * @param {string} tenantId Tenant scope.
+     * @param {string} cancellationId Cancellation primary key.
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function getCancellationSummaryById(tenantId, cancellationId, tx) {
         const queryable = tx ?? deps.queryable;
         const cancellation = await deps.cancellations.findById(queryable, tenantId, cancellationId);
@@ -50,6 +64,10 @@ export function createCancellationQueryService(deps) {
         return toCancellationDto(cancellation);
     }
 
+/**
+     * Offset-paginated cancellation search for compatibility/admin APIs (requires read permission).
+     * @param {object} input Tenant, filters, page/pageSize, actor permissions.
+     */
     async function listCancellations(input) {
         requireCancellationsRead(deps.authorization, input.actorPermissions);
         const page = clampPage(input.page);

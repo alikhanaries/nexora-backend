@@ -2,6 +2,9 @@ import { DefaultMarketplaceEntityMappingRecorder } from './default-marketplace-e
 import { MarketplaceEntityMappingService } from './marketplace-entity-mapping-service.js';
 import { PostgresMarketplaceEntityMappingRepository } from '../repositories/postgres-marketplace-entity-mapping-repository.js';
 
+/**
+ * Records external marketplace entity ids during catalog sync (idempotent upserts).
+ */
 export function createMarketplaceEntityMappingRecorder() {
     const mappings = new PostgresMarketplaceEntityMappingRepository();
     const mappingService = new MarketplaceEntityMappingService({ mappings });

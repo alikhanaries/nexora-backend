@@ -3,6 +3,7 @@ const DEFAULT_POLICY = {
     minLength: 12,
     maxLength: 128,
 };
+/** Enforces configured password length bounds. */
 export function validatePassword(password, config = DEFAULT_POLICY) {
     if (typeof password !== 'string' || password.length === 0) {
         throw new ValidationError('Password is required');
@@ -14,13 +15,16 @@ export function validatePassword(password, config = DEFAULT_POLICY) {
         throw new ValidationError(`Password must not exceed ${config.maxLength} characters`);
     }
 }
+/** Trims and lowercases email for lookup/storage. */
 export function normalizeEmail(email) {
     return email.trim().toLowerCase();
 }
+/** Trims and lowercases tenant slug input. */
 export function normalizeTenantSlug(slug) {
     return slug.trim().toLowerCase();
 }
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+/** Validates normalized tenant slug pattern (DNS-like label rules). */
 export function validateTenantSlug(slug) {
     const normalized = normalizeTenantSlug(slug);
     if (!SLUG_PATTERN.test(normalized)) {

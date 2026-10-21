@@ -77,6 +77,9 @@ export class ExecuteOutboundMarketplaceOrderLifecycleCommand {
                 externalOrderId: input.externalOrderId,
                 payload: input.payload ?? null,
             });
+            /**
+             * Outbound lifecycle: resolves adapter, optional HTTP idempotency, invokes marketplace API via runtime factory.
+             */
             const run = async () => {
                 const runtime = await this.deps.database.execute(async (tx) => this.deps.marketplaceAdapterRuntimeFactory.createForSync({
                     tenantId: input.tenantId,

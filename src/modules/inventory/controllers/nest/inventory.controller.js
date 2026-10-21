@@ -24,14 +24,17 @@ import { INVENTORY_ROUTES } from '../../routes/inventory.routes.js';
 /**
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
+ * Routes under `/api/v1/stock-locations` and `/api/v1/inventory*` (INVENTORY_ROUTES); handlers call `CORE_SERVICES.inventory.useCases`.
  */
 @Controller()
 class InventoryController {
+/** Binds `CORE_SERVICES` inventory use cases for this HTTP adapter. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.inventory.useCases;
     this.metrics = coreServices.metrics;
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to inventory use case `listStockLocations`. */
   @Get(INVENTORY_ROUTES.listStockLocations.path)
   async listStockLocations() {
     const actor = requireActorContext();
@@ -42,6 +45,7 @@ class InventoryController {
     return { success: true, data: locations.map(toStockLocationResponse) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to inventory use case `createStockLocation`. */
   @Post(INVENTORY_ROUTES.createStockLocation.path)
   @HttpCode(201)
   async createStockLocation(@Body() body) {
@@ -57,6 +61,7 @@ class InventoryController {
     return { success: true, data: toStockLocationResponse(location) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to inventory use case `getStockLocation`. */
   @Get(INVENTORY_ROUTES.getStockLocation.path)
   async getStockLocation(@Param() params) {
     const { stockLocationId } = parseOrThrow(stockLocationIdParamsSchema, params, 'stock location params');
@@ -69,6 +74,7 @@ class InventoryController {
     return { success: true, data: toStockLocationResponse(location) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to inventory use case `listInventory`. */
   @Get(INVENTORY_ROUTES.listInventory.path)
   async listInventory(@Query() query) {
     const parsed = parseOrThrow(inventoryListQuerySchema, query, 'query');
@@ -81,6 +87,7 @@ class InventoryController {
     return { success: true, data: balances.map(toBalanceResponse) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to inventory use case `getProductInventory`. */
   @Get(INVENTORY_ROUTES.getProductInventory.path)
   async getProductInventory(@Param() params, @Query() query) {
     const { productId } = parseOrThrow(productIdParamsSchema, params, 'product params');
@@ -95,6 +102,7 @@ class InventoryController {
     return { success: true, data: balances.map(toBalanceResponse) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to inventory use case `adjust`. */
   @Post(INVENTORY_ROUTES.adjust.path)
   @HttpCode(200)
   async adjust(@Body() body) {
@@ -119,6 +127,7 @@ class InventoryController {
     };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to inventory use case `receive`. */
   @Post(INVENTORY_ROUTES.receive.path)
   @HttpCode(200)
   async receive(@Body() body) {
@@ -143,6 +152,10 @@ class InventoryController {
     };
   }
 
+/**
+   * POST reserve — increases reserved quantity when salable stock exists at the location.
+   * Records movement/reservation rows; tenant and product must belong together.
+   */
   @Post(INVENTORY_ROUTES.reserve.path)
   @HttpCode(200)
   async reserve(@Body() body) {
@@ -170,6 +183,9 @@ class InventoryController {
     };
   }
 
+/**
+   * POST release — reverses a prior reservation (by reference or explicit keys) within the tenant.
+   */
   @Post(INVENTORY_ROUTES.release.path)
   @HttpCode(200)
   async release(@Body() body) {

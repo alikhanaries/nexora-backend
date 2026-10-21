@@ -21,18 +21,21 @@ async function withProductQueryable(deps, tenantId, tx, work) {
  */
 export function createDefaultProductQueryService(deps) {
     return {
+/** Repository operation on product data (tenant-isolated SQL). */
         async getProductById(tenantId, productId, tx) {
             return withProductQueryable(deps, tenantId, tx, async (queryable) => {
                 const product = await deps.products.findById(queryable, tenantId, productId);
                 return product === null ? null : toProductDto(product);
             });
         },
+/** Repository operation on product data (tenant-isolated SQL). */
         async getProductBySku(tenantId, merchantSku, tx) {
             return withProductQueryable(deps, tenantId, tx, async (queryable) => {
                 const product = await deps.products.findBySku(queryable, tenantId, merchantSku);
                 return product === null ? null : toProductDto(product);
             });
         },
+/** Repository operation on product data (tenant-isolated SQL). */
         async getProductsByIds(tenantId, productIds, tx) {
             if (productIds.length === 0) {
                 return [];
@@ -42,6 +45,7 @@ export function createDefaultProductQueryService(deps) {
                 return products.map(toProductDto);
             });
         },
+/** Confirms the product id exists under the tenant or throws `NotFoundError`. */
         async verifyProductBelongsToTenant(tenantId, productId, tx) {
             return withProductQueryable(deps, tenantId, tx, async (queryable) => {
                 const product = await deps.products.findById(queryable, tenantId, productId);

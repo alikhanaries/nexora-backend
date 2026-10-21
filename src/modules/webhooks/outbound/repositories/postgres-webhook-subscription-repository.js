@@ -22,6 +22,9 @@ const subscriptionRowSchema = z.object({
 
 const subscriptionSelect = `id, tenant_id, url, description, secret_ciphertext, event_types, status, created_by, created_at, updated_at`;
 
+/**
+ * Maps SQL row to webhook domain entity.
+ */
 function toSubscription(row) {
     return reconstituteWebhookSubscription({
         id: row.id,
@@ -37,8 +40,14 @@ function toSubscription(row) {
     });
 }
 
+/**
+ * Postgres repository factory; all queries scoped by tenant_id where applicable.
+ */
 export function createPostgresWebhookSubscriptionRepository() {
     return {
+        /**
+         * Inserts tenant webhook row; unique constraints enforce idempotent deliveries/subscriptions.
+         */
         async insert(queryable, subscription) {
         await queryable.query(`INSERT INTO webhook_subscriptions
          (id, tenant_id, url, description, secret_ciphertext, event_types, status, created_by, created_at, updated_at)
@@ -55,6 +64,7 @@ export function createPostgresWebhookSubscriptionRepository() {
             subscription.updatedAt,
         ], { operation: 'webhooks.subscriptions.insert' });
         },
+        /**
         async findById(queryable, tenantId, subscriptionId) {
         const result = await queryable.query(`SELECT ${subscriptionSelect}
        FROM webhook_subscriptions
@@ -64,6 +74,7 @@ export function createPostgresWebhookSubscriptionRepository() {
             return null;
         return toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row'));
         },
+        /**
         async list(queryable, tenantId, input = {}) {
         const params = [tenantId];
         let sql = `SELECT ${subscriptionSelect}
@@ -77,6 +88,9 @@ export function createPostgresWebhookSubscriptionRepository() {
         const result = await queryable.query(sql, params, { operation: 'webhooks.subscriptions.list' });
         return result.rows.map((row) => toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row')));
         },
+        /**
+         * Offset page of orders using buildListConditions filters.
+         */
         async listPage(queryable, tenantId, filter, limit, cursorCreatedAt, cursorId) {
         const conditions = ['tenant_id = $1'];
         const params = [tenantId];
@@ -97,6 +111,9 @@ export function createPostgresWebhookSubscriptionRepository() {
        LIMIT ${limitParam}`, params, { operation: 'webhooks.subscriptions.list_page' });
         return result.rows.map((row) => toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row')));
         },
+        /**
+         * Subscriptions eligible for outbound dispatch fan-out on a given event type.
+         */
         async listActiveForEventType(queryable, tenantId, eventType) {
         const result = await queryable.query(`SELECT ${subscriptionSelect}
        FROM webhook_subscriptions
@@ -106,6 +123,7 @@ export function createPostgresWebhookSubscriptionRepository() {
        ORDER BY created_at ASC, id ASC`, [tenantId, WebhookSubscriptionStatus.ACTIVE, eventType], { operation: 'webhooks.subscriptions.list_active_for_event_type' });
         return result.rows.map((row) => toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row')));
         },
+        /**
         async update(queryable, subscription) {
         await queryable.query(`UPDATE webhook_subscriptions
        SET url = $3,
@@ -123,6 +141,9 @@ export function createPostgresWebhookSubscriptionRepository() {
             subscription.updatedAt,
         ], { operation: 'webhooks.subscriptions.update' });
         },
+        /**
+         * Rotates HMAC signing secret for subscriber endpoint verification.
+         */
         async updateSecret(queryable, subscription) {
         await queryable.query(`UPDATE webhook_subscriptions
        SET secret_ciphertext = $3,

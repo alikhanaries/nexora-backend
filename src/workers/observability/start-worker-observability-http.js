@@ -1,3 +1,8 @@
+/**
+ * Starts the worker-only HTTP server for liveness, readiness, and metrics.
+ *
+ * Disabled when worker observability HTTP is off in configuration.
+ */
 import { ConfigurationError } from '../../shared/errors/index.js';
 import { createWorkerObservabilityHttpServer } from './create-worker-observability-http-server.js';
 

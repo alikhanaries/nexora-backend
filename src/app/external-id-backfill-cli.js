@@ -1,3 +1,6 @@
+/**
+ * One-off CLI to backfill external integer ID mappings for compatibility APIs.
+ */
 import { loadConfigFromEnvironment } from './config/index.js';
 import { createInfrastructure } from './create-infrastructure.js';
 import { createExternalIdMappingModule } from '../modules/external-id-mapping/index.js';
@@ -26,6 +29,7 @@ function parseOptions(argv) {
     return options;
 }
 
+/** Loads config/infra, runs external integer ID backfill (optional tenant filter), then closes connections. */
 async function main() {
     const options = parseOptions(process.argv);
     const config = loadConfigFromEnvironment();

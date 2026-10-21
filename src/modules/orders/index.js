@@ -1,3 +1,7 @@
+/**
+ * Orders domain: manual and integration order creation, confirmation, queries, and command/query services.
+ * Re-exports marketplace order ingestion factory from `./marketplace-ingestion`.
+ */
 import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import { createAcknowledgeOrder } from './services/acknowledge-order.js';
 import { createConfirmOrder } from './services/confirm-order.js';
@@ -11,6 +15,20 @@ import { createOrderFulfillmentService } from './services/order-fulfillment-serv
 import { createOrderQueryService } from './services/order-query-service.js';
 import { createOrderReturnGateway } from './services/order-return-gateway.js';
 import { createPostgresOrderRepository } from './repositories/index.js';
+/**
+ * @param {object} deps
+ * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @param {import('../../shared/events/event-recorder.port.js').EventRecorderPort} deps.eventRecorder
+ * @param {import('../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
+ * @param {import('../products/public/index.js').DefaultProductQueryService} deps.productQueryService
+ * @param {import('../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
+ * @param {import('../offers/public/index.js').DefaultOfferQueryService} deps.offerQueryService
+ * @param {import('../pricing/public/index.js').DefaultPricingService} deps.pricingService
+ * @param {import('../inventory/public/index.js').DefaultInventoryService} deps.inventoryService
+ * @param {import('../external-id-mapping/public/index.js').ExternalIntegerIdMappingCommandService} deps.externalIntegerIdMappingCommandService
+ * @param {import('../audit/public/index.js').AuditRecorder} [deps.auditRecorder]
+ * @returns {{ orderCommandService: object, orderFulfillmentService: object, orderQueryService: object, orderReturnGateway: object, createOrder: Function, createIntegrationOrder: Function, wireChannelFulfilledOrder: Function, useCases: object }}
+ */
 export function createOrdersModule(deps) {
     const authorization = createDefaultAuthorizationService();
     const orders = createPostgresOrderRepository();
@@ -53,6 +71,9 @@ export function createOrdersModule(deps) {
     const orderCommandService = createOrderCommandService({
         createOrder,
         createIntegrationOrder,
+        /**
+         * Factory wiring for channel-fulfilled order ingest (permissions, idempotency on external ref, events).
+         */
         get createIntegrationFulfilledOrder() {
             return createIntegrationFulfilledOrder;
         },

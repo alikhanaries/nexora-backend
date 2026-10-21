@@ -1,8 +1,18 @@
+/**
+ * API process entrypoint (`npm start` / `npm run dev`).
+ *
+ * Boot order: env config → shared infrastructure (DB/Redis/queue) →
+ * domain composition (`createApplication`) → outbox publisher + pool metrics →
+ * Nest HTTP listen. SIGTERM/SIGINT drain via `gracefulShutdown`.
+ * The worker process has a separate entry at `src/workers/main.js`.
+ */
 import { loadConfigFromEnvironment } from './config/index.js';
 import { createApplication } from './create-application.js';
 import { createInfrastructure } from './create-infrastructure.js';
 import { gracefulShutdown } from './shutdown.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
+
+/** API boot: infrastructure, application graph, outbox, HTTP listen, and signal-driven graceful shutdown. */
 async function main() {
     const config = loadConfigFromEnvironment();
     const infra = await createInfrastructure(config);
@@ -20,6 +30,7 @@ async function main() {
         'Wasl API (NestJS + Express) listening',
     );
     let shuttingDown = false;
+    /** Idempotent handler for SIGTERM/SIGINT that drains dependencies via {@link gracefulShutdown}. */
     const shutdown = async (signal) => {
         if (shuttingDown)
             return;

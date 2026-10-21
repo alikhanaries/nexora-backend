@@ -11,8 +11,10 @@ import { requireReturnsUpdate } from './return-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createAcknowledgeReturn(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requireReturnsUpdate(deps.authorization, input.actorPermissions);
+/** Transactional unit of work executed inside idempotency/database `execute`. */
         const work = async (tx) => {
             const existing = await deps.returns.lockForUpdate(tx, input.tenantId, input.returnId);
             if (existing === null) {

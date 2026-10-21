@@ -1,3 +1,4 @@
+/** Runs async work and records commerce success/failure metrics when `metrics` is set. */
 export async function withCommerceMetric(metrics, operation, work) {
     if (metrics === undefined) {
         return work();
@@ -12,6 +13,7 @@ export async function withCommerceMetric(metrics, operation, work) {
         throw error;
     }
 }
+/** Fire-and-forget commerce metric when metrics recorder is optional. */
 export function recordCommerceOutcome(metrics, operation, outcome) {
     metrics?.recordCommerceOperation({ operation, outcome });
 }

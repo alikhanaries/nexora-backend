@@ -1,15 +1,26 @@
+/**
+ * Gate for `/api/v2/stock-connect/*` when integration is enabled in config.
+ * Validates feature flag and optional `X-Tenant-Id` against request context; non-integration paths pass through.
+ */
 import { Inject, Injectable } from '@nestjs/common';
 import { AuthorizationError, NotFoundError } from '../../../../../shared/errors/index.js';
 import { getRequestContext } from '../../../../../shared/context/request-context.js';
 import { isStockConnectIntegrationPath } from '../../../../../shared/auth/stock-connect-integration-route-prefix.js';
 import { WASL_CONFIG } from '../../../../../app/config/wasl-config.module.js';
 
+/** Applied on all StockConnect Nest controllers via `@UseGuards`. */
 @Injectable()
 class StockConnectIntegrationGuard {
+  /** @param {{ stockConnect: { integrationEnabled: boolean } }} config */
   constructor(@Inject(WASL_CONFIG) config) {
     this.config = config;
   }
 
+  /**
+   * Allows non–Stock Connect routes; on Stock Connect paths enforces integration flag and optional `X-Tenant-Id`.
+   * @param {import('@nestjs/common').ExecutionContext} context
+   * @returns {boolean}
+   */
   canActivate(context) {
     const request = context.switchToHttp().getRequest();
     const path = request.route?.path ?? request.path ?? request.url.split('?')[0] ?? request.url;

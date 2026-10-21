@@ -22,6 +22,7 @@ const offerRowSchema = z.object({
     updated_at: z.date(),
 });
 
+/** Maps a validated SQL row into a domain offer entity. */
 function toOffer(row) {
     return reconstituteOffer({
         id: row.id,
@@ -40,8 +41,10 @@ function toOffer(row) {
 const offerSelectColumns = `id, tenant_id, product_id, channel_id, status, external_reference,
   price_reference, listing_status, created_at, updated_at`;
 
+/** Postgres persistence factory; every query is scoped by `tenant_id`. */
 export function createPostgresOfferRepository() {
     return {
+/** Loads one offer by id within the tenant; returns null when missing. */
         async findById(queryable, tenantId, offerId) {
             const result = await queryable.query(`SELECT ${offerSelectColumns}
        FROM offers
@@ -51,6 +54,7 @@ export function createPostgresOfferRepository() {
                 return null;
             return toOffer(parseOrThrow(offerRowSchema, row, 'offers row'));
         },
+/** Repository operation on offer data (tenant-isolated SQL). */
         async findByProductAndChannel(queryable, tenantId, productId, channelId) {
             const result = await queryable.query(`SELECT ${offerSelectColumns}
        FROM offers
@@ -60,6 +64,7 @@ export function createPostgresOfferRepository() {
                 return null;
             return toOffer(parseOrThrow(offerRowSchema, row, 'offers row'));
         },
+/** Resolves a offer by tenant-scoped external reference for idempotent ingestion. */
         async findByExternalReference(queryable, tenantId, channelId, externalReference) {
             const result = await queryable.query(`SELECT ${offerSelectColumns}
        FROM offers
@@ -71,6 +76,7 @@ export function createPostgresOfferRepository() {
                 return null;
             return toOffer(parseOrThrow(offerRowSchema, row, 'offers row'));
         },
+/** Lists child rows for a offer within the tenant. */
         async listByChannel(queryable, tenantId, channelId, filters = {}) {
             const conditions = ['tenant_id = $1', 'channel_id = $2'];
             const parameters = [tenantId, channelId];
@@ -84,6 +90,7 @@ export function createPostgresOfferRepository() {
        ORDER BY created_at DESC`, parameters, { operation: 'offers.list_by_channel' });
             return result.rows.map((row) => toOffer(parseOrThrow(offerRowSchema, row, 'offers row')));
         },
+/** Lists child rows for a offer within the tenant. */
         async listByProduct(queryable, tenantId, productId, filters = {}) {
             const conditions = ['tenant_id = $1', 'product_id = $2'];
             const parameters = [tenantId, productId];
@@ -101,6 +108,7 @@ export function createPostgresOfferRepository() {
        ORDER BY created_at DESC`, parameters, { operation: 'offers.list_by_product' });
             return result.rows.map((row) => toOffer(parseOrThrow(offerRowSchema, row, 'offers row')));
         },
+/** Keyset (cursor) page of offers ordered by created time within the tenant. */
         async listPage(queryable, tenantId, filters, limit, cursorCreatedAt, cursorId) {
             const conditions = ['tenant_id = $1'];
             const parameters = [tenantId];
@@ -130,6 +138,7 @@ export function createPostgresOfferRepository() {
                 items: result.rows.map((row) => toOffer(parseOrThrow(offerRowSchema, row, 'offers row'))),
             };
         },
+/** Persists a new offer row (and related lines when applicable) in the current transaction. */
         async insert(transaction, offer) {
             await transaction.query(`INSERT INTO offers (
          id, tenant_id, product_id, channel_id, status, external_reference,
@@ -147,6 +156,7 @@ export function createPostgresOfferRepository() {
                 offer.updatedAt,
             ], { operation: 'offers.insert' });
         },
+/** Updates mutable offer columns; `tenant_id` and id constrain the row. */
         async update(transaction, offer) {
             await transaction.query(`UPDATE offers
        SET status = $3,

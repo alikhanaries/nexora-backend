@@ -1,3 +1,9 @@
+/**
+ * Node fetch-based outbound HTTP client for integrations and webhook delivery.
+ *
+ * Propagates request correlation, redacts sensitive fields in logs, and retries
+ * GET/HEAD once on timeout (see inline note on PUT/DELETE).
+ */
 import { getRequestContext } from '../../shared/context/request-context.js';
 import { REQUEST_ID_HEADER } from '../../shared/context/request-id.js';
 import { ExternalServiceError, ExternalServiceTimeoutError } from '../../shared/errors/index.js';
@@ -135,6 +141,7 @@ export class FetchHttpClient {
     }
 }
 
+/** Reads response text; parses JSON when content-type indicates JSON. */
 async function parseBody(response) {
     const contentType = response.headers.get('content-type') ?? '';
     const text = await response.text();
@@ -150,6 +157,7 @@ async function parseBody(response) {
     }
     return text;
 }
+/** Copies Fetch `Headers` into a plain lower-case-key record. */
 function headersToRecord(headers) {
     const result = {};
     headers.forEach((value, key) => {
@@ -157,6 +165,7 @@ function headersToRecord(headers) {
     });
     return result;
 }
+/** JSON-stringifies objects when appropriate; passes through strings and primitives. */
 function serializeRequestBody(body, headers) {
     if (body === undefined)
         return undefined;
@@ -171,6 +180,7 @@ function serializeRequestBody(body, headers) {
     }
     return undefined;
 }
+/** Generates a 16-char hex span id for outbound HTTP tracing headers. */
 function randomSpanId() {
     return Math.random().toString(16).slice(2, 18).padEnd(16, '0');
 }

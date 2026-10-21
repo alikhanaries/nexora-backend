@@ -9,6 +9,7 @@ import { productStatusChangedEvent } from './product-events.js';
  * @returns {{ execute: Function }}
  */
 export function createDeactivateProduct(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         deps.authorization.requirePermission(input.actorPermissions, 'products.update');
         const now = new Date();

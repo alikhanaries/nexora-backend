@@ -30,6 +30,9 @@ export class ShopifyOrderAdapter extends BaseMarketplaceOrderAdapter {
         });
     }
 
+    /**
+     * Order pull/ack capabilities exposed to marketplace order ingestion.
+     */
     getOrderCapabilities() {
         return {
             supportsOrdersInbound: true,
@@ -38,6 +41,9 @@ export class ShopifyOrderAdapter extends BaseMarketplaceOrderAdapter {
         };
     }
 
+    /**
+     * Inbound lifecycle command types supported for webhook/queue processing.
+     */
     getOrderLifecycleCapabilities() {
         return {
             supportsOrderUpdate: false,

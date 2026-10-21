@@ -1,14 +1,23 @@
+/**
+ * S3-compatible object storage adapter.
+ *
+ * Supports AWS S3 and path-style endpoints (e.g. MinIO) for product assets and
+ * other blob persistence behind the storage port.
+ */
 import { CreateBucketCommand, DeleteObjectCommand, GetObjectCommand, HeadBucketCommand, HeadObjectCommand, PutObjectCommand, S3Client, } from '@aws-sdk/client-s3';
 import { Readable } from 'node:stream';
 import { NotFoundError, ServiceUnavailableError, toErrorMessage, } from '../../shared/errors/index.js';
+/** Type guard for Node readable streams from GetObject body. */
 function isReadable(value) {
     return value instanceof Readable;
 }
+/** Infrastructure implementation of the storage provider port. */
 export class S3StorageProvider {
     config;
     client;
     logger;
     bucketEnsured = false;
+    /** Configures AWS SDK client for S3 or path-style compatible endpoints. */
     constructor(config, logger) {
         this.config = config;
         this.logger = logger.child({ component: 'storage' });
@@ -26,6 +35,7 @@ export class S3StorageProvider {
             },
         });
     }
+    /** Uploads object bytes/metadata; returns stored object descriptor. */
     async put(input) {
         await this.ensureBucket();
         try {
@@ -53,6 +63,7 @@ export class S3StorageProvider {
             });
         }
     }
+    /** Streams object body; throws {@link NotFoundError} when key is missing. */
     async get(key) {
         await this.ensureBucket();
         try {
@@ -79,6 +90,7 @@ export class S3StorageProvider {
             });
         }
     }
+    /** Deletes object by key. */
     async delete(key) {
         await this.ensureBucket();
         try {
@@ -90,10 +102,12 @@ export class S3StorageProvider {
             });
         }
     }
+    /** True when {@link head} returns metadata. */
     async exists(key) {
         const head = await this.head(key);
         return head !== undefined;
     }
+    /** HEAD object metadata without downloading body; undefined when not found. */
     async head(key) {
         await this.ensureBucket();
         try {
@@ -115,10 +129,12 @@ export class S3StorageProvider {
             });
         }
     }
+    /** Verifies bucket exists (creates if needed) via HeadBucket. */
     async healthCheck() {
         await this.ensureBucket();
         await this.client.send(new HeadBucketCommand({ Bucket: this.config.bucket }));
     }
+    /** One-time HeadBucket or CreateBucket for dev/local endpoints. */
     async ensureBucket() {
         if (this.bucketEnsured)
             return;
@@ -139,6 +155,7 @@ export class S3StorageProvider {
         this.bucketEnsured = true;
     }
 }
+/** True for S3 SDK not-found error names. */
 function isNotFound(error) {
     if (typeof error !== 'object' || error === null)
         return false;

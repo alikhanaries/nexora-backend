@@ -9,6 +9,9 @@ import { parseAmazonSnsEnvelope } from './parse-amazon-sns-envelope.js';
 export class AmazonWebhookAdapter {
     marketplaceKey = AMAZON_MARKETPLACE_KEY;
 
+    /**
+     * Webhook verification and normalized event kinds supported at ingress.
+     */
     getWebhookCapabilities() {
         return { supportsInboundWebhooks: true };
     }

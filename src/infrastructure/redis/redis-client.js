@@ -1,6 +1,13 @@
+/**
+ * Shared Redis connection for cache, rate limiting, and distributed locks.
+ *
+ * Uses fail-fast settings (no offline command queue) distinct from the BullMQ
+ * connection, which requires blocking reads.
+ */
 import { performance } from 'node:perf_hooks';
 import { Redis } from 'ioredis';
 import { ServiceUnavailableError, toErrorMessage } from '../../shared/errors/index.js';
+/** ioredis client options: fail-fast, bounded retries, lazy connect. */
 function buildOptions(config, logger) {
     return {
         connectTimeout: config.connectTimeoutMs,
@@ -17,11 +24,13 @@ function buildOptions(config, logger) {
         },
     };
 }
+/** Lifecycle-managed ioredis client with metrics and normalized errors. */
 export class RedisConnection {
     client;
     logger;
     metrics;
     closed = false;
+    /** Creates lazy ioredis client with error/ready logging. */
     constructor({ config, logger, metrics }) {
         this.logger = logger.child({ component: 'redis' });
         this.metrics = metrics;
@@ -35,6 +44,7 @@ export class RedisConnection {
             this.logger.info({}, 'Redis connection ready');
         });
     }
+    /** Establishes Redis connection; maps failures to {@link ServiceUnavailableError}. */
     async connect() {
         try {
             await this.client.connect();
@@ -45,6 +55,7 @@ export class RedisConnection {
             });
         }
     }
+    /** PING for readiness probes. */
     async healthCheck() {
         await this.run('ping', () => this.client.ping());
     }
@@ -76,6 +87,7 @@ export class RedisConnection {
             });
         }
     }
+    /** QUIT (or disconnect on failure) and mark connection closed. */
     async close() {
         if (this.closed)
             return;

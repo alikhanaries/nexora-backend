@@ -1,3 +1,6 @@
+/**
+ * Use case: attach a tenant role to a membership (RBAC assignment command).
+ */
 import { ConflictError, NotFoundError, ValidationError } from '../../../shared/errors/index.js';
 import { requireAuthorizationDeps } from './require-deps.js';
 

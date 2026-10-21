@@ -1,3 +1,4 @@
+/** Copies optional referenceType/referenceId fields onto inventory mutation inputs when present. */
 export function optionalReferenceFields(input) {
     return {
         ...(input.referenceType === undefined ? {} : { referenceType: input.referenceType }),

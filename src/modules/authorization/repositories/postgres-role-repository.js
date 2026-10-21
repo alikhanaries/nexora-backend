@@ -18,6 +18,7 @@ const permissionRowSchema = z.object({
     description: z.string(),
     created_at: z.coerce.date(),
 });
+/** Maps a roles table row into the domain role shape. */
 function mapRole(row) {
     return {
         id: row.id,
@@ -31,6 +32,7 @@ function mapRole(row) {
         updatedAt: row.updated_at,
     };
 }
+/** Maps a permissions table row for role permission listings. */
 function mapPermission(row) {
     return {
         id: row.id,
@@ -40,10 +42,11 @@ function mapPermission(row) {
     };
 }
 /**
- * Postgres persistence (function-based repository).
- * @returns {object}
+ * Postgres role persistence (function-based repository).
+ * @returns {object} Role CRUD helpers bound to a transaction handle.
  */
 export function createPostgresRoleRepository() {
+    /** Inserts a role and replaces its permission set from `record.permissionKeys`. */
     async function create(record, tx) {
         const insertResult = await tx.query(`INSERT INTO roles (tenant_id, name, system_key, is_system, status)
        VALUES ($1, $2, $3, $4, 'ACTIVE')
@@ -52,6 +55,7 @@ export function createPostgresRoleRepository() {
         await setRolePermissions(role.id, record.permissionKeys, tx);
         return { ...role, permissionKeys: [...record.permissionKeys].sort() };
     }
+    /** Loads role metadata by id, or null when absent. */
     async function findById(roleId, tx) {
         const result = await tx.query(`SELECT id, tenant_id, name, system_key, status, is_system, cloned_from_role_id, created_at, updated_at
        FROM roles
@@ -61,6 +65,7 @@ export function createPostgresRoleRepository() {
         }
         return mapRole(parseOrThrow(roleRowSchema, result.rows[0], 'role row'));
     }
+    /** Case-insensitive role name lookup within a tenant. */
     async function findByTenantAndName(tenantId, name, tx) {
         const result = await tx.query(`SELECT id, tenant_id, name, system_key, status, is_system, cloned_from_role_id, created_at, updated_at
        FROM roles
@@ -70,6 +75,7 @@ export function createPostgresRoleRepository() {
         }
         return mapRole(parseOrThrow(roleRowSchema, result.rows[0], 'role row'));
     }
+    /** Finds a seeded system role by stable `system_key` within a tenant. */
     async function findSystemRoleByKey(tenantId, systemKey, tx) {
         const result = await tx.query(`SELECT id, tenant_id, name, system_key, status, is_system, cloned_from_role_id, created_at, updated_at
        FROM roles
@@ -79,6 +85,7 @@ export function createPostgresRoleRepository() {
         }
         return mapRole(parseOrThrow(roleRowSchema, result.rows[0], 'role row'));
     }
+    /** Lists all roles for a tenant ordered by name. */
     async function listByTenant(tenantId, tx) {
         const result = await tx.query(`SELECT id, tenant_id, name, system_key, status, is_system, cloned_from_role_id, created_at, updated_at
        FROM roles
@@ -86,6 +93,7 @@ export function createPostgresRoleRepository() {
        ORDER BY name ASC`, [tenantId], { operation: 'authorization.roles.list_by_tenant' });
         return result.rows.map((row) => mapRole(parseOrThrow(roleRowSchema, row, 'role row')));
     }
+    /** Lists permission catalog rows granted to a role. */
     async function listPermissionsForRole(roleId, tx) {
         const result = await tx.query(`SELECT p.id, p.key, p.description, p.created_at
        FROM role_permissions rp
@@ -94,6 +102,7 @@ export function createPostgresRoleRepository() {
        ORDER BY p.key ASC`, [roleId], { operation: 'authorization.roles.list_permissions' });
         return result.rows.map((row) => mapPermission(parseOrThrow(permissionRowSchema, row, 'permission row')));
     }
+    /** Returns whether the role currently grants a single permission key. */
     async function roleGrantsPermission(roleId, permissionKey, tx) {
         const result = await tx.query(`SELECT 1
        FROM role_permissions rp
@@ -102,6 +111,10 @@ export function createPostgresRoleRepository() {
        LIMIT 1`, [roleId, permissionKey], { operation: 'authorization.roles.grants_permission' });
         return result.rowCount > 0;
     }
+    /**
+     * Replaces `role_permissions` for a role.
+     * Validates every key exists in the permissions catalog before clearing and inserting.
+     */
     async function setRolePermissions(roleId, permissionKeys, tx) {
         const permissionResult = await tx.query(`SELECT id, key
        FROM permissions

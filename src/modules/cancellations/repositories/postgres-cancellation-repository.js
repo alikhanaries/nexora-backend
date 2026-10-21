@@ -29,6 +29,7 @@ const cancellationLineRowSchema = z.object({
 const cancellationSelect = `id, tenant_id, order_id, external_reference, status, reason, created_at, updated_at, completed_at`;
 const cancellationSelectAliased = `c.id, c.tenant_id, c.order_id, c.external_reference, c.status, c.reason, c.created_at, c.updated_at, c.completed_at`;
 const cancellationLineSelect = `id, tenant_id, cancellation_id, order_line_id, quantity, created_at`;
+/** Maps a validated SQL row into a domain cancellation entity. */
 function toCancellation(row) {
     return reconstituteCancellation({
         id: row.id,
@@ -42,6 +43,7 @@ function toCancellation(row) {
         completedAt: row.completed_at,
     });
 }
+/** Maps a validated SQL row into a domain cancellation entity. */
 function toCancellationLine(row) {
     return reconstituteCancellationLine({
         id: row.id,
@@ -52,6 +54,7 @@ function toCancellationLine(row) {
         createdAt: row.created_at,
     });
 }
+/** Builds tenant-scoped SQL WHERE fragments and optional order joins for list/count queries. */
 function buildListConditions(tenantId, filters) {
         const conditions = ['c.tenant_id = $1'];
         const params = [tenantId];
@@ -127,8 +130,10 @@ function buildListConditions(tenantId, filters) {
     }
 
 
+/** Postgres persistence factory; every query is scoped by `tenant_id`. */
 export function createPostgresCancellationRepository() {
     return {
+/** Loads one cancellation by id within the tenant; returns null when missing. */
         async findById(queryable, tenantId, cancellationId) {
         const result = await queryable.query(`SELECT ${cancellationSelect}
        FROM cancellations
@@ -138,6 +143,7 @@ export function createPostgresCancellationRepository() {
             return null;
         return toCancellation(parseOrThrow(cancellationRowSchema, row, 'cancellations row'));
         },
+/** Resolves a cancellation by tenant-scoped external reference for idempotent ingestion. */
         async findByExternalReference(queryable, tenantId, externalReference) {
         const result = await queryable.query(`SELECT ${cancellationSelect}
        FROM cancellations
@@ -147,6 +153,7 @@ export function createPostgresCancellationRepository() {
             return null;
         return toCancellation(parseOrThrow(cancellationRowSchema, row, 'cancellations row'));
         },
+/** `SELECT … FOR UPDATE` row lock on the cancellation (and tenant) inside a transaction. */
         async lockByExternalReferenceForUpdate(transaction, tenantId, externalReference) {
         const result = await transaction.query(`SELECT ${cancellationSelect}
        FROM cancellations
@@ -157,6 +164,7 @@ export function createPostgresCancellationRepository() {
             return null;
         return toCancellation(parseOrThrow(cancellationRowSchema, row, 'cancellations row'));
         },
+/** Lists child rows for a cancellation within the tenant. */
         async listLines(queryable, tenantId, cancellationId) {
         const result = await queryable.query(`SELECT ${cancellationLineSelect}
        FROM cancellation_lines
@@ -164,6 +172,7 @@ export function createPostgresCancellationRepository() {
        ORDER BY created_at`, [tenantId, cancellationId], { operation: 'cancellation_lines.list' });
         return result.rows.map((row) => toCancellationLine(parseOrThrow(cancellationLineRowSchema, row, 'cancellation_lines row')));
         },
+/** Counts cancellations matching filters for offset pagination totals. */
         async count(queryable, tenantId, filters) {
         const { conditions, params, joinClause } = buildListConditions(tenantId, filters);
         const result = await queryable.query(`SELECT COUNT(*)::int AS total
@@ -173,6 +182,7 @@ export function createPostgresCancellationRepository() {
         const row = result.rows[0];
         return Number(row?.total ?? 0);
         },
+/** Offset page of cancellations with sort direction; uses shared list filter builder. */
         async listPageOffset(queryable, tenantId, filters, page, pageSize, sortDirection = 'asc') {
         const { conditions, params, nextParamIndex, joinClause } = buildListConditions(tenantId, filters);
         const offset = (page - 1) * pageSize;
@@ -188,6 +198,7 @@ export function createPostgresCancellationRepository() {
        LIMIT $${limitParam} OFFSET $${offsetParam}`, listParams, { operation: 'cancellations.list_page_offset' });
         return result.rows.map((row) => toCancellation(parseOrThrow(cancellationRowSchema, row, 'cancellations row')));
         },
+/** Keyset (cursor) page of cancellations ordered by created time within the tenant. */
         async listPage(queryable, tenantId, filters, limit, cursorCreatedAt, cursorId) {
         const conditions = ['tenant_id = $1'];
         const parameters = [tenantId];
@@ -213,6 +224,7 @@ export function createPostgresCancellationRepository() {
             items: result.rows.map((row) => toCancellation(parseOrThrow(cancellationRowSchema, row, 'cancellations row'))),
         };
         },
+/** Persists a new cancellation row (and related lines when applicable) in the current transaction. */
         async insertCancellation(transaction, cancellation) {
         const props = cancellation;
         await transaction.query(`INSERT INTO cancellations (
@@ -229,12 +241,14 @@ export function createPostgresCancellationRepository() {
             props.completedAt,
         ], { operation: 'cancellations.insert' });
         },
+/** Updates mutable cancellation columns; `tenant_id` and id constrain the row. */
         async updateCancellation(transaction, cancellation) {
         const props = cancellation;
         await transaction.query(`UPDATE cancellations
        SET status = $3, reason = $4, updated_at = $5, completed_at = $6
        WHERE tenant_id = $1 AND id = $2`, [props.tenantId, props.id, props.status, props.reason, props.updatedAt, props.completedAt], { operation: 'cancellations.update' });
         },
+/** Persists a new cancellation row (and related lines when applicable) in the current transaction. */
         async insertCancellationLine(transaction, line) {
         const props = line;
         await transaction.query(`INSERT INTO cancellation_lines (

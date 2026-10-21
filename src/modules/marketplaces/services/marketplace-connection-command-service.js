@@ -52,6 +52,9 @@ export class MarketplaceConnectionCommandService {
 
 
 
+    /**
+     * Creates or replaces tenant marketplace connection secrets/settings; validates marketplace active.
+     */
     async upsertMarketplaceConnection(input) {
 
         this.deps.authorization.requirePermission(input.actorPermissions, 'channels.update');
@@ -142,6 +145,9 @@ export class MarketplaceConnectionCommandService {
 
 
 
+    /**
+     * Partial update of connection config; may test adapter auth when requested.
+     */
     async patchMarketplaceConnection(input) {
 
         this.deps.authorization.requirePermission(input.actorPermissions, 'channels.update');
@@ -224,6 +230,9 @@ export class MarketplaceConnectionCommandService {
 
 
 
+    /**
+     * Removes tenant credentials for a channel marketplace link.
+     */
     async deleteMarketplaceConnection(input) {
 
         this.deps.authorization.requirePermission(input.actorPermissions, 'channels.update');
@@ -262,6 +271,9 @@ export class MarketplaceConnectionCommandService {
 
 
 
+    /**
+     * Probe adapter auth (no catalog mutation); surfaces adapter configuration errors.
+     */
     async testMarketplaceConnection(input) {
 
         this.deps.authorization.requirePermission(input.actorPermissions, 'channels.update');

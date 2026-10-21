@@ -17,6 +17,9 @@ export class NamshiOutboundOrderLifecycleAdapter extends BaseMarketplaceOrderAda
         });
     }
 
+    /**
+     * Outbound lifecycle operations (acknowledge, ship, cancel, etc.) for this marketplace.
+     */
     getLifecycleCapabilities() {
         return {
             supportsOutboundCancellation: false,

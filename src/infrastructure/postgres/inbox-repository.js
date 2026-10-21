@@ -12,6 +12,7 @@ import { clampBatchSize } from '../../shared/pagination/index.js';
  */
 export class PostgresInboxRepository {
     database;
+    /** @param {import('./postgres-database.js').PostgresDatabase} database */
     constructor(database) {
         this.database = database;
     }
@@ -34,11 +35,13 @@ export class PostgresInboxRepository {
         // 'processed', so this delivery is a duplicate.
         return result.rowCount > 0;
     }
+    /** Sets inbox row to processed with timestamp after successful handler run. */
     async markProcessed(transaction, consumerName, eventId) {
         await transaction.query(`UPDATE inbox_messages
        SET status = 'processed', processed_at = now(), last_error = NULL
        WHERE consumer_name = $1 AND event_id = $2`, [consumerName, eventId], { operation: 'inbox.mark_processed' });
     }
+    /** Records failure status and truncated error message for retry eligibility. */
     async markFailed(transaction, consumerName, eventId, error) {
         await transaction.query(`UPDATE inbox_messages
        SET status = 'failed', last_error = left($3, 1000)

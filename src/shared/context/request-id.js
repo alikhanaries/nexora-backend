@@ -6,9 +6,11 @@ export const REQUEST_ID_HEADER = 'x-request-id';
  * forge another request's identity or blow up log size.
  */
 const SAFE_REQUEST_ID = /^[A-Za-z0-9_-]{8,128}$/;
+/** Creates a new UUID request id. */
 export function generateRequestId() {
     return randomUUID();
 }
+/** True when the value matches the safe request-id character/length rules. */
 export function isValidRequestId(value) {
     return SAFE_REQUEST_ID.test(value);
 }

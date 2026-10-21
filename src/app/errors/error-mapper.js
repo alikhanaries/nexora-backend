@@ -1,7 +1,11 @@
+/**
+ * HTTP-layer error normalisation for {@link GlobalExceptionFilter}.
+ */
 import { ZodError } from 'zod';
 import { AppError, InternalError, MalformedRequestError, RateLimitError, ValidationError, } from '../../shared/errors/index.js';
 import { toFieldIssues } from '../../shared/validation/index.js';
 import { toErrorEnvelope } from './error-envelope.js';
+/** Returns status code, JSON body, and optional headers (e.g. rate-limit `retry-after`). */
 export function mapErrorToHttp(error, requestId) {
     const appError = normaliseError(error);
     const body = toErrorEnvelope(appError, requestId);
@@ -17,6 +21,7 @@ export function mapErrorToHttp(error, requestId) {
         ...(headers === undefined ? {} : { headers }),
     };
 }
+/** Coerces unknown throws into {@link AppError} (Zod → validation, SyntaxError → malformed body, else internal). */
 function normaliseError(error) {
     if (AppError.isAppError(error))
         return error;

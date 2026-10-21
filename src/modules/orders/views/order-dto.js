@@ -1,3 +1,6 @@
+/**
+ * Maps domain entity to API/DTO shape (dates ISO-encoded in HTTP mappers).
+ */
 export function toOrderDto(order) {
     return {
         id: order.id,
@@ -20,6 +23,9 @@ export function toOrderDto(order) {
         deliveredAt: order.deliveredAt,
     };
 }
+/**
+ * Maps domain entity to API/DTO shape (dates ISO-encoded in HTTP mappers).
+ */
 export function toOrderLineDto(line) {
     return {
         id: line.id,
@@ -44,6 +50,9 @@ export function toOrderLineDto(line) {
         updatedAt: line.updatedAt,
     };
 }
+/**
+ * Maps domain entity to API/DTO shape (dates ISO-encoded in HTTP mappers).
+ */
 export function toCustomerSnapshotDto(snapshot) {
     return {
         id: snapshot.id,

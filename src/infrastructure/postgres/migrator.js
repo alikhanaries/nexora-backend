@@ -20,10 +20,12 @@ import { DatabaseError } from '../../shared/errors/index.js';
 const MIGRATION_ADVISORY_LOCK_ID = 8147302915n;
 const MIGRATIONS_DIRECTORY = join(dirname(fileURLToPath(import.meta.url)), 'migrations');
 const FILENAME_PATTERN = /^(\d{4})_([a-z0-9_]+)\.sql$/;
+/** SHA-256 of migration SQL with normalized LF line endings. */
 function checksumOf(sql) {
     // Normalise line endings so a Windows checkout and a Linux CI agent agree.
     return createHash('sha256').update(sql.replace(/\r\n/g, '\n')).digest('hex');
 }
+/** Loads sorted `.sql` migrations from disk with version, name, and checksum metadata. */
 export async function loadMigrationFiles(directory = MIGRATIONS_DIRECTORY) {
     const entries = await readdir(directory);
     const sqlFiles = entries.filter((entry) => entry.endsWith('.sql')).sort();
@@ -45,6 +47,7 @@ export async function loadMigrationFiles(directory = MIGRATIONS_DIRECTORY) {
     }
     return migrations;
 }
+/** Creates `schema_migrations` if this database has never been migrated. */
 async function ensureMigrationsTable(client) {
     await client.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -56,6 +59,7 @@ async function ensureMigrationsTable(client) {
     )
   `);
 }
+/** Reads applied migration rows ordered by version. */
 async function readAppliedMigrations(client) {
     const result = await client.query('SELECT version, name, checksum, applied_at FROM schema_migrations ORDER BY version');
     return result.rows.map((row) => ({
@@ -65,6 +69,7 @@ async function readAppliedMigrations(client) {
         appliedAt: row.applied_at,
     }));
 }
+/** Ensures applied migrations still exist on disk with unchanged checksums. */
 function assertChecksumsMatch(applied, available) {
     const byVersion = new Map(available.map((migration) => [migration.version, migration]));
     for (const record of applied) {
@@ -79,6 +84,7 @@ function assertChecksumsMatch(applied, available) {
         }
     }
 }
+/** Serializes migration runs across deploys using a fixed Postgres advisory lock. */
 async function withAdvisoryLock(pool, work) {
     const client = await pool.connect();
     try {
@@ -126,6 +132,7 @@ export async function migrateUp(pool, logger, directory) {
         return { appliedVersions: executed, alreadyUpToDate: false };
     });
 }
+/** Returns applied and pending migrations without executing SQL. */
 export async function migrationStatus(pool, directory) {
     const available = await loadMigrationFiles(directory);
     return withAdvisoryLock(pool, async (client) => {

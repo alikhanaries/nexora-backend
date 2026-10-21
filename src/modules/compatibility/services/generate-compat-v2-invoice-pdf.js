@@ -28,6 +28,11 @@ export function generateCompatV2InvoicePdf(input) {
     return buildMinimalPdf(textLines.join('\n'));
 }
 
+/**
+ * Formats invoice date as DD/MM/YYYY UTC for PDF text; falls back to ISO date when invalid.
+ * @param {Date} date Order/invoice instant.
+ * @returns {string} Display date string embedded in generated PDF.
+ */
 function formatInvoiceDate(date) {
     if (Number.isNaN(date.getTime())) {
         return new Date().toISOString().slice(0, 10);
@@ -69,6 +74,11 @@ function buildMinimalPdf(text) {
     return Buffer.from(`%PDF-1.4\n${body}${xref}${trailer}`, 'utf8');
 }
 
+/**
+ * Escapes parentheses and backslashes for PDF literal string encoding in content stream.
+ * @param {string} value Raw multi-line invoice text.
+ * @returns {string} PDF-safe string contents.
+ */
 function escapePdfString(value) {
     return value
         .replace(/\\/g, '\\\\')

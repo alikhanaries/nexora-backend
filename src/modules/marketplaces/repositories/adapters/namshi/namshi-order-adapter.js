@@ -25,6 +25,9 @@ export class NamshiOrderAdapter extends BaseMarketplaceOrderAdapter {
         });
     }
 
+    /**
+     * Order pull/ack capabilities exposed to marketplace order ingestion.
+     */
     getOrderCapabilities() {
         return {
             supportsOrdersInbound: false,
@@ -33,6 +36,9 @@ export class NamshiOrderAdapter extends BaseMarketplaceOrderAdapter {
         };
     }
 
+    /**
+     * Inbound lifecycle command types supported for webhook/queue processing.
+     */
     getOrderLifecycleCapabilities() {
         return namshiOrderLifecycleCapabilities();
     }

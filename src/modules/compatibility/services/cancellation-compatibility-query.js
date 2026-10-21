@@ -4,11 +4,19 @@ import { mapCancellationPageToExternalCollection, } from './mappers/compatibilit
 
 const DEFAULT_PAGE_SIZE = 50;
 
+/** Read façade for `/api/v2/cancellations/merchant` with order enrichment and external integer IDs. */
 export class CancellationCompatibilityQuery {
     deps;
+    /** @param {object} deps Cancellation query, order query, and external id mapping services. */
     constructor(deps) {
         this.deps = deps;
     }
+    /**
+     * Lists cancellations for a tenant with optional reference and date filters.
+     * Loads related orders and maps cancellation external integer ids for the wire envelope.
+     * @param {object} input Tenant id, permissions, pagination, and filter fields from HTTP layer.
+     * @returns {Promise<object>} External ApiResponse page; read-only, no idempotency side effects.
+     */
     async listMerchantCancellations(input) {
         const pageSize = input.pageSize ?? DEFAULT_PAGE_SIZE;
         const page = input.page ?? 1;

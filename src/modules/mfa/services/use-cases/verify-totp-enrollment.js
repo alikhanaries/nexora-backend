@@ -8,6 +8,7 @@ import { RateLimitError } from '../../../../shared/errors/index.js';
  */
 export function createVerifyTotpEnrollment(deps) {
     return {
+        /** Confirms enrollment code against PENDING factor secret. Authz: `mfa.manage`. Rate-limited. */
         async execute(input) {
             if (!input.actorPermissions.includes('mfa.manage')) {
                 throw new AuthorizationError('Missing required permission: mfa.manage');

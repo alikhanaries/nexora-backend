@@ -1,3 +1,4 @@
+/** Maps an internal offer shape into an API-safe OfferDto object (dates serialized where needed). */
 export function toOfferDto(offer) {
     return {
         id: offer.id,

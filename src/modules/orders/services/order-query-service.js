@@ -1,3 +1,6 @@
+/**
+ * Read-side order API: list/get with permission checks and DTO mapping.
+ */
 import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
 import { toCustomerSnapshotDto, toOrderDto, toOrderLineDto } from '../views/order-dto.js';
 import { requireOrdersRead } from './order-permissions.js';
@@ -6,6 +9,9 @@ import { withOrderQueryable } from './resolve-order-queryable.js';
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
 
+/**
+ * Validates and caps cross-module order list pagination inputs.
+ */
 function clampPageSize(pageSize) {
     const requested = pageSize ?? DEFAULT_PAGE_SIZE;
     if (!Number.isInteger(requested) || requested < 1) {
@@ -14,6 +20,9 @@ function clampPageSize(pageSize) {
     return Math.min(requested, MAX_PAGE_SIZE);
 }
 
+/**
+ * Validates and caps cross-module order list pagination inputs.
+ */
 function clampPage(page) {
     const requested = page ?? 1;
     if (!Number.isInteger(requested) || requested < 1) {
@@ -31,6 +40,9 @@ function clampPage(page) {
  * @param {import('../repositories/postgres-order-repository.js').PostgresOrderRepository} deps.orders
  */
 export function createOrderQueryService(deps) {
+    /**
+     * Tenant-scoped order fetch with NotFound on getOrderById.
+     */
     async function getOrderById(tenantId, orderId, tx) {
         return withOrderQueryable(deps, tenantId, tx, async (queryable) => {
             const order = await deps.orders.findById(queryable, tenantId, orderId);
@@ -41,6 +53,9 @@ export function createOrderQueryService(deps) {
         });
     }
 
+    /**
+     * Lists order lines as DTOs within optional caller transaction.
+     */
     async function getOrderLines(tenantId, orderId, tx) {
         return withOrderQueryable(deps, tenantId, tx, async (queryable) => {
             const lines = await deps.orders.listOrderLines(queryable, tenantId, orderId);
@@ -48,10 +63,16 @@ export function createOrderQueryService(deps) {
         });
     }
 
+    /**
+     * Alias of getOrderById for cross-module guard before mutations.
+     */
     async function verifyOrderBelongsToTenant(tenantId, orderId, tx) {
         return getOrderById(tenantId, orderId, tx);
     }
 
+    /**
+     * Tenant-scoped order fetch with NotFound on getOrderById.
+     */
     async function findOrderById(tenantId, orderId, tx) {
         return withOrderQueryable(deps, tenantId, tx, async (queryable) => {
             const order = await deps.orders.findById(queryable, tenantId, orderId);
@@ -59,6 +80,9 @@ export function createOrderQueryService(deps) {
         });
     }
 
+    /**
+     * Nullable find by display order number.
+     */
     async function findOrderByOrderNumber(tenantId, orderNumber, tx) {
         return withOrderQueryable(deps, tenantId, tx, async (queryable) => {
             const order = await deps.orders.findByOrderNumber(queryable, tenantId, orderNumber);
@@ -66,6 +90,9 @@ export function createOrderQueryService(deps) {
         });
     }
 
+    /**
+     * Page-based order search with lines+customer hydration; requires orders.read.
+     */
     async function listOrders(input) {
         requireOrdersRead(deps.authorization, input.actorPermissions);
         const page = clampPage(input.page);

@@ -1,3 +1,6 @@
+/**
+ * Use case: detach a role from a membership, guarded by {@link createLastAdminGuard}.
+ */
 import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
 import { requireAuthorizationDeps } from './require-deps.js';
 

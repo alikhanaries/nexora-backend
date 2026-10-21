@@ -1,3 +1,11 @@
+/**
+ * Worker process entrypoint.
+ *
+ * Boots infrastructure (Postgres, Redis, BullMQ), wires marketplace commerce /
+ * lifecycle, catalog sync + reconciliation, outbound webhook delivery,
+ * integration-event consumers, optional observability HTTP (health/metrics),
+ * and retention cleanup — then runs until SIGTERM/SIGINT.
+ */
 import { loadConfigFromEnvironment } from '../app/config/index.js';
 import { createInfrastructure } from '../app/create-infrastructure.js';
 import { gracefulShutdown } from '../app/shutdown.js';
@@ -14,6 +22,7 @@ import { wireIntegrationCatalogSync } from './wire-integration-catalog-sync.js';
 import { wireMarketplaceLifecycleWorker } from './wire-marketplace-lifecycle-worker.js';
 import { createWorkerMarketplaceCommerceDeps } from './create-worker-marketplace-commerce-deps.js';
 import { startWorkerObservabilityHttp } from './observability/start-worker-observability-http.js';
+/** Worker boot: infra, handlers, schedulers, observability HTTP, and graceful shutdown. */
 async function main() {
     const config = loadConfigFromEnvironment();
     const infra = await createInfrastructure(config, { processKind: 'worker' });
@@ -107,6 +116,7 @@ async function main() {
     }, 5_000);
     infra.logger.info({}, 'Worker started');
     let shuttingDown = false;
+    /** Idempotent SIGTERM/SIGINT handler draining workers and infrastructure. */
     const shutdown = async (signal) => {
         if (shuttingDown)
             return;

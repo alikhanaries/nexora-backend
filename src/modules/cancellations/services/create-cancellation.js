@@ -49,6 +49,14 @@ export function createCreateCancellation(deps) {
         });
     }
 
+/**
+   * Releases reserved stock for a cancelled line; prefers CANCELLATION reference, falls back to ORDER.
+   * @param {object} tx Active transaction.
+   * @param {string} tenantId Tenant scope.
+   * @param {string} orderId Source order for fallback reference.
+   * @param {string} cancellationId Cancellation aggregate id used as inventory reference.
+   * @param {object} applied Fulfillment line with product, location, and quantity.
+   */
     async function releaseInventoryForCancellation(tx, tenantId, orderId, cancellationId, applied) {
         const releaseInput = {
             tenantId,
@@ -76,6 +84,12 @@ export function createCreateCancellation(deps) {
         }
     }
 
+/**
+   * Creates and completes a cancellation: locks order lines, applies fulfillment deltas, releases inventory, emits events.
+   * Honors `cancellations.create` vs `orders.cancel` permission based on input.
+   * @param {object} input Tenant, actor, orderId, optional lines/reason/externalReference, optional transaction.
+   * @returns {Promise<{cancellation: object}>} Completed cancellation detail DTO.
+   */
     async function execute(input) {
         if (input.permission === 'cancellations.create') {
             requireCancellationsCreate(deps.authorization, input.actorPermissions);
@@ -103,6 +117,9 @@ export function createCreateCancellation(deps) {
         }
         const cancellationId = randomUUID();
         const now = new Date();
+/**
+   * Idempotent transactional body: external-reference dedupe, insert lines, inventory release, audit/outbox.
+   */
         const work = async (tx) => {
             if (externalReference !== null) {
                 const existing = await deps.cancellations.findByExternalReference(tx, input.tenantId, externalReference);

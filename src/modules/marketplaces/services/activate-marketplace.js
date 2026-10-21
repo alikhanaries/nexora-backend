@@ -4,9 +4,15 @@ import { marketplaceStatusChangedEvent } from './marketplace-events.js';
 import { requireMarketplaceManage } from './marketplace-permissions.js';
 export class ActivateMarketplace {
     deps;
+    /**
+     * Injects module dependencies (database, repositories, authorization, event recorder).
+     */
     constructor(deps) {
         this.deps = deps;
     }
+    /**
+     * Use-case entry: permission check, transactional persistence, domain events/audit when applicable.
+     */
     async execute(input) {
         requireMarketplaceManage(this.deps.authorization, input.actorPermissions);
         const marketplace = await this.deps.database.execute(async (tx) => {

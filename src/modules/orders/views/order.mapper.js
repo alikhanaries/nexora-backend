@@ -1,3 +1,6 @@
+/**
+ * Maps domain entity to API/DTO shape (dates ISO-encoded in HTTP mappers).
+ */
 export function toOrderResponse(order) {
     return {
         id: order.id,
@@ -20,6 +23,9 @@ export function toOrderResponse(order) {
         deliveredAt: order.deliveredAt?.toISOString() ?? null,
     };
 }
+/**
+ * Maps domain entity to API/DTO shape (dates ISO-encoded in HTTP mappers).
+ */
 export function toOrderLineResponse(line) {
     return {
         id: line.id,
@@ -42,6 +48,9 @@ export function toOrderLineResponse(line) {
         updatedAt: line.updatedAt.toISOString(),
     };
 }
+/**
+ * Maps domain entity to API/DTO shape (dates ISO-encoded in HTTP mappers).
+ */
 export function toCustomerSnapshotResponse(snapshot) {
     return {
         id: snapshot.id,
@@ -57,6 +66,9 @@ export function toCustomerSnapshotResponse(snapshot) {
         createdAt: snapshot.createdAt.toISOString(),
     };
 }
+/**
+ * Maps domain entity to API/DTO shape (dates ISO-encoded in HTTP mappers).
+ */
 export function toOrderDetailResponse(order) {
     return {
         ...toOrderResponse(order),

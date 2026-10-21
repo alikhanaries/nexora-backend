@@ -4,7 +4,9 @@ import { createCommerceIntegrationEntity } from '../models/commerce-integration.
 import { channelCreatedEvent } from './commerce-integration-events.js';
 import { requireChannelCreate } from './commerce-integration-permissions.js';
 
+/** @param {object} deps @returns {{ execute: Function }} */
 export function createCreateCommerceIntegration(deps) {
+    /** Validates marketplace, optional stock location, inserts channel, records created event. Authz: `channels.create`. */
     async function execute(input) {
         requireChannelCreate(deps.authorization, input.actorPermissions);
         const name = input.name.trim();

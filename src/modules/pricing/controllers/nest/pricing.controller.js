@@ -16,13 +16,16 @@ import { PRICE_ROUTES } from '../../routes/price.routes.js';
 /**
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
+ * Route family `/api/v1/prices` (PRICE_ROUTES); handlers call `CORE_SERVICES.pricing.useCases`.
  */
 @Controller()
 class PricingController {
+/** Binds `CORE_SERVICES` price use cases for this HTTP adapter. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.pricing.useCases;
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to price use case `list`. */
   @Get(PRICE_ROUTES.list.path)
   async list(@Query() query) {
     const parsed = parseOrThrow(listPricesQuerySchema, query, 'list query');
@@ -47,6 +50,7 @@ class PricingController {
     };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to price use case `create`. */
   @Post(PRICE_ROUTES.create.path)
   @HttpCode(201)
   async create(@Body() body) {
@@ -70,6 +74,7 @@ class PricingController {
     return { success: true, data: toPriceResponse(price) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to price use case `getById`. */
   @Get(PRICE_ROUTES.getById.path)
   async getById(@Param() params) {
     const { priceId } = parseOrThrow(priceIdParamsSchema, params, 'price params');
@@ -82,6 +87,7 @@ class PricingController {
     return { success: true, data: toPriceResponse(price) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to price use case `patch`. */
   @Patch(PRICE_ROUTES.patch.path)
   @HttpCode(200)
   async patch(@Param() params, @Body() body) {

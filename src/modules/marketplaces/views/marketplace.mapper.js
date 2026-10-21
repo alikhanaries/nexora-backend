@@ -1,3 +1,6 @@
+/**
+ * Maps domain entity to API/DTO shape (dates ISO-encoded in HTTP mappers).
+ */
 export function toMarketplaceResponse(marketplace) {
     return {
         id: marketplace.id,

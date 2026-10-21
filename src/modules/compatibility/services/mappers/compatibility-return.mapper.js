@@ -332,6 +332,7 @@ export function mapExternalReturnStatusesToPlatformStatuses(externalStatuses) {
     return [...platformStatuses];
 }
 
+/** External status preset for `/api/v2/returns/merchant/new` (platform IN_PROGRESS returns). */
 export function mapNewReturnStatusFilter() {
     return ['IN_PROGRESS'];
 }

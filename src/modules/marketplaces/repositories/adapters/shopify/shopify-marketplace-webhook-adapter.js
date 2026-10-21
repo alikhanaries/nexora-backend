@@ -29,6 +29,9 @@ export class ShopifyMarketplaceWebhookAdapter {
         this.deps = deps;
     }
 
+    /**
+     * Webhook verification and normalized event kinds supported at ingress.
+     */
     getWebhookCapabilities() {
         return { supportsInboundWebhooks: true };
     }

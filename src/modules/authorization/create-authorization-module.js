@@ -1,3 +1,7 @@
+/**
+ * Authorization domain composition root: wires Postgres role/permission repositories,
+ * membership role assignments, and RBAC use cases used by HTTP routes and other modules.
+ */
 import { createAssignRole } from './services/assign-role.js';
 import { createDefaultAuthorizationService } from './services/authorization-service.js';
 import { createCreateRole } from './services/create-role.js';
@@ -12,6 +16,11 @@ import { createPostgresMembershipRoleRepository } from './repositories/postgres-
 import { createPostgresPermissionRepository } from './repositories/postgres-permission-repository.js';
 import { createPostgresRoleRepository } from './repositories/postgres-role-repository.js';
 
+/**
+ * @param {object} deps
+ * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @returns {{ authorizationService: ReturnType<typeof createDefaultAuthorizationService>, useCases: { createRole: Function, listRoles: Function, assignRole: Function, removeRole: Function, listPermissions: Function, getEffectivePermissions: Function, systemRoleSeeder: Function } }}
+ */
 export function createAuthorizationModule(deps) {
     requireAuthorizationDeps(deps, 'createAuthorizationModule', ['database']);
     const authorization = createDefaultAuthorizationService();

@@ -2,6 +2,12 @@ import { ZodError } from 'zod';
 import { AppError, InternalError, MalformedRequestError, ValidationError, } from '../../../../shared/errors/index.js';
 import { toFieldIssues } from '../../../../shared/validation/index.js';
 
+/**
+ * Coerces unknown thrown values into {@link AppError} for compatibility HTTP mapping.
+ * Maps Zod and JSON syntax failures to validation/malformed request errors; others become InternalError.
+ * @param {unknown} error Caught exception from routeDeps or validation layer.
+ * @returns {import('../../../../shared/errors/index.js').AppError} Normalised app error (no external API terms).
+ */
 function normaliseCompatibilityError(error) {
     if (AppError.isAppError(error)) {
         return error;
@@ -75,6 +81,12 @@ function mapValidationDetailsToExternalErrors(details) {
     return Object.keys(validationErrors).length > 0 ? validationErrors : undefined;
 }
 
+/**
+ * Maps core errors to merchant compatibility v2 `Success: false` ApiResponse envelope.
+ * Adds ValidationErrors from Zod-style issue details when present.
+ * @param {unknown} error Caught error from handler or service.
+ * @returns {{ statusCode: number, body: object }} HTTP status and external JSON body for CompatibilityExceptionFilter.
+ */
 export function mapCoreErrorToExternalApiResponse(error) {
     const mapped = mapCoreErrorToExternalResponse(error);
     const validationErrors = mapped.body.details === undefined

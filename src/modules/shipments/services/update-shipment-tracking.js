@@ -12,8 +12,10 @@ import { requireShipmentsUpdate } from './shipment-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createUpdateShipmentTracking(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requireShipmentsUpdate(deps.authorization, input.actorPermissions);
+/** Transactional unit of work executed inside idempotency/database `execute`. */
         const work = async (tx) => {
             const existing = await deps.shipments.findByExternalReference(
                 tx,

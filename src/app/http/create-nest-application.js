@@ -1,3 +1,6 @@
+/**
+ * Builds the Nest application on a pre-configured Express instance and {@link buildAppModule}.
+ */
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
@@ -39,6 +42,7 @@ export function getNestConfig(nestApp) {
   return nestApp.get(WASL_CONFIG);
 }
 
+/** Listen port override via `NEST_SERVER_PORT`, otherwise `config.server.port`. */
 export function resolveNestListenPort(config) {
   const fromEnv = process.env.NEST_SERVER_PORT?.trim();
   if (fromEnv !== undefined && fromEnv.length > 0) {

@@ -1,8 +1,14 @@
 import { ValidationError } from '../../../shared/errors/index.js';
 const MARKETPLACE_KEY_PATTERN = /^[a-z][a-z0-9_]*$/;
+/**
+ * Trims and lowercases marketplace key used for adapter routing and catalog rows.
+ */
 export function normalizeMarketplaceKey(key) {
     return key.trim().toLowerCase();
 }
+/**
+ * Validates normalized key pattern; throws ValidationError when invalid.
+ */
 export function validateMarketplaceKey(key) {
     const normalized = normalizeMarketplaceKey(key);
     if (!MARKETPLACE_KEY_PATTERN.test(normalized)) {

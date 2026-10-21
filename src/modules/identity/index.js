@@ -1,3 +1,6 @@
+/**
+ * Identity and authentication: users, memberships, login/refresh/logout, password reset, and access-token authentication.
+ */
 import { createArgon2PasswordHasher } from '../../infrastructure/auth/argon2-password-hasher.js';
 import { JoseAccessTokenService } from '../../infrastructure/auth/jose-access-token-service.js';
 import { AesSecretEncryptor } from '../../infrastructure/auth/aes-secret-encryptor.js';
@@ -23,6 +26,15 @@ import { createPostgresPasswordResetTokenRepository } from './repositories/postg
 import { createPostgresTenantLookup } from './repositories/postgres-tenant-lookup.js';
 import { createNoopPasswordResetNotifier } from './repositories/noop-password-reset-notifier.js';
 
+/**
+ * @param {object} deps
+ * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @param {import('../../app/config/config.js').AppConfig} deps.config
+ * @param {(membershipId: string) => Promise<string[]>} deps.membershipPermissionResolver
+ * @param {import('../../infrastructure/redis/redis-rate-limiter.js').RedisRateLimiter} [deps.rateLimiter]
+ * @param {import('../audit/public/index.js').AuditRecorder} [deps.auditRecorder]
+ * @returns {Promise<{ useCases: object, authenticateAccessToken: Function, auth: object, repositories: object }>}
+ */
 export async function createIdentityModule(deps) {
     const passwordHasher = createArgon2PasswordHasher();
     const accessTokenService = await JoseAccessTokenService.create(deps.config.auth);

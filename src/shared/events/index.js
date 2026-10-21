@@ -1,3 +1,4 @@
+/** Integration event schemas, parsers, and the versioned event catalog. */
 export {
     parseIntegrationEvent,
     parseIntegrationEventInput,

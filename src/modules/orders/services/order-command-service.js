@@ -1,3 +1,6 @@
+/**
+ * Facade for order write operations: create, channel ingest, acknowledge — with idempotency keys.
+ */
 const DEFAULT_CREATE_ROUTE_ID = 'orders.create';
 const DEFAULT_CREATE_CHANNEL_ROUTE_ID = 'orders.create_channel';
 const DEFAULT_CREATE_CHANNEL_FULFILLED_ROUTE_ID = 'orders.create_channel_fulfilled';

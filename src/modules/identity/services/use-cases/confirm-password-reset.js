@@ -9,6 +9,7 @@ import { hashSecret, validatePassword } from '../../../../shared/security/index.
  * @returns {{ execute: Function }}
  */
 export function createConfirmPasswordReset(deps) {
+    /** Validates token, sets new password, revokes other reset tokens. Rate-limited. */
     async function execute(input) {
         if (deps.rateLimiter !== undefined) {
             const rateLimit = await deps.rateLimiter.consume({

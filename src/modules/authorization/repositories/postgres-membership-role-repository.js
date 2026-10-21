@@ -18,6 +18,7 @@ const roleRowSchema = z.object({
     created_at: z.coerce.date(),
     updated_at: z.coerce.date(),
 });
+/** Maps a roles table row into the domain role shape. */
 function mapRole(row) {
     return {
         id: row.id,
@@ -32,10 +33,11 @@ function mapRole(row) {
     };
 }
 /**
- * Postgres persistence (function-based repository).
- * @returns {object}
+ * Postgres membership↔role persistence (function-based repository).
+ * @returns {object} Assignment and effective-permission helpers for a transaction.
  */
 export function createPostgresMembershipRoleRepository() {
+    /** Loads membership id/tenant/status, or null when absent. */
     async function findMembership(membershipId, tx) {
         const result = await tx.query(`SELECT id, tenant_id, status
        FROM tenant_memberships
@@ -50,6 +52,7 @@ export function createPostgresMembershipRoleRepository() {
             status: row.status,
         };
     }
+    /** Inserts a membership_roles row; maps unique conflicts to ConflictError. */
     async function assignRole(membershipId, roleId, tx) {
         try {
             await tx.query(`INSERT INTO membership_roles (membership_id, role_id)
@@ -62,10 +65,12 @@ export function createPostgresMembershipRoleRepository() {
             throw error;
         }
     }
+    /** Deletes a membership_roles assignment when present. */
     async function removeRole(membershipId, roleId, tx) {
         await tx.query(`DELETE FROM membership_roles
        WHERE membership_id = $1 AND role_id = $2`, [membershipId, roleId], { operation: 'authorization.membership_roles.remove' });
     }
+    /** Lists roles assigned to a membership, ordered by name. */
     async function listRolesForMembership(membershipId, tx) {
         const result = await tx.query(`SELECT r.id, r.tenant_id, r.name, r.system_key, r.status, r.is_system, r.cloned_from_role_id, r.created_at, r.updated_at
        FROM membership_roles mr
@@ -74,6 +79,7 @@ export function createPostgresMembershipRoleRepository() {
        ORDER BY r.name ASC`, [membershipId], { operation: 'authorization.membership_roles.list_roles' });
         return result.rows.map((row) => mapRole(parseOrThrow(roleRowSchema, row, 'role row')));
     }
+    /** Resolves membership by user+tenant then loads effective permission context. */
     async function loadPermissionContextByUserAndTenant(userId, tenantId, tx) {
         const result = await tx.query(`SELECT id, tenant_id, status
        FROM tenant_memberships
@@ -84,6 +90,10 @@ export function createPostgresMembershipRoleRepository() {
         const row = parseOrThrow(membershipRowSchema, result.rows[0], 'membership row');
         return loadPermissionContext(row.id, tx);
     }
+    /**
+     * Builds membership status plus per-role permission keys for authorization checks.
+     * Includes inactive roles in the raw context so callers can filter.
+     */
     async function loadPermissionContext(membershipId, tx) {
         const membership = await findMembership(membershipId, tx);
         if (membership === null) {
@@ -118,6 +128,10 @@ export function createPostgresMembershipRoleRepository() {
             })),
         };
     }
+    /**
+     * Row-locks ACTIVE memberships that currently hold tenant-admin permission.
+     * Used before last-admin checks so concurrent role removals serialize.
+     */
     async function lockAdminCapableMemberships(tenantId, tx) {
         await tx.query(`SELECT tm.id
        FROM tenant_memberships tm
@@ -134,6 +148,7 @@ export function createPostgresMembershipRoleRepository() {
          )
        FOR UPDATE OF tm`, [tenantId, TENANT_ADMIN_PERMISSION], { operation: 'authorization.membership_roles.lock_admin_memberships' });
     }
+    /** Counts ACTIVE memberships that hold tenant-admin via an ACTIVE role. */
     async function countAdminCapableMemberships(tenantId, tx) {
         const result = await tx.query(`SELECT COUNT(DISTINCT tm.id)::int AS admin_count
        FROM tenant_memberships tm
@@ -151,6 +166,10 @@ export function createPostgresMembershipRoleRepository() {
         const count = result.rows[0]?.['admin_count'];
         return typeof count === 'number' ? count : Number(count);
     }
+    /**
+     * True when the membership retains tenant-admin through a role other than `excludingRoleId`.
+     * Supports last-admin guards when removing one admin role assignment.
+     */
     async function membershipHasAdminViaOtherRoles(membershipId, excludingRoleId, tx) {
         const result = await tx.query(`SELECT 1
        FROM membership_roles mr

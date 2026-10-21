@@ -1,8 +1,10 @@
 import { getRequestContext } from '../../../shared/context/request-context.js';
 const EVENT_VERSION = 1;
+/** Reads the current request id from async context for outbound domain events. */
 function correlationId() {
     return getRequestContext()?.requestId ?? null;
 }
+/** Builds a versioned integration event envelope for the product aggregate. */
 export function productCreatedEvent(product) {
     return {
         type: 'product.created',
@@ -19,6 +21,7 @@ export function productCreatedEvent(product) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the product aggregate. */
 export function productUpdatedEvent(product, changes) {
     return {
         type: 'product.updated',
@@ -33,6 +36,7 @@ export function productUpdatedEvent(product, changes) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the product aggregate. */
 export function productStatusChangedEvent(product, previousStatus) {
     return {
         type: 'product.status_changed',

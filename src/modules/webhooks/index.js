@@ -1,3 +1,7 @@
+/**
+ * Webhooks umbrella: delegates merchant outbound subscriptions to `./outbound`,
+ * re-exports marketplace ingestion and async dispatch/delivery factories for workers.
+ */
 import {
   createWebhooksModule as createOutboundWebhooksModule,
   createWebhookDispatchService,
@@ -5,7 +9,10 @@ import {
 } from './outbound/index.js';
 import { createMarketplaceWebhookIngestionModule } from './marketplace/index.js';
 
-/** Outbound merchant webhook subscriptions + delivery. */
+/**
+ * @param {object} deps — forwarded to `createWebhooksModule` in `./outbound`
+ * @returns {ReturnType<typeof createOutboundWebhooksModule>}
+ */
 export function createWebhooksModule(deps) {
   return createOutboundWebhooksModule(deps);
 }

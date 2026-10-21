@@ -1,3 +1,4 @@
+/** Maps an internal product shape into an API-safe ProductDto object (dates serialized where needed). */
 export function toProductDto(product) {
     return {
         id: product.id,
@@ -10,6 +11,7 @@ export function toProductDto(product) {
         updatedAt: product.updatedAt,
     };
 }
+/** Maps an internal product shape into an API-safe ProductContentDto object (dates serialized where needed). */
 export function toProductContentDto(content) {
     return {
         id: content.id,

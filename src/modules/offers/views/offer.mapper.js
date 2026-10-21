@@ -1,3 +1,4 @@
+/** Maps an internal offer shape into an API-safe OfferResponse object (dates serialized where needed). */
 export function toOfferResponse(offer) {
     return {
         id: offer.id,

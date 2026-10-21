@@ -68,6 +68,7 @@ export const externalOrderStatusSchema = z.enum([
     'AWAITING_PAYMENT',
 ]);
 
+/** Zod helper: repeat or single query param → optional string array (compatibility list filters). */
 function optionalQueryStringArray(schema) {
     return z.preprocess((value) => {
         if (value === undefined) {

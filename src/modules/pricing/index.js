@@ -1,3 +1,7 @@
+/**
+ * Pricing domain: price records, effective pricing service, and CRUD use cases.
+ * Re-exports price entity helpers from `./models`.
+ */
 import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import {
     createCreatePrice,
@@ -9,6 +13,15 @@ import {
 } from './services/index.js';
 import { createPostgresPriceRepository } from './repositories/index.js';
 
+/**
+ * @param {object} deps
+ * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @param {import('../products/public/index.js').DefaultProductQueryService} deps.productQueryService
+ * @param {import('../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
+ * @param {import('../../shared/events/event-recorder.port.js').EventRecorderPort} deps.eventRecorder
+ * @param {import('../audit/public/index.js').AuditRecorder} [deps.auditRecorder]
+ * @returns {{ pricingService: import('./public/index.js').DefaultPricingService, useCases: object }}
+ */
 export function createPricingModule(deps) {
     const authorization = createDefaultAuthorizationService();
     const prices = createPostgresPriceRepository();

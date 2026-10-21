@@ -10,6 +10,7 @@
  */
 export const MIN_BATCH_SIZE = 1;
 export const MAX_BATCH_SIZE = 1_000;
+/** Clamps infrastructure batch sizes to [MIN_BATCH_SIZE, max]. */
 export function clampBatchSize(requested, max = MAX_BATCH_SIZE) {
     if (!Number.isFinite(requested))
         return MIN_BATCH_SIZE;

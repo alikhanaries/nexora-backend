@@ -1,3 +1,6 @@
+/**
+ * Merchant compatibility v2 `/api/v2/*` catalog writes: channel-scoped product/offer/stock updates with external IDs.
+ */
 import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
 import { readCompatibilityAvailableQuantity } from './read-compatibility-available-quantity.js';
 import {
@@ -21,6 +24,7 @@ const ROUTE_PUT_OFFER_STOCK = 'PUT /api/v2/offer/stock';
 export class CatalogCompatibilityCommand {
     deps;
 
+    /** @param {object} deps Core catalog use cases, authorization, idempotency, and channel resolution helpers. */
     constructor(deps) {
         this.deps = deps;
     }
@@ -57,6 +61,12 @@ export class CatalogCompatibilityCommand {
         });
     }
 
+    /**
+     * POST `/api/v2/products/freeze` — suspends channel offers or deactivates products per SKU.
+     * Optional channel scope via api key channel id / reference; idempotent per tenant + route + key.
+     * @param {object} input Actor, tenant, body with MerchantProductNoList, idempotency fields.
+     * @returns {Promise<object>} Batch Success/ValidationErrors envelope.
+     */
     async freezeProducts(input) {
         return this.runIdempotent(input, ROUTE_POST_PRODUCTS_FREEZE, JSON.stringify(input.body), async () => {
             this.deps.authorization.requirePermission(input.actorPermissions, 'products.update');
@@ -104,6 +114,11 @@ export class CatalogCompatibilityCommand {
         });
     }
 
+    /**
+     * POST `/api/v2/products/bulkdelete` — deactivates each listed merchant SKU when not already inactive.
+     * @param {object} input Tenant-scoped mutation input with idempotency metadata.
+     * @returns {Promise<object>} Per-SKU batch result envelope.
+     */
     async bulkDeleteProducts(input) {
         return this.runIdempotent(input, ROUTE_POST_PRODUCTS_BULKDELETE, JSON.stringify(input.body), async () => {
             this.deps.authorization.requirePermission(input.actorPermissions, 'products.update');
@@ -134,6 +149,11 @@ export class CatalogCompatibilityCommand {
         });
     }
 
+    /**
+     * PATCH `/api/v2/products/extra-data/bulk` — merges ExtraData into product content attributes (locale en).
+     * @param {object} input Batch body with MerchantProductNo + ExtraData entries.
+     * @returns {Promise<object>} Batch mutation envelope; may write product content per SKU.
+     */
     async patchExtraDataBulk(input) {
         return this.runIdempotent(input, ROUTE_PATCH_EXTRA_DATA, JSON.stringify(input.body), async () => {
             this.deps.authorization.requirePermission(input.actorPermissions, 'products.update');
@@ -184,6 +204,12 @@ export class CatalogCompatibilityCommand {
         });
     }
 
+    /**
+     * PUT `/api/v2/offer` — creates or updates effective price for product + resolved channel.
+     * Resolves channel from api key, reference header, or body ChannelId; ensures offer exists first.
+     * @param {object} input Pricing body mapped via compatibility offer mapper.
+     * @returns {Promise<object>} Single-line success envelope with channel reference on wire.
+     */
     async updateOfferPrice(input) {
         return this.runIdempotent(input, ROUTE_PUT_OFFER, JSON.stringify(input.body), async () => {
             const mapped = mapCeOfferPriceRequest(input.body);
@@ -233,6 +259,12 @@ export class CatalogCompatibilityCommand {
         });
     }
 
+    /**
+     * PUT `/api/v2/offer/stock` — sets absolute stock by adjusting inventory delta per offer line.
+     * Requires `inventory.adjust` permission; uses channel stock location from integration config.
+     * @param {object} input Stock batch body.
+     * @returns {Promise<object>} Batch stock update envelope.
+     */
     async updateOfferStock(input) {
         return this.runIdempotent(input, ROUTE_PUT_OFFER_STOCK, JSON.stringify(input.body), async () => {
             this.deps.authorization.requirePermission(input.actorPermissions, 'inventory.adjust');
@@ -288,6 +320,15 @@ export class CatalogCompatibilityCommand {
         });
     }
 
+    /**
+     * Wraps catalog mutations in compatibility idempotency store (tenant + principal + route + key).
+     * Replays stored 200 body when the same fingerprint was already processed.
+     * @param {object} input Mutation input carrying idempotencyKey and principalFingerprint.
+     * @param {string} routeId Stable route identifier for idempotency namespace.
+     * @param {string} requestFingerprint Serialized body fingerprint for conflict detection.
+     * @param {() => Promise<object>} operation Core mutation to run on first success.
+     * @returns {Promise<object>} Fresh or replayed ApiResponse body.
+     */
     async runIdempotent(input, routeId, requestFingerprint, operation) {
         const outcome = await this.deps.idempotency.execute({
             tenantId: input.tenantId,
@@ -335,6 +376,13 @@ export class CatalogCompatibilityCommand {
         return product;
     }
 
+    /**
+     * Ensures an ACTIVE offer exists for product + channel (creates/activates draft when missing).
+     * @param {object} input Actor fields for offer commands.
+     * @param {string} productId Internal product id.
+     * @param {string} channelId Internal commerce integration id.
+     * @returns {Promise<object>} Offer record after activation when needed.
+     */
     async ensureOfferExists(input, productId, channelId) {
         const existing = await this.deps.offerQueryService.getOfferForProductAndChannel(
             input.tenantId,
@@ -373,6 +421,12 @@ export class CatalogCompatibilityCommand {
         return created.offer;
     }
 
+    /**
+     * Loads tenant product by merchant SKU or throws NotFoundError for batch error mapping.
+     * @param {string} tenantId Tenant scope.
+     * @param {string} merchantSku Merchant product number.
+     * @returns {Promise<object>} Product entity.
+     */
     async requireProduct(tenantId, merchantSku) {
         const product = await this.deps.productQueryService.getProductBySku(tenantId, merchantSku);
         if (product === null) {
@@ -381,6 +435,11 @@ export class CatalogCompatibilityCommand {
         return product;
     }
 
+    /**
+     * Best-effort channel resolution for optional channel-scoped freeze; returns null on validation miss.
+     * @param {object} input Channel hints from api key, reference header, and body.
+     * @returns {Promise<object|null>} Commerce integration or null when channel cannot be resolved.
+     */
     async tryResolveChannel(input) {
         try {
             return await resolveCompatibilityChannel(this.deps, {

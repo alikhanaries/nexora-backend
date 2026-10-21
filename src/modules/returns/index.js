@@ -1,3 +1,7 @@
+/**
+ * Returns domain: RMA lifecycle, command/query services, and inventory-aware receive flows.
+ * Re-exports return entity helpers from `./models`.
+ */
 import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import {
     createAcknowledgeReturn,
@@ -14,6 +18,17 @@ import {
     createReturnCommandService
 } from './services/index.js';
 import { createPostgresReturnRepository } from './repositories/index.js';
+/**
+ * @param {object} deps
+ * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @param {object} deps.orderReturnGateway
+ * @param {import('../../shared/events/event-recorder.port.js').EventRecorderPort} deps.eventRecorder
+ * @param {import('../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
+ * @param {import('../inventory/public/index.js').DefaultInventoryService} deps.inventoryService
+ * @param {import('../external-id-mapping/public/index.js').ExternalIntegerIdMappingCommandService} deps.externalIntegerIdMappingCommandService
+ * @param {import('../audit/public/index.js').AuditRecorder} [deps.auditRecorder]
+ * @returns {{ returnCommandService: object, returnQueryService: object, useCases: object }}
+ */
 export function createReturnsModule(deps) {
     const authorization = createDefaultAuthorizationService();
     const returns = createPostgresReturnRepository();

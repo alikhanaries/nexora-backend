@@ -1,3 +1,6 @@
+/**
+ * Inbound marketplace webhooks: adapter registry, connection resolution, and normalized event handoff to order lifecycle queue.
+ */
 import { ReceiveMarketplaceWebhook } from './services/receive-marketplace-webhook.js';
 import { ResolveMarketplaceWebhookConnection } from './services/resolve-marketplace-webhook-connection.js';
 import { MarketplaceWebhookAdapterRegistry } from './public/marketplace-webhook-adapter-registry.js';
@@ -14,6 +17,7 @@ import { MarketplaceWebhookAdapterRegistry } from './public/marketplace-webhook-
  * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
  * @param {import('../../products/public/index.js').DefaultProductQueryService} [deps.productQueryService]
  * @param {(registry: MarketplaceWebhookAdapterRegistry) => void} [deps.registerMarketplaceWebhookAdapters]
+ * @returns {{ receiveMarketplaceWebhook: ReceiveMarketplaceWebhook, webhookAdapterRegistry: MarketplaceWebhookAdapterRegistry }}
  */
 export function createMarketplaceWebhookIngestionModule(deps) {
     const webhookAdapterRegistry = new MarketplaceWebhookAdapterRegistry();

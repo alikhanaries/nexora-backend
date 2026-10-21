@@ -30,6 +30,7 @@ export class CatalogSyncReconciliationScheduler {
         this.lockTtlSeconds = lockTtlSeconds;
     }
 
+    /** Starts the interval timer and runs an immediate tick when enabled. */
     start() {
         if (!this.config.enabled || this.timer !== undefined) {
             return;
@@ -41,6 +42,7 @@ export class CatalogSyncReconciliationScheduler {
         this.logger.info({ intervalMs: this.config.intervalMs }, 'Catalog sync reconciliation scheduler started');
     }
 
+    /** Clears the timer and waits for any in-flight tick to finish. */
     async stop() {
         this.stopped = true;
         if (this.timer !== undefined) {
@@ -76,6 +78,7 @@ export class CatalogSyncReconciliationScheduler {
     }
 }
 
+/** Promise delay used while waiting for a running tick during shutdown. */
 function sleep(ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);

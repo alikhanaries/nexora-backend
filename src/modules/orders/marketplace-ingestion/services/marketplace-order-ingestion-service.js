@@ -1,3 +1,6 @@
+/**
+ * Normalizes marketplace pull/push payloads into internal orders (worker + webhook pipeline).
+ */
 import { NotFoundError, ValidationError } from '../../../../shared/errors/index.js';
 import { parseOrThrow } from '../../../../shared/validation/index.js';
 import { recordMarketplaceOrderIngestionOutcome } from '../../../../shared/metrics/record-marketplace-order-ingestion.js';

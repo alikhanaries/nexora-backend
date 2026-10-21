@@ -1,3 +1,6 @@
+/**
+ * Zod schema for every environment variable the API and workers understand.
+ */
 import { z } from 'zod';
 import { WASL_NAMING } from './naming.config.js';
 import { envBoolean, envInteger, envOptionalString, envString, envStringList, envUrl, } from './env-parsers.js';

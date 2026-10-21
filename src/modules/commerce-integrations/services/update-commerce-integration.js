@@ -3,7 +3,9 @@ import { updateCommerceIntegrationDetails } from '../models/commerce-integration
 import { channelUpdatedEvent } from './commerce-integration-events.js';
 import { requireChannelUpdate } from './commerce-integration-permissions.js';
 
+/** @param {object} deps @returns {{ execute: Function }} */
 export function createUpdateCommerceIntegration(deps) {
+    /** Patches name/refs/stock location; emits updated event when row changes. Authz: `channels.update`. */
     async function execute(input) {
         requireChannelUpdate(deps.authorization, input.actorPermissions);
         if (input.name === undefined &&

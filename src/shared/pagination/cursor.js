@@ -1,6 +1,7 @@
 import { ValidationError } from '../errors/index.js';
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
+/** Validates list limit with default 50 and cap 100. */
 export function clampCursorLimit(limit) {
     const requested = limit ?? DEFAULT_LIMIT;
     if (!Number.isInteger(requested) || requested < 1) {
@@ -12,6 +13,7 @@ export function clampCursorLimit(limit) {
 export function encodeCursor(parts) {
     return Buffer.from(JSON.stringify(parts), 'utf8').toString('base64url');
 }
+/** Decodes base64url cursor to string tuple; throws {@link ValidationError} on bad input. */
 export function decodeCursor(cursor) {
     try {
         const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));

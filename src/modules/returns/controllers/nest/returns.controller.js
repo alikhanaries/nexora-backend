@@ -18,13 +18,16 @@ import { RETURN_ROUTES } from '../../routes/return.routes.js';
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  * Idempotency orchestration stays here (HTTP adaptation).
+ * Routes under `/api/v1/returns` and order-nested returns (RETURN_ROUTES); handlers call `CORE_SERVICES.returns.useCases`.
  */
 @Controller()
 class ReturnsController {
+/** Binds `CORE_SERVICES` return use cases for this HTTP adapter. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.returns.useCases;
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to return use case `createForOrder`. */
   @Post(RETURN_ROUTES.createForOrder.path)
   @HttpCode(201)
   async createForOrder(
@@ -76,6 +79,7 @@ class ReturnsController {
     return outcome.value;
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to return use case `list`. */
   @Get(RETURN_ROUTES.list.path)
   async list(@Query() query) {
     const parsed = parseOrThrow(listReturnsQuerySchema, query, 'list query');
@@ -98,6 +102,7 @@ class ReturnsController {
     };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to return use case `getById`. */
   @Get(RETURN_ROUTES.getById.path)
   async getById(@Param() params) {
     const { returnId } = parseOrThrow(returnIdParamsSchema, params, 'return params');
@@ -110,30 +115,35 @@ class ReturnsController {
     return { success: true, data: toReturnResponse(returnDetail) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to return use case `approve`. */
   @Post(RETURN_ROUTES.approve.path)
   @HttpCode(200)
   async approve(@Param() params) {
     return this.transition('approveReturn', params);
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to return use case `receive`. */
   @Post(RETURN_ROUTES.receive.path)
   @HttpCode(200)
   async receive(@Param() params) {
     return this.transition('receiveReturn', params);
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to return use case `complete`. */
   @Post(RETURN_ROUTES.complete.path)
   @HttpCode(200)
   async complete(@Param() params) {
     return this.transition('completeReturn', params);
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to return use case `reject`. */
   @Post(RETURN_ROUTES.reject.path)
   @HttpCode(200)
   async reject(@Param() params) {
     return this.transition('rejectReturn', params);
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to return use case `cancel`. */
   @Post(RETURN_ROUTES.cancel.path)
   @HttpCode(200)
   async cancel(@Param() params) {

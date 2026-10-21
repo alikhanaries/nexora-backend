@@ -1,3 +1,6 @@
+/**
+ * CE v2 catalog mutations (product/offer upserts) against core catalog commands.
+ */
 import { resolveChannelStockLocationId } from '../../commerce-integrations/public/index.js';
 import { getCurrencyMinorUnitExponent } from '../../../shared/money/index.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
@@ -285,6 +288,12 @@ export class CompatV2CatalogCommand {
         return { Success: true, StatusCode: 200, Message: null };
     }
 
+    /**
+     * Finds first configured stock location across tenant integrations for CE catalog stock writes.
+     * @param {string} tenantId Tenant scope.
+     * @returns {Promise<string>} Stock location id.
+     * @throws {ValidationError} When no channel exposes defaultStockLocationId.
+     */
     async resolveDefaultStockLocationId(tenantId) {
         const channels = await this.deps.commerceIntegrationQueryService.listCommerceIntegrations(tenantId, {});
         for (const channel of channels) {
@@ -314,6 +323,13 @@ export class CompatV2CatalogCommand {
         return useCase;
     }
 
+    /**
+     * Loads existing product content (if any), merges attribute patch, upserts locale `en` content.
+     * Side effect: product content write per call; no idempotency wrapper at this helper level.
+     * @param {object} input Actor + tenant from CE catalog mutation context.
+     * @param {string} productId Internal product id.
+     * @param {Record<string, unknown>} attributePatch Extra-data keys to merge (null removes key).
+     */
     async mergeProductAttributes(input, productId, attributePatch) {
         const upsert = this.requireUseCase('upsertProductContent');
         const getContent = this.deps.getProductContent;
@@ -368,6 +384,11 @@ export class CompatV2CatalogCommand {
         });
     }
 
+    /**
+     * When extra-data key looks like a price field, upserts channel prices for matched integrations.
+     * Matches channel by name/code/reference substring; falls back to all tenant channels.
+     * @param {object} params input context, product entity, channel list, attribute key/value.
+     */
     async applyPriceLikeExtraData({ input, product, channels, key, value }) {
         const lower = key.toLowerCase();
         if (!lower.endsWith('price') && lower !== 'price') {
@@ -393,6 +414,14 @@ export class CompatV2CatalogCommand {
         }
     }
 
+    /**
+     * Creates or updates effective price for product/channel/currency (minor units).
+     * @param {object} input CE catalog mutation actor context.
+     * @param {string} productId Product id.
+     * @param {string} channelId Commerce integration id.
+     * @param {string} currency ISO currency code.
+     * @param {number} amountMinor Price in minor units.
+     */
     async upsertChannelPrice(input, productId, channelId, currency, amountMinor) {
         const existing = await this.deps.pricingService.getEffectivePrice(
             input.tenantId,

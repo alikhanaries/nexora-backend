@@ -16,11 +16,15 @@ import { commerceActorFields, productActorFields } from '../../../../app/common/
  * @param {object} coreServices
  */
 export function createStockConnectCatalogCommands(coreServices) {
+  /** @returns {object} Product module use cases. */
   const products = () => coreServices.products.useCases;
+  /** @returns {object} Offer module use cases. */
   const offers = () => coreServices.offers.useCases;
+  /** @returns {object} Inventory module use cases. */
   const inventory = () => coreServices.inventory.useCases;
 
   return {
+    /** Paginated tenant product list mapped to API responses. */
     async listProducts(query) {
       const actor = requireActorContext();
       const page = await products().listProducts.execute({
@@ -37,6 +41,7 @@ export function createStockConnectCatalogCommands(coreServices) {
       };
     },
 
+    /** Loads one product by id for the current tenant. */
     async getProduct(productId) {
       const actor = requireActorContext();
       const { product } = await products().getProduct.execute({
@@ -47,6 +52,7 @@ export function createStockConnectCatalogCommands(coreServices) {
       return toProductResponse(product);
     },
 
+    /** Creates a product from Stock Connect upsert fields. */
     async createProduct(body) {
       const actor = requireActorContext();
       const { actorId, actorKind } = productActorFields(actor);
@@ -62,6 +68,7 @@ export function createStockConnectCatalogCommands(coreServices) {
       return toProductResponse(product);
     },
 
+    /** Partial product update for the current tenant. */
     async updateProduct(productId, body) {
       const actor = requireActorContext();
       const { actorId, actorKind } = productActorFields(actor);
@@ -77,6 +84,7 @@ export function createStockConnectCatalogCommands(coreServices) {
       return toProductResponse(product);
     },
 
+    /** Creates a channel offer for a product (used before publish/activate). */
     async createOffer(body) {
       const actor = requireActorContext();
       const { actorId, actorKind } = commerceActorFields(actor);
@@ -93,6 +101,7 @@ export function createStockConnectCatalogCommands(coreServices) {
       return toOfferResponse(offer);
     },
 
+    /** Activates an offer, optionally resolving pricing for the channel. */
     async activateOffer(offerId, body) {
       const actor = requireActorContext();
       const { actorId, actorKind } = commerceActorFields(actor);
@@ -108,6 +117,7 @@ export function createStockConnectCatalogCommands(coreServices) {
       return toOfferResponse(offer);
     },
 
+    /** Inventory balances, optionally scoped to one product or stock location. */
     async listInventory(query, productId) {
       const actor = requireActorContext();
       const { balances } = await inventory().getInventory.execute({
@@ -119,6 +129,7 @@ export function createStockConnectCatalogCommands(coreServices) {
       return balances.map(toBalanceResponse);
     },
 
+    /** Applies a signed quantity delta and returns idempotency flag plus balance snapshot. */
     async adjustInventory(body) {
       const actor = requireActorContext();
       const result = await withCommerceMetric(coreServices.metrics, 'inventory.adjust', () =>

@@ -28,6 +28,9 @@ export class NoonOrderAdapter extends BaseMarketplaceOrderAdapter {
         });
     }
 
+    /**
+     * Order pull/ack capabilities exposed to marketplace order ingestion.
+     */
     getOrderCapabilities() {
         return {
             supportsOrdersInbound: false,
@@ -36,6 +39,9 @@ export class NoonOrderAdapter extends BaseMarketplaceOrderAdapter {
         };
     }
 
+    /**
+     * Inbound lifecycle command types supported for webhook/queue processing.
+     */
     getOrderLifecycleCapabilities() {
         return noonOrderLifecycleCapabilities();
     }

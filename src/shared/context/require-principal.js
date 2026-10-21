@@ -1,5 +1,6 @@
 import { AuthenticationError } from '../errors/index.js';
 import { getRequestContext } from './request-context.js';
+/** Returns tenant/user/api-key actor fields from context or throws 401. */
 export function requireActorContext() {
     const context = getRequestContext();
     const principal = context?.principal;

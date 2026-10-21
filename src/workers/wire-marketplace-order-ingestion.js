@@ -1,3 +1,8 @@
+/**
+ * Worker composition root for normalized marketplace order ingestion.
+ *
+ * Assembles adapters, lookups, and the ingestion module used by lifecycle jobs.
+ */
 import { createDefaultCommerceIntegrationQueryService } from '../modules/commerce-integrations/public/index.js';
 import { PostgresMarketplaceRepository } from '../modules/marketplaces/repositories/postgres-marketplace-repository.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../modules/marketplaces/public/index.js';
@@ -8,6 +13,8 @@ import { createDefaultProductQueryService } from '../modules/products/public/ind
 import { createPostgresProductRepository } from '../modules/products/repositories/index.js';
 
 /**
+ * Returns ingestion services and adapter registry for marketplace lifecycle jobs.
+ *
  * @param {object} deps
  * @param {import('../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
  * @param {import('../shared/metrics/metrics-recorder.js').MetricsRecorder} deps.metrics

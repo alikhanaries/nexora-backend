@@ -14,6 +14,7 @@ export async function createWorkerObservabilityHttpServer(deps) {
     metricsEnabled: deps.metricsEnabled,
   });
 
+  /** In-process HTTP against worker observability Express app (tests). */
   const inject = (options) => injectExpress(app, options);
 
   return {

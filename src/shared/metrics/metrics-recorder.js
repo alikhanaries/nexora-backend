@@ -29,6 +29,7 @@ export const noopMetricsRecorder = {
     render: () => Promise.resolve(''),
     contentType: 'text/plain; charset=utf-8',
 };
+/** Maps HTTP status to prometheus `status_class` label bucket. */
 export function classifyStatus(statusCode) {
     if (statusCode >= 500)
         return 'server_error';

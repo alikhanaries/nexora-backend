@@ -1,5 +1,9 @@
+/**
+ * Loads and validates environment into the typed `AppConfig` object used at boot.
+ */
 import { ConfigurationError } from '../../shared/errors/index.js';
 import { configSchema } from './schema.js';
+/** Maps validated env schema output into the nested {@link AppConfig} shape used at runtime. */
 function toAppConfig(raw) {
     const isProduction = raw.NODE_ENV === 'production';
     return {
@@ -135,6 +139,7 @@ function toAppConfig(raw) {
         },
     };
 }
+/** Cross-field validation after parsing; throws {@link ConfigurationError} when rules are violated. */
 function assertConsistency(config) {
     const problems = [];
     if (config.database.pool.min > config.database.pool.max) {
@@ -167,6 +172,7 @@ function assertConsistency(config) {
         throw new ConfigurationError('Configuration is inconsistent', { problems });
     }
 }
+/** Parses `source` (typically `process.env`) through {@link configSchema} and cross-field checks. */
 export function loadConfig(source) {
     const parsed = configSchema.safeParse(source);
     if (!parsed.success) {

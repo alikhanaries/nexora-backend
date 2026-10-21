@@ -1,3 +1,4 @@
+/** Stable string for idempotency/rate keys: `user:`, `api-key:`, or `anonymous`. */
 export function actorFingerprint(actor) {
     if (actor.userId !== undefined) {
         return `user:${actor.userId}`;

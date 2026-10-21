@@ -1,3 +1,6 @@
+/**
+ * BullMQ handler: applies queued marketplace lifecycle commands (cancel, fulfill, etc.) to orders.
+ */
 import { ValidationError, NotFoundError } from '../../../../shared/errors/index.js';
 import { parseOrThrow } from '../../../../shared/validation/index.js';
 import { recordMarketplaceLifecycleWorkerOutcome } from '../../../../shared/metrics/record-marketplace-lifecycle-worker.js';

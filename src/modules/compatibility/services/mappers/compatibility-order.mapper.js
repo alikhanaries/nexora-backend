@@ -17,6 +17,11 @@ const EXTERNAL_LINE_STATUS_BY_PLATFORM_LINE_STATUS = {
     CLOSED: 'CLOSED',
 };
 
+/**
+ * Maps platform address fields to merchant compatibility v2 PascalCase address DTO.
+ * @param {object|null|undefined} address Core customer address or null.
+ * @returns {object|null} External address or null when input absent.
+ */
 function mapExternalAddress(address) {
     if (address === null || address === undefined) {
         return null;
@@ -54,6 +59,10 @@ function mapExternalOrderLine(line, externalLineId) {
     };
 }
 
+/**
+ * @param {Date|string} value ISO string or Date from core order timestamps.
+ * @returns {Date} Parsed Date for external ISO fields.
+ */
 function toDate(value) {
     if (value instanceof Date) {
         return value;
@@ -159,6 +168,7 @@ export function mapExternalStatusesToPlatformStatuses(externalStatuses) {
     return [...platformStatuses];
 }
 
+/** External status filter preset for `/api/v2/orders/new` poll (maps to platform NEW). */
 export function mapNewOrderStatusFilter() {
     return ['NEW'];
 }

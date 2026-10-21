@@ -1,3 +1,6 @@
+/**
+ * Routes normalized marketplace webhook events to ingestion or lifecycle command handlers.
+ */
 import { MarketplaceWebhookEventKind } from '../models/marketplace-webhook-event-kind.js';
 import {
     MarketplaceWebhookPermanentError,
@@ -14,6 +17,7 @@ import { mapNormalizedMarketplaceOrderToStatusSyncCommand } from '../../../order
  * Generic order lifecycle handler for normalized marketplace webhook events (Phase 31/32 boundary).
  * Provider-specific parsing lives in webhook adapters; this class only routes event kinds.
  */
+/** Dispatches parsed webhook events to order ingest vs lifecycle command executors. */
 export class MarketplaceOrderLifecycleProcessor {
     deps;
 
@@ -56,6 +60,9 @@ export class MarketplaceOrderLifecycleProcessor {
         }
     }
 
+    /**
+     * ORDER_UPDATE with normalized order: maps to lifecycle status sync; falls back to ingest if order missing.
+     */
     async syncOrderUpdate(input) {
         if (this.deps.marketplaceOrderLifecycleService === undefined) {
             throw new MarketplaceWebhookUnsupportedError('Order update webhooks require marketplace lifecycle service');
@@ -92,6 +99,9 @@ export class MarketplaceOrderLifecycleProcessor {
         }
     }
 
+    /**
+     * ORDER_UPDATE with provider lifecycle payload: delegates to queue-style lifecycle processor.
+     */
     async applyOrderUpdate(input) {
         if (this.deps.processMarketplaceLifecyclePayload === undefined) {
             throw new MarketplaceWebhookUnsupportedError('Order update webhooks require marketplace lifecycle processing', {
@@ -125,6 +135,9 @@ export class MarketplaceOrderLifecycleProcessor {
         }
     }
 
+    /**
+     * ORDER_CREATE path: runs normalized ingest use case; maps ingestion errors to webhook errors.
+     */
     async ingestOrderCreate(input) {
         try {
             return await this.deps.ingestNormalizedMarketplaceOrder.execute({

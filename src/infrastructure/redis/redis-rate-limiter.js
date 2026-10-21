@@ -63,6 +63,7 @@ function parseScriptReply(reply, limit) {
     if (!Array.isArray(reply) || reply.length < 4) {
         throw new Error('Unexpected rate limiter script reply');
     }
+    /** Coerces Lua script numeric replies from string or number. */
     const toNumber = (value) => (typeof value === 'number' ? value : Number(value));
     const allowed = toNumber(reply[0]) === 1;
     const remaining = toNumber(reply[1]);
@@ -81,12 +82,14 @@ export class RedisRateLimiter {
     keys;
     metrics;
     logger;
+    /** @param {import('./redis-client.js').RedisConnection} connection */
     constructor(connection, keys, metrics, logger) {
         this.connection = connection;
         this.keys = keys;
         this.metrics = metrics;
         this.logger = logger.child({ component: 'rate-limiter' });
     }
+    /** Consumes one unit of budget; records metrics and returns allow/deny with retry hints. */
     async consume(key) {
         const result = await this.evaluate(key, 1);
         this.metrics.recordRateLimitHit(key.policy.name, result.allowed);
@@ -95,12 +98,15 @@ export class RedisRateLimiter {
         }
         return result;
     }
+    /** Evaluates limit without consuming (cost 0). */
     async peek(key) {
         return this.evaluate(key, 0);
     }
+    /** Deletes the counter key for a policy/subject pair. */
     async reset(key) {
         await this.connection.run('ratelimit.reset', () => this.connection.client.del(this.keys.rateLimit(key.policy.name, key.subject)));
     }
+    /** Runs GCRA Lua script with given cost (0 = peek, 1 = consume). */
     async evaluate(key, cost) {
         const { limit, windowSeconds } = key.policy;
         if (limit <= 0 || windowSeconds <= 0) {

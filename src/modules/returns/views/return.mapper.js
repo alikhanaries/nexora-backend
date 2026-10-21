@@ -1,3 +1,4 @@
+/** Maps an internal return shape into an API-safe ReturnResponse object (dates serialized where needed). */
 export function toReturnResponse(returnDetail) {
     return {
         id: returnDetail.id,

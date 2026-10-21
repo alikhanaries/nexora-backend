@@ -10,12 +10,14 @@ export class InboxConsumer {
     inbox;
     handler;
     logger;
+    /** @param {import('./postgres-database.js').PostgresDatabase} database @param {import('./inbox-repository.js').PostgresInboxRepository} inbox */
     constructor(database, inbox, handler, logger) {
         this.database = database;
         this.inbox = inbox;
         this.handler = handler;
         this.logger = logger;
     }
+    /** Claims inbox row, invokes handler in one DB transaction, marks processed or failed. */
     async handle(event) {
         const claimed = await this.database.execute(async (tx) => {
             const reserved = await this.inbox.beginProcessing(tx, this.handler.consumerName, event.id, event.type);

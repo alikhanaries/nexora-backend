@@ -2,6 +2,7 @@ import { ValidationError } from '../errors/index.js';
 import { getCurrencyMinorUnitExponent } from './currency-exponents.js';
 
 const CURRENCY_PATTERN = /^[A-Z]{3}$/;
+/** Validates and normalizes ISO 4217 currency code. */
 export function parseCurrency(currency) {
     const normalized = currency.trim().toUpperCase();
     if (!CURRENCY_PATTERN.test(normalized)) {
@@ -9,6 +10,7 @@ export function parseCurrency(currency) {
     }
     return normalized;
 }
+/** Validates positive safe integer minor-unit amount. */
 export function parseAmountMinor(amountMinor) {
     if (!Number.isInteger(amountMinor)) {
         throw new ValidationError('Amount must be an integer in minor units');
@@ -21,6 +23,7 @@ export function parseAmountMinor(amountMinor) {
     }
     return amountMinor;
 }
+/** Builds a `{ currency, amountMinor }` money value with validation. */
 export function createMoney(currency, amountMinor) {
     return {
         currency: parseCurrency(currency),

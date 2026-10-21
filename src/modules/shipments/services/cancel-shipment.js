@@ -10,6 +10,9 @@ import { requireShipmentsUpdate } from './shipment-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createCancelShipment(deps) {
+/**
+   * Cancels a shipment when status allows; releases inventory tied to the shipment reference.
+   */
     async function execute(input) {
         requireShipmentsUpdate(deps.authorization, input.actorPermissions);
         const shipment = await deps.database.execute(async (tx) => {

@@ -28,20 +28,24 @@ export class BullMqJobQueue {
     queues = new Map();
     logger;
     closed = false;
+    /** @param {import('ioredis').Redis} connection Dedicated BullMQ Redis client. */
     constructor(connection, config, logger, metrics) {
         this.connection = connection;
         this.config = config;
         this.metrics = metrics;
         this.logger = logger.child({ component: 'queue' });
     }
+    /** Enqueues a job immediately with default retry/backoff and retention settings. */
     async enqueue(queue, name, payload, options = {}) {
         return this.add(queue, name, payload, options, undefined);
     }
+    /** Enqueues a job after `delayMs` milliseconds. */
     async enqueueDelayed(queue, name, payload, delayMs, options = {}) {
         if (delayMs < 0)
             throw new Error('Delay must not be negative');
         return this.add(queue, name, payload, options, delayMs);
     }
+    /** Removes a non-active job by id; returns false when missing or actively processing. */
     async remove(queue, jobId) {
         this.assertOpen();
         try {
@@ -65,6 +69,7 @@ export class BullMqJobQueue {
             });
         }
     }
+    /** Pings the queue Redis connection for readiness probes. */
     async healthCheck() {
         this.assertOpen();
         try {
@@ -76,6 +81,7 @@ export class BullMqJobQueue {
             });
         }
     }
+    /** Closes all BullMQ queue handles and the Redis connection. */
     async close() {
         if (this.closed)
             return;
@@ -85,6 +91,7 @@ export class BullMqJobQueue {
         await this.connection.quit().catch(() => this.connection.disconnect());
         this.logger.info({}, 'Job queue closed');
     }
+    /** Internal add with metrics and ServiceUnavailableError mapping on Redis failures. */
     async add(queue, name, payload, options, delayMs) {
         this.assertOpen();
         try {
@@ -112,6 +119,7 @@ export class BullMqJobQueue {
             });
         }
     }
+    /** Lazily creates and caches a BullMQ `Queue` for `name`. */
     queue(name) {
         const existing = this.queues.get(name);
         if (existing !== undefined)
@@ -120,6 +128,7 @@ export class BullMqJobQueue {
         this.queues.set(name, created);
         return created;
     }
+    /** Throws when the queue has been closed. */
     assertOpen() {
         if (this.closed)
             throw new ServiceUnavailableError('Job queue is closed');

@@ -18,14 +18,23 @@ const LEGAL_TRANSITIONS = {
     [OrderStatus.CANCELLED]: [],
     [OrderStatus.RETURNED]: [],
 };
+/**
+ * Pure check against allowed order status graph (fulfillment and cancellation rules).
+ */
 export function canTransitionOrderStatus(from, to) {
     return LEGAL_TRANSITIONS[from].includes(to);
 }
+/**
+ * Throws when status change violates LEGAL_TRANSITIONS (used before persist).
+ */
 export function assertOrderTransition(from, to) {
     if (!canTransitionOrderStatus(from, to)) {
         throw new Error(`Invalid order status transition from ${from} to ${to}`);
     }
 }
+/**
+ * True while order is pre-shipment (NEW through READY_TO_SHIP).
+ */
 export function isOrderCancellable(status) {
     return (status === OrderStatus.NEW ||
         status === OrderStatus.CONFIRMED ||

@@ -1,3 +1,9 @@
+/**
+ * Registers BullMQ job handlers on the worker runtime.
+ *
+ * Maps each queue/job name to validated payload handling: integration events
+ * (inbox router), webhook delivery, catalog sync, and marketplace lifecycle.
+ */
 import { z } from 'zod';
 import { JobName, QueueName } from '../../infrastructure/queue/queue-names.js';
 import { WebhookDeliveryRetryError } from '../../modules/webhooks/outbound/services/webhook-delivery-errors.js';
@@ -21,6 +27,17 @@ const webhookDeliveryPayloadSchema = z.object({
     eventId: z.string().uuid(),
     eventType: z.string(),
 });
+/**
+ * Binds domain services to the queues the worker process consumes.
+ *
+ * @param {object} deps
+ * @param {import('../../infrastructure/queue/bullmq-worker-runtime.js').BullMqWorkerRuntime} deps.workerRuntime
+ * @param {import('./composite-integration-event-router.js').CompositeIntegrationEventRouter} deps.integrationEventRouter
+ * @param {import('../../modules/webhooks/outbound/services/webhook-delivery-service.js').WebhookDeliveryService} deps.webhookDeliveryService
+ * @param {import('../../modules/integration-catalog-sync/services/integration-catalog-sync-service.js').IntegrationCatalogSyncService} deps.channelCatalogSyncService
+ * @param {import('../../modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js').ExecuteMarketplaceLifecycleJob} deps.executeMarketplaceLifecycleJob
+ * @param {string} deps.marketplaceLifecycleQueueName
+ */
 export function registerWorkerHandlers(deps) {
     if (deps.channelCatalogSyncService === undefined) {
         throw new Error('channelCatalogSyncService is required for worker handlers');
@@ -28,6 +45,7 @@ export function registerWorkerHandlers(deps) {
     if (deps.executeMarketplaceLifecycleJob === undefined) {
         throw new Error('executeMarketplaceLifecycleJob is required for worker handlers');
     }
+    /** Validates outbox job payload and routes through integration event consumers. */
     const publishHandler = async (payload, context) => {
         if (context.name !== JobName.PUBLISH_INTEGRATION_EVENT) {
             return;
@@ -45,6 +63,7 @@ export function registerWorkerHandlers(deps) {
             correlationId: parsed.correlationId,
         });
     };
+    /** Performs outbound webhook HTTP delivery with optional BullMQ delayed retry. */
     const webhookDeliveryHandler = async (payload, context) => {
         if (context.name !== JobName.DELIVER_WEBHOOK) {
             return;
@@ -64,6 +83,7 @@ export function registerWorkerHandlers(deps) {
             throw error;
         }
     };
+    /** Runs channel catalog sync worker job with delayed retry on {@link CatalogSyncRetryError}. */
     const catalogSyncHandler = async (payload, context) => {
         if (context.name !== JobName.RUN_CATALOG_SYNC) {
             return;
@@ -82,6 +102,7 @@ export function registerWorkerHandlers(deps) {
             throw error;
         }
     };
+    /** Delegates marketplace order lifecycle queue jobs to the domain executor. */
     const marketplaceLifecycleHandler = async (payload, context) => {
         if (context.name !== JobName.PROCESS_MARKETPLACE_LIFECYCLE) {
             return;

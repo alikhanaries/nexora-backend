@@ -1,3 +1,9 @@
+/**
+ * Worker composition root for marketplace order lifecycle jobs.
+ *
+ * Wires enqueue/fetch/execute services so BullMQ handlers can process inbound
+ * webhooks and outbound marketplace lifecycle actions.
+ */
 import { MarketplaceOrderLifecycleProcessor } from '../modules/webhooks/marketplace/services/marketplace-order-lifecycle-processor.js';
 import { createMarketplaceLifecycleEnqueueService } from '../modules/orders/marketplace-ingestion/services/marketplace-lifecycle-enqueue-service.js';
 import { createExecuteMarketplaceLifecycleJob } from '../modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
@@ -5,6 +11,8 @@ import { createFetchAndEnqueueMarketplaceOrderLifecycle } from '../modules/order
 import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../modules/marketplaces/services/enqueue-outbound-marketplace-order-lifecycle-command.js';
 
 /**
+ * Exposes the job executor and enqueue helpers registered on the lifecycle queue.
+ *
  * @param {object} deps
  * @param {import('../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
  * @param {import('../shared/queue/job-queue.port.js').JobQueue} deps.queue

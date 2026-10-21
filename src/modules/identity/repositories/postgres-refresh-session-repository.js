@@ -13,6 +13,7 @@ import { mapRefreshSessionRow } from './row-mappers.js';
  */
 export function createPostgresRefreshSessionRepository() {
     return {
+        /** Session lookup for refresh/logout (hashed refresh token). */
         async findByTokenHash(tx, tokenHash) {
             const result = await tx.query(`SELECT id, user_id, tenant_id, token_hash, family_id, status,
               expires_at, created_at, last_used_at, revoked_at, replaced_by
@@ -23,6 +24,7 @@ export function createPostgresRefreshSessionRepository() {
             return mapRefreshSessionRow(result.rows[0]);
         },
 
+        /** Session by id (JWT sessionId validation). */
         async findById(tx, id) {
             const result = await tx.query(`SELECT id, user_id, tenant_id, token_hash, family_id, status,
               expires_at, created_at, last_used_at, revoked_at, replaced_by
@@ -33,6 +35,7 @@ export function createPostgresRefreshSessionRepository() {
             return mapRefreshSessionRow(result.rows[0]);
         },
 
+        /** Inserts or updates refresh session row. */
         async save(tx, session) {
             await tx.query(`INSERT INTO refresh_sessions (
          id, user_id, tenant_id, token_hash, family_id, status,
@@ -57,24 +60,28 @@ export function createPostgresRefreshSessionRepository() {
             ], { operation: 'identity.refresh_sessions.save' });
         },
 
+        /** Marks old session REPLACED during refresh rotation. */
         async markReplaced(tx, sessionId, replacedById, lastUsedAt) {
             await tx.query(`UPDATE refresh_sessions
        SET status = 'REPLACED', replaced_by = $2, last_used_at = $3
        WHERE id = $1`, [sessionId, replacedById, lastUsedAt], { operation: 'identity.refresh_sessions.mark_replaced' });
         },
 
+        /** Revokes all ACTIVE sessions in rotation family (logout / theft response). */
         async revokeFamily(tx, familyId, revokedAt) {
             await tx.query(`UPDATE refresh_sessions
        SET status = 'REVOKED', revoked_at = $2
        WHERE family_id = $1 AND status = 'ACTIVE'`, [familyId, revokedAt], { operation: 'identity.refresh_sessions.revoke_family' });
         },
 
+        /** Revokes all ACTIVE sessions for user (global sign-out). */
         async revokeAllForUser(tx, userId, revokedAt) {
             await tx.query(`UPDATE refresh_sessions
        SET status = 'REVOKED', revoked_at = $2
        WHERE user_id = $1 AND status = 'ACTIVE'`, [userId, revokedAt], { operation: 'identity.refresh_sessions.revoke_all_for_user' });
         },
 
+        /** Revokes single session by id. */
         async revokeById(tx, sessionId, revokedAt) {
             await tx.query(`UPDATE refresh_sessions
        SET status = 'REVOKED', revoked_at = $2

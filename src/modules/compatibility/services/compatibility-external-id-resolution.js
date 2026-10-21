@@ -1,3 +1,6 @@
+/**
+ * Translates compatibility external integer IDs to internal UUIDs for orders, lines, returns, etc.
+ */
 import {
     ExternalIdMappingProvider,
     ExternalIdMappingResourceType,

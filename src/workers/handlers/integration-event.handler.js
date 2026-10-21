@@ -7,9 +7,11 @@
 export class LoggingIntegrationEventHandler {
     logger;
     consumerName = 'foundation.logging';
+    /** @param {import('../../shared/logging/logger.port.js').Logger} logger */
     constructor(logger) {
         this.logger = logger;
     }
+    /** Logs consumed integration event metadata (pipeline smoke handler). */
     handle(event) {
         this.logger.info({
             eventId: event.id,

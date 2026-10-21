@@ -1,8 +1,12 @@
+/**
+ * Merchant compatibility v2 `/api/v2/orders*` read queries: external ID enrichment and merchant JSON mapping.
+ */
 import { loadOrderExternalIdMaps } from './compatibility-external-id-enrichment.js';
 import { mapEmptyOrderPageToExternalCollection, mapExternalStatusesToPlatformStatuses, mapNewOrderStatusFilter, mapOrderPageToExternalCollection, } from './mappers/compatibility-order.mapper.js';
 
 const DEFAULT_PAGE_SIZE = 50;
 
+/** Picks the latest defined date — used to combine overlapping created-from filters (inclusive lower bound). */
 function mergeInclusiveLowerBound(...dates) {
     const defined = dates.filter((value) => value !== undefined);
     if (defined.length === 0) {
@@ -11,6 +15,7 @@ function mergeInclusiveLowerBound(...dates) {
     return new Date(Math.max(...defined.map((value) => value.getTime())));
 }
 
+/** Picks the earliest defined date — used for created-before upper bounds (exclusive end). */
 function mergeExclusiveUpperBound(...dates) {
     const defined = dates.filter((value) => value !== undefined);
     if (defined.length === 0) {
@@ -19,17 +24,30 @@ function mergeExclusiveUpperBound(...dates) {
     return new Date(Math.min(...defined.map((value) => value.getTime())));
 }
 
+/** Read façade for merchant order APIs backed by {@link createOrderQueryService}. */
 export class OrderCompatibilityQuery {
     deps;
+    /** @param {object} deps Order, commerce integration, and external integer id mapping query services. */
     constructor(deps) {
         this.deps = deps;
     }
+    /**
+     * GET `/api/v2/orders/new` — same as listOrders with external NEW status filter preset.
+     * @param {object} input Tenant, permissions, pagination.
+     * @returns {Promise<object>} Order ApiResponse with external integer ids on orders/lines.
+     */
     async listNewOrders(input) {
         return this.listOrders({
             ...input,
             externalStatuses: mapNewOrderStatusFilter(),
         });
     }
+    /**
+     * GET `/api/v2/orders` — lists tenant orders, maps statuses/dates to core query, enriches channels + external ids.
+     * Returns empty page when external status filter maps to no platform statuses.
+     * @param {object} input Filters and pagination from merchant compatibility v2 query schema.
+     * @returns {Promise<object>} External order collection envelope.
+     */
     async listOrders(input) {
         const pageSize = input.pageSize ?? DEFAULT_PAGE_SIZE;
         const page = input.page ?? 1;
