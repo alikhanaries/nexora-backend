@@ -2,21 +2,17 @@ import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../../audit/public/index.js';
 import { RateLimitError } from '../../../../shared/errors/index.js';
 import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-policies.js';
-import { WebhookSubscription } from '../models/webhook-subscription.js';
+import { createWebhookSubscriptionEntity } from '../models/webhook-subscription.js';
 import { generateWebhookSecret } from '../models/webhook-secret.js';
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
 import { requireWebhooksManage } from './webhook-permissions.js';
 import { validateWebhookEventTypes } from './validate-webhook-event-types.js';
 import { validateWebhookUrl } from './validate-webhook-url.js';
 
-export class CreateWebhookSubscription {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireWebhooksManage(this.deps.authorization, input.actorPermissions);
-        const rateLimit = await this.deps.rateLimiter.consume({
+export function createCreateWebhookSubscription(deps) {
+    async function execute(input) {
+        requireWebhooksManage(deps.authorization, input.actorPermissions);
+        const rateLimit = await deps.rateLimiter.consume({
             policy: AUTH_RATE_LIMIT_POLICIES.webhookCreate,
             subject: `${input.tenantId}:${input.actorId}`,
         });
@@ -26,9 +22,9 @@ export class CreateWebhookSubscription {
         const url = await validateWebhookUrl(input.url);
         const eventTypes = validateWebhookEventTypes(input.eventTypes);
         const plaintextSecret = generateWebhookSecret();
-        const secretCiphertext = this.deps.secretEncryptor.encrypt(plaintextSecret);
+        const secretCiphertext = deps.secretEncryptor.encrypt(plaintextSecret);
         const now = new Date();
-        const subscription = WebhookSubscription.create({
+        const subscription = createWebhookSubscriptionEntity({
             id: randomUUID(),
             tenantId: input.tenantId,
             url,
@@ -38,10 +34,10 @@ export class CreateWebhookSubscription {
             createdBy: input.actorId,
             createdAt: now,
         });
-        await this.deps.database.execute(async (tx) => {
-            await this.deps.subscriptions.insert(tx, subscription);
-            if (this.deps.auditRecorder !== undefined) {
-                await this.deps.auditRecorder.record(tx, {
+        await deps.database.execute(async (tx) => {
+            await deps.subscriptions.insert(tx, subscription);
+            if (deps.auditRecorder !== undefined) {
+                await deps.auditRecorder.record(tx, {
                     tenantId: input.tenantId,
                     actorKind: input.actorKind,
                     actorId: input.actorId,
@@ -61,4 +57,5 @@ export class CreateWebhookSubscription {
             secret: plaintextSecret,
         };
     }
+    return { execute };
 }

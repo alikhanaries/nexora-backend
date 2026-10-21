@@ -8,7 +8,7 @@ export class CatalogCompatibilityQuery {
      * @param {object} deps
      * @param {import('../../products/public/product-query-service.js').DefaultProductQueryService} deps.productQueryService
      * @param {import('../../products/services/get-product-content.js').GetProduct} deps.getProductContent
-     * @param {import('../../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
+     * @param {ReturnType<typeof import('../../authorization/public/index.js').createDefaultAuthorizationService>} deps.authorization
      */
     constructor(deps) {
         this.deps = deps;

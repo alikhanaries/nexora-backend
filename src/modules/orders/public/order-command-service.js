@@ -159,7 +159,4 @@
  * @property {(command: AcknowledgeOrderCommand) => Promise<AcknowledgeOrderResult>} acknowledgeOrder
  */
 
-export {
-    createOrderCommandService,
-    DefaultOrderCommandService,
-} from '../services/order-command-service.js';
+export { createOrderCommandService } from '../services/order-command-service.js';

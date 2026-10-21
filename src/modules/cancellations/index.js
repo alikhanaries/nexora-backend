@@ -1,20 +1,19 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import {
     createCreateCancellation,
     createGetCancellation,
     createListCancellations,
     createCancellationQueryService,
-    createCancellationCommandService,
+    createCancellationCommandService
 } from './services/index.js';
-import { PostgresCancellationRepository } from './repositories/index.js';
-import cancellationRoutes, {} from './controllers/cancellation.routes.js';
+import { createPostgresCancellationRepository } from './repositories/index.js';
 export function createCancellationsModule(deps) {
-    const authorization = new DefaultAuthorizationService();
-    const cancellations = new PostgresCancellationRepository();
+    const authorization = createDefaultAuthorizationService();
+    const cancellations = createPostgresCancellationRepository();
     const cancellationQueryService = createCancellationQueryService({
         authorization,
         queryable: deps.database,
-        cancellations,
+        cancellations
     });
     const lifecycleDeps = {
         authorization,
@@ -26,12 +25,12 @@ export function createCancellationsModule(deps) {
         eventRecorder: deps.eventRecorder,
         idempotency: deps.idempotency,
         externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     };
     const createCancellation = createCreateCancellation(lifecycleDeps);
     const cancellationCommandService = createCancellationCommandService({
         createCancellation,
-        idempotency: deps.idempotency,
+        idempotency: deps.idempotency
     });
     const useCases = {
         createCancellation,
@@ -39,15 +38,20 @@ export function createCancellationsModule(deps) {
         listCancellations: createListCancellations({
             authorization,
             queryable: deps.database,
-            cancellations,
+            cancellations
         }),
-        idempotency: deps.idempotency,
+        idempotency: deps.idempotency
     };
     return {
         cancellationCommandService,
         cancellationQueryService,
-        useCases,
-        routes: cancellationRoutes,
+        useCases
     };
 }
-export { Cancellation, CancellationLine, CancellationStatus } from './models/index.js';
+export {
+    createCancellationEntity,
+    reconstituteCancellation,
+    createCancellationLineEntity,
+    reconstituteCancellationLine,
+    CancellationStatus,
+} from './models/index.js';

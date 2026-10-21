@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { Order } from '../../../src/modules/orders/models/order.js';
+import { createOrderEntity } from '../../../src/modules/orders/models/order.js';
 import { OrderStatus } from '../../../src/modules/orders/models/order-status.js';
 
 describe('Order domain', () => {
     it('creates CONFIRMED orders with confirmedAt by default', () => {
         const createdAt = new Date('2026-01-01T00:00:00.000Z');
-        const order = Order.create({
+        const order = createOrderEntity({
             id: 'order-1',
             tenantId: 'tenant-1',
             channelId: 'channel-1',
@@ -26,7 +26,7 @@ describe('Order domain', () => {
 
     it('creates NEW orders without confirmedAt', () => {
         const createdAt = new Date('2026-01-01T00:00:00.000Z');
-        const order = Order.create({
+        const order = createOrderEntity({
             id: 'order-1',
             tenantId: 'tenant-1',
             channelId: 'channel-1',

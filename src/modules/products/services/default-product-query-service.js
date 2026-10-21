@@ -16,36 +16,37 @@ async function withProductQueryable(deps, tenantId, tx, work) {
     return work(deps.database);
 }
 
-export class DefaultProductQueryService {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async getProductById(tenantId, productId, tx) {
-        return withProductQueryable(this.deps, tenantId, tx, async (queryable) => {
-            const product = await this.deps.products.findById(queryable, tenantId, productId);
-            return product === null ? null : toProductDto(product);
-        });
-    }
-    async getProductBySku(tenantId, merchantSku, tx) {
-        return withProductQueryable(this.deps, tenantId, tx, async (queryable) => {
-            const product = await this.deps.products.findBySku(queryable, tenantId, merchantSku);
-            return product === null ? null : toProductDto(product);
-        });
-    }
-    async getProductsByIds(tenantId, productIds, tx) {
-        if (productIds.length === 0) {
-            return [];
-        }
-        return withProductQueryable(this.deps, tenantId, tx, async (queryable) => {
-            const products = await this.deps.products.findByIds(queryable, tenantId, productIds);
-            return products.map(toProductDto);
-        });
-    }
-    async verifyProductBelongsToTenant(tenantId, productId, tx) {
-        return withProductQueryable(this.deps, tenantId, tx, async (queryable) => {
-            const product = await this.deps.products.findById(queryable, tenantId, productId);
-            return product !== null;
-        });
-    }
+/**
+ * @param {object} deps
+ */
+export function createDefaultProductQueryService(deps) {
+    return {
+        async getProductById(tenantId, productId, tx) {
+            return withProductQueryable(deps, tenantId, tx, async (queryable) => {
+                const product = await deps.products.findById(queryable, tenantId, productId);
+                return product === null ? null : toProductDto(product);
+            });
+        },
+        async getProductBySku(tenantId, merchantSku, tx) {
+            return withProductQueryable(deps, tenantId, tx, async (queryable) => {
+                const product = await deps.products.findBySku(queryable, tenantId, merchantSku);
+                return product === null ? null : toProductDto(product);
+            });
+        },
+        async getProductsByIds(tenantId, productIds, tx) {
+            if (productIds.length === 0) {
+                return [];
+            }
+            return withProductQueryable(deps, tenantId, tx, async (queryable) => {
+                const products = await deps.products.findByIds(queryable, tenantId, productIds);
+                return products.map(toProductDto);
+            });
+        },
+        async verifyProductBelongsToTenant(tenantId, productId, tx) {
+            return withProductQueryable(deps, tenantId, tx, async (queryable) => {
+                const product = await deps.products.findById(queryable, tenantId, productId);
+                return product !== null;
+            });
+        },
+    };
 }

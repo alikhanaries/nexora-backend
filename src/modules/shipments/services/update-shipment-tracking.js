@@ -1,5 +1,6 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { BusinessRuleError, NotFoundError } from '../../../shared/errors/index.js';
+import { shipShipmentEntity, withShipmentCarrierDetails } from '../models/shipment.js';
 import { ShipmentStatus } from '../models/shipment-status.js';
 import { toShipmentDetailDto } from '../views/shipment-dto.js';
 import { shipmentShippedEvent, shipmentStatusChangedEvent } from './shipment-events.js';
@@ -39,13 +40,13 @@ export function createUpdateShipmentTracking(deps) {
             let updated = locked;
 
             if (locked.status === ShipmentStatus.CREATED || locked.status === ShipmentStatus.READY_TO_SHIP) {
-                updated = locked.ship(now).withCarrierDetails({
+                updated = withShipmentCarrierDetails(shipShipmentEntity(locked, now), {
                     carrier,
                     trackingNumber,
                 }, now);
             }
             else if (locked.status === ShipmentStatus.SHIPPED || locked.status === ShipmentStatus.IN_TRANSIT) {
-                updated = locked.withCarrierDetails({
+                updated = withShipmentCarrierDetails(locked, {
                     carrier,
                     trackingNumber,
                 }, now);

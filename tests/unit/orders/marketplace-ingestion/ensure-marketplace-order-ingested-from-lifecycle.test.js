@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { EnsureMarketplaceOrderIngestedFromLifecycle } from '../../../../src/modules/orders/marketplace-ingestion/services/ensure-marketplace-order-ingested-from-lifecycle.js';
+import { createEnsureMarketplaceOrderIngestedFromLifecycle } from '../../../../src/modules/orders/marketplace-ingestion/services/ensure-marketplace-order-ingested-from-lifecycle.js';
 import { MarketplaceOrderLifecycleOperation } from '../../../../src/modules/orders/marketplace-ingestion/models/marketplace-order-lifecycle-operation.js';
 import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
 
@@ -24,7 +24,7 @@ describe('EnsureMarketplaceOrderIngestedFromLifecycle', () => {
             findByChannelAndExternalReference: vi.fn(async () => ({ id: existingOrderId })),
         };
         const ingestNormalizedMarketplaceOrder = { execute: vi.fn() };
-        const service = new EnsureMarketplaceOrderIngestedFromLifecycle({
+        const service = createEnsureMarketplaceOrderIngestedFromLifecycle({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry: { resolve: vi.fn() },
             commerceIntegrationQueryService: { getCommerceIntegrationById: vi.fn() },
@@ -57,7 +57,7 @@ describe('EnsureMarketplaceOrderIngestedFromLifecycle', () => {
         const ingestNormalizedMarketplaceOrder = {
             execute: vi.fn(async () => ({ outcome: 'created', order: { id: newOrderId } })),
         };
-        const service = new EnsureMarketplaceOrderIngestedFromLifecycle({
+        const service = createEnsureMarketplaceOrderIngestedFromLifecycle({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry: { resolve: vi.fn(() => adapter) },
             commerceIntegrationQueryService: {
@@ -104,7 +104,7 @@ describe('EnsureMarketplaceOrderIngestedFromLifecycle', () => {
         const ingestNormalizedMarketplaceOrder = {
             execute: vi.fn(async () => ({ outcome: 'created', order: { id: randomUUID() } })),
         };
-        const service = new EnsureMarketplaceOrderIngestedFromLifecycle({
+        const service = createEnsureMarketplaceOrderIngestedFromLifecycle({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry: { resolve: vi.fn(() => adapter) },
             commerceIntegrationQueryService: {

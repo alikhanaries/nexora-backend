@@ -88,13 +88,13 @@ class CompatV2Controller {
 
   @Get('/api/v2/ce/shipments/merchant')
   async listMerchantShipments(@Query() query) {
-    const parsed = compatV2OrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(compatV2OrdersQuerySchema, query, 'query');
     return this.compatibilityHttpService.listMerchantShipmentsForCompatV2(parsed);
   }
 
   @Get('/api/v2/ce/returns')
   async listReturns(@Query() query) {
-    const parsed = compatV2OrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(compatV2OrdersQuerySchema, query, 'query');
     return this.compatibilityHttpService.listReturnsForCompatV2(parsed);
   }
 
@@ -120,14 +120,14 @@ class CompatV2Controller {
 
   @Get('/api/v2/ce/products')
   async listProducts(@Query() query) {
-    const parsed = compatV2ProductsQuerySchema.parse(query);
+    const parsed = parseOrThrow(compatV2ProductsQuerySchema, query, 'query');
     return this.compatibilityHttpService.listProductsForCompatV2(parsed);
   }
 
   @Get('/api/v2/ce/channels/:channelId/products')
   async listChannelProducts(@Param() params, @Query() query) {
     const { channelId } = parseOrThrow(ceChannelIdParamsSchema, params, 'channel id');
-    const parsedQuery = compatV2IntegrationProductsQuerySchema.parse(query);
+    const parsedQuery = parseOrThrow(compatV2IntegrationProductsQuerySchema, query, 'query');
     return this.compatibilityHttpService.listIntegrationProductsForCompatV2(channelId, parsedQuery);
   }
 

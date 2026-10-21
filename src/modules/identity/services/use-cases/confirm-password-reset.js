@@ -3,14 +3,15 @@ import { passwordResetConfirmRateLimitSubject } from '../../../../shared/auth/ra
 import { RateLimitError } from '../../../../shared/errors/index.js';
 import { InvalidCredentialsError } from '../../models/index.js';
 import { hashSecret, validatePassword } from '../../../../shared/security/index.js';
-export class ConfirmPasswordResetUseCase {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        if (this.deps.rateLimiter !== undefined) {
-            const rateLimit = await this.deps.rateLimiter.consume({
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createConfirmPasswordReset(deps) {
+    async function execute(input) {
+        if (deps.rateLimiter !== undefined) {
+            const rateLimit = await deps.rateLimiter.consume({
                 policy: AUTH_RATE_LIMIT_POLICIES.passwordResetConfirm,
                 subject: passwordResetConfirmRateLimitSubject(input.token),
             });
@@ -18,18 +19,20 @@ export class ConfirmPasswordResetUseCase {
                 throw new RateLimitError(rateLimit.retryAfterSeconds);
             }
         }
-        validatePassword(input.newPassword, this.deps.passwordPolicy);
+        validatePassword(input.newPassword, deps.passwordPolicy);
         const tokenHash = hashSecret(input.token);
         const now = new Date();
-        await this.deps.db.execute(async (tx) => {
-            const token = await this.deps.resetTokens.findActiveByTokenHash(tx, tokenHash);
+        await deps.db.execute(async (tx) => {
+            const token = await deps.resetTokens.findActiveByTokenHash(tx, tokenHash);
             if (token === null || token.expiresAt <= now) {
                 throw new InvalidCredentialsError();
             }
-            const passwordHash = await this.deps.passwordHasher.hash(input.newPassword);
-            await this.deps.credentials.save(tx, token.userId, passwordHash);
-            await this.deps.resetTokens.markUsed(tx, token.id, now);
-            await this.deps.refreshSessions.revokeAllForUser(tx, token.userId, now);
+            const passwordHash = await deps.passwordHasher.hash(input.newPassword);
+            await deps.credentials.save(tx, token.userId, passwordHash);
+            await deps.resetTokens.markUsed(tx, token.id, now);
+            await deps.refreshSessions.revokeAllForUser(tx, token.userId, now);
         });
     }
+
+    return { execute };
 }

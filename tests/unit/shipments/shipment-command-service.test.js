@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     createShipmentCommandService,
-    DefaultShipmentCommandService,
 } from '../../../src/modules/shipments/public/shipment-command-service.js';
 
 const shipmentDetail = {
@@ -76,23 +75,5 @@ describe('createShipmentCommandService', () => {
             idempotencyKey: 'idem-ship-1',
         }, 'body-1', expect.any(Function), expect.any(Function), { useTransaction: true });
         expect(result.shipment).toMatchObject({ transactionProvided: true });
-    });
-
-    it('keeps DefaultShipmentCommandService constructor-return wrapper working', async () => {
-        const createShipment = {
-            execute: vi.fn().mockResolvedValue({ shipment: shipmentDetail }),
-        };
-        const service = new DefaultShipmentCommandService({ createShipment });
-
-        const result = await service.createShipment({
-            tenantId: 'tenant-1',
-            actorId: 'actor-1',
-            actorKind: 'user',
-            actorPermissions: ['shipments.create'],
-            orderId: 'order-1',
-            lines: [{ orderLineId: 'line-1', quantity: 2 }],
-        });
-
-        expect(result).toEqual({ shipment: shipmentDetail });
     });
 });

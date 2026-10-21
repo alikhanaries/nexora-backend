@@ -1,30 +1,32 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { updateProductEntity } from '../models/product.js';
 import { toProductDto } from './product-dto.js';
 import { productUpdatedEvent } from './product-events.js';
-export class UpdateProduct {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        this.deps.authorization.requirePermission(input.actorPermissions, 'products.update');
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createUpdateProduct(deps) {
+    async function execute(input) {
+        deps.authorization.requirePermission(input.actorPermissions, 'products.update');
         const now = new Date();
         const externalReference = input.externalReference === undefined
             ? undefined
             : input.externalReference === null
                 ? null
                 : input.externalReference.trim() || null;
-        const product = await this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.products.findById(tx, input.tenantId, input.productId);
+        const product = await deps.database.execute(async (tx) => {
+            const existing = await deps.products.findById(tx, input.tenantId, input.productId);
             if (existing === null) {
                 throw new NotFoundError('Product was not found');
             }
-            const updated = existing.update({
+            const updated = updateProductEntity(existing, {
                 ...(externalReference === undefined ? {} : { externalReference }),
                 ...(input.productType === undefined ? {} : { productType: input.productType }),
             }, now);
-            await this.deps.products.update(tx, updated);
+            await deps.products.update(tx, updated);
             const dto = toProductDto(updated);
             const changes = {};
             if (externalReference !== undefined && externalReference !== existing.externalReference) {
@@ -37,8 +39,8 @@ export class UpdateProduct {
                 changes['productType'] = { from: existing.productType, to: input.productType };
             }
             if (Object.keys(changes).length > 0) {
-                await this.deps.eventRecorder?.record(tx, productUpdatedEvent(dto, changes));
-                await this.deps.auditRecorder?.record(tx, {
+                await deps.eventRecorder?.record(tx, productUpdatedEvent(dto, changes));
+                await deps.auditRecorder?.record(tx, {
                     tenantId: input.tenantId,
                     actorKind: input.actorKind,
                     actorId: input.actorId,
@@ -53,4 +55,5 @@ export class UpdateProduct {
         }, { tenantId: input.tenantId });
         return { product };
     }
+    return { execute };
 }

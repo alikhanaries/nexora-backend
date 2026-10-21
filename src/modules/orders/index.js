@@ -1,4 +1,4 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import { createAcknowledgeOrder } from './services/acknowledge-order.js';
 import { createConfirmOrder } from './services/confirm-order.js';
 import { createCreateIntegrationFulfilledOrder } from './services/create-integration-fulfilled-order.js';
@@ -10,20 +10,19 @@ import { createOrderCommandService } from './services/order-command-service.js';
 import { createOrderFulfillmentService } from './services/order-fulfillment-service.js';
 import { createOrderQueryService } from './services/order-query-service.js';
 import { createOrderReturnGateway } from './services/order-return-gateway.js';
-import { PostgresOrderRepository } from './repositories/index.js';
-import orderRoutes, {} from './controllers/order.routes.js';
+import { createPostgresOrderRepository } from './repositories/index.js';
 export function createOrdersModule(deps) {
-    const authorization = new DefaultAuthorizationService();
-    const orders = new PostgresOrderRepository();
+    const authorization = createDefaultAuthorizationService();
+    const orders = createPostgresOrderRepository();
     const orderFulfillmentService = createOrderFulfillmentService({
         orders,
-        eventRecorder: deps.eventRecorder,
+        eventRecorder: deps.eventRecorder
     });
     const orderQueryService = createOrderQueryService({
         authorization,
         queryable: deps.database,
         database: deps.database,
-        orders,
+        orders
     });
     const orderReturnGateway = createOrderReturnGateway({ orders });
     const sharedDeps = {
@@ -31,7 +30,7 @@ export function createOrdersModule(deps) {
         database: deps.database,
         orders,
         eventRecorder: deps.eventRecorder,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     };
     const orderCreationDeps = {
         ...sharedDeps,
@@ -40,14 +39,14 @@ export function createOrdersModule(deps) {
         offerQueryService: deps.offerQueryService,
         pricingService: deps.pricingService,
         inventoryService: deps.inventoryService,
-        externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
+        externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService
     };
     const createOrder = createCreateOrder(orderCreationDeps);
     const createIntegrationOrder = createCreateIntegrationOrder(orderCreationDeps);
     const confirmOrder = createConfirmOrder(sharedDeps);
     const acknowledgeOrder = createAcknowledgeOrder({
         ...sharedDeps,
-        confirmOrder,
+        confirmOrder
     });
     /** @type {{ execute: Function }|null} */
     let createIntegrationFulfilledOrder = null;
@@ -58,7 +57,7 @@ export function createOrdersModule(deps) {
             return createIntegrationFulfilledOrder;
         },
         acknowledgeOrder,
-        idempotency: deps.idempotency,
+        idempotency: deps.idempotency
     });
     /**
      * @param {object} shipmentDeps
@@ -71,7 +70,7 @@ export function createOrdersModule(deps) {
             ...orderCreationDeps,
             createShipment: shipmentDeps.createShipment,
             shipShipment: shipmentDeps.shipShipment,
-            listShipmentsForOrder: shipmentDeps.listShipmentsForOrder,
+            listShipmentsForOrder: shipmentDeps.listShipmentsForOrder
         });
     }
     const useCases = {
@@ -81,14 +80,14 @@ export function createOrdersModule(deps) {
         getOrder: createGetOrder({
             authorization,
             queryable: deps.database,
-            orders,
+            orders
         }),
         listOrders: createListOrders({
             authorization,
             queryable: deps.database,
-            orders,
+            orders
         }),
-        idempotency: deps.idempotency,
+        idempotency: deps.idempotency
     };
     return {
         orderCommandService,
@@ -98,8 +97,7 @@ export function createOrdersModule(deps) {
         createOrder,
         createIntegrationOrder,
         wireChannelFulfilledOrder,
-        useCases,
-        routes: orderRoutes,
+        useCases
     };
 }
 

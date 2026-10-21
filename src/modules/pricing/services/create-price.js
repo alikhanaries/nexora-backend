@@ -1,14 +1,15 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { requirePricingCreate } from './pricing-permissions.js';
-export class CreatePrice {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requirePricingCreate(this.deps.authorization, input.actorPermissions);
-        const price = await this.deps.database.execute(async (tx) => {
-            const created = await this.deps.pricingService.createPrice({
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCreatePrice(deps) {
+    async function execute(input) {
+        requirePricingCreate(deps.authorization, input.actorPermissions);
+        const price = await deps.database.execute(async (tx) => {
+            const created = await deps.pricingService.createPrice({
                 tenantId: input.tenantId,
                 productId: input.productId,
                 currency: input.currency,
@@ -17,7 +18,7 @@ export class CreatePrice {
                 ...(input.validFrom === undefined ? {} : { validFrom: input.validFrom }),
                 ...(input.validTo === undefined ? {} : { validTo: input.validTo }),
             }, tx);
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: input.actorKind,
                 actorId: input.actorId,
@@ -36,4 +37,5 @@ export class CreatePrice {
         }, { tenantId: input.tenantId });
         return { price };
     }
+    return { execute };
 }

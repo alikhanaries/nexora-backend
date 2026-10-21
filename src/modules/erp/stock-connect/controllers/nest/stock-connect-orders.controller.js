@@ -28,13 +28,13 @@ class StockConnectOrdersController {
 
   @Get('/api/v2/stock-connect/orders')
   async list(@Query() query) {
-    const parsed = stockConnectListOrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(stockConnectListOrdersQuerySchema, query, 'query');
     return this.stockConnectIntegrationService.listOrders(parsed);
   }
 
   @Get('/api/v2/stock-connect/orders/sync')
   async sync(@Query() query) {
-    const parsed = stockConnectSyncOrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(stockConnectSyncOrdersQuerySchema, query, 'query');
     return this.stockConnectIntegrationService.syncOrders(parsed);
   }
 

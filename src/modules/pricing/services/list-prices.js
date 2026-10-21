@@ -1,12 +1,13 @@
 import { requirePricingRead } from './pricing-permissions.js';
-export class ListPrices {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requirePricingRead(this.deps.authorization, input.actorPermissions);
-        return this.deps.pricingService.listPrices({
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createListPrices(deps) {
+    async function execute(input) {
+        requirePricingRead(deps.authorization, input.actorPermissions);
+        return deps.pricingService.listPrices({
             tenantId: input.tenantId,
             ...(input.limit === undefined ? {} : { limit: input.limit }),
             ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
@@ -16,4 +17,5 @@ export class ListPrices {
             ...(input.status === undefined ? {} : { status: input.status }),
         });
     }
+    return { execute };
 }

@@ -5,8 +5,8 @@ import {
     ExternalIdMappingResourceType,
 } from '../../external-id-mapping/public/index.js';
 import { AppError, ConflictError, NotFoundError, ValidationError, } from '../../../shared/errors/index.js';
-import { CancellationLine } from '../models/cancellation-line.js';
-import { Cancellation } from '../models/cancellation.js';
+import { createCancellationLineEntity } from '../models/cancellation-line.js';
+import { completeCancellationEntity, createCancellationEntity } from '../models/cancellation.js';
 import { toCancellationDto, toCancellationLineDto, } from '../views/cancellation-dto.js';
 import { cancellationCompletedEvent, cancellationCreatedEvent } from './cancellation-events.js';
 import { requireCancellationsCreate, requireOrdersCancel } from './cancellation-permissions.js';
@@ -120,7 +120,7 @@ export function createCreateCancellation(deps) {
                 }
             }
 
-            const cancellation = Cancellation.create({
+            const cancellation = createCancellationEntity({
                 id: cancellationId,
                 tenantId: input.tenantId,
                 orderId: input.orderId,
@@ -150,7 +150,7 @@ export function createCreateCancellation(deps) {
             });
             const persistedLines = [];
             for (const applied of fulfillment.appliedLines) {
-                const cancellationLine = CancellationLine.create({
+                const cancellationLine = createCancellationLineEntity({
                     id: randomUUID(),
                     tenantId: input.tenantId,
                     cancellationId,
@@ -162,7 +162,7 @@ export function createCreateCancellation(deps) {
                 persistedLines.push(cancellationLine);
                 await releaseInventoryForCancellation(tx, input.tenantId, input.orderId, cancellationId, applied);
             }
-            const completed = cancellation.complete(now);
+            const completed = completeCancellationEntity(cancellation, now);
             await deps.cancellations.updateCancellation(tx, completed);
             await deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
                 tenantId: input.tenantId,
@@ -204,12 +204,6 @@ export function createCreateCancellation(deps) {
     return { execute };
 }
 
-/** @deprecated Prefer createCreateCancellation */
-export class CreateCancellation {
-    constructor(deps) {
-        return createCreateCancellation(deps);
-    }
-}
 
 /**
  * @param {unknown} error

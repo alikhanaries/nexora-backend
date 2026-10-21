@@ -1,108 +1,137 @@
 import { BusinessRuleError } from '../../../shared/errors/index.js';
-import { assertShipmentTransition, isShipmentCancellable, ShipmentStatus, } from './shipment-status.js';
-export class Shipment {
-    props;
-    constructor(props) {
-        this.props = props;
-    }
-    static create(props) {
-        const now = props.createdAt ?? new Date();
-        return new Shipment({
-            ...props,
-            status: props.status ?? ShipmentStatus.CREATED,
-            shippedAt: props.shippedAt ?? null,
-            deliveredAt: props.deliveredAt ?? null,
-            createdAt: now,
-            updatedAt: props.updatedAt ?? now,
+import {
+    assertShipmentTransition,
+    isShipmentCancellable,
+    ShipmentStatus,
+} from './shipment-status.js';
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   orderId: string,
+ *   externalReference: string | null,
+ *   carrier: string | null,
+ *   service: string | null,
+ *   trackingNumber: string | null,
+ *   status: string,
+ *   shippedAt: Date | null,
+ *   deliveredAt: Date | null,
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ * }} Shipment
+ */
+
+/**
+ * @param {Omit<Shipment, 'status' | 'shippedAt' | 'deliveredAt' | 'updatedAt'> & {
+ *   status?: string,
+ *   shippedAt?: Date | null,
+ *   deliveredAt?: Date | null,
+ *   updatedAt?: Date,
+ * }} props
+ * @returns {Shipment}
+ */
+export function createShipmentEntity(props) {
+    const now = props.createdAt ?? new Date();
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        orderId: props.orderId,
+        externalReference: props.externalReference ?? null,
+        carrier: props.carrier,
+        service: props.service,
+        trackingNumber: props.trackingNumber,
+        status: props.status ?? ShipmentStatus.CREATED,
+        shippedAt: props.shippedAt ?? null,
+        deliveredAt: props.deliveredAt ?? null,
+        createdAt: now,
+        updatedAt: props.updatedAt ?? now,
+    };
+}
+
+/**
+ * @param {Shipment} props
+ * @returns {Shipment}
+ */
+export function reconstituteShipment(props) {
+    return { ...props };
+}
+
+/**
+ * @param {Shipment} shipment
+ * @param {string} next
+ * @param {Date} [at]
+ * @returns {Shipment}
+ */
+export function transitionShipmentEntity(shipment, next, at = new Date()) {
+    assertShipmentTransition(shipment.status, next);
+    return {
+        ...shipment,
+        status: next,
+        updatedAt: at,
+        ...(next === ShipmentStatus.SHIPPED || next === ShipmentStatus.IN_TRANSIT
+            ? { shippedAt: shipment.shippedAt ?? at }
+            : {}),
+        ...(next === ShipmentStatus.DELIVERED ? { deliveredAt: at } : {}),
+    };
+}
+
+/**
+ * @param {Shipment} shipment
+ * @param {{ carrier?: string | null, service?: string | null, trackingNumber?: string | null }} patch
+ * @param {Date} [at]
+ * @returns {Shipment}
+ */
+export function withShipmentCarrierDetails(shipment, patch, at = new Date()) {
+    return {
+        ...shipment,
+        carrier: patch.carrier === undefined ? shipment.carrier : patch.carrier,
+        service: patch.service === undefined ? shipment.service : patch.service,
+        trackingNumber: patch.trackingNumber === undefined ? shipment.trackingNumber : patch.trackingNumber,
+        updatedAt: at,
+    };
+}
+
+/**
+ * @param {Shipment} shipment
+ * @param {Date} [at]
+ * @returns {Shipment}
+ */
+export function shipShipmentEntity(shipment, at = new Date()) {
+    if (shipment.status !== ShipmentStatus.CREATED &&
+        shipment.status !== ShipmentStatus.READY_TO_SHIP) {
+        throw new BusinessRuleError('Only created or ready-to-ship shipments can be shipped', {
+            status: shipment.status,
         });
     }
-    static reconstitute(props) {
-        return new Shipment(props);
-    }
-    get id() {
-        return this.props.id;
-    }
-    get tenantId() {
-        return this.props.tenantId;
-    }
-    get orderId() {
-        return this.props.orderId;
-    }
-    get externalReference() {
-        return this.props.externalReference ?? null;
-    }
-    get carrier() {
-        return this.props.carrier;
-    }
-    get service() {
-        return this.props.service;
-    }
-    get trackingNumber() {
-        return this.props.trackingNumber;
-    }
-    get status() {
-        return this.props.status;
-    }
-    get shippedAt() {
-        return this.props.shippedAt;
-    }
-    get deliveredAt() {
-        return this.props.deliveredAt;
-    }
-    get createdAt() {
-        return this.props.createdAt;
-    }
-    get updatedAt() {
-        return this.props.updatedAt;
-    }
-    transitionTo(next, at = new Date()) {
-        assertShipmentTransition(this.props.status, next);
-        return new Shipment({
-            ...this.props,
-            status: next,
-            updatedAt: at,
-            ...(next === ShipmentStatus.SHIPPED || next === ShipmentStatus.IN_TRANSIT
-                ? { shippedAt: this.props.shippedAt ?? at }
-                : {}),
-            ...(next === ShipmentStatus.DELIVERED ? { deliveredAt: at } : {}),
+    return transitionShipmentEntity(shipment, ShipmentStatus.SHIPPED, at);
+}
+
+/**
+ * @param {Shipment} shipment
+ * @param {Date} [at]
+ * @returns {Shipment}
+ */
+export function deliverShipmentEntity(shipment, at = new Date()) {
+    if (shipment.status !== ShipmentStatus.SHIPPED &&
+        shipment.status !== ShipmentStatus.IN_TRANSIT) {
+        throw new BusinessRuleError('Only shipped or in-transit shipments can be delivered', {
+            status: shipment.status,
         });
     }
-    withCarrierDetails(patch, at = new Date()) {
-        return new Shipment({
-            ...this.props,
-            carrier: patch.carrier === undefined ? this.props.carrier : patch.carrier,
-            service: patch.service === undefined ? this.props.service : patch.service,
-            trackingNumber: patch.trackingNumber === undefined ? this.props.trackingNumber : patch.trackingNumber,
-            updatedAt: at,
+    return transitionShipmentEntity(shipment, ShipmentStatus.DELIVERED, at);
+}
+
+/**
+ * @param {Shipment} shipment
+ * @param {Date} [at]
+ * @returns {Shipment}
+ */
+export function cancelShipmentEntity(shipment, at = new Date()) {
+    if (!isShipmentCancellable(shipment.status)) {
+        throw new BusinessRuleError('Shipment cannot be cancelled in its current status', {
+            status: shipment.status,
         });
     }
-    ship(at = new Date()) {
-        if (this.props.status !== ShipmentStatus.CREATED &&
-            this.props.status !== ShipmentStatus.READY_TO_SHIP) {
-            throw new BusinessRuleError('Only created or ready-to-ship shipments can be shipped', {
-                status: this.props.status,
-            });
-        }
-        return this.transitionTo(ShipmentStatus.SHIPPED, at);
-    }
-    deliver(at = new Date()) {
-        if (this.props.status !== ShipmentStatus.SHIPPED &&
-            this.props.status !== ShipmentStatus.IN_TRANSIT) {
-            throw new BusinessRuleError('Only shipped or in-transit shipments can be delivered', {
-                status: this.props.status,
-            });
-        }
-        return this.transitionTo(ShipmentStatus.DELIVERED, at);
-    }
-    cancel(at = new Date()) {
-        if (!isShipmentCancellable(this.props.status)) {
-            throw new BusinessRuleError('Shipment cannot be cancelled in its current status', {
-                status: this.props.status,
-            });
-        }
-        return this.transitionTo(ShipmentStatus.CANCELLED, at);
-    }
-    toProps() {
-        return { ...this.props };
-    }
+    return transitionShipmentEntity(shipment, ShipmentStatus.CANCELLED, at);
 }

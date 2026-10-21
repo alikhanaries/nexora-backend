@@ -28,13 +28,13 @@ class CompatibilityOrdersV2Controller {
 
   @Get('/api/v2/orders')
   async list(@Query() query) {
-    const parsed = listOrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(listOrdersQuerySchema, query, 'list query');
     return this.compatibilityOrdersService.listOrdersV2(parsed);
   }
 
   @Get('/api/v2/orders/new')
   async listNew(@Query() query) {
-    const parsed = listNewOrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(listNewOrdersQuerySchema, query, 'list query');
     return this.compatibilityOrdersService.listNewOrdersV2(parsed);
   }
 

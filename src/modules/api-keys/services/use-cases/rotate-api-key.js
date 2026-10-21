@@ -80,10 +80,3 @@ export function createRotateApiKey(deps) {
 
     return { execute };
 }
-
-/** @deprecated Prefer {@link createRotateApiKey}; kept for existing import sites. */
-export class RotateApiKeyUseCase {
-    constructor(deps) {
-        return createRotateApiKey(deps);
-    }
-}

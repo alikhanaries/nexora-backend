@@ -5,8 +5,9 @@ import {
     ExternalIdMappingResourceType,
 } from '../../external-id-mapping/public/index.js';
 import { AppError, BusinessRuleError, ConflictError, NotFoundError, ValidationError, } from '../../../shared/errors/index.js';
-import { ShipmentLine } from '../models/shipment-line.js';
-import { Shipment } from '../models/shipment.js';
+import { orderLineShippableQuantity } from '../../orders/public/index.js';
+import { createShipmentLineEntity } from '../models/shipment-line.js';
+import { createShipmentEntity } from '../models/shipment.js';
 import { toShipmentDetailDto } from '../views/shipment-dto.js';
 import { shipmentCreatedEvent } from './shipment-events.js';
 import { requireShipmentsCreate } from './shipment-permissions.js';
@@ -93,18 +94,18 @@ export function createCreateShipment(deps) {
 
             for (const [orderLineId, quantity] of requestedByLine) {
                 const orderLine = lockedById.get(orderLineId);
-                if (quantity > orderLine.shippableQuantity()) {
+                if (quantity > orderLineShippableQuantity(orderLine)) {
                     throw new BusinessRuleError('Shipment quantity exceeds shippable quantity', {
                         orderLineId,
                         requestedQuantity: quantity,
-                        shippableQuantity: orderLine.shippableQuantity(),
+                        shippableQuantity: orderLineShippableQuantity(orderLine),
                     });
                 }
             }
 
             const shipmentId = randomUUID();
             const now = new Date();
-            const created = Shipment.create({
+            const created = createShipmentEntity({
                 id: shipmentId,
                 tenantId: input.tenantId,
                 orderId: input.orderId,
@@ -116,7 +117,7 @@ export function createCreateShipment(deps) {
             });
             const shipmentLines = [];
             for (const line of input.lines) {
-                const shipmentLine = ShipmentLine.create({
+                const shipmentLine = createShipmentLineEntity({
                     id: randomUUID(),
                     tenantId: input.tenantId,
                     shipmentId,
@@ -180,12 +181,6 @@ export function createCreateShipment(deps) {
     return { execute };
 }
 
-/** @deprecated Prefer createCreateShipment */
-export class CreateShipment {
-    constructor(deps) {
-        return createCreateShipment(deps);
-    }
-}
 
 /**
  * @param {unknown} error

@@ -1,7 +1,6 @@
 import { ReceiveMarketplaceWebhook } from './services/receive-marketplace-webhook.js';
 import { ResolveMarketplaceWebhookConnection } from './services/resolve-marketplace-webhook-connection.js';
 import { MarketplaceWebhookAdapterRegistry } from './public/marketplace-webhook-adapter-registry.js';
-import { createMarketplaceWebhookRoutes } from './views/marketplace-webhook.routes.js';
 
 /**
  * @param {object} deps
@@ -27,13 +26,11 @@ export function createMarketplaceWebhookIngestionModule(deps) {
         idempotency: deps.idempotency,
         metrics: deps.metrics,
         logger: deps.logger,
-        ...(deps.productQueryService === undefined ? {} : { productQueryService: deps.productQueryService }),
+        ...(deps.productQueryService === undefined ? {} : { productQueryService: deps.productQueryService })
     });
-    const routes = createMarketplaceWebhookRoutes({ receiveMarketplaceWebhook });
     return {
         receiveMarketplaceWebhook,
-        webhookAdapterRegistry,
-        routes,
+        webhookAdapterRegistry
     };
 }
 

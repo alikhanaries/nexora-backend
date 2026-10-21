@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
-import { Shipment } from '../../../src/modules/shipments/models/shipment.js';
+import { reconstituteShipment } from '../../../src/modules/shipments/models/shipment.js';
 import { ShipmentStatus } from '../../../src/modules/shipments/models/shipment-status.js';
 import { createShipShipment } from '../../../src/modules/shipments/services/ship-shipment.js';
 
 function makeShipment(overrides = {}) {
   const now = new Date('2024-01-01T00:00:00.000Z');
-  return Shipment.reconstitute({
+  return reconstituteShipment({
     id: 's1',
     tenantId: 't1',
     orderId: 'o1',

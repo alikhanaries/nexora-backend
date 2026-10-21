@@ -1,12 +1,18 @@
 import { BusinessRuleError, NotFoundError, ValidationError } from '../../../shared/errors/index.js';
+import {
+    orderLineCancellableQuantity,
+    orderLineShippableQuantity,
+    withOrderLineUpdatedQuantities,
+} from '../models/order-line.js';
 import { OrderLineStatus } from '../models/order-line-status.js';
+import { transitionOrderEntity } from '../models/order.js';
 import { OrderStatus, isOrderCancellable } from '../models/order-status.js';
 import { toOrderDto } from '../views/order-dto.js';
 import { orderCancelledEvent, orderStatusChangedEvent } from './order-events.js';
 
 /**
  * @param {object} deps
- * @param {import('../repositories/postgres-order-repository.js').PostgresOrderRepository} deps.orders
+ * @param {ReturnType<import('../repositories/postgres-order-repository.js').createPostgresOrderRepository>} deps.orders
  * @param {object} deps.eventRecorder
  */
 export function createOrderFulfillmentService(deps) {
@@ -31,8 +37,8 @@ export function createOrderFulfillmentService(deps) {
         const lineById = new Map(lockedLines.map((line) => [line.id, line]));
         const updates = input.lines.length === 0
             ? lockedLines
-                .filter((line) => line.cancellableQuantity() > 0)
-                .map((line) => ({ orderLineId: line.id, quantity: line.cancellableQuantity() }))
+                .filter((line) => orderLineCancellableQuantity(line) > 0)
+                .map((line) => ({ orderLineId: line.id, quantity: orderLineCancellableQuantity(line) }))
             : input.lines;
         if (updates.length === 0) {
             throw new BusinessRuleError('No cancellable quantity remains on this order');
@@ -50,7 +56,7 @@ export function createOrderFulfillmentService(deps) {
                     orderLineId: update.orderLineId,
                 });
             }
-            const cancellable = line.cancellableQuantity();
+            const cancellable = orderLineCancellableQuantity(line);
             if (update.quantity > cancellable) {
                 throw new BusinessRuleError('Cancellation quantity exceeds cancellable quantity', {
                     orderLineId: line.id,
@@ -60,7 +66,7 @@ export function createOrderFulfillmentService(deps) {
             }
             const cancelledQuantity = line.cancelledQuantity + update.quantity;
             const status = cancelledQuantity === line.quantity ? OrderLineStatus.CANCELLED : line.status;
-            const updatedLine = line.withUpdatedQuantities({
+            const updatedLine = withOrderLineUpdatedQuantities(line, {
                 cancelledQuantity,
                 status,
                 updatedAt: now,
@@ -79,7 +85,7 @@ export function createOrderFulfillmentService(deps) {
         const previousOrderStatus = order.status;
         let updatedOrder = order;
         if (fullyCancelled) {
-            updatedOrder = order.transitionTo(OrderStatus.CANCELLED, now);
+            updatedOrder = transitionOrderEntity(order, OrderStatus.CANCELLED, now);
             await deps.orders.updateOrder(transaction, updatedOrder);
             const orderDto = toOrderDto(updatedOrder);
             await deps.eventRecorder.record(transaction, orderStatusChangedEvent(orderDto, previousOrderStatus));
@@ -130,7 +136,7 @@ export function createOrderFulfillmentService(deps) {
                     orderLineId: input.orderLineId,
                 });
             }
-            const shippable = line.shippableQuantity();
+            const shippable = orderLineShippableQuantity(line);
             if (input.quantity > shippable) {
                 throw new BusinessRuleError('Shipment quantity exceeds shippable quantity', {
                     orderLineId: input.orderLineId,
@@ -139,7 +145,7 @@ export function createOrderFulfillmentService(deps) {
                 });
             }
             const shippedQuantity = line.shippedQuantity + input.quantity;
-            const updated = line.withUpdatedQuantities({
+            const updated = withOrderLineUpdatedQuantities(line, {
                 shippedQuantity,
                 status: shippedQuantity >= line.quantity - line.cancelledQuantity
                     ? OrderLineStatus.CLOSED
@@ -173,7 +179,7 @@ export function createOrderFulfillmentService(deps) {
                 });
             }
             const shippedQuantity = line.shippedQuantity - input.quantity;
-            const updated = line.withUpdatedQuantities({
+            const updated = withOrderLineUpdatedQuantities(line, {
                 shippedQuantity,
                 status: shippedQuantity < line.quantity - line.cancelledQuantity
                     ? OrderLineStatus.OPEN
@@ -197,13 +203,13 @@ export function createOrderFulfillmentService(deps) {
         let updated = order;
         const previousStatus = order.status;
         if (updated.status === OrderStatus.CONFIRMED) {
-            updated = updated.transitionTo(OrderStatus.PROCESSING);
+            updated = transitionOrderEntity(updated, OrderStatus.PROCESSING);
         }
         if (updated.status === OrderStatus.PROCESSING) {
-            updated = updated.transitionTo(OrderStatus.READY_TO_SHIP);
+            updated = transitionOrderEntity(updated, OrderStatus.READY_TO_SHIP);
         }
         if (updated.status === OrderStatus.READY_TO_SHIP) {
-            updated = updated.transitionTo(OrderStatus.SHIPPED);
+            updated = transitionOrderEntity(updated, OrderStatus.SHIPPED);
         }
         if (updated.status === previousStatus) {
             return;
@@ -219,11 +225,4 @@ export function createOrderFulfillmentService(deps) {
         reverseShipmentQuantities,
         evaluateOrderShipmentState,
     };
-}
-
-/** @deprecated Prefer {@link createOrderFulfillmentService}; kept for existing import sites. */
-export class DefaultOrderFulfillmentService {
-    constructor(deps) {
-        return createOrderFulfillmentService(deps);
-    }
 }

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { COMPAT_V2_WEBHOOK_BRIDGE_SUBSCRIPTION_DESCRIPTION } from '../../../src/shared/stockconnect/compat-v2-webhook-bridge.js';
-import { WebhookDeliveryService } from '../../../src/modules/webhooks/outbound/services/webhook-delivery-service.js';
+import { createWebhookDeliveryService } from '../../../src/modules/webhooks/outbound/services/webhook-delivery-service.js';
 import { WebhookDeliveryRetryError } from '../../../src/modules/webhooks/outbound/services/webhook-delivery-errors.js';
 import { verifyWebhookRequestBody } from '../../../src/modules/webhooks/outbound/services/webhook-request-signer.js';
 
@@ -70,7 +70,7 @@ function createService(overrides = {}) {
         ...overrides,
     };
     return {
-        service: new WebhookDeliveryService(deps),
+        service: createWebhookDeliveryService(deps),
         deps,
     };
 }

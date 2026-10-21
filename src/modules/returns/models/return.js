@@ -1,104 +1,135 @@
 import { BusinessRuleError } from '../../../shared/errors/index.js';
-import { assertReturnTransition, ReturnStatus, } from './return-status.js';
-export class Return {
-    props;
-    constructor(props) {
-        this.props = props;
-    }
-    static create(props) {
-        const now = props.createdAt ?? new Date();
-        return new Return({
-            ...props,
-            status: props.status ?? ReturnStatus.REQUESTED,
-            receivedAt: props.receivedAt ?? null,
-            completedAt: props.completedAt ?? null,
-            createdAt: now,
-            updatedAt: props.updatedAt ?? now,
-        });
-    }
-    static reconstitute(props) {
-        return new Return(props);
-    }
-    get id() {
-        return this.props.id;
-    }
-    get tenantId() {
-        return this.props.tenantId;
-    }
-    get orderId() {
-        return this.props.orderId;
-    }
-    get externalReference() {
-        return this.props.externalReference ?? null;
-    }
-    get shipmentId() {
-        return this.props.shipmentId;
-    }
-    get status() {
-        return this.props.status;
-    }
-    get reason() {
-        return this.props.reason;
-    }
-    get createdAt() {
-        return this.props.createdAt;
-    }
-    get updatedAt() {
-        return this.props.updatedAt;
-    }
-    get receivedAt() {
-        return this.props.receivedAt;
-    }
-    get completedAt() {
-        return this.props.completedAt;
-    }
-    approve(at = new Date()) {
-        assertReturnTransition(this.props.status, ReturnStatus.APPROVED);
-        return this.withStatus(ReturnStatus.APPROVED, at);
-    }
-    receive(at = new Date()) {
-        if (this.props.status === ReturnStatus.RECEIVED) {
-            return this;
-        }
-        assertReturnTransition(this.props.status, ReturnStatus.RECEIVED);
-        return new Return({
-            ...this.props,
-            status: ReturnStatus.RECEIVED,
-            updatedAt: at,
-            receivedAt: at,
-        });
-    }
-    complete(at = new Date()) {
-        assertReturnTransition(this.props.status, ReturnStatus.COMPLETED);
-        return new Return({
-            ...this.props,
-            status: ReturnStatus.COMPLETED,
-            updatedAt: at,
-            completedAt: at,
-        });
-    }
-    reject(at = new Date()) {
-        assertReturnTransition(this.props.status, ReturnStatus.REJECTED);
-        return this.withStatus(ReturnStatus.REJECTED, at);
-    }
-    cancel(at = new Date()) {
-        assertReturnTransition(this.props.status, ReturnStatus.CANCELLED);
-        return this.withStatus(ReturnStatus.CANCELLED, at);
-    }
-    withStatus(status, at) {
-        if (this.props.status === status) {
-            throw new BusinessRuleError('Return is already in the requested status', {
-                returnId: this.props.id,
-                status,
-            });
-        }
-        return new Return({
-            ...this.props,
+import { assertReturnTransition, ReturnStatus } from './return-status.js';
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   orderId: string,
+ *   externalReference: string | null,
+ *   shipmentId: string | null,
+ *   status: string,
+ *   reason: string | null,
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ *   receivedAt: Date | null,
+ *   completedAt: Date | null,
+ * }} Return
+ */
+
+/**
+ * @param {Omit<Return, 'status' | 'receivedAt' | 'completedAt' | 'updatedAt'> & {
+ *   status?: string,
+ *   receivedAt?: Date | null,
+ *   completedAt?: Date | null,
+ *   updatedAt?: Date,
+ * }} props
+ * @returns {Return}
+ */
+export function createReturnEntity(props) {
+    const now = props.createdAt ?? new Date();
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        orderId: props.orderId,
+        externalReference: props.externalReference ?? null,
+        shipmentId: props.shipmentId,
+        status: props.status ?? ReturnStatus.REQUESTED,
+        reason: props.reason,
+        createdAt: now,
+        updatedAt: props.updatedAt ?? now,
+        receivedAt: props.receivedAt ?? null,
+        completedAt: props.completedAt ?? null,
+    };
+}
+
+/**
+ * @param {Return} props
+ * @returns {Return}
+ */
+export function reconstituteReturn(props) {
+    return { ...props };
+}
+
+/**
+ * @param {Return} returnEntity
+ * @param {string} status
+ * @param {Date} at
+ * @returns {Return}
+ */
+function withReturnStatus(returnEntity, status, at) {
+    if (returnEntity.status === status) {
+        throw new BusinessRuleError('Return is already in the requested status', {
+            returnId: returnEntity.id,
             status,
-            updatedAt: at,
         });
     }
-    toProps() {
-        return { ...this.props };
+    return {
+        ...returnEntity,
+        status,
+        updatedAt: at,
+    };
+}
+
+/**
+ * @param {Return} returnEntity
+ * @param {Date} [at]
+ * @returns {Return}
+ */
+export function approveReturnEntity(returnEntity, at = new Date()) {
+    assertReturnTransition(returnEntity.status, ReturnStatus.APPROVED);
+    return withReturnStatus(returnEntity, ReturnStatus.APPROVED, at);
+}
+
+/**
+ * @param {Return} returnEntity
+ * @param {Date} [at]
+ * @returns {Return}
+ */
+export function receiveReturnEntity(returnEntity, at = new Date()) {
+    if (returnEntity.status === ReturnStatus.RECEIVED) {
+        return returnEntity;
     }
+    assertReturnTransition(returnEntity.status, ReturnStatus.RECEIVED);
+    return {
+        ...returnEntity,
+        status: ReturnStatus.RECEIVED,
+        updatedAt: at,
+        receivedAt: at,
+    };
+}
+
+/**
+ * @param {Return} returnEntity
+ * @param {Date} [at]
+ * @returns {Return}
+ */
+export function completeReturnEntity(returnEntity, at = new Date()) {
+    assertReturnTransition(returnEntity.status, ReturnStatus.COMPLETED);
+    return {
+        ...returnEntity,
+        status: ReturnStatus.COMPLETED,
+        updatedAt: at,
+        completedAt: at,
+    };
+}
+
+/**
+ * @param {Return} returnEntity
+ * @param {Date} [at]
+ * @returns {Return}
+ */
+export function rejectReturnEntity(returnEntity, at = new Date()) {
+    assertReturnTransition(returnEntity.status, ReturnStatus.REJECTED);
+    return withReturnStatus(returnEntity, ReturnStatus.REJECTED, at);
+}
+
+/**
+ * @param {Return} returnEntity
+ * @param {Date} [at]
+ * @returns {Return}
+ */
+export function cancelReturnEntity(returnEntity, at = new Date()) {
+    assertReturnTransition(returnEntity.status, ReturnStatus.CANCELLED);
+    return withReturnStatus(returnEntity, ReturnStatus.CANCELLED, at);
 }

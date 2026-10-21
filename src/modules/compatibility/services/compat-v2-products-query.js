@@ -8,7 +8,7 @@ export class CompatV2ProductsQuery {
 
     /**
      * @param {object} deps
-     * @param {import('../../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
+     * @param {ReturnType<typeof import('../../authorization/public/index.js').createDefaultAuthorizationService>} deps.authorization
      * @param {import('../../products/public/product-query-service.js').DefaultProductQueryService} deps.productQueryService
      */
     constructor(deps) {

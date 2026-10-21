@@ -1,8 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-    createOrderCommandService,
-    DefaultOrderCommandService,
-} from '../../../src/modules/orders/public/order-command-service.js';
+import { createOrderCommandService } from '../../../src/modules/orders/public/order-command-service.js';
 import { AuthorizationError } from '../../../src/shared/errors/index.js';
 
 const baseCommand = {
@@ -292,18 +289,4 @@ describe('createOrderCommandService', () => {
         expect(result.order).toMatchObject({ transactionProvided: true });
     });
 
-    it('keeps DefaultOrderCommandService constructor-return wrapper working', async () => {
-        const createOrder = {
-            execute: vi.fn().mockResolvedValue({ order: orderDetail }),
-        };
-        const service = new DefaultOrderCommandService({
-            createOrder,
-            createIntegrationOrder: { execute: vi.fn() },
-            createIntegrationFulfilledOrder: null,
-            acknowledgeOrder: { execute: vi.fn() },
-        });
-
-        const result = await service.createOrder(baseCommand);
-        expect(result).toEqual({ order: orderDetail });
-    });
 });

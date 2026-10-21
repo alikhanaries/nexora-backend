@@ -4,24 +4,21 @@ import { WebhookSubscriptionStatus } from '../models/webhook-subscription-status
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
 import { requireWebhooksRead } from './webhook-permissions.js';
 
-export class GetWebhookSubscription {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireWebhooksRead(this.deps.authorization, input.actorPermissions);
-        const rateLimit = await this.deps.rateLimiter.consume({
+export function createGetWebhookSubscription(deps) {
+    async function execute(input) {
+        requireWebhooksRead(deps.authorization, input.actorPermissions);
+        const rateLimit = await deps.rateLimiter.consume({
             policy: AUTH_RATE_LIMIT_POLICIES.webhookRead,
             subject: `${input.tenantId}:${input.actorId ?? input.tenantId}`,
         });
         if (!rateLimit.allowed) {
             throw new RateLimitError(rateLimit.retryAfterSeconds);
         }
-        const subscription = await this.deps.database.execute(async (tx) => this.deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId), { tenantId: input.tenantId });
+        const subscription = await deps.database.execute(async (tx) => deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId), { tenantId: input.tenantId });
         if (subscription === null || subscription.status === WebhookSubscriptionStatus.DELETED) {
             throw new NotFoundError('Webhook subscription was not found', { subscriptionId: input.subscriptionId });
         }
         return { subscription: toWebhookSubscriptionDto(subscription) };
     }
+    return { execute };
 }

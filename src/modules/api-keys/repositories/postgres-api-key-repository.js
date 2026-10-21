@@ -43,8 +43,12 @@ function mapFull(row) {
         rotatedFromId: row.rotated_from_id,
     };
 }
-export class PostgresApiKeyRepository {
-    async create(tx, record) {
+/**
+ * Postgres persistence (function-based repository).
+ * @returns {object}
+ */
+export function createPostgresApiKeyRepository() {
+    async function create(tx, record) {
         const result = await tx.query(`INSERT INTO api_keys (
          id, tenant_id, name, prefix, secret_hash, key_type, scopes, expires_at, rotated_from_id
        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -62,7 +66,7 @@ export class PostgresApiKeyRepository {
         ], { operation: 'api_keys.create' });
         return mapSummary(parseOrThrow(summaryRowSchema, result.rows[0], 'api key row'));
     }
-    async findByPrefix(tx, prefix) {
+    async function findByPrefix(tx, prefix) {
         const result = await tx.query(`SELECT id, tenant_id, name, prefix, secret_hash, key_type, scopes, status,
               channel_id, expires_at, last_used_at, created_at, updated_at,
               revoked_at, rotated_from_id
@@ -71,7 +75,7 @@ export class PostgresApiKeyRepository {
             return null;
         return mapFull(parseOrThrow(fullRowSchema, result.rows[0], 'api key row'));
     }
-    async findById(tx, id) {
+    async function findById(tx, id) {
         const result = await tx.query(`SELECT id, tenant_id, name, prefix, secret_hash, key_type, scopes, status,
               channel_id, expires_at, last_used_at, created_at, updated_at,
               revoked_at, rotated_from_id
@@ -80,7 +84,7 @@ export class PostgresApiKeyRepository {
             return null;
         return mapFull(parseOrThrow(fullRowSchema, result.rows[0], 'api key row'));
     }
-    async listByTenant(tx, tenantId) {
+    async function listByTenant(tx, tenantId) {
         const result = await tx.query(`SELECT id, tenant_id, name, prefix, key_type, scopes, status,
               expires_at, last_used_at, created_at, updated_at
        FROM api_keys
@@ -88,17 +92,26 @@ export class PostgresApiKeyRepository {
        ORDER BY created_at DESC`, [tenantId], { operation: 'api_keys.list_by_tenant' });
         return result.rows.map((row) => mapSummary(parseOrThrow(summaryRowSchema, row, 'api key row')));
     }
-    async revoke(tx, id, revokedAt) {
+    async function revoke(tx, id, revokedAt) {
         await tx.query(`UPDATE api_keys
        SET status = 'REVOKED', revoked_at = $2, updated_at = $2
        WHERE id = $1 AND status = 'ACTIVE'`, [id, revokedAt], { operation: 'api_keys.revoke' });
     }
-    async markRotated(tx, id, revokedAt) {
+    async function markRotated(tx, id, revokedAt) {
         await tx.query(`UPDATE api_keys
        SET status = 'REVOKED', revoked_at = $2, updated_at = $2
        WHERE id = $1 AND status = 'ACTIVE'`, [id, revokedAt], { operation: 'api_keys.mark_rotated' });
     }
-    async touchLastUsed(tx, id, usedAt) {
+    async function touchLastUsed(tx, id, usedAt) {
         await tx.query(`UPDATE api_keys SET last_used_at = $2, updated_at = $2 WHERE id = $1`, [id, usedAt], { operation: 'api_keys.touch_last_used' });
     }
+    return {
+        create,
+        findByPrefix,
+        findById,
+        listByTenant,
+        revoke,
+        markRotated,
+        touchLastUsed,
+    };
 }

@@ -1,13 +1,13 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { AuditService } from './services/audit-service.js';
-import { DefaultAuditRecorder } from './services/default-audit-recorder.js';
-import { PostgresAuditRepository } from './repositories/postgres-audit-repository.js';
-import auditRoutes from './views/audit.routes.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
+import { createAuditService } from './services/audit-service.js';
+import { createDefaultAuditRecorder } from './services/default-audit-recorder.js';
+import { createPostgresAuditRepository } from './repositories/postgres-audit-repository.js';
+
 export function createAuditModule(deps) {
-    const repository = new PostgresAuditRepository();
-    const auditRecorder = new DefaultAuditRecorder(repository);
-    const authorization = new DefaultAuthorizationService();
-    const auditService = new AuditService({
+    const repository = createPostgresAuditRepository();
+    const auditRecorder = createDefaultAuditRecorder(repository);
+    const authorization = createDefaultAuthorizationService();
+    const auditService = createAuditService({
         repository,
         database: deps.database,
         requirePermission: (granted, required) => authorization.requirePermission(granted, required),
@@ -15,9 +15,5 @@ export function createAuditModule(deps) {
     return {
         auditRecorder,
         auditService,
-        routes: {
-            plugin: auditRoutes,
-            options: { auditService },
-        },
     };
 }

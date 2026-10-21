@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
 import {
   createReturnQueryService,
-  DefaultReturnQueryService,
 } from '../../../src/modules/returns/services/return-query-service.js';
 
 describe('createReturnQueryService', () => {
@@ -52,33 +51,5 @@ describe('createReturnQueryService', () => {
     });
 
     await expect(service.getReturnById('t1', 'missing')).rejects.toBeInstanceOf(NotFoundError);
-  });
-
-  it('keeps DefaultReturnQueryService constructor-return wrapper working', async () => {
-    const createdAt = new Date();
-    const returnEntity = {
-      id: 'r1',
-      tenantId: 't1',
-      orderId: 'o1',
-      externalReference: null,
-      shipmentId: null,
-      status: 'REQUESTED',
-      reason: null,
-      receivedAt: null,
-      completedAt: null,
-      createdAt,
-      updatedAt: createdAt,
-    };
-    const service = new DefaultReturnQueryService({
-      authorization: { requirePermission: vi.fn() },
-      queryable: {},
-      returns: {
-        findById: vi.fn(async () => returnEntity),
-        listReturnLines: vi.fn(async () => []),
-      },
-    });
-
-    const dto = await service.getReturnById('t1', 'r1');
-    expect(dto.id).toBe('r1');
   });
 });

@@ -1,14 +1,15 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { requirePricingUpdate } from './pricing-permissions.js';
-export class UpdatePrice {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requirePricingUpdate(this.deps.authorization, input.actorPermissions);
-        const price = await this.deps.database.execute(async (tx) => {
-            const updated = await this.deps.pricingService.updatePrice({
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createUpdatePrice(deps) {
+    async function execute(input) {
+        requirePricingUpdate(deps.authorization, input.actorPermissions);
+        const price = await deps.database.execute(async (tx) => {
+            const updated = await deps.pricingService.updatePrice({
                 tenantId: input.tenantId,
                 priceId: input.priceId,
                 ...(input.amountMinor === undefined ? {} : { amountMinor: input.amountMinor }),
@@ -16,7 +17,7 @@ export class UpdatePrice {
                 ...(input.validTo === undefined ? {} : { validTo: input.validTo }),
                 ...(input.channelId === undefined ? {} : { channelId: input.channelId }),
             }, tx);
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: input.actorKind,
                 actorId: input.actorId,
@@ -33,4 +34,5 @@ export class UpdatePrice {
         }, { tenantId: input.tenantId });
         return { price };
     }
+    return { execute };
 }

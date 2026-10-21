@@ -4,14 +4,10 @@ import { clampCursorLimit, decodeCursor, encodeCursor } from '../../../../shared
 import { toWebhookDeliveryDto } from './webhook-delivery-dto.js';
 import { requireWebhooksRead } from './webhook-permissions.js';
 
-export class ListWebhookDeliveries {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireWebhooksRead(this.deps.authorization, input.actorPermissions);
-        const rateLimit = await this.deps.rateLimiter.consume({
+export function createListWebhookDeliveries(deps) {
+    async function execute(input) {
+        requireWebhooksRead(deps.authorization, input.actorPermissions);
+        const rateLimit = await deps.rateLimiter.consume({
             policy: AUTH_RATE_LIMIT_POLICIES.webhookRead,
             subject: `${input.tenantId}:${input.actorId ?? input.tenantId}`,
         });
@@ -30,12 +26,12 @@ export class ListWebhookDeliveries {
             cursorCreatedAt = new Date(parts[0] ?? '');
             cursorId = parts[1] ?? null;
         }
-        const page = await this.deps.database.execute(async (tx) => {
-            const subscription = await this.deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId);
+        const page = await deps.database.execute(async (tx) => {
+            const subscription = await deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId);
             if (subscription === null) {
                 throw new NotFoundError('Webhook subscription was not found', { subscriptionId: input.subscriptionId });
             }
-            return this.deps.deliveries.listPage(tx, input.tenantId, input.subscriptionId, {
+            return deps.deliveries.listPage(tx, input.tenantId, input.subscriptionId, {
                 ...(input.status === undefined ? {} : { status: input.status }),
                 ...(input.eventType === undefined ? {} : { eventType: input.eventType }),
             }, fetchLimit, cursorCreatedAt, cursorId);
@@ -51,4 +47,5 @@ export class ListWebhookDeliveries {
                 : null,
         };
     }
+    return { execute };
 }

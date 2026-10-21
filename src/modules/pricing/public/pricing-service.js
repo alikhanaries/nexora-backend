@@ -7,4 +7,4 @@
  * @property {(input: object, tx?: object) => Promise<object>} listPrices
  * Mutations record audit/outbox events in the supplied transaction when provided.
  */
-export { DefaultPricingService } from '../services/default-pricing-service.js';
+export { createDefaultPricingService } from '../services/default-pricing-service.js';

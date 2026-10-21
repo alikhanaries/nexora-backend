@@ -1,54 +1,53 @@
-import { StepUpService } from './services/step-up-verifier.js';
-import { ActivateTotpFactorUseCase } from './services/use-cases/activate-totp-factor.js';
-import { StartTotpEnrollmentUseCase } from './services/use-cases/start-totp-enrollment.js';
-import { UseRecoveryCodeUseCase } from './services/use-cases/use-recovery-code.js';
-import { VerifyMfaUseCase } from './services/use-cases/verify-mfa.js';
-import { VerifyTotpEnrollmentUseCase } from './services/use-cases/verify-totp-enrollment.js';
-import { PostgresMfaFactorRepository } from './repositories/postgres-mfa-factor-repository.js';
-import { PostgresRecoveryCodeRepository } from './repositories/postgres-recovery-code-repository.js';
-import { PostgresStepUpSessionRepository } from './repositories/postgres-step-up-session-repository.js';
-import mfaRoutes from './views/mfa.routes.js';
+import { createStepUpService } from './services/step-up-verifier.js';
+import { createActivateTotpFactor } from './services/use-cases/activate-totp-factor.js';
+import { createStartTotpEnrollment } from './services/use-cases/start-totp-enrollment.js';
+import { createUseRecoveryCode } from './services/use-cases/use-recovery-code.js';
+import { createVerifyMfa } from './services/use-cases/verify-mfa.js';
+import { createVerifyTotpEnrollment } from './services/use-cases/verify-totp-enrollment.js';
+import { createPostgresMfaFactorRepository } from './repositories/postgres-mfa-factor-repository.js';
+import { createPostgresRecoveryCodeRepository } from './repositories/postgres-recovery-code-repository.js';
+import { createPostgresStepUpSessionRepository } from './repositories/postgres-step-up-session-repository.js';
 export function createMfaModule(deps) {
-    const mfaFactors = new PostgresMfaFactorRepository();
-    const recoveryCodes = new PostgresRecoveryCodeRepository();
-    const stepUpSessions = new PostgresStepUpSessionRepository();
-    const stepUpService = new StepUpService({
+    const mfaFactors = createPostgresMfaFactorRepository();
+    const recoveryCodes = createPostgresRecoveryCodeRepository();
+    const stepUpSessions = createPostgresStepUpSessionRepository();
+    const stepUpService = createStepUpService({
         db: deps.database,
         stepUpSessions,
-        stepUpTtlSeconds: deps.config.auth.stepUpTtlSeconds,
+        stepUpTtlSeconds: deps.config.auth.stepUpTtlSeconds
     });
-    const startTotpEnrollment = new StartTotpEnrollmentUseCase({
+    const startTotpEnrollment = createStartTotpEnrollment({
         db: deps.database,
         mfaFactors,
         secretEncryptor: deps.secretEncryptor,
-        issuer: deps.config.appName,
+        issuer: deps.config.appName
     });
-    const verifyTotpEnrollment = new VerifyTotpEnrollmentUseCase({
+    const verifyTotpEnrollment = createVerifyTotpEnrollment({
         db: deps.database,
         mfaFactors,
         secretEncryptor: deps.secretEncryptor,
-        rateLimiter: deps.rateLimiter,
+        rateLimiter: deps.rateLimiter
     });
-    const activateTotpFactor = new ActivateTotpFactorUseCase({
+    const activateTotpFactor = createActivateTotpFactor({
         db: deps.database,
         mfaFactors,
         recoveryCodes,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     });
-    const verifyMfa = new VerifyMfaUseCase({
+    const verifyMfa = createVerifyMfa({
         db: deps.database,
         mfaFactors,
         secretEncryptor: deps.secretEncryptor,
         stepUpService,
         rateLimiter: deps.rateLimiter,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     });
-    const useRecoveryCode = new UseRecoveryCodeUseCase({
+    const useRecoveryCode = createUseRecoveryCode({
         db: deps.database,
         recoveryCodes,
         stepUpService,
         rateLimiter: deps.rateLimiter,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     });
     return {
         stepUpService,
@@ -58,16 +57,6 @@ export function createMfaModule(deps) {
             activateTotpFactor,
             verifyMfa,
             useRecoveryCode,
-        },
-        routes: {
-            plugin: mfaRoutes,
-            options: {
-                startTotpEnrollment,
-                verifyTotpEnrollment,
-                activateTotpFactor,
-                verifyMfa,
-                useRecoveryCode,
-            },
         },
     };
 }

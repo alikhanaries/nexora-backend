@@ -39,4 +39,4 @@
  * }) => Promise<{ delivery: object }>} getWebhookDelivery
  */
 
-export { DefaultWebhookQueryService } from '../services/webhook-query-service.js';
+export { createDefaultWebhookQueryService } from '../services/webhook-query-service.js';

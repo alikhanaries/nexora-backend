@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ExecuteMarketplaceLifecycleJob } from '../../../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
+import { createExecuteMarketplaceLifecycleJob } from '../../../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
 import { MarketplaceLifecycleJobSource } from '../../../../src/modules/orders/marketplace-ingestion/models/marketplace-lifecycle-job-source.js';
 import { MarketplaceOrderLifecycleOperation } from '../../../../src/modules/orders/marketplace-ingestion/models/marketplace-order-lifecycle-operation.js';
 import { MarketplaceOrderLifecycleRetryError } from '../../../../src/modules/orders/marketplace-ingestion/public/marketplace-order-lifecycle-errors.js';
@@ -61,7 +61,7 @@ function buildExecutor(overrides = {}) {
         apply: vi.fn(async () => ({ outcome: 'applied', orderId: 'ord-1' })),
     };
     return {
-        executor: new ExecuteMarketplaceLifecycleJob({
+        executor: createExecuteMarketplaceLifecycleJob({
             orderLifecycleProcessor,
             lifecycleService,
             commerceIntegrationQueryService,

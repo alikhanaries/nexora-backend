@@ -1,24 +1,26 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { BusinessRuleError, NotFoundError } from '../../../shared/errors/index.js';
+import { activateOfferEntity } from '../models/offer.js';
 import { toOfferDto } from './offer-dto.js';
 import { offerStatusChangedEvent } from './offer-events.js';
 import { requireOffersUpdate } from './offer-permissions.js';
-export class ActivateOffer {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireOffersUpdate(this.deps.authorization, input.actorPermissions);
-        const offer = await this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.offers.findById(tx, input.tenantId, input.offerId);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createActivateOffer(deps) {
+    async function execute(input) {
+        requireOffersUpdate(deps.authorization, input.actorPermissions);
+        const offer = await deps.database.execute(async (tx) => {
+            const existing = await deps.offers.findById(tx, input.tenantId, input.offerId);
             if (existing === null) {
                 throw new NotFoundError('Offer was not found', {
                     tenantId: input.tenantId,
                     offerId: input.offerId,
                 });
             }
-            const product = await this.deps.productQueryService.getProductById(input.tenantId, existing.productId, tx);
+            const product = await deps.productQueryService.getProductById(input.tenantId, existing.productId, tx);
             if (product === null) {
                 throw new NotFoundError('Product was not found', {
                     tenantId: input.tenantId,
@@ -31,12 +33,12 @@ export class ActivateOffer {
                     status: product.status,
                 });
             }
-            await this.deps.commerceIntegrationQueryService.verifyChannelUsable(input.tenantId, existing.channelId, tx);
+            await deps.commerceIntegrationQueryService.verifyChannelUsable(input.tenantId, existing.channelId, tx);
             if (input.resolvePricing === true) {
                 if (input.currency === undefined) {
                     throw new BusinessRuleError('currency is required when resolvePricing is true');
                 }
-                const effective = await this.deps.pricingService.getEffectivePrice(input.tenantId, existing.productId, existing.channelId, input.currency, new Date(), tx);
+                const effective = await deps.pricingService.getEffectivePrice(input.tenantId, existing.productId, existing.channelId, input.currency, new Date(), tx);
                 if (effective === null) {
                     throw new BusinessRuleError('No effective price found for this offer', {
                         productId: existing.productId,
@@ -46,12 +48,12 @@ export class ActivateOffer {
                 }
             }
             const previousStatus = existing.status;
-            const updated = existing.activate(new Date());
-            await this.deps.offers.update(tx, updated);
+            const updated = activateOfferEntity(existing, new Date());
+            await deps.offers.update(tx, updated);
             const dto = toOfferDto(updated);
             if (previousStatus !== updated.status) {
-                await this.deps.eventRecorder.record(tx, offerStatusChangedEvent(dto, previousStatus));
-                await this.deps.auditRecorder?.record(tx, {
+                await deps.eventRecorder.record(tx, offerStatusChangedEvent(dto, previousStatus));
+                await deps.auditRecorder?.record(tx, {
                     tenantId: input.tenantId,
                     actorKind: input.actorKind,
                     actorId: input.actorId,
@@ -71,4 +73,5 @@ export class ActivateOffer {
         }, { tenantId: input.tenantId });
         return { offer };
     }
+    return { execute };
 }

@@ -1,7 +1,7 @@
 import { MarketplaceOrderLifecycleProcessor } from '../modules/webhooks/marketplace/services/marketplace-order-lifecycle-processor.js';
-import { MarketplaceLifecycleEnqueueService } from '../modules/orders/marketplace-ingestion/services/marketplace-lifecycle-enqueue-service.js';
-import { ExecuteMarketplaceLifecycleJob } from '../modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
-import { FetchAndEnqueueMarketplaceOrderLifecycle } from '../modules/orders/marketplace-ingestion/services/fetch-and-enqueue-marketplace-order-lifecycle.js';
+import { createMarketplaceLifecycleEnqueueService } from '../modules/orders/marketplace-ingestion/services/marketplace-lifecycle-enqueue-service.js';
+import { createExecuteMarketplaceLifecycleJob } from '../modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
+import { createFetchAndEnqueueMarketplaceOrderLifecycle } from '../modules/orders/marketplace-ingestion/services/fetch-and-enqueue-marketplace-order-lifecycle.js';
 import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../modules/marketplaces/services/enqueue-outbound-marketplace-order-lifecycle-command.js';
 
 /**
@@ -21,7 +21,7 @@ import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../modules/mark
  * @param {import('../modules/orders/marketplace-ingestion/public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} deps.marketplaceLookup
  */
 export function wireMarketplaceLifecycleWorker(deps) {
-    const lifecycleEnqueueService = new MarketplaceLifecycleEnqueueService({
+    const lifecycleEnqueueService = createMarketplaceLifecycleEnqueueService({
         queue: deps.queue,
         metrics: deps.metrics,
         lifecycleConfig: deps.config.marketplaceLifecycle,
@@ -33,7 +33,7 @@ export function wireMarketplaceLifecycleWorker(deps) {
             ? {}
             : { processMarketplaceLifecyclePayload: deps.processMarketplaceLifecyclePayload }),
     });
-    const executeMarketplaceLifecycleJob = new ExecuteMarketplaceLifecycleJob({
+    const executeMarketplaceLifecycleJob = createExecuteMarketplaceLifecycleJob({
         orderLifecycleProcessor,
         lifecycleService: deps.lifecycleService,
         commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
@@ -44,7 +44,7 @@ export function wireMarketplaceLifecycleWorker(deps) {
             ? {}
             : { executeOutboundLifecycle: deps.executeOutboundMarketplaceOrderLifecycle }),
     });
-    const fetchAndEnqueueMarketplaceOrderLifecycle = new FetchAndEnqueueMarketplaceOrderLifecycle({
+    const fetchAndEnqueueMarketplaceOrderLifecycle = createFetchAndEnqueueMarketplaceOrderLifecycle({
         lifecycleEnqueueService,
         orderAdapterRegistry: deps.orderAdapterRegistry,
         marketplaceAdapterRuntimeFactory: deps.marketplaceAdapterRuntimeFactory,

@@ -1,40 +1,56 @@
 import { BusinessRuleError } from '../../../shared/errors/index.js';
 import { ReservationStatus as Status } from './reservation-status.js';
-export class InventoryReservation {
-    id;
-    tenantId;
-    stockLocationId;
-    productId;
-    referenceType;
-    referenceId;
-    quantity;
-    status;
-    createdAt;
-    releasedAt;
-    constructor(props) {
-        this.id = props.id;
-        this.tenantId = props.tenantId;
-        this.stockLocationId = props.stockLocationId;
-        this.productId = props.productId;
-        this.referenceType = props.referenceType;
-        this.referenceId = props.referenceId;
-        this.quantity = props.quantity;
-        this.status = props.status;
-        this.createdAt = props.createdAt;
-        this.releasedAt = props.releasedAt;
-    }
-    static reconstitute(props) {
-        return new InventoryReservation(props);
-    }
-    assertActive() {
-        if (this.status !== Status.ACTIVE) {
-            throw new BusinessRuleError('Reservation is not active', {
-                reservationId: this.id,
-                status: this.status,
-            });
-        }
-    }
-    isReleased() {
-        return this.status === Status.RELEASED;
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   stockLocationId: string,
+ *   productId: string,
+ *   referenceType: string,
+ *   referenceId: string,
+ *   quantity: number,
+ *   status: string,
+ *   createdAt: Date,
+ *   releasedAt: Date | null,
+ * }} InventoryReservation
+ */
+
+/**
+ * @param {InventoryReservation} props
+ * @returns {InventoryReservation}
+ */
+export function reconstituteInventoryReservation(props) {
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        stockLocationId: props.stockLocationId,
+        productId: props.productId,
+        referenceType: props.referenceType,
+        referenceId: props.referenceId,
+        quantity: props.quantity,
+        status: props.status,
+        createdAt: props.createdAt,
+        releasedAt: props.releasedAt,
+    };
+}
+
+/**
+ * @param {InventoryReservation} reservation
+ * @returns {boolean}
+ */
+export function isInventoryReservationReleased(reservation) {
+    return reservation.status === Status.RELEASED;
+}
+
+/**
+ * @param {InventoryReservation} reservation
+ */
+export function assertInventoryReservationActive(reservation) {
+    if (reservation.status !== Status.ACTIVE) {
+        throw new BusinessRuleError('Reservation is not active', {
+            reservationId: reservation.id,
+            status: reservation.status,
+        });
     }
 }

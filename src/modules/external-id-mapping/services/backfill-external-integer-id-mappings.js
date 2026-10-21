@@ -25,73 +25,19 @@ import { clampBatchSize } from '../../../shared/pagination/index.js';
  * @property {ExternalIdBackfillTenantStats[]} tenants
  */
 
-export class BackfillExternalIntegerIdMappings {
-    deps;
-
-    /**
-     * @param {object} deps
-     * @param {{ execute: Function, query: Function }} deps.database
-     * @param {import('../public/external-integer-id-mapping-command-service.js').ExternalIntegerIdMappingCommandService} deps.externalIntegerIdMappingCommandService
-     * @param {import('../repositories/postgres-external-id-backfill-queries.js').PostgresExternalIdBackfillQueries} deps.backfillQueries
-     * @param {import('pino').Logger} deps.logger
-     */
-    constructor(deps) {
-        this.deps = deps;
-    }
-
-    /**
-     * @param {object} [options]
-     * @param {readonly string[]} [options.tenantIds]
-     * @param {number} [options.batchSize]
-     */
-    async run(options = {}) {
-        const batchSize = clampBatchSize(options.batchSize ?? EXTERNAL_ID_BACKFILL_DEFAULT_BATCH_SIZE);
-        const tenantIds = options.tenantIds ?? await this.deps.backfillQueries.listActiveTenantIds(this.deps.database);
-        /** @type {ExternalIdBackfillTenantStats[]} */
-        const tenantStats = [];
-        for (const tenantId of tenantIds) {
-            const stats = await this.#backfillTenant(tenantId, batchSize);
-            tenantStats.push(stats);
-        }
-        return { success: true, tenants: tenantStats };
-    }
-
-    /**
-     * @param {string} tenantId
-     * @param {number} batchSize
-     */
-    async #backfillTenant(tenantId, batchSize) {
-        /** @type {ExternalIdBackfillResourceTypeStats[]} */
-        const resourceTypes = [];
-        for (const resourceType of EXTERNAL_ID_BACKFILL_RESOURCE_TYPES) {
-            const stats = await this.#backfillResourceType(tenantId, resourceType, batchSize);
-            resourceTypes.push(stats);
-            this.deps.logger.info(
-                {
-                    tenantId,
-                    resourceType,
-                    processed: stats.processed,
-                    assigned: stats.assigned,
-                    batches: stats.batches,
-                },
-                'External ID backfill resource type finished',
-            );
-        }
-        return { tenantId, resourceTypes };
-    }
-
+export function createBackfillExternalIntegerIdMappings(deps) {
     /**
      * @param {string} tenantId
      * @param {string} resourceType
      * @param {number} batchSize
      */
-    async #backfillResourceType(tenantId, resourceType, batchSize) {
+    async function backfillResourceType(tenantId, resourceType, batchSize) {
         let afterResourceId = null;
         let processed = 0;
         let assigned = 0;
         let batches = 0;
         for (;;) {
-            const resourceIds = await this.deps.database.execute(async (tx) => this.deps.backfillQueries.findUnmappedResourceIds(
+            const resourceIds = await deps.database.execute(async (tx) => deps.backfillQueries.findUnmappedResourceIds(
                 tx,
                 tenantId,
                 ExternalIdMappingProvider.COMPAT_V2,
@@ -103,10 +49,10 @@ export class BackfillExternalIntegerIdMappings {
                 break;
             }
             batches += 1;
-            const batchAssigned = await this.deps.database.execute(async (tx) => {
+            const batchAssigned = await deps.database.execute(async (tx) => {
                 let created = 0;
                 for (const resourceId of resourceIds) {
-                    await this.deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
+                    await deps.externalIntegerIdMappingCommandService.assignMapping(tx, {
                         tenantId,
                         provider: ExternalIdMappingProvider.COMPAT_V2,
                         resourceType,
@@ -122,4 +68,47 @@ export class BackfillExternalIntegerIdMappings {
         }
         return { resourceType, processed, assigned, batches };
     }
+
+    /**
+     * @param {string} tenantId
+     * @param {number} batchSize
+     */
+    async function backfillTenant(tenantId, batchSize) {
+        /** @type {ExternalIdBackfillResourceTypeStats[]} */
+        const resourceTypes = [];
+        for (const resourceType of EXTERNAL_ID_BACKFILL_RESOURCE_TYPES) {
+            const stats = await backfillResourceType(tenantId, resourceType, batchSize);
+            resourceTypes.push(stats);
+            deps.logger.info(
+                {
+                    tenantId,
+                    resourceType,
+                    processed: stats.processed,
+                    assigned: stats.assigned,
+                    batches: stats.batches,
+                },
+                'External ID backfill resource type finished',
+            );
+        }
+        return { tenantId, resourceTypes };
+    }
+
+    return {
+        /**
+         * @param {object} [options]
+         * @param {readonly string[]} [options.tenantIds]
+         * @param {number} [options.batchSize]
+         */
+        async run(options = {}) {
+            const batchSize = clampBatchSize(options.batchSize ?? EXTERNAL_ID_BACKFILL_DEFAULT_BATCH_SIZE);
+            const tenantIds = options.tenantIds ?? await deps.backfillQueries.listActiveTenantIds(deps.database);
+            /** @type {ExternalIdBackfillTenantStats[]} */
+            const tenantStats = [];
+            for (const tenantId of tenantIds) {
+                const stats = await backfillTenant(tenantId, batchSize);
+                tenantStats.push(stats);
+            }
+            return { success: true, tenants: tenantStats };
+        },
+    };
 }

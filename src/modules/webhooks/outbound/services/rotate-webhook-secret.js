@@ -2,21 +2,18 @@ import { auditRequestFields } from '../../../audit/public/index.js';
 import { AuthorizationError, NotFoundError, RateLimitError, ValidationError } from '../../../../shared/errors/index.js';
 import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-policies.js';
 import { WebhookSubscriptionStatus } from '../models/webhook-subscription-status.js';
+import { rotateWebhookSubscriptionSecret } from '../models/webhook-subscription.js';
 import { generateWebhookSecret } from '../models/webhook-secret.js';
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
 import { requireWebhooksManage } from './webhook-permissions.js';
 
-export class RotateWebhookSecret {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireWebhooksManage(this.deps.authorization, input.actorPermissions);
+export function createRotateWebhookSecret(deps) {
+    async function execute(input) {
+        requireWebhooksManage(deps.authorization, input.actorPermissions);
         if (input.sessionId === undefined) {
             throw new ValidationError('Step-up authentication is required to rotate webhook secrets');
         }
-        const hasStepUp = await this.deps.stepUpVerifier.hasValidStepUp({
+        const hasStepUp = await deps.stepUpVerifier.hasValidStepUp({
             userId: input.actorId,
             tenantId: input.tenantId,
             sessionId: input.sessionId,
@@ -24,7 +21,7 @@ export class RotateWebhookSecret {
         if (!hasStepUp) {
             throw new AuthorizationError('Recent step-up authentication is required');
         }
-        const rateLimit = await this.deps.rateLimiter.consume({
+        const rateLimit = await deps.rateLimiter.consume({
             policy: AUTH_RATE_LIMIT_POLICIES.webhookSecretRotate,
             subject: `${input.tenantId}:${input.actorId}`,
         });
@@ -32,17 +29,17 @@ export class RotateWebhookSecret {
             throw new RateLimitError(rateLimit.retryAfterSeconds);
         }
         const plaintextSecret = generateWebhookSecret();
-        const secretCiphertext = this.deps.secretEncryptor.encrypt(plaintextSecret);
+        const secretCiphertext = deps.secretEncryptor.encrypt(plaintextSecret);
         const now = new Date();
-        const updated = await this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId);
+        const updated = await deps.database.execute(async (tx) => {
+            const existing = await deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId);
             if (existing === null || existing.status === WebhookSubscriptionStatus.DELETED) {
                 throw new NotFoundError('Webhook subscription was not found', { subscriptionId: input.subscriptionId });
             }
-            const next = existing.rotateSecret(secretCiphertext, now);
-            await this.deps.subscriptions.updateSecret(tx, next);
-            if (this.deps.auditRecorder !== undefined) {
-                await this.deps.auditRecorder.record(tx, {
+            const next = rotateWebhookSubscriptionSecret(existing, secretCiphertext, now);
+            await deps.subscriptions.updateSecret(tx, next);
+            if (deps.auditRecorder !== undefined) {
+                await deps.auditRecorder.record(tx, {
                     tenantId: input.tenantId,
                     actorKind: input.actorKind,
                     actorId: input.actorId,
@@ -60,4 +57,5 @@ export class RotateWebhookSecret {
             secret: plaintextSecret,
         };
     }
+    return { execute };
 }

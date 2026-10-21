@@ -38,7 +38,4 @@
  * @property {(command: CreateCancellationCommand) => Promise<CreateCancellationResult>} createCancellation
  */
 
-export {
-    createCancellationCommandService,
-    DefaultCancellationCommandService,
-} from '../services/cancellation-command-service.js';
+export { createCancellationCommandService } from '../services/cancellation-command-service.js';

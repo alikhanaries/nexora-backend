@@ -13,40 +13,42 @@ function generateRecoveryCodes() {
     }
     return { plaintext, hashes };
 }
-export class ActivateTotpFactorUseCase {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        if (!input.actorPermissions.includes('mfa.manage')) {
-            throw new AuthorizationError('Missing required permission: mfa.manage');
-        }
-        const now = new Date();
-        const { plaintext, hashes } = generateRecoveryCodes();
-        await this.deps.db.execute(async (tx) => {
-            const factor = await this.deps.mfaFactors.findById(tx, input.factorId);
-            if (factor === null || factor.userId !== input.userId || factor.status !== 'PENDING') {
-                throw new NotFoundError('MFA factor was not found');
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createActivateTotpFactor(deps) {
+    return {
+        async execute(input) {
+            if (!input.actorPermissions.includes('mfa.manage')) {
+                throw new AuthorizationError('Missing required permission: mfa.manage');
             }
-            await this.deps.mfaFactors.revokeAllForUser(tx, input.userId, input.tenantId, now);
-            await this.deps.mfaFactors.activate(tx, factor.id, now);
-            await this.deps.recoveryCodes.revokeAllForUser(tx, input.userId, input.tenantId);
-            await this.deps.recoveryCodes.createBatch(tx, {
-                userId: input.userId,
-                tenantId: input.tenantId,
-                codeHashes: hashes,
-            });
-            await this.deps.auditRecorder?.record(tx, {
-                tenantId: input.tenantId,
-                actorKind: 'user',
-                actorId: input.userId,
-                eventType: 'MFA_ENABLED',
-                resourceType: 'mfa_factor',
-                resourceId: factor.id,
-                ...auditRequestFields(),
-            });
-        }, { tenantId: input.tenantId });
-        return { activated: true, recoveryCodes: plaintext };
-    }
+            const now = new Date();
+            const { plaintext, hashes } = generateRecoveryCodes();
+            await deps.db.execute(async (tx) => {
+                const factor = await deps.mfaFactors.findById(tx, input.factorId);
+                if (factor === null || factor.userId !== input.userId || factor.status !== 'PENDING') {
+                    throw new NotFoundError('MFA factor was not found');
+                }
+                await deps.mfaFactors.revokeAllForUser(tx, input.userId, input.tenantId, now);
+                await deps.mfaFactors.activate(tx, factor.id, now);
+                await deps.recoveryCodes.revokeAllForUser(tx, input.userId, input.tenantId);
+                await deps.recoveryCodes.createBatch(tx, {
+                    userId: input.userId,
+                    tenantId: input.tenantId,
+                    codeHashes: hashes,
+                });
+                await deps.auditRecorder?.record(tx, {
+                    tenantId: input.tenantId,
+                    actorKind: 'user',
+                    actorId: input.userId,
+                    eventType: 'MFA_ENABLED',
+                    resourceType: 'mfa_factor',
+                    resourceId: factor.id,
+                    ...auditRequestFields(),
+                });
+            }, { tenantId: input.tenantId });
+            return { activated: true, recoveryCodes: plaintext };
+        },
+    };
 }

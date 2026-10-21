@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
 import {
   createCancellationQueryService,
-  DefaultCancellationQueryService,
 } from '../../../src/modules/cancellations/services/cancellation-query-service.js';
 
 describe('createCancellationQueryService', () => {
@@ -36,26 +35,5 @@ describe('createCancellationQueryService', () => {
     });
 
     await expect(service.getCancellationById('t1', 'missing')).rejects.toBeInstanceOf(NotFoundError);
-  });
-
-  it('keeps DefaultCancellationQueryService constructor-return wrapper working', async () => {
-    const cancellation = {
-      id: 'c1',
-      tenantId: 't1',
-      orderId: 'o1',
-      status: 'COMPLETED',
-      createdAt: new Date(),
-    };
-    const service = new DefaultCancellationQueryService({
-      authorization: { requirePermission: vi.fn() },
-      queryable: {},
-      cancellations: {
-        findById: vi.fn(async () => cancellation),
-        listLines: vi.fn(async () => []),
-      },
-    });
-
-    const dto = await service.getCancellationById('t1', 'c1');
-    expect(dto.id).toBe('c1');
   });
 });

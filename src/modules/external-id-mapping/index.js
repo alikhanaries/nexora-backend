@@ -1,10 +1,10 @@
-import { AssignExternalIntegerIdMapping } from './services/assign-external-integer-id-mapping.js';
-import { BackfillExternalIntegerIdMappings } from './services/backfill-external-integer-id-mappings.js';
-import { DefaultExternalIntegerIdMappingCommandService } from './services/external-integer-id-mapping-command-service.js';
-import { DefaultExternalIntegerIdMappingQueryService } from './services/external-integer-id-mapping-query-service.js';
+import { createAssignExternalIntegerIdMapping } from './services/assign-external-integer-id-mapping.js';
+import { createBackfillExternalIntegerIdMappings } from './services/backfill-external-integer-id-mappings.js';
+import { createDefaultExternalIntegerIdMappingCommandService } from './services/external-integer-id-mapping-command-service.js';
+import { createDefaultExternalIntegerIdMappingQueryService } from './services/external-integer-id-mapping-query-service.js';
 import {
-    PostgresExternalIdBackfillQueries,
-    PostgresExternalIntegerIdMappingRepository,
+    createPostgresExternalIdBackfillQueries,
+    createPostgresExternalIntegerIdMappingRepository,
 } from './repositories/index.js';
 
 function resolveModuleLogger(logger) {
@@ -27,18 +27,18 @@ function resolveModuleLogger(logger) {
  * @param {import('pino').Logger} [deps.logger]
  */
 export function createExternalIdMappingModule(deps) {
-    const mappings = new PostgresExternalIntegerIdMappingRepository();
-    const assignExternalIntegerIdMapping = new AssignExternalIntegerIdMapping(mappings);
-    const externalIntegerIdMappingCommandService = new DefaultExternalIntegerIdMappingCommandService({
+    const mappings = createPostgresExternalIntegerIdMappingRepository();
+    const assignExternalIntegerIdMapping = createAssignExternalIntegerIdMapping(mappings);
+    const externalIntegerIdMappingCommandService = createDefaultExternalIntegerIdMappingCommandService({
         assignExternalIntegerIdMapping,
     });
-    const externalIntegerIdMappingQueryService = new DefaultExternalIntegerIdMappingQueryService({
+    const externalIntegerIdMappingQueryService = createDefaultExternalIntegerIdMappingQueryService({
         queryable: deps.database,
         database: deps.database,
         mappings,
     });
-    const backfillQueries = new PostgresExternalIdBackfillQueries();
-    const externalIntegerIdBackfillService = new BackfillExternalIntegerIdMappings({
+    const backfillQueries = createPostgresExternalIdBackfillQueries();
+    const externalIntegerIdBackfillService = createBackfillExternalIntegerIdMappings({
         database: deps.database,
         externalIntegerIdMappingCommandService,
         backfillQueries,

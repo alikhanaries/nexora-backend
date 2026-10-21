@@ -1,5 +1,5 @@
 import { createAuditModule } from '../modules/audit/index.js';
-import { DefaultAuthorizationService } from '../modules/authorization/public/index.js';
+import { createDefaultAuthorizationService } from '../modules/authorization/public/index.js';
 import { createCancellationsModule } from '../modules/cancellations/index.js';
 import { createCommerceIntegrationsModule } from '../modules/commerce-integrations/index.js';
 import { createExternalIdMappingModule } from '../modules/external-id-mapping/index.js';
@@ -13,7 +13,7 @@ import { createReturnsModule } from '../modules/returns/index.js';
 import { createShipmentsModule } from '../modules/shipments/index.js';
 import { MarketplaceAdapterRuntimeFactory } from '../modules/marketplaces/services/marketplace-adapter-runtime-factory.js';
 import { PostgresMarketplaceConnectionRepository } from '../modules/marketplaces/repositories/postgres-marketplace-connection-repository.js';
-import { PostgresOrderRepository } from '../modules/orders/repositories/postgres-order-repository.js';
+import { createPostgresOrderRepository } from '../modules/orders/repositories/postgres-order-repository.js';
 import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../modules/marketplaces/repositories/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
 import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../modules/marketplaces/services/marketplace-outbound-order-lifecycle-adapter-registry.js';
 import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../modules/marketplaces/services/execute-outbound-marketplace-order-lifecycle-command.js';
@@ -27,7 +27,7 @@ import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestio
  */
 export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
     const audit = createAuditModule({ database: infra.database });
-    const authorization = new DefaultAuthorizationService();
+    const authorization = createDefaultAuthorizationService();
     const marketplaces = createMarketplacesModule({
         database: infra.database,
         eventRecorder: infra.eventRecorder,
@@ -132,7 +132,7 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
         marketplaceAdapterRuntimeFactory,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
-        orders: new PostgresOrderRepository(),
+        orders: createPostgresOrderRepository(),
         confirmOrder: orders.useCases.confirmOrder,
         cancellationCommandService: cancellations.cancellationCommandService,
         returnCommandService: returns.returnCommandService,

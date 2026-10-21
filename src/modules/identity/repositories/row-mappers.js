@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { parseOrThrow } from '../../../shared/validation/index.js';
-import { Email, Membership, RefreshSession, User } from '../models/index.js';
+import { reconstituteEmail } from '../models/email.js';
+import { reconstituteMembership } from '../models/membership.js';
+import { createRefreshSessionEntity } from '../models/refresh-session.js';
+import { reconstituteUser } from '../models/user.js';
+
 const userRowSchema = z.object({
     id: z.string().uuid(),
     email: z.string(),
@@ -47,9 +51,9 @@ const passwordResetTokenRowSchema = z.object({
 });
 export function mapUserRow(row) {
     const parsed = parseOrThrow(userRowSchema, row, 'user row');
-    return User.create({
+    return reconstituteUser({
         id: parsed.id,
-        email: Email.create(parsed.email),
+        email: reconstituteEmail({ raw: parsed.email, normalized: parsed.normalized_email }),
         status: parsed.status,
         createdAt: parsed.created_at,
         updatedAt: parsed.updated_at,
@@ -57,7 +61,7 @@ export function mapUserRow(row) {
 }
 export function mapMembershipRow(row) {
     const parsed = parseOrThrow(membershipRowSchema, row, 'membership row');
-    return Membership.create({
+    return reconstituteMembership({
         id: parsed.id,
         tenantId: parsed.tenant_id,
         userId: parsed.user_id,
@@ -68,7 +72,7 @@ export function mapMembershipRow(row) {
 }
 export function mapRefreshSessionRow(row) {
     const parsed = parseOrThrow(refreshSessionRowSchema, row, 'refresh session row');
-    return RefreshSession.create({
+    return createRefreshSessionEntity({
         id: parsed.id,
         userId: parsed.user_id,
         tenantId: parsed.tenant_id,

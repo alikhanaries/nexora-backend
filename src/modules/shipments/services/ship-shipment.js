@@ -2,6 +2,7 @@ import { auditRequestFields } from '../../audit/public/index.js';
 import { NotFoundError } from '../../../shared/errors/index.js';
 import { toShipmentDetailDto } from '../views/shipment-dto.js';
 import { shipmentShippedEvent, shipmentStatusChangedEvent } from './shipment-events.js';
+import { shipShipmentEntity, withShipmentCarrierDetails } from '../models/shipment.js';
 import { ShipmentStatus } from '../models/shipment-status.js';
 import { fulfillInventoryWhenShipmentShipped } from './fulfill-inventory-when-shipment-shipped.js';
 import { requireShipmentsUpdate } from './shipment-permissions.js';
@@ -25,11 +26,11 @@ export function createShipShipment(deps) {
             }
             const previousStatus = existing.status;
             const now = new Date();
-            let updated = existing.ship();
+            let updated = shipShipmentEntity(existing, now);
             if (input.carrier !== undefined ||
                 input.service !== undefined ||
                 input.trackingNumber !== undefined) {
-                updated = updated.withCarrierDetails({
+                updated = withShipmentCarrierDetails(updated, {
                     ...(input.carrier === undefined
                         ? {}
                         : { carrier: normalizeOptionalText(input.carrier) }),
@@ -92,12 +93,6 @@ export function createShipShipment(deps) {
     return { execute };
 }
 
-/** @deprecated Prefer createShipShipment */
-export class ShipShipment {
-    constructor(deps) {
-        return createShipShipment(deps);
-    }
-}
 
 /**
  * @param {string|null|undefined} value

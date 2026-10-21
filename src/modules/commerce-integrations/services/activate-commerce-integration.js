@@ -1,16 +1,14 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { activateCommerceIntegration } from '../models/commerce-integration.js';
 import { channelStatusChangedEvent } from './commerce-integration-events.js';
 import { requireChannelUpdate } from './commerce-integration-permissions.js';
-export class ActivateCommerceIntegration {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireChannelUpdate(this.deps.authorization, input.actorPermissions);
-        const channel = await this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.repository.findById(tx, input.tenantId, input.channelId);
+
+export function createActivateCommerceIntegration(deps) {
+    async function execute(input) {
+        requireChannelUpdate(deps.authorization, input.actorPermissions);
+        const channel = await deps.database.execute(async (tx) => {
+            const existing = await deps.repository.findById(tx, input.tenantId, input.channelId);
             if (existing === null) {
                 throw new NotFoundError('Channel was not found', {
                     tenantId: input.tenantId,
@@ -18,11 +16,11 @@ export class ActivateCommerceIntegration {
                 });
             }
             const previousStatus = existing.status;
-            const updated = existing.activate(new Date());
-            await this.deps.repository.update(tx, updated);
+            const updated = activateCommerceIntegration(existing, new Date());
+            await deps.repository.update(tx, updated);
             if (previousStatus !== updated.status) {
-                await this.deps.eventRecorder.record(tx, channelStatusChangedEvent(updated, previousStatus));
-                await this.deps.auditRecorder?.record(tx, {
+                await deps.eventRecorder.record(tx, channelStatusChangedEvent(updated, previousStatus));
+                await deps.auditRecorder?.record(tx, {
                     tenantId: input.tenantId,
                     actorKind: 'user',
                     actorId: input.actorId,
@@ -41,4 +39,5 @@ export class ActivateCommerceIntegration {
         }, { tenantId: input.tenantId });
         return { channel };
     }
+    return { execute };
 }

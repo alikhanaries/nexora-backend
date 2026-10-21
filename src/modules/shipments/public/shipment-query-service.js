@@ -27,7 +27,4 @@
  * }) => Promise<{ items: object[], totalCount: number, page: number, pageSize: number }>} listShipments
  * Tenant-scoped page-based shipment listing with optional filters.
  */
-export {
-    createShipmentQueryService,
-    DefaultShipmentQueryService,
-} from '../services/shipment-query-service.js';
+export { createShipmentQueryService } from '../services/shipment-query-service.js';

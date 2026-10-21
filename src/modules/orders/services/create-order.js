@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../audit/public/index.js';
 import { BusinessRuleError, ValidationError, } from '../../../shared/errors/index.js';
 import { parseCurrency } from '../../../shared/money/index.js';
-import { CustomerSnapshot } from '../models/customer-snapshot.js';
-import { OrderLine } from '../models/order-line.js';
-import { Order } from '../models/order.js';
+import { createCustomerSnapshotEntity } from '../models/customer-snapshot.js';
+import { createOrderLineEntity } from '../models/order-line.js';
+import { createOrderEntity } from '../models/order.js';
 import { toCustomerSnapshotDto, toOrderDto, toOrderLineDto, } from '../views/order-dto.js';
 import { orderCreatedEvent, orderConfirmedEvent } from './order-events.js';
 import { requireOrdersCreate } from './order-permissions.js';
@@ -67,7 +67,7 @@ export function createCreateOrder(deps) {
             }
             const orderNumber = await deps.orders.allocateOrderNumber(tx, input.tenantId);
             const now = new Date();
-            const order = Order.create({
+            const order = createOrderEntity({
                 id: orderId,
                 tenantId: input.tenantId,
                 channelId: input.channelId,
@@ -84,7 +84,7 @@ export function createCreateOrder(deps) {
             await deps.orders.insertOrder(tx, order);
             const orderLines = [];
             for (const line of resolvedLines) {
-                const orderLine = OrderLine.create({
+                const orderLine = createOrderLineEntity({
                     id: randomUUID(),
                     tenantId: input.tenantId,
                     orderId,
@@ -104,7 +104,7 @@ export function createCreateOrder(deps) {
                 orderLines.push(orderLine);
             }
             const customerInput = input.customer ?? {};
-            const snapshot = CustomerSnapshot.create({
+            const snapshot = createCustomerSnapshotEntity({
                 id: randomUUID(),
                 tenantId: input.tenantId,
                 orderId,

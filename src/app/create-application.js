@@ -1,10 +1,11 @@
 import { createAuditModule } from '../modules/audit/index.js';
 import { createApiKeysModule } from '../modules/api-keys/index.js';
 import { createAuthorizationModule } from '../modules/authorization/index.js';
-import { AuthorizationMembershipPermissionResolver } from '../modules/authorization/public/index.js';
-import { PostgresMembershipRoleRepository } from '../modules/authorization/repositories/postgres-membership-role-repository.js';
+import {
+    createAuthorizationMembershipPermissionResolver,
+    createPostgresMembershipRoleRepository,
+} from '../modules/authorization/public/index.js';
 import { createIdentityModule } from '../modules/identity/index.js';
-import { AuthenticateAccessTokenUseCase } from '../modules/identity/services/authenticate-access-token.js';
 import { createMfaModule } from '../modules/mfa/index.js';
 import { createCommerceIntegrationsModule } from '../modules/commerce-integrations/index.js';
 import { createInventoryModule } from '../modules/inventory/index.js';
@@ -33,19 +34,19 @@ import { registerMarketplaceWebhookAdapters } from '../modules/marketplaces/repo
 import { registerMarketplaceOutboundOrderLifecycleAdapters } from '../modules/marketplaces/repositories/adapters/register-marketplace-outbound-order-lifecycle-adapters.js';
 import { MarketplaceOutboundOrderLifecycleAdapterRegistry } from '../modules/marketplaces/services/marketplace-outbound-order-lifecycle-adapter-registry.js';
 import { ExecuteOutboundMarketplaceOrderLifecycleCommand } from '../modules/marketplaces/services/execute-outbound-marketplace-order-lifecycle-command.js';
-import { MarketplaceLifecycleEnqueueService } from '../modules/orders/marketplace-ingestion/services/marketplace-lifecycle-enqueue-service.js';
+import { createMarketplaceLifecycleEnqueueService } from '../modules/orders/marketplace-ingestion/services/marketplace-lifecycle-enqueue-service.js';
 import { EnqueueOutboundMarketplaceOrderLifecycleCommand } from '../modules/marketplaces/services/enqueue-outbound-marketplace-order-lifecycle-command.js';
 import { ShopifyOrderAdapter } from '../modules/marketplaces/repositories/adapters/shopify/shopify-order-adapter.js';
-import { PostgresOrderRepository } from '../modules/orders/repositories/postgres-order-repository.js';
-import { DefaultAuthorizationService } from '../modules/authorization/public/index.js';
+import { createPostgresOrderRepository } from '../modules/orders/repositories/postgres-order-repository.js';
+import { createDefaultAuthorizationService } from '../modules/authorization/public/index.js';
 import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestion.js';
 import { createNestHttpServer } from './http/create-nest-http-server.js';
 import { createDefaultProbes, ReadinessService } from './observability/readiness.js';
 export async function createApplication(infra) {
     const audit = createAuditModule({ database: infra.database });
     const authorization = createAuthorizationModule({ database: infra.database });
-    const membershipRoles = new PostgresMembershipRoleRepository();
-    const membershipPermissions = new AuthorizationMembershipPermissionResolver(membershipRoles);
+    const membershipRoles = createPostgresMembershipRoleRepository();
+    const membershipPermissions = createAuthorizationMembershipPermissionResolver({ membershipRoles });
     const identity = await createIdentityModule({
         database: infra.database,
         config: infra.config,
@@ -67,13 +68,7 @@ export async function createApplication(infra) {
         stepUpVerifier: mfa.stepUpService,
         auditRecorder: audit.auditRecorder,
     });
-    const authenticateAccessToken = new AuthenticateAccessTokenUseCase({
-        db: infra.database,
-        accessTokenService: identity.auth.accessTokenService,
-        refreshSessions: identity.repositories.refreshSessions,
-        users: identity.repositories.users,
-        membershipPermissions,
-    });
+    const authenticateAccessToken = identity.authenticateAccessToken;
     const readiness = new ReadinessService(createDefaultProbes({
         database: infra.database,
         redis: infra.redis,
@@ -91,7 +86,7 @@ export async function createApplication(infra) {
     });
     const products = createProductsModule({
         database: infra.database,
-        authorization: new DefaultAuthorizationService(),
+        authorization: createDefaultAuthorizationService(),
         auditRecorder: audit.auditRecorder,
         eventRecorder: infra.eventRecorder,
     });
@@ -227,7 +222,7 @@ export async function createApplication(infra) {
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
         noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
         noonUserAgent: infra.config.marketplace.noonUserAgent,
-        orders: new PostgresOrderRepository(),
+        orders: createPostgresOrderRepository(),
         confirmOrder: orders.useCases.confirmOrder,
         cancellationCommandService: cancellations.cancellationCommandService,
         returnCommandService: returns.returnCommandService,
@@ -243,7 +238,7 @@ export async function createApplication(infra) {
         noonUserAgent: infra.config.marketplace.noonUserAgent,
     });
     const marketplaceRepository = new PostgresMarketplaceRepository();
-    const marketplaceLifecycleEnqueueService = new MarketplaceLifecycleEnqueueService({
+    const marketplaceLifecycleEnqueueService = createMarketplaceLifecycleEnqueueService({
         queue: infra.queue,
         metrics: infra.metrics,
         lifecycleConfig: infra.config.marketplaceLifecycle,

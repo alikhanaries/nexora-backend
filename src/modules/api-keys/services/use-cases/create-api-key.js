@@ -75,10 +75,3 @@ export function createCreateApiKey(deps) {
 
     return { execute };
 }
-
-/** @deprecated Prefer {@link createCreateApiKey}; kept for existing import sites and tests. */
-export class CreateApiKeyUseCase {
-    constructor(deps) {
-        return createCreateApiKey(deps);
-    }
-}

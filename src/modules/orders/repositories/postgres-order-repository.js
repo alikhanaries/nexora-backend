@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { encodeCursor } from '../../../shared/pagination/index.js';
 import { parseOrThrow } from '../../../shared/validation/index.js';
-import { CustomerSnapshot } from '../models/customer-snapshot.js';
-import { OrderLine } from '../models/order-line.js';
+import { reconstituteCustomerSnapshot } from '../models/customer-snapshot.js';
+import { reconstituteOrderLine } from '../models/order-line.js';
 import { OrderLineStatus } from '../models/order-line-status.js';
-import { Order } from '../models/order.js';
+import { reconstituteOrder } from '../models/order.js';
 import { OrderStatus } from '../models/order-status.js';
 const orderRowSchema = z.object({
     id: z.string().uuid(),
@@ -106,7 +106,7 @@ const orderLineSelect = `id, tenant_id, order_id, product_id, offer_id, stock_lo
   returned_quantity, unit_price_minor, discount_minor, tax_minor, line_total_minor, currency,
   status, created_at, updated_at`;
 function toOrder(row) {
-    return Order.reconstitute({
+    return reconstituteOrder({
         id: row.id,
         tenantId: row.tenant_id,
         channelId: row.channel_id,
@@ -128,7 +128,7 @@ function toOrder(row) {
     });
 }
 function toOrderLine(row) {
-    return OrderLine.reconstitute({
+    return reconstituteOrderLine({
         id: row.id,
         tenantId: row.tenant_id,
         orderId: row.order_id,
@@ -152,7 +152,7 @@ function toOrderLine(row) {
     });
 }
 function toCustomerSnapshot(row) {
-    return CustomerSnapshot.reconstitute({
+    return reconstituteCustomerSnapshot({
         id: row.id,
         tenantId: row.tenant_id,
         orderId: row.order_id,
@@ -168,51 +168,7 @@ function toCustomerSnapshot(row) {
         createdAt: row.created_at,
     });
 }
-export class PostgresOrderRepository {
-    async findById(queryable, tenantId, orderId) {
-        const result = await queryable.query(`SELECT ${orderSelect} FROM orders WHERE tenant_id = $1 AND id = $2`, [tenantId, orderId], { operation: 'orders.find_by_id' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
-    }
-    async lockOrderForUpdate(transaction, tenantId, orderId) {
-        const result = await transaction.query(`SELECT ${orderSelect}
-       FROM orders
-       WHERE tenant_id = $1 AND id = $2
-       FOR UPDATE`, [tenantId, orderId], { operation: 'orders.lock_for_update' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
-    }
-    async findByOrderNumber(queryable, tenantId, orderNumber) {
-        const result = await queryable.query(`SELECT ${orderSelect} FROM orders WHERE tenant_id = $1 AND order_number = $2`, [tenantId, orderNumber], { operation: 'orders.find_by_order_number' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
-    }
-    async findByChannelAndExternalReference(queryable, tenantId, channelId, externalOrderReference) {
-        const result = await queryable.query(`SELECT ${orderSelect}
-       FROM orders
-       WHERE tenant_id = $1 AND channel_id = $2 AND external_order_reference = $3`, [tenantId, channelId, externalOrderReference], { operation: 'orders.find_by_channel_and_external_reference' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
-    }
-    async lockByChannelAndExternalReferenceForUpdate(transaction, tenantId, channelId, externalOrderReference) {
-        const result = await transaction.query(`SELECT ${orderSelect}
-       FROM orders
-       WHERE tenant_id = $1 AND channel_id = $2 AND external_order_reference = $3
-       FOR UPDATE`, [tenantId, channelId, externalOrderReference], { operation: 'orders.lock_by_channel_and_external_reference' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
-    }
-    buildListConditions(tenantId, filters) {
+function buildListConditions(tenantId, filters) {
         const conditions = ['o.tenant_id = $1'];
         const params = [tenantId];
         let paramIndex = 2;
@@ -286,7 +242,54 @@ export class PostgresOrderRepository {
         }
         return { conditions, params, nextParamIndex: paramIndex };
     }
-    async list(queryable, tenantId, filters, limit, cursor) {
+
+
+export function createPostgresOrderRepository() {
+    return {
+        async findById(queryable, tenantId, orderId) {
+        const result = await queryable.query(`SELECT ${orderSelect} FROM orders WHERE tenant_id = $1 AND id = $2`, [tenantId, orderId], { operation: 'orders.find_by_id' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
+        },
+        async lockOrderForUpdate(transaction, tenantId, orderId) {
+        const result = await transaction.query(`SELECT ${orderSelect}
+       FROM orders
+       WHERE tenant_id = $1 AND id = $2
+       FOR UPDATE`, [tenantId, orderId], { operation: 'orders.lock_for_update' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
+        },
+        async findByOrderNumber(queryable, tenantId, orderNumber) {
+        const result = await queryable.query(`SELECT ${orderSelect} FROM orders WHERE tenant_id = $1 AND order_number = $2`, [tenantId, orderNumber], { operation: 'orders.find_by_order_number' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
+        },
+        async findByChannelAndExternalReference(queryable, tenantId, channelId, externalOrderReference) {
+        const result = await queryable.query(`SELECT ${orderSelect}
+       FROM orders
+       WHERE tenant_id = $1 AND channel_id = $2 AND external_order_reference = $3`, [tenantId, channelId, externalOrderReference], { operation: 'orders.find_by_channel_and_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
+        },
+        async lockByChannelAndExternalReferenceForUpdate(transaction, tenantId, channelId, externalOrderReference) {
+        const result = await transaction.query(`SELECT ${orderSelect}
+       FROM orders
+       WHERE tenant_id = $1 AND channel_id = $2 AND external_order_reference = $3
+       FOR UPDATE`, [tenantId, channelId, externalOrderReference], { operation: 'orders.lock_by_channel_and_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toOrder(parseOrThrow(orderRowSchema, row, 'orders row'));
+        },
+        async list(queryable, tenantId, filters, limit, cursor) {
         const conditions = ['tenant_id = $1'];
         const params = [tenantId];
         let paramIndex = 2;
@@ -333,17 +336,17 @@ export class PostgresOrderRepository {
        ORDER BY created_at DESC, id DESC
        LIMIT $${paramIndex}`, params, { operation: 'orders.list' });
         return result.rows.map((row) => toOrder(parseOrThrow(orderRowSchema, row, 'orders row')));
-    }
-    async count(queryable, tenantId, filters) {
-        const { conditions, params } = this.buildListConditions(tenantId, filters);
+        },
+        async count(queryable, tenantId, filters) {
+        const { conditions, params } = buildListConditions(tenantId, filters);
         const result = await queryable.query(`SELECT COUNT(*)::int AS total
        FROM orders o
        WHERE ${conditions.join(' AND ')}`, params, { operation: 'orders.count' });
         const row = result.rows[0];
         return Number(row?.total ?? 0);
-    }
-    async listPage(queryable, tenantId, filters, page, pageSize) {
-        const { conditions, params, nextParamIndex } = this.buildListConditions(tenantId, filters);
+        },
+        async listPage(queryable, tenantId, filters, page, pageSize) {
+        const { conditions, params, nextParamIndex } = buildListConditions(tenantId, filters);
         const offset = (page - 1) * pageSize;
         const limitParam = nextParamIndex;
         const offsetParam = nextParamIndex + 1;
@@ -354,9 +357,9 @@ export class PostgresOrderRepository {
        ORDER BY o.created_at DESC, o.id DESC
        LIMIT $${limitParam} OFFSET $${offsetParam}`, listParams, { operation: 'orders.list_page' });
         return result.rows.map((row) => toOrder(parseOrThrow(orderRowSchema, row, 'orders row')));
-    }
-    async insertOrder(transaction, order) {
-        const p = order.toProps();
+        },
+        async insertOrder(transaction, order) {
+        const p = order;
         await transaction.query(`INSERT INTO orders (
          id, tenant_id, channel_id, external_order_reference, order_number, status, currency,
          subtotal_minor, discount_minor, tax_minor, shipping_minor, total_minor,
@@ -381,9 +384,9 @@ export class PostgresOrderRepository {
             p.shippedAt,
             p.deliveredAt,
         ], { operation: 'orders.insert' });
-    }
-    async updateOrder(transaction, order) {
-        const p = order.toProps();
+        },
+        async updateOrder(transaction, order) {
+        const p = order;
         await transaction.query(`UPDATE orders SET
          status = $3, updated_at = $4, confirmed_at = $5, cancelled_at = $6,
          shipped_at = $7, delivered_at = $8
@@ -397,9 +400,9 @@ export class PostgresOrderRepository {
             p.shippedAt,
             p.deliveredAt,
         ], { operation: 'orders.update' });
-    }
-    async insertOrderLine(transaction, line) {
-        const p = line.toProps();
+        },
+        async insertOrderLine(transaction, line) {
+        const p = line;
         await transaction.query(`INSERT INTO order_lines (
          id, tenant_id, order_id, product_id, offer_id, stock_location_id, merchant_sku,
          product_type_snapshot, quantity, cancelled_quantity, shipped_quantity, returned_quantity,
@@ -427,9 +430,9 @@ export class PostgresOrderRepository {
             p.createdAt,
             p.updatedAt,
         ], { operation: 'order_lines.insert' });
-    }
-    async updateOrderLine(transaction, line) {
-        const p = line.toProps();
+        },
+        async updateOrderLine(transaction, line) {
+        const p = line;
         await transaction.query(`UPDATE order_lines SET
          cancelled_quantity = $3, shipped_quantity = $4, returned_quantity = $5,
          status = $6, updated_at = $7
@@ -442,24 +445,24 @@ export class PostgresOrderRepository {
             p.status,
             p.updatedAt,
         ], { operation: 'order_lines.update' });
-    }
-    async updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt) {
+        },
+        async updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt) {
         await transaction.query(`UPDATE order_lines
        SET returned_quantity = $3, updated_at = $4
        WHERE tenant_id = $1 AND id = $2`, [tenantId, orderLineId, returnedQuantity, updatedAt], { operation: 'order_lines.update_returned_quantity' });
-    }
-    async listOrderLines(queryable, tenantId, orderId) {
+        },
+        async listOrderLines(queryable, tenantId, orderId) {
         const result = await queryable.query(`SELECT ${orderLineSelect} FROM order_lines WHERE tenant_id = $1 AND order_id = $2 ORDER BY created_at`, [tenantId, orderId], { operation: 'order_lines.list' });
         return result.rows.map((row) => toOrderLine(parseOrThrow(orderLineRowSchema, row, 'order_lines row')));
-    }
-    async lockOrderLinesForUpdate(transaction, tenantId, orderId) {
+        },
+        async lockOrderLinesForUpdate(transaction, tenantId, orderId) {
         const result = await transaction.query(`SELECT ${orderLineSelect}
        FROM order_lines
        WHERE tenant_id = $1 AND order_id = $2
        FOR UPDATE`, [tenantId, orderId], { operation: 'order_lines.lock_for_update' });
         return result.rows.map((row) => toOrderLine(parseOrThrow(orderLineRowSchema, row, 'order_lines row')));
-    }
-    async lockOrderLineForUpdate(transaction, tenantId, orderLineId) {
+        },
+        async lockOrderLineForUpdate(transaction, tenantId, orderLineId) {
         const result = await transaction.query(`SELECT ${orderLineSelect}
        FROM order_lines
        WHERE tenant_id = $1 AND id = $2
@@ -468,9 +471,9 @@ export class PostgresOrderRepository {
         if (row === undefined)
             return null;
         return toOrderLine(parseOrThrow(orderLineRowSchema, row, 'order_lines row'));
-    }
-    async insertCustomerSnapshot(transaction, snapshot) {
-        const p = snapshot.toProps();
+        },
+        async insertCustomerSnapshot(transaction, snapshot) {
+        const p = snapshot;
         await transaction.query(`INSERT INTO order_customer_snapshots (
          id, tenant_id, order_id, external_customer_reference, first_name, last_name,
          email, phone, company_name, billing_address, shipping_address, metadata, created_at
@@ -489,8 +492,8 @@ export class PostgresOrderRepository {
             JSON.stringify(p.metadata),
             p.createdAt,
         ], { operation: 'order_customer_snapshots.insert' });
-    }
-    async findCustomerSnapshot(queryable, tenantId, orderId) {
+        },
+        async findCustomerSnapshot(queryable, tenantId, orderId) {
         const result = await queryable.query(`SELECT id, tenant_id, order_id, external_customer_reference, first_name, last_name,
               email, phone, company_name, billing_address, shipping_address, metadata, created_at
        FROM order_customer_snapshots
@@ -499,8 +502,8 @@ export class PostgresOrderRepository {
         if (row === undefined)
             return null;
         return toCustomerSnapshot(parseOrThrow(customerRowSchema, row, 'order_customer_snapshots row'));
-    }
-    async allocateOrderNumber(transaction, tenantId) {
+        },
+        async allocateOrderNumber(transaction, tenantId) {
         const result = await transaction.query(`INSERT INTO tenant_order_sequences (tenant_id, last_value)
        VALUES ($1, 1)
        ON CONFLICT (tenant_id) DO UPDATE
@@ -513,7 +516,8 @@ export class PostgresOrderRepository {
         }
         const seq = Number(row.last_value);
         return `ORD-${String(seq).padStart(8, '0')}`;
-    }
+        },
+    };
 }
 export function orderListCursor(order) {
     return encodeCursor([order.createdAt.toISOString(), order.id]);

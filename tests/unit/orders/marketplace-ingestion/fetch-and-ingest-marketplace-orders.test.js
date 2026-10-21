@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { NormalizedMarketplaceOrderStatus } from '../../../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-order-status.js';
-import { FetchAndIngestMarketplaceOrders } from '../../../../src/modules/orders/marketplace-ingestion/services/fetch-and-ingest-marketplace-orders.js';
-import { MarketplaceOrderAdapterRegistry } from '../../../../src/modules/orders/marketplace-ingestion/public/marketplace-order-adapter-registry.js';
+import { createFetchAndIngestMarketplaceOrders } from '../../../../src/modules/orders/marketplace-ingestion/services/fetch-and-ingest-marketplace-orders.js';
+import { createMarketplaceOrderAdapterRegistry } from '../../../../src/modules/orders/marketplace-ingestion/public/marketplace-order-adapter-registry.js';
 
 const STOCK_LOCATION_ID = '00000000-0000-4000-8000-000000000020';
 const TENANT_ID = '00000000-0000-4000-8000-000000000001';
@@ -35,7 +35,7 @@ describe('FetchAndIngestMarketplaceOrders', () => {
             outcome: 'created',
             order: { id: `ord-${normalizedOrder.externalOrderId}` },
         }));
-        const registry = new MarketplaceOrderAdapterRegistry();
+        const registry = createMarketplaceOrderAdapterRegistry();
         registry.register({
             marketplaceKey: 'shopify',
             getOrderCapabilities: () => ({
@@ -45,7 +45,7 @@ describe('FetchAndIngestMarketplaceOrders', () => {
             }),
             listOrders,
         });
-        const useCase = new FetchAndIngestMarketplaceOrders({
+        const useCase = createFetchAndIngestMarketplaceOrders({
             ingestNormalizedMarketplaceOrder: { execute: ingest },
             orderAdapterRegistry: registry,
             commerceIntegrationQueryService: {
@@ -81,7 +81,7 @@ describe('FetchAndIngestMarketplaceOrders', () => {
                 hasNextPage: false,
                 endCursor: null,
             });
-        const registry = new MarketplaceOrderAdapterRegistry();
+        const registry = createMarketplaceOrderAdapterRegistry();
         registry.register({
             marketplaceKey: 'shopify',
             getOrderCapabilities: () => ({
@@ -91,7 +91,7 @@ describe('FetchAndIngestMarketplaceOrders', () => {
             }),
             listOrders,
         });
-        const useCase = new FetchAndIngestMarketplaceOrders({
+        const useCase = createFetchAndIngestMarketplaceOrders({
             ingestNormalizedMarketplaceOrder: {
                 execute: async () => ({ outcome: 'created', order: { id: 'x' } }),
             },

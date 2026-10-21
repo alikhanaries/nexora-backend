@@ -12,8 +12,8 @@ import { ShopifyGraphqlClient } from '../../src/modules/marketplaces/repositorie
 import { MarketplaceHttpClient } from '../../src/modules/marketplaces/repositories/http/marketplace-http-client.js';
 import { createMarketplaceOrderIngestionModule } from '../../src/modules/orders/marketplace-ingestion/index.js';
 import { MarketplaceOrderIngestionPermanentError } from '../../src/modules/orders/marketplace-ingestion/public/marketplace-order-ingestion-errors.js';
-import { DefaultProductQueryService } from '../../src/modules/products/public/index.js';
-import { PostgresProductRepository } from '../../src/modules/products/repositories/postgres-product-repository.js';
+import { createDefaultProductQueryService } from '../../src/modules/products/public/index.js';
+import { createPostgresProductRepository } from '../../src/modules/products/repositories/index.js';
 import { buildShopifyGraphqlOrder } from '../unit/marketplaces/shopify-order-fixtures.js';
 import { mapShopifyOrderToNormalized } from '../../src/modules/marketplaces/repositories/adapters/shopify/map-shopify-order-to-normalized.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
@@ -139,9 +139,9 @@ describe('Shopify marketplace order ingestion integration', () => {
                 return m === null ? null : { id: m.id, key: m.key, status: m.status };
             },
         };
-        const productQueryService = new DefaultProductQueryService({
+        const productQueryService = createDefaultProductQueryService({
             queryable: infra.database,
-            products: new PostgresProductRepository(),
+            products: createPostgresProductRepository(),
         });
         ingestionModule = createMarketplaceOrderIngestionModule({
             database: infra.database,
@@ -226,9 +226,9 @@ describe('Shopify marketplace order ingestion integration', () => {
                 return m === null ? null : { id: m.id, key: m.key, status: m.status };
             },
         };
-        const productQueryService = new DefaultProductQueryService({
+        const productQueryService = createDefaultProductQueryService({
             queryable: app.infra.database,
-            products: new PostgresProductRepository(),
+            products: createPostgresProductRepository(),
         });
         const adapterModule = createMarketplaceOrderIngestionModule({
             database: app.infra.database,

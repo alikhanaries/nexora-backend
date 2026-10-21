@@ -3,7 +3,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '../../src/app/config/config.js';
 import { createApplication } from '../../src/app/create-application.js';
 import { JobName } from '../../src/infrastructure/queue/queue-names.js';
-import { ExecuteMarketplaceLifecycleJob } from '../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
+import { createExecuteMarketplaceLifecycleJob } from '../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
 import { MarketplaceOrderLifecycleProcessor } from '../../src/modules/webhooks/marketplace/services/marketplace-order-lifecycle-processor.js';
 import { MarketplaceWebhookEventKind } from '../../src/modules/webhooks/marketplace/models/marketplace-webhook-event-kind.js';
 import { NormalizedMarketplaceOrderStatus } from '../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-order-status.js';
@@ -25,7 +25,7 @@ describe('marketplace lifecycle worker integration', () => {
         });
         const tenantId = '22222222-2222-4222-8222-222222222222';
         const channelId = '33333333-3333-4333-8333-333333333333';
-        const executeMarketplaceLifecycleJob = new ExecuteMarketplaceLifecycleJob({
+        const executeMarketplaceLifecycleJob = createExecuteMarketplaceLifecycleJob({
             orderLifecycleProcessor,
             lifecycleService: app.marketplaceOrderIngestion.lifecycleService,
             commerceIntegrationQueryService: {

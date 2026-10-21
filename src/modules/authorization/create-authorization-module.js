@@ -45,7 +45,6 @@ export function createAuthorizationModule(deps) {
         roles,
         database: deps.database,
     });
-    const routes = authorizationRoutes;
     return {
         authorizationService: authorization,
         useCases: {
@@ -56,17 +55,6 @@ export function createAuthorizationModule(deps) {
             listPermissions,
             getEffectivePermissions,
             systemRoleSeeder,
-        },
-        routes: {
-            plugin: routes,
-            options: {
-                createRole,
-                listRoles,
-                assignRole,
-                removeRole,
-                listPermissions,
-                getEffectivePermissions,
-            },
         },
     };
 }

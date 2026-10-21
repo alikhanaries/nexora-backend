@@ -1,4 +1,5 @@
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { closeTenantEntity } from '../models/tenant.js';
 import { requireTenantLifecycleAccess } from './tenant-permissions.js';
 
 /**
@@ -16,7 +17,7 @@ export function createCloseTenant(deps) {
             if (existing === null) {
                 throw new NotFoundError('Tenant was not found', { tenantId: input.tenantId });
             }
-            const updated = existing.close(new Date());
+            const updated = closeTenantEntity(existing, new Date());
             await deps.repository.update(tx, updated);
             return updated;
         });
@@ -24,16 +25,4 @@ export function createCloseTenant(deps) {
     }
 
     return { execute };
-}
-
-/** @deprecated Prefer {@link createCloseTenant}; kept for existing import sites. */
-export class CloseTenant {
-    /**
-     * @param {object} repository
-     * @param {object} transactionManager
-     * @param {object} authorization
-     */
-    constructor(repository, transactionManager, authorization) {
-        return createCloseTenant({ repository, transactionManager, authorization });
-    }
 }

@@ -1,10 +1,19 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { ActivateCommerceIntegration, CreateCommerceIntegration, DeactivateCommerceIntegration, CommerceIntegrationQueryService, GetCommerceIntegration, ListCommerceIntegrations, SuspendCommerceIntegration, UpdateCommerceIntegration, } from './services/index.js';
-import { PostgresCommerceIntegrationRepository } from './repositories/index.js';
-import commerceIntegrationRoutes from './views/commerce-integration.routes.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
+import {
+    createActivateCommerceIntegration,
+    createCreateCommerceIntegration,
+    createDeactivateCommerceIntegration,
+    createDefaultCommerceIntegrationQueryService,
+    createGetCommerceIntegration,
+    createListCommerceIntegrations,
+    createSuspendCommerceIntegration,
+    createUpdateCommerceIntegration,
+} from './services/index.js';
+import { createPostgresCommerceIntegrationRepository } from './repositories/index.js';
+
 export function createCommerceIntegrationsModule(deps) {
-    const authorization = new DefaultAuthorizationService();
-    const repository = new PostgresCommerceIntegrationRepository();
+    const authorization = createDefaultAuthorizationService();
+    const repository = createPostgresCommerceIntegrationRepository();
     const sharedDeps = {
         authorization,
         repository,
@@ -12,33 +21,39 @@ export function createCommerceIntegrationsModule(deps) {
         eventRecorder: deps.eventRecorder,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
     };
-    const commerceIntegrationQueryService = new CommerceIntegrationQueryService({
-        queryable: deps.database,
+    const commerceIntegrationQueryService = createDefaultCommerceIntegrationQueryService({
         database: deps.database,
-        getCommerceIntegrationById: (tenantId, channelId, queryable) => repository.findById(queryable, tenantId, channelId),
-        getCommerceIntegrationByExternalReference: (tenantId, externalReference, queryable) => repository.findByExternalReference(queryable, tenantId, externalReference),
-        listCommerceIntegrations: (tenantId, filters, queryable) => repository.list(queryable, tenantId, filters),
+        repository,
     });
     const useCases = {
-        createCommerceIntegration: new CreateCommerceIntegration({
+        createCommerceIntegration: createCreateCommerceIntegration({
             ...sharedDeps,
             verifyMarketplaceExists: deps.verifyMarketplaceExists,
             inventoryService: deps.inventoryService,
         }),
-        updateCommerceIntegration: new UpdateCommerceIntegration({
+        updateCommerceIntegration: createUpdateCommerceIntegration({
             ...sharedDeps,
             inventoryService: deps.inventoryService,
         }),
-        getCommerceIntegration: new GetCommerceIntegration(sharedDeps),
-        listCommerceIntegrations: new ListCommerceIntegrations(sharedDeps),
-        activateCommerceIntegration: new ActivateCommerceIntegration(sharedDeps),
-        deactivateCommerceIntegration: new DeactivateCommerceIntegration(sharedDeps),
-        suspendCommerceIntegration: new SuspendCommerceIntegration(sharedDeps),
+        getCommerceIntegration: createGetCommerceIntegration(sharedDeps),
+        listCommerceIntegrations: createListCommerceIntegrations(sharedDeps),
+        activateCommerceIntegration: createActivateCommerceIntegration(sharedDeps),
+        deactivateCommerceIntegration: createDeactivateCommerceIntegration(sharedDeps),
+        suspendCommerceIntegration: createSuspendCommerceIntegration(sharedDeps),
     };
     return {
         useCases,
         commerceIntegrationQueryService,
-        routes: commerceIntegrationRoutes,
     };
 }
-export { CommerceIntegration, IntegrationStatus } from './models/index.js';
+
+export {
+    createCommerceIntegrationEntity,
+    reconstituteCommerceIntegration,
+    isCommerceIntegrationUsable,
+    updateCommerceIntegrationDetails,
+    activateCommerceIntegration,
+    deactivateCommerceIntegration,
+    suspendCommerceIntegration,
+    IntegrationStatus,
+} from './models/index.js';

@@ -1,5 +1,6 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { deliverShipmentEntity } from '../models/shipment.js';
 import { toShipmentDetailDto } from '../views/shipment-dto.js';
 import { shipmentDeliveredEvent, shipmentStatusChangedEvent } from './shipment-events.js';
 import { requireShipmentsUpdate } from './shipment-permissions.js';
@@ -20,7 +21,7 @@ export function createDeliverShipment(deps) {
                 });
             }
             const previousStatus = existing.status;
-            const updated = existing.deliver();
+            const updated = deliverShipmentEntity(existing);
             await deps.shipments.updateShipment(tx, updated);
             const lines = await deps.shipments.listShipmentLines(tx, input.tenantId, updated.id);
             const detail = toShipmentDetailDto(updated, lines);

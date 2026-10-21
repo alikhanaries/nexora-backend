@@ -7,4 +7,4 @@
  * @property {(options?: { tenantIds?: readonly string[], batchSize?: number }) => Promise<ExternalIdBackfillRunResult>} run
  */
 
-export { BackfillExternalIntegerIdMappings as DefaultExternalIntegerIdBackfillService } from '../services/backfill-external-integer-id-mappings.js';
+export { createBackfillExternalIntegerIdMappings as createExternalIntegerIdBackfillService } from '../services/backfill-external-integer-id-mappings.js';

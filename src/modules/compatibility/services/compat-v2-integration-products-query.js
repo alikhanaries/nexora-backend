@@ -15,7 +15,7 @@ export class CompatV2IntegrationProductsQuery {
 
     /**
      * @param {object} deps
-     * @param {import('../../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
+     * @param {ReturnType<typeof import('../../authorization/public/index.js').createDefaultAuthorizationService>} deps.authorization
      * @param {import('../../commerce-integrations/public/commerce-integration-query-service.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {import('../../offers/public/offer-query-service.js').DefaultOfferQueryService} deps.offerQueryService
      * @param {import('../../products/public/product-query-service.js').DefaultProductQueryService} deps.productQueryService

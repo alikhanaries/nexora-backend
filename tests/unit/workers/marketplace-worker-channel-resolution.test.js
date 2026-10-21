@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ExecuteMarketplaceLifecycleJob } from '../../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
+import { createExecuteMarketplaceLifecycleJob } from '../../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-lifecycle-job.js';
 import { MarketplaceLifecycleJobSource } from '../../../src/modules/orders/marketplace-ingestion/models/marketplace-lifecycle-job-source.js';
 import { MarketplaceWebhookEventKind } from '../../../src/modules/webhooks/marketplace/models/marketplace-webhook-event-kind.js';
 import { wireMarketplaceOrderIngestion } from '../../../src/workers/wire-marketplace-order-ingestion.js';
@@ -100,7 +100,7 @@ function buildExecutor(commerceIntegrationQueryService, marketplaceKey) {
     const marketplaceLookup = {
         findById: vi.fn(async () => ({ id: marketplaceId, key: marketplaceKey, status: 'ACTIVE' })),
     };
-    const executor = new ExecuteMarketplaceLifecycleJob({
+    const executor = createExecuteMarketplaceLifecycleJob({
         orderLifecycleProcessor,
         lifecycleService,
         commerceIntegrationQueryService,

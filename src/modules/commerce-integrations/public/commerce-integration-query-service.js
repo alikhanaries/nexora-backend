@@ -9,4 +9,7 @@
  * @property {(tenantId: string, externalReference: string, tx?: object) => Promise<object>} getCommerceIntegrationByExternalReference
  * Throws {@link NotFoundError} when missing.
  */
-export { CommerceIntegrationQueryService } from '../services/commerce-integration-query-service.js';
+export {
+    createCommerceIntegrationQueryService,
+    createDefaultCommerceIntegrationQueryService,
+} from '../services/commerce-integration-query-service.js';

@@ -1,34 +1,36 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { updateOfferEntity } from '../models/offer.js';
 import { toOfferDto } from './offer-dto.js';
 import { offerUpdatedEvent } from './offer-events.js';
 import { requireOffersUpdate } from './offer-permissions.js';
-export class UpdateOffer {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireOffersUpdate(this.deps.authorization, input.actorPermissions);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createUpdateOffer(deps) {
+    async function execute(input) {
+        requireOffersUpdate(deps.authorization, input.actorPermissions);
         const externalReference = input.externalReference === undefined
             ? undefined
             : input.externalReference === null
                 ? null
                 : input.externalReference.trim() || null;
-        const offer = await this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.offers.findById(tx, input.tenantId, input.offerId);
+        const offer = await deps.database.execute(async (tx) => {
+            const existing = await deps.offers.findById(tx, input.tenantId, input.offerId);
             if (existing === null) {
                 throw new NotFoundError('Offer was not found', {
                     tenantId: input.tenantId,
                     offerId: input.offerId,
                 });
             }
-            const updated = existing.update({
+            const updated = updateOfferEntity(existing, {
                 ...(externalReference === undefined ? {} : { externalReference }),
                 ...(input.priceReference === undefined ? {} : { priceReference: input.priceReference }),
                 ...(input.listingStatus === undefined ? {} : { listingStatus: input.listingStatus }),
             }, new Date());
-            await this.deps.offers.update(tx, updated);
+            await deps.offers.update(tx, updated);
             const dto = toOfferDto(updated);
             const changes = {};
             if (externalReference !== undefined && externalReference !== existing.externalReference) {
@@ -51,8 +53,8 @@ export class UpdateOffer {
                 };
             }
             if (Object.keys(changes).length > 0) {
-                await this.deps.eventRecorder.record(tx, offerUpdatedEvent(dto, changes));
-                await this.deps.auditRecorder?.record(tx, {
+                await deps.eventRecorder.record(tx, offerUpdatedEvent(dto, changes));
+                await deps.auditRecorder?.record(tx, {
                     tenantId: input.tenantId,
                     actorKind: input.actorKind,
                     actorId: input.actorId,
@@ -67,4 +69,5 @@ export class UpdateOffer {
         }, { tenantId: input.tenantId });
         return { offer };
     }
+    return { execute };
 }

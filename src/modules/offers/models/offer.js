@@ -1,100 +1,149 @@
 import { BusinessRuleError } from '../../../shared/errors/index.js';
 import { ListingStatus } from './listing-status.js';
 import { OfferStatus } from './offer-status.js';
-export class Offer {
-    id;
-    tenantId;
-    productId;
-    channelId;
-    status;
-    externalReference;
-    priceReference;
-    listingStatus;
-    createdAt;
-    updatedAt;
-    constructor(props) {
-        this.id = props.id;
-        this.tenantId = props.tenantId;
-        this.productId = props.productId;
-        this.channelId = props.channelId;
-        this.status = props.status;
-        this.externalReference = props.externalReference;
-        this.priceReference = props.priceReference;
-        this.listingStatus = props.listingStatus;
-        this.createdAt = props.createdAt;
-        this.updatedAt = props.updatedAt;
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   productId: string,
+ *   channelId: string,
+ *   status: string,
+ *   externalReference: string | null,
+ *   priceReference: string | null,
+ *   listingStatus: string,
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ * }} Offer
+ */
+
+/**
+ * @param {object} props
+ * @returns {Offer}
+ */
+export function createOfferEntity(props) {
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        productId: props.productId,
+        channelId: props.channelId,
+        status: OfferStatus.DRAFT,
+        externalReference: props.externalReference ?? null,
+        priceReference: props.priceReference ?? null,
+        listingStatus: ListingStatus.UNLISTED,
+        createdAt: props.createdAt,
+        updatedAt: props.createdAt,
+    };
+}
+
+/**
+ * @param {Offer} props
+ * @returns {Offer}
+ */
+export function reconstituteOffer(props) {
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        productId: props.productId,
+        channelId: props.channelId,
+        status: props.status,
+        externalReference: props.externalReference,
+        priceReference: props.priceReference,
+        listingStatus: props.listingStatus,
+        createdAt: props.createdAt,
+        updatedAt: props.updatedAt,
+    };
+}
+
+/**
+ * @param {Offer} offer
+ * @returns {boolean}
+ */
+export function isOfferUsable(offer) {
+    return offer.status === OfferStatus.ACTIVE;
+}
+
+/**
+ * @param {Offer} offer
+ * @param {object} fields
+ * @param {Date} at
+ * @returns {Offer}
+ */
+export function updateOfferEntity(offer, fields, at) {
+    if (offer.status === OfferStatus.INACTIVE) {
+        throw new BusinessRuleError('Inactive offers cannot be updated');
     }
-    static create(props) {
-        return new Offer({
-            id: props.id,
-            tenantId: props.tenantId,
-            productId: props.productId,
-            channelId: props.channelId,
-            status: OfferStatus.DRAFT,
-            externalReference: props.externalReference ?? null,
-            priceReference: props.priceReference ?? null,
-            listingStatus: ListingStatus.UNLISTED,
-            createdAt: props.createdAt,
-            updatedAt: props.createdAt,
+    return {
+        id: offer.id,
+        tenantId: offer.tenantId,
+        productId: offer.productId,
+        channelId: offer.channelId,
+        status: offer.status,
+        externalReference: fields.externalReference === undefined ? offer.externalReference : fields.externalReference,
+        priceReference: fields.priceReference === undefined ? offer.priceReference : fields.priceReference,
+        listingStatus: fields.listingStatus ?? offer.listingStatus,
+        createdAt: offer.createdAt,
+        updatedAt: at,
+    };
+}
+
+/**
+ * @param {Offer} offer
+ * @param {string} status
+ * @param {Date} updatedAt
+ * @returns {Offer}
+ */
+function withOfferStatus(offer, status, updatedAt) {
+    return {
+        id: offer.id,
+        tenantId: offer.tenantId,
+        productId: offer.productId,
+        channelId: offer.channelId,
+        status,
+        externalReference: offer.externalReference,
+        priceReference: offer.priceReference,
+        listingStatus: offer.listingStatus,
+        createdAt: offer.createdAt,
+        updatedAt,
+    };
+}
+
+/**
+ * @param {Offer} offer
+ * @param {Date} at
+ * @returns {Offer}
+ */
+export function activateOfferEntity(offer, at) {
+    if (offer.status !== OfferStatus.DRAFT && offer.status !== OfferStatus.SUSPENDED) {
+        throw new BusinessRuleError('Only draft or suspended offers can be activated', {
+            currentStatus: offer.status,
         });
     }
-    static reconstitute(props) {
-        return new Offer(props);
-    }
-    isUsable() {
-        return this.status === OfferStatus.ACTIVE;
-    }
-    update(fields, at) {
-        if (this.status === OfferStatus.INACTIVE) {
-            throw new BusinessRuleError('Inactive offers cannot be updated');
-        }
-        return new Offer({
-            id: this.id,
-            tenantId: this.tenantId,
-            productId: this.productId,
-            channelId: this.channelId,
-            status: this.status,
-            externalReference: fields.externalReference === undefined ? this.externalReference : fields.externalReference,
-            priceReference: fields.priceReference === undefined ? this.priceReference : fields.priceReference,
-            listingStatus: fields.listingStatus ?? this.listingStatus,
-            createdAt: this.createdAt,
-            updatedAt: at,
+    return withOfferStatus(offer, OfferStatus.ACTIVE, at);
+}
+
+/**
+ * @param {Offer} offer
+ * @param {Date} at
+ * @returns {Offer}
+ */
+export function suspendOfferEntity(offer, at) {
+    if (offer.status !== OfferStatus.ACTIVE) {
+        throw new BusinessRuleError('Only active offers can be suspended', {
+            currentStatus: offer.status,
         });
     }
-    activate(at) {
-        if (this.status !== OfferStatus.DRAFT && this.status !== OfferStatus.SUSPENDED) {
-            throw new BusinessRuleError('Only draft or suspended offers can be activated', {
-                currentStatus: this.status,
-            });
-        }
-        return this.withStatus(OfferStatus.ACTIVE, at);
+    return withOfferStatus(offer, OfferStatus.SUSPENDED, at);
+}
+
+/**
+ * @param {Offer} offer
+ * @param {Date} at
+ * @returns {Offer}
+ */
+export function deactivateOfferEntity(offer, at) {
+    if (offer.status === OfferStatus.INACTIVE) {
+        throw new BusinessRuleError('Offer is already inactive');
     }
-    suspend(at) {
-        if (this.status !== OfferStatus.ACTIVE) {
-            throw new BusinessRuleError('Only active offers can be suspended', {
-                currentStatus: this.status,
-            });
-        }
-        return this.withStatus(OfferStatus.SUSPENDED, at);
-    }
-    deactivate(at) {
-        if (this.status === OfferStatus.INACTIVE) {
-            throw new BusinessRuleError('Offer is already inactive');
-        }
-        return this.withStatus(OfferStatus.INACTIVE, at);
-    }
-    withStatus(status, updatedAt) {
-        return new Offer({
-            id: this.id,
-            tenantId: this.tenantId,
-            productId: this.productId,
-            channelId: this.channelId,
-            status,
-            externalReference: this.externalReference,
-            priceReference: this.priceReference,
-            listingStatus: this.listingStatus,
-            createdAt: this.createdAt,
-            updatedAt,
-        });
-    }
+    return withOfferStatus(offer, OfferStatus.INACTIVE, at);
 }

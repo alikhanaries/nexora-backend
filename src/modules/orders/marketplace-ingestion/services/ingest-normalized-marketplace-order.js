@@ -12,22 +12,16 @@ import {
 /**
  * Fetch or accept a normalized order, then run generic ingestion.
  * Webhook and polling entrypoints converge here.
+ *
+ * @param {object} deps
+ * @param {ReturnType<import('./marketplace-order-ingestion-service.js').createMarketplaceOrderIngestionService>} deps.ingestionService
+ * @param {ReturnType<import('../public/marketplace-order-adapter-registry.js').createMarketplaceOrderAdapterRegistry>} deps.orderAdapterRegistry
+ * @param {import('../../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
+ * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
+ * @param {import('../../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @returns {{ execute: Function, fetchViaAdapter: Function }}
  */
-export class IngestNormalizedMarketplaceOrder {
-    deps;
-
-    /**
-     * @param {object} deps
-     * @param {import('./marketplace-order-ingestion-service.js').MarketplaceOrderIngestionService} deps.ingestionService
-     * @param {import('../public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
-     * @param {import('../../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
-     * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
-     * @param {import('../../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
-     */
-    constructor(deps) {
-        this.deps = deps;
-    }
-
+export function createIngestNormalizedMarketplaceOrder(deps) {
     /**
      * @param {object} input
      * @param {string} input.tenantId
@@ -38,15 +32,15 @@ export class IngestNormalizedMarketplaceOrder {
      * @param {string|null} [input.correlationId]
      * @param {string} [input.jobId]
      */
-    async execute(input) {
+    async function execute(input) {
         let order = input.normalizedOrder;
         if (order === undefined) {
             if (input.externalOrderId === undefined || input.externalOrderId.trim().length === 0) {
                 throw new MarketplaceOrderIngestionPermanentError('externalOrderId or normalizedOrder is required');
             }
-            order = await this.fetchViaAdapter(input);
+            order = await fetchViaAdapter(input);
         }
-        return this.deps.ingestionService.ingest({
+        return deps.ingestionService.ingest({
             tenantId: input.tenantId,
             channelId: input.channelId,
             order,
@@ -58,8 +52,8 @@ export class IngestNormalizedMarketplaceOrder {
     /**
      * @param {object} input
      */
-    async fetchViaAdapter(input) {
-        const adapter = this.deps.orderAdapterRegistry.resolve(input.marketplaceKey);
+    async function fetchViaAdapter(input) {
+        const adapter = deps.orderAdapterRegistry.resolve(input.marketplaceKey);
         if (adapter === null || typeof adapter.fetchOrder !== 'function') {
             throw new MarketplaceOrderIngestionPermanentError('Marketplace order fetch is not supported', {
                 marketplaceKey: input.marketplaceKey,
@@ -71,14 +65,14 @@ export class IngestNormalizedMarketplaceOrder {
                 marketplaceKey: input.marketplaceKey,
             });
         }
-        if (this.deps.marketplaceAdapterRuntimeFactory === undefined) {
+        if (deps.marketplaceAdapterRuntimeFactory === undefined) {
             throw new MarketplaceOrderIngestionPermanentError('Marketplace adapter runtime is not configured');
         }
         try {
-            const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.channelId);
+            const channel = await deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.channelId);
             const stockLocationId = requireChannelStockLocationId(channel);
-            return await this.deps.database.execute(async (tx) => {
-                const runtime = await this.deps.marketplaceAdapterRuntimeFactory.createForSync({
+            return await deps.database.execute(async (tx) => {
+                const runtime = await deps.marketplaceAdapterRuntimeFactory.createForSync({
                     tenantId: input.tenantId,
                     channelId: input.channelId,
                     marketplaceKey: input.marketplaceKey,
@@ -107,4 +101,6 @@ export class IngestNormalizedMarketplaceOrder {
             throw mapped;
         }
     }
+
+    return { execute, fetchViaAdapter };
 }

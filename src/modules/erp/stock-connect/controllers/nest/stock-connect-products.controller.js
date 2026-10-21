@@ -32,7 +32,7 @@ class StockConnectProductsController {
 
   @Get('/api/v2/stock-connect/products')
   async list(@Query() query) {
-    const parsed = stockConnectListProductsQuerySchema.parse(query);
+    const parsed = parseOrThrow(stockConnectListProductsQuerySchema, query, 'query');
     return this.stockConnectIntegrationService.listProducts(parsed);
   }
 

@@ -103,10 +103,3 @@ export function createShipmentQueryService(deps) {
         listShipments,
     };
 }
-
-/** @deprecated Prefer {@link createShipmentQueryService}; kept for existing import sites and JSDoc typedefs. */
-export class DefaultShipmentQueryService {
-    constructor(deps) {
-        return createShipmentQueryService(deps);
-    }
-}

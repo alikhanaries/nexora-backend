@@ -124,10 +124,3 @@ export function createShipmentCommandService(deps) {
 
     return { createShipment, updateShipmentTracking };
 }
-
-/** @deprecated Prefer {@link createShipmentCommandService}; kept for existing import sites and tests. */
-export class DefaultShipmentCommandService {
-    constructor(deps) {
-        return createShipmentCommandService(deps);
-    }
-}

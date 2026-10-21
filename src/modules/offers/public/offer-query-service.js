@@ -1,10 +1,1 @@
-/**
- * @typedef {object} OfferQueryService
- * @property {(tenantId: string, offerId: string, tx?: object) => Promise<object>} getOfferById
- * @property {(tenantId: string, productId: string, channelId: string, tx?: object) => Promise<object|null>} getOfferForProductAndChannel
- * @property {(tenantId: string, productId: string, tx?: object) => Promise<object[]>} getOffersByProduct
- * @property {(tenantId: string, channelId: string, tx?: object) => Promise<object[]>} listActiveOffersByChannel
- * @property {(tenantId: string, offerId: string, tx?: object) => Promise<object>} verifyOfferUsable
- * @property {(tenantId: string, channelId: string, externalReference: string, tx?: object) => Promise<object|null>} getOfferByExternalReference
- */
-export { DefaultOfferQueryService } from '../services/offer-query-service.js';
+export { createDefaultOfferQueryService } from '../services/offer-query-service.js';

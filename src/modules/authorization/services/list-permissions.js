@@ -26,4 +26,6 @@ export class ListPermissions {
     constructor(deps) {
         return createListPermissions(deps);
     }
+
+    return { execute };
 }

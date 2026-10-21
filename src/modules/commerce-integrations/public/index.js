@@ -1,5 +1,8 @@
-export { CommerceIntegrationQueryService } from '../services/commerce-integration-query-service.js';
-export { CommerceIntegration, IntegrationStatus } from '../models/index.js';
+export {
+    createCommerceIntegrationQueryService,
+    createDefaultCommerceIntegrationQueryService,
+} from '../services/commerce-integration-query-service.js';
+export { IntegrationStatus } from '../models/index.js';
 export {
     resolveChannelStockLocationId,
     requireChannelStockLocationId,
