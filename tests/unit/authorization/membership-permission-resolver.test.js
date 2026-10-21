@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     createAuthorizationMembershipPermissionResolver,
+    AuthorizationMembershipPermissionResolver,
 } from '../../../src/modules/authorization/services/membership-permission-resolver.js';
 
 describe('createAuthorizationMembershipPermissionResolver', () => {
@@ -39,5 +40,16 @@ describe('createAuthorizationMembershipPermissionResolver', () => {
             tenantId: 'tenant-1',
         });
         expect(permissions).toEqual(expect.arrayContaining(['orders.read', 'orders.write']));
+    });
+
+    it('compatibility wrapper accepts membershipRoles directly', async () => {
+        const membershipRoles = {
+            loadPermissionContextByUserAndTenant: vi.fn(async () => null),
+        };
+        const resolver = new AuthorizationMembershipPermissionResolver(membershipRoles);
+        await expect(resolver.resolvePermissions({}, {
+            userId: 'user-1',
+            tenantId: 'tenant-1',
+        })).resolves.toEqual([]);
     });
 });

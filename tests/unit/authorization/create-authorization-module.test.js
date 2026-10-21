@@ -2,23 +2,26 @@ import { describe, expect, it, vi } from 'vitest';
 import { createAuthorizationModule } from '../../../src/modules/authorization/create-authorization-module.js';
 
 vi.mock('../../../src/modules/authorization/repositories/postgres-permission-repository.js', () => ({
-    createPostgresPermissionRepository: vi.fn(() => ({})),
+    PostgresPermissionRepository: vi.fn(function PostgresPermissionRepository() {}),
 }));
 vi.mock('../../../src/modules/authorization/repositories/postgres-role-repository.js', () => ({
-    createPostgresRoleRepository: vi.fn(() => ({})),
+    PostgresRoleRepository: vi.fn(function PostgresRoleRepository() {}),
 }));
 vi.mock('../../../src/modules/authorization/repositories/postgres-membership-role-repository.js', () => ({
-    createPostgresMembershipRoleRepository: vi.fn(() => ({})),
+    PostgresMembershipRoleRepository: vi.fn(function PostgresMembershipRoleRepository() {}),
+}));
+vi.mock('../../../src/modules/authorization/views/authorization.routes.js', () => ({
+    default: { plugin: true },
 }));
 
 describe('createAuthorizationModule', () => {
     it('fails fast when database is missing', () => {
         expect(() => createAuthorizationModule({})).toThrow(
-            /createAuthorizationModule requires deps\.database/,
+            'createAuthorizationModule requires deps.database',
         );
     });
 
-    it('wires factory-based use cases and authorization service without legacy routes', () => {
+    it('wires factory-based use cases and authorization service', () => {
         const module = createAuthorizationModule({
             database: { execute: vi.fn() },
         });
@@ -30,6 +33,6 @@ describe('createAuthorizationModule', () => {
         expect(module.useCases.listPermissions).toHaveProperty('execute');
         expect(module.useCases.getEffectivePermissions).toHaveProperty('execute');
         expect(module.useCases.systemRoleSeeder).toHaveProperty('execute');
-        expect(module.routes).toBeUndefined();
+        expect(module.routes.options.createRole).toBe(module.useCases.createRole);
     });
 });

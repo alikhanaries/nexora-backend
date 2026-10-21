@@ -32,3 +32,13 @@ export function createGetEffectivePermissions(deps) {
 
     return { execute };
 }
+
+/** @deprecated Prefer {@link createGetEffectivePermissions}; kept for existing import sites. */
+export class GetEffectivePermissions {
+    /**
+     * @param {object} deps
+     */
+    constructor(deps) {
+        return createGetEffectivePermissions(deps);
+    }
+}

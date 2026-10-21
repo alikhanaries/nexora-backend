@@ -42,3 +42,13 @@ export function createRemoveRole(deps) {
 
     return { execute };
 }
+
+/** @deprecated Prefer {@link createRemoveRole}; kept for existing import sites. */
+export class RemoveRole {
+    /**
+     * @param {object} deps
+     */
+    constructor(deps) {
+        return createRemoveRole(deps);
+    }
+}

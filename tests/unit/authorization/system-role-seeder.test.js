@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     createSystemRoleSeeder,
+    SystemRoleSeeder,
 } from '../../../src/modules/authorization/services/system-role-seeder.js';
 import { SYSTEM_ROLE_TEMPLATES } from '../../../src/modules/authorization/models/system-role-templates.js';
 
@@ -63,5 +64,19 @@ describe('createSystemRoleSeeder', () => {
         const result = await seeder.execute({ tenantId: TENANT_ID });
         expect(result.createdCount).toBe(0);
         expect(roles.create).not.toHaveBeenCalled();
+    });
+
+    it('compatibility wrapper preserves seeder behavior', async () => {
+        const alwaysExisting = new SystemRoleSeeder({
+            permissions: { listKeys: vi.fn(async () => []) },
+            roles: {
+                findSystemRoleByKey: vi.fn(async (_t, systemKey) => ({ id: systemKey, systemKey, name: systemKey })),
+                listPermissionsForRole: vi.fn(async () => []),
+                create: vi.fn(),
+            },
+            database: { execute: vi.fn(async (work) => work({})) },
+        });
+        const result = await alwaysExisting.execute({ tenantId: TENANT_ID });
+        expect(result.createdCount).toBe(0);
     });
 });

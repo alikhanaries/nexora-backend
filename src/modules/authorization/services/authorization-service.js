@@ -31,3 +31,10 @@ export function createDefaultAuthorizationService() {
         resolveFromContext,
     };
 }
+
+/** @deprecated Prefer {@link createDefaultAuthorizationService}; kept for existing import sites. */
+export class DefaultAuthorizationService {
+    constructor() {
+        return createDefaultAuthorizationService();
+    }
+}

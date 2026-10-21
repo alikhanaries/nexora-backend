@@ -43,3 +43,13 @@ export function createAssignRole(deps) {
 
     return { execute };
 }
+
+/** @deprecated Prefer {@link createAssignRole}; kept for existing import sites. */
+export class AssignRole {
+    /**
+     * @param {object} deps
+     */
+    constructor(deps) {
+        return createAssignRole(deps);
+    }
+}

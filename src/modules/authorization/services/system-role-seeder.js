@@ -46,3 +46,13 @@ export function createSystemRoleSeeder(deps) {
 
     return { execute };
 }
+
+/** @deprecated Prefer {@link createSystemRoleSeeder}; kept for existing import sites. */
+export class SystemRoleSeeder {
+    /**
+     * @param {object} deps
+     */
+    constructor(deps) {
+        return createSystemRoleSeeder(deps);
+    }
+}
