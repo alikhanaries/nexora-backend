@@ -72,7 +72,7 @@ function assertTenantHeaderMatchesPrincipal(headers, tenantId) {
   }
 }
 
-export @Injectable()
+@Injectable()
 class AuthGuard {
   constructor(@Inject(CORE_SERVICES) coreServices, @Inject(Reflector) reflector) {
     this.coreServices = coreServices;
@@ -182,3 +182,4 @@ class AuthGuard {
     }
   }
 }
+export { AuthGuard };

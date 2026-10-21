@@ -19,7 +19,7 @@ import { CompatV2OrderInvoiceQuery } from './services/compat-v2-order-invoice-qu
 /**
  * @param {object} deps
  * @param {import('./services/core-contracts.js').CompatibilityCoreContracts} deps.coreContracts
- * @param {import('../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
+ * @param {ReturnType<typeof import('../authorization/public/index.js').createDefaultAuthorizationService>} deps.authorization
  * @param {import('../../infrastructure/postgres/idempotency-service.js').PostgresIdempotencyService} deps.idempotency
  * @param {import('./services/catalog-compatibility-contracts.js').CompatibilityCatalogCommands} deps.catalogCommands
  * @param {import('../../infrastructure/redis/redis-rate-limiter.js').RedisRateLimiter} deps.rateLimiter

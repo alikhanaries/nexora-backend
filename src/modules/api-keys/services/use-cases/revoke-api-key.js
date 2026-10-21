@@ -39,10 +39,3 @@ export function createRevokeApiKey(deps) {
 
     return { execute };
 }
-
-/** @deprecated Prefer {@link createRevokeApiKey}; kept for existing import sites. */
-export class RevokeApiKeyUseCase {
-    constructor(deps) {
-        return createRevokeApiKey(deps);
-    }
-}

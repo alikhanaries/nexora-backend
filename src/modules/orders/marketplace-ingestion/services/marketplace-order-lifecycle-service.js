@@ -14,25 +14,20 @@ import { normalizedMarketplaceLifecycleCommandSchema } from './normalized-market
 const LIFECYCLE_ROUTE_ID = 'marketplace-order-lifecycle.apply';
 const LIFECYCLE_PRINCIPAL = 'marketplace-order-lifecycle';
 
-export class MarketplaceOrderLifecycleService {
-    deps;
-
-    /**
-     * @param {object} deps
-     * @param {import('../../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
-     * @param {import('../../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
-     * @param {import('../public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} deps.marketplaceLookup
-     * @param {{ findByChannelAndExternalReference: (queryable: object, tenantId: string, channelId: string, externalOrderReference: string) => Promise<import('../../models/order.js').Order | null> }} deps.orders
-     * @param {ExecuteMarketplaceOrderLifecycleOperation} deps.executeOperation
-     * @param {import('../public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
-     * @param {import('../../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
-     * @param {import('../../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
-     * @param {import('../../../../shared/logging/logger.port.js').Logger} [deps.logger]
-     */
-    constructor(deps) {
-        this.deps = deps;
-    }
-
+/**
+ * @param {object} deps
+ * @param {import('../../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @param {import('../../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
+ * @param {import('../public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} deps.marketplaceLookup
+ * @param {{ findByChannelAndExternalReference: (queryable: object, tenantId: string, channelId: string, externalOrderReference: string) => Promise<object | null> }} deps.orders
+ * @param {{ execute: Function }} deps.executeOperation
+ * @param {ReturnType<import('../public/marketplace-order-adapter-registry.js').createMarketplaceOrderAdapterRegistry>} deps.orderAdapterRegistry
+ * @param {import('../../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
+ * @param {import('../../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
+ * @param {import('../../../../shared/logging/logger.port.js').Logger} [deps.logger]
+ * @returns {{ apply: Function }}
+ */
+export function createMarketplaceOrderLifecycleService(deps) {
     /**
      * @param {object} input
      * @param {string} input.tenantId
@@ -40,19 +35,19 @@ export class MarketplaceOrderLifecycleService {
      * @param {unknown} input.command
      * @param {string} [input.jobId]
      */
-    async apply(input) {
+    async function apply(input) {
         const command = parseOrThrow(normalizedMarketplaceLifecycleCommandSchema, input.command, 'marketplace lifecycle command');
         const metricContext = { marketplaceKey: command.marketplaceKey, operation: command.operation };
-        recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'received', metricContext);
+        recordMarketplaceOrderLifecycleOutcome(deps.metrics, 'received', metricContext);
         try {
-            await this.assertChannelContext(input.tenantId, input.channelId, command.marketplaceKey);
-            const adapter = this.deps.orderAdapterRegistry.resolve(command.marketplaceKey);
+            await assertChannelContext(input.tenantId, input.channelId, command.marketplaceKey);
+            const adapter = deps.orderAdapterRegistry.resolve(command.marketplaceKey);
             const lifecycleCaps = adapter?.getOrderLifecycleCapabilities?.();
             assertMarketplaceOrderLifecycleCapability(command.operation, lifecycleCaps, command.marketplaceKey);
-            const fingerprint = this.buildRequestFingerprint(command);
+            const fingerprint = buildRequestFingerprint(command);
             const run = async (tx) => {
                 const externalOrderReference = command.externalOrderId.trim();
-                const order = await this.deps.orders.findByChannelAndExternalReference(tx, input.tenantId, input.channelId, externalOrderReference);
+                const order = await deps.orders.findByChannelAndExternalReference(tx, input.tenantId, input.channelId, externalOrderReference);
                 if (order === null) {
                     throw new MarketplaceOrderLifecyclePermanentError('Marketplace order was not found in Wasl', {
                         externalOrderId: externalOrderReference,
@@ -64,24 +59,24 @@ export class MarketplaceOrderLifecycleService {
                         orderId: order.id,
                     });
                 }
-                return this.deps.executeOperation.execute({
+                return deps.executeOperation.execute({
                     tenantId: input.tenantId,
                     channelId: input.channelId,
                 }, command, order, tx);
             };
             let result;
-            if (this.deps.idempotency === undefined) {
-                result = await this.deps.database.execute(run, { tenantId: input.tenantId });
+            if (deps.idempotency === undefined) {
+                result = await deps.database.execute(run, { tenantId: input.tenantId });
             }
             else {
-                const outcome = await this.deps.idempotency.execute({
+                const outcome = await deps.idempotency.execute({
                     tenantId: input.tenantId,
                     principalFingerprint: LIFECYCLE_PRINCIPAL,
                     routeId: LIFECYCLE_ROUTE_ID,
                     idempotencyKey: command.externalEventId,
                 }, fingerprint, run, (result) => ({ statusCode: 200, body: result }), { useTransaction: true });
                 if (outcome.kind === 'replayed') {
-                    recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, MarketplaceOrderLifecycleOutcome.DUPLICATE, metricContext);
+                    recordMarketplaceOrderLifecycleOutcome(deps.metrics, MarketplaceOrderLifecycleOutcome.DUPLICATE, metricContext);
                     const stored = outcome.value;
                     const payload = stored !== null && typeof stored === 'object' && 'body' in stored
                         ? stored.body
@@ -93,8 +88,8 @@ export class MarketplaceOrderLifecycleService {
                 }
                 result = outcome.value;
             }
-            recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, result.outcome, metricContext);
-            this.deps.logger?.info({
+            recordMarketplaceOrderLifecycleOutcome(deps.metrics, result.outcome, metricContext);
+            deps.logger?.info({
                 tenantId: input.tenantId,
                 channelId: input.channelId,
                 marketplaceKey: command.marketplaceKey,
@@ -109,18 +104,18 @@ export class MarketplaceOrderLifecycleService {
         }
         catch (error) {
             if (error instanceof MarketplaceOrderLifecycleUnsupportedError) {
-                recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, MarketplaceOrderLifecycleOutcome.UNSUPPORTED, metricContext);
+                recordMarketplaceOrderLifecycleOutcome(deps.metrics, MarketplaceOrderLifecycleOutcome.UNSUPPORTED, metricContext);
                 throw error;
             }
             if (error instanceof MarketplaceOrderLifecyclePermanentError) {
-                recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'permanent_failure', metricContext);
+                recordMarketplaceOrderLifecycleOutcome(deps.metrics, 'permanent_failure', metricContext);
                 throw error;
             }
             if (error instanceof ValidationError || error instanceof NotFoundError) {
-                recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'permanent_failure', metricContext);
+                recordMarketplaceOrderLifecycleOutcome(deps.metrics, 'permanent_failure', metricContext);
                 throw new MarketplaceOrderLifecyclePermanentError(error.message, error.safeDetails);
             }
-            recordMarketplaceOrderLifecycleOutcome(this.deps.metrics, 'retryable_failure', metricContext);
+            recordMarketplaceOrderLifecycleOutcome(deps.metrics, 'retryable_failure', metricContext);
             if (error instanceof MarketplaceOrderLifecycleRetryError) {
                 throw error;
             }
@@ -133,12 +128,12 @@ export class MarketplaceOrderLifecycleService {
      * @param {string} channelId
      * @param {string} marketplaceKey
      */
-    async assertChannelContext(tenantId, channelId, marketplaceKey) {
-        const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(tenantId, channelId);
+    async function assertChannelContext(tenantId, channelId, marketplaceKey) {
+        const channel = await deps.commerceIntegrationQueryService.getCommerceIntegrationById(tenantId, channelId);
         if (channel.tenantId !== tenantId) {
             throw new MarketplaceOrderLifecyclePermanentError('Channel tenant mismatch', { channelId });
         }
-        const marketplace = await this.deps.marketplaceLookup.findById(channel.marketplaceId);
+        const marketplace = await deps.marketplaceLookup.findById(channel.marketplaceId);
         if (marketplace === null) {
             throw new MarketplaceOrderLifecyclePermanentError('Channel marketplace was not found', {
                 marketplaceId: channel.marketplaceId,
@@ -155,7 +150,9 @@ export class MarketplaceOrderLifecycleService {
     /**
      * @param {import('./normalized-marketplace-lifecycle-command.schema.js').normalizedMarketplaceLifecycleCommandSchema['_output']} command
      */
-    buildRequestFingerprint(command) {
+    function buildRequestFingerprint(command) {
         return createHash('sha256').update(JSON.stringify(command)).digest('hex');
     }
+
+    return { apply };
 }

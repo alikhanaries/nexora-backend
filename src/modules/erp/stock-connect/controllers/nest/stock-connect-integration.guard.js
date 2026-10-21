@@ -4,7 +4,7 @@ import { getRequestContext } from '../../../../../shared/context/request-context
 import { isStockConnectIntegrationPath } from '../../../../../shared/auth/stock-connect-integration-route-prefix.js';
 import { WASL_CONFIG } from '../../../../../app/config/wasl-config.module.js';
 
-export @Injectable()
+@Injectable()
 class StockConnectIntegrationGuard {
   constructor(@Inject(WASL_CONFIG) config) {
     this.config = config;
@@ -30,3 +30,4 @@ class StockConnectIntegrationGuard {
     return true;
   }
 }
+export { StockConnectIntegrationGuard };

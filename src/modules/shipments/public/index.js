@@ -1,8 +1,2 @@
-export {
-    createShipmentQueryService,
-    DefaultShipmentQueryService,
-} from './shipment-query-service.js';
-export {
-    createShipmentCommandService,
-    DefaultShipmentCommandService,
-} from './shipment-command-service.js';
+export { createShipmentQueryService } from './shipment-query-service.js';
+export { createShipmentCommandService } from './shipment-command-service.js';

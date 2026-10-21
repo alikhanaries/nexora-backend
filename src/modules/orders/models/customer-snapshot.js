@@ -1,57 +1,47 @@
-export class CustomerSnapshot {
-    props;
-    constructor(props) {
-        this.props = props;
-    }
-    static create(props) {
-        return new CustomerSnapshot({
-            ...props,
-            createdAt: props.createdAt ?? new Date(),
-        });
-    }
-    static reconstitute(props) {
-        return new CustomerSnapshot(props);
-    }
-    get id() {
-        return this.props.id;
-    }
-    get tenantId() {
-        return this.props.tenantId;
-    }
-    get orderId() {
-        return this.props.orderId;
-    }
-    get externalCustomerReference() {
-        return this.props.externalCustomerReference;
-    }
-    get firstName() {
-        return this.props.firstName;
-    }
-    get lastName() {
-        return this.props.lastName;
-    }
-    get email() {
-        return this.props.email;
-    }
-    get phone() {
-        return this.props.phone;
-    }
-    get companyName() {
-        return this.props.companyName;
-    }
-    get billingAddress() {
-        return this.props.billingAddress;
-    }
-    get shippingAddress() {
-        return this.props.shippingAddress;
-    }
-    get metadata() {
-        return this.props.metadata;
-    }
-    get createdAt() {
-        return this.props.createdAt;
-    }
-    toProps() {
-        return { ...this.props };
-    }
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   orderId: string,
+ *   externalCustomerReference: string | null,
+ *   firstName: string | null,
+ *   lastName: string | null,
+ *   email: string | null,
+ *   phone: string | null,
+ *   companyName: string | null,
+ *   billingAddress: object | null,
+ *   shippingAddress: object | null,
+ *   metadata: Record<string, unknown>,
+ *   createdAt: Date,
+ * }} CustomerSnapshot
+ */
+
+/**
+ * @param {Omit<CustomerSnapshot, 'createdAt'> & { createdAt?: Date }} props
+ * @returns {CustomerSnapshot}
+ */
+export function createCustomerSnapshotEntity(props) {
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        orderId: props.orderId,
+        externalCustomerReference: props.externalCustomerReference,
+        firstName: props.firstName,
+        lastName: props.lastName,
+        email: props.email,
+        phone: props.phone,
+        companyName: props.companyName,
+        billingAddress: props.billingAddress,
+        shippingAddress: props.shippingAddress,
+        metadata: props.metadata,
+        createdAt: props.createdAt ?? new Date(),
+    };
+}
+
+/**
+ * @param {CustomerSnapshot} props
+ * @returns {CustomerSnapshot}
+ */
+export function reconstituteCustomerSnapshot(props) {
+    return { ...props };
 }

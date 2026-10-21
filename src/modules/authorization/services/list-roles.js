@@ -28,13 +28,3 @@ export function createListRoles(deps) {
 
     return { execute };
 }
-
-/** @deprecated Prefer {@link createListRoles}; kept for existing import sites. */
-export class ListRoles {
-    /**
-     * @param {object} deps
-     */
-    constructor(deps) {
-        return createListRoles(deps);
-    }
-}

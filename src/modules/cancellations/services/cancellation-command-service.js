@@ -69,10 +69,3 @@ export function createCancellationCommandService(deps) {
 
     return { createCancellation };
 }
-
-/** @deprecated Prefer {@link createCancellationCommandService}; kept for existing import sites and tests. */
-export class DefaultCancellationCommandService {
-    constructor(deps) {
-        return createCancellationCommandService(deps);
-    }
-}

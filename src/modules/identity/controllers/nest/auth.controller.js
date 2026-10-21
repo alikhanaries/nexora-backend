@@ -3,47 +3,63 @@ import {
   loginBodySchema,
   logoutBodySchema,
   refreshBodySchema,
-} from '../../../../modules/identity/views/auth.routes.js';
+} from '../../views/auth.schemas.js';
 import { parseOrThrow } from '../../../../shared/validation/index.js';
+import { AuthenticationError } from '../../../../shared/errors/index.js';
 import { Public } from '../../../../app/common/decorators/public.decorator.js';
-import { AuthService } from './auth.service.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
+import { AUTH_ROUTES } from '../../routes/auth.routes.js';
 
-export @Controller()
+/**
+ * Thin Nest HTTP adapter — API methods only.
+ * Business rules live in services/; paths live in routes/.
+ */
+@Controller()
 class AuthController {
-  constructor(@Inject(AuthService) authService) {
-    this.authService = authService;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.useCases = coreServices.identity.useCases;
   }
 
   @Public()
-  @Post('/api/v1/auth/login')
+  @Post(AUTH_ROUTES.login.path)
   @HttpCode(200)
   async login(@Body() body) {
     const parsed = parseOrThrow(loginBodySchema, body, 'login');
-    const result = await this.authService.login(parsed);
+    const result = await this.useCases.login.execute(parsed);
     return { success: true, data: result };
   }
 
   @Public()
-  @Post('/api/v1/auth/refresh')
+  @Post(AUTH_ROUTES.refresh.path)
   @HttpCode(200)
   async refresh(@Body() body) {
     const parsed = parseOrThrow(refreshBodySchema, body, 'refresh');
-    const result = await this.authService.refresh(parsed);
+    const result = await this.useCases.refreshToken.execute(parsed);
     return { success: true, data: result };
   }
 
   @Public()
-  @Post('/api/v1/auth/logout')
+  @Post(AUTH_ROUTES.logout.path)
   @HttpCode(200)
   async logout(@Body() body) {
     const parsed = parseOrThrow(logoutBodySchema, body, 'logout');
-    await this.authService.logout(parsed);
+    await this.useCases.logout.execute(parsed);
     return { success: true, data: { loggedOut: true } };
   }
 
-  @Get('/api/v1/auth/me')
+  @Get(AUTH_ROUTES.me.path)
   async me(@Headers('authorization') authorization) {
-    const result = await this.authService.getCurrentUser(authorization);
+    if (typeof authorization !== 'string') {
+      throw new AuthenticationError();
+    }
+    const match = /^Bearer\s+(\S+)$/i.exec(authorization);
+    if (match?.[1] === undefined) {
+      throw new AuthenticationError();
+    }
+    const result = await this.useCases.getCurrentUser.execute({
+      accessToken: match[1],
+    });
     return { success: true, data: result };
   }
 }
+export { AuthController };

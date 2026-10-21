@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     createCancellationCommandService,
-    DefaultCancellationCommandService,
 } from '../../../src/modules/cancellations/public/cancellation-command-service.js';
 
 const cancellationDetail = {
@@ -76,23 +75,5 @@ describe('createCancellationCommandService', () => {
             idempotencyKey: 'idem-cancel-1',
         }, 'body-1', expect.any(Function), expect.any(Function), { useTransaction: true });
         expect(result.cancellation).toMatchObject({ transactionProvided: true });
-    });
-
-    it('keeps DefaultCancellationCommandService constructor-return wrapper working', async () => {
-        const createCancellation = {
-            execute: vi.fn().mockResolvedValue({ cancellation: cancellationDetail }),
-        };
-        const service = new DefaultCancellationCommandService({ createCancellation });
-
-        const result = await service.createCancellation({
-            tenantId: 'tenant-1',
-            actorId: 'actor-1',
-            actorKind: 'user',
-            actorPermissions: ['cancellations.create'],
-            orderId: 'order-1',
-            lines: [{ orderLineId: 'line-1', quantity: 2 }],
-        });
-
-        expect(result).toEqual({ cancellation: cancellationDetail });
     });
 });

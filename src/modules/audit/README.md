@@ -1,6 +1,19 @@
 # Audit Module
 
-Phase 2G — append-only security audit trail for identity and authorization events.
+Append-only security audit trail for identity, authorization, and commerce events.
+
+This module follows the **function-based MVC** layout (same pattern as `tenants/` / `api-keys/`).
+
+## Layout
+
+| Folder | Role |
+| ------ | ---- |
+| `routes/` | Endpoint method + path registry only |
+| `controllers/nest/` | Thin Nest HTTP adapter |
+| `services/` | `createAuditService`, `createDefaultAuditRecorder`, helpers |
+| `repositories/` | `createPostgresAuditRepository` |
+| `models/` | Event type vocabulary + `reconstituteAuditEvent` |
+| `views/` | HTTP Zod schemas + response mapper |
 
 ## Responsibilities
 
@@ -8,21 +21,11 @@ Phase 2G — append-only security audit trail for identity and authorization eve
 - Redact secrets from metadata before persistence
 - Query audit events for the current tenant (`audit.read` permission)
 
-## Event types
-
-Events follow the Phase 2 security vocabulary, including:
-
-- User and membership lifecycle (`USER_CREATED`, `MEMBERSHIP_ACTIVATED`, …)
-- Role changes (`ROLE_ASSIGNED`, `ROLE_REMOVED`, …)
-- Authentication (`LOGIN_SUCCESS`, `LOGIN_FAILURE`, `REFRESH_REUSE_DETECTED`)
-- API keys (`API_KEY_CREATED`, `API_KEY_ROTATED`, `API_KEY_REVOKED`)
-- MFA (`MFA_ENABLED`, `MFA_DISABLED`, `MFA_STEP_UP`)
-
 ## Integration
 
-Other modules depend on the `AuditRecorder` port from `public/index.ts`:
+Other modules depend on the recorder port from composition (`auditRecorder.record`):
 
-```typescript
+```javascript
 await auditRecorder.record(tx, {
   tenantId,
   actorKind: 'user',
@@ -35,11 +38,15 @@ await auditRecorder.record(tx, {
 
 Metadata is redacted automatically — never pass raw passwords, tokens, or MFA secrets.
 
+Public helpers: `auditRequestFields`, `noopAuditRecorder`, `AUDIT_EVENT_TYPES`, `createDefaultAuditRecorder`.
+
 ## API
 
-| Method | Path            | Permission   |
-| ------ | --------------- | ------------ |
-| GET    | `/api/v1/audit` | `audit.read` |
+Paths are declared in `routes/audit.routes.js`.
+
+| Method | Path | Permission |
+| ------ | ---- | ---------- |
+| GET | `/api/v1/audit` | `audit.read` |
 
 ## Storage
 

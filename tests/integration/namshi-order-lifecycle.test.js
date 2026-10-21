@@ -8,9 +8,9 @@ import { NamshiOrderAdapter } from '../../src/modules/marketplaces/repositories/
 import { DefaultMarketplaceEntityMappingLookup } from '../../src/modules/marketplaces/public/index.js';
 import { PostgresMarketplaceEntityMappingRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-entity-mapping-repository.js';
 import { PostgresMarketplaceRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-repository.js';
-import { PostgresOrderRepository } from '../../src/modules/orders/repositories/postgres-order-repository.js';
-import { DefaultProductQueryService } from '../../src/modules/products/public/index.js';
-import { PostgresProductRepository } from '../../src/modules/products/repositories/postgres-product-repository.js';
+import { createPostgresOrderRepository } from '../../src/modules/orders/repositories/postgres-order-repository.js';
+import { createDefaultProductQueryService } from '../../src/modules/products/public/index.js';
+import { createPostgresProductRepository } from '../../src/modules/products/repositories/index.js';
 import { buildNamshiFbpiGetOrderResponse, buildNamshiFbpiOrderSyncWebhook } from '../unit/marketplaces/namshi-fbpi-fixtures.js';
 import { authHeaders, createAuthenticatedUser, createTestTenant } from './auth-helpers.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
@@ -104,9 +104,9 @@ describe('Namshi order lifecycle integration', () => {
                 return m === null ? null : { id: m.id, key: m.key, status: m.status };
             },
         };
-        const productQueryService = new DefaultProductQueryService({
+        const productQueryService = createDefaultProductQueryService({
             database: infra.database,
-            products: new PostgresProductRepository(),
+            products: createPostgresProductRepository(),
         });
         module = createMarketplaceOrderIngestionModule({
             database: infra.database,
@@ -119,7 +119,7 @@ describe('Namshi order lifecycle integration', () => {
             }),
             productQueryService,
             metrics: infra.metrics,
-            orders: new PostgresOrderRepository(),
+            orders: createPostgresOrderRepository(),
             confirmOrder: app.orders.useCases.confirmOrder,
             cancellationCommandService: app.cancellations.cancellationCommandService,
             idempotency: infra.idempotency,

@@ -1,6 +1,7 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { BusinessRuleError, NotFoundError } from '../../../shared/errors/index.js';
 import { ReturnStatus } from '../models/return-status.js';
+import { approveReturnEntity } from '../models/return.js';
 import { toReturnDetailDto } from '../views/return-dto.js';
 import { returnStatusChangedEvent } from './return-events.js';
 import { requireReturnsUpdate } from './return-permissions.js';
@@ -34,7 +35,7 @@ export function createAcknowledgeReturn(deps) {
             }
             const previousStatus = existing.status;
             const now = new Date();
-            const updated = existing.approve(now);
+            const updated = approveReturnEntity(existing, now);
             await deps.returns.updateReturn(tx, updated);
             const detail = toReturnDetailDto(updated, lines);
             if (previousStatus !== updated.status) {
@@ -63,11 +64,4 @@ export function createAcknowledgeReturn(deps) {
     }
 
     return { execute };
-}
-
-/** @deprecated Prefer createAcknowledgeReturn */
-export class AcknowledgeReturn {
-    constructor(deps) {
-        return createAcknowledgeReturn(deps);
-    }
 }

@@ -1,38 +1,39 @@
 import { createArgon2PasswordHasher } from '../../infrastructure/auth/argon2-password-hasher.js';
 import { JoseAccessTokenService } from '../../infrastructure/auth/jose-access-token-service.js';
 import { AesSecretEncryptor } from '../../infrastructure/auth/aes-secret-encryptor.js';
-import { CreateUserUseCase } from './services/use-cases/create-user.js';
-import { GetUserUseCase } from './services/use-cases/get-user.js';
-import { AddMembershipUseCase } from './services/use-cases/add-membership.js';
-import { GetMembershipUseCase } from './services/use-cases/get-membership.js';
-import { ActivateMembershipUseCase } from './services/use-cases/activate-membership.js';
-import { SuspendMembershipUseCase } from './services/use-cases/suspend-membership.js';
-import { RevokeMembershipUseCase } from './services/use-cases/revoke-membership.js';
-import { LoginUseCase } from './services/use-cases/login.js';
-import { RefreshTokenUseCase } from './services/use-cases/refresh-token.js';
-import { LogoutUseCase } from './services/use-cases/logout.js';
-import { GetCurrentUserUseCase } from './services/use-cases/get-current-user.js';
-import { RequestPasswordResetUseCase } from './services/use-cases/request-password-reset.js';
-import { ConfirmPasswordResetUseCase } from './services/use-cases/confirm-password-reset.js';
-import { PostgresUserRepository } from './repositories/postgres-user-repository.js';
-import { PostgresMembershipRepository } from './repositories/postgres-membership-repository.js';
-import { PostgresPasswordCredentialRepository } from './repositories/postgres-password-credential-repository.js';
-import { PostgresRefreshSessionRepository } from './repositories/postgres-refresh-session-repository.js';
-import { PostgresPasswordResetTokenRepository } from './repositories/postgres-password-reset-token-repository.js';
-import { PostgresTenantLookup } from './repositories/postgres-tenant-lookup.js';
-import { NoopPasswordResetNotifier } from './repositories/noop-password-reset-notifier.js';
-import { createAuthRoutes } from './views/auth.routes.js';
+import { createCreateUser } from './services/use-cases/create-user.js';
+import { createGetUser } from './services/use-cases/get-user.js';
+import { createAddMembership } from './services/use-cases/add-membership.js';
+import { createGetMembership } from './services/use-cases/get-membership.js';
+import { createActivateMembership } from './services/use-cases/activate-membership.js';
+import { createSuspendMembership } from './services/use-cases/suspend-membership.js';
+import { createRevokeMembership } from './services/use-cases/revoke-membership.js';
+import { createLogin } from './services/use-cases/login.js';
+import { createRefreshToken } from './services/use-cases/refresh-token.js';
+import { createLogout } from './services/use-cases/logout.js';
+import { createGetCurrentUser } from './services/use-cases/get-current-user.js';
+import { createRequestPasswordReset } from './services/use-cases/request-password-reset.js';
+import { createConfirmPasswordReset } from './services/use-cases/confirm-password-reset.js';
+import { createAuthenticateAccessToken } from './services/authenticate-access-token.js';
+import { createPostgresUserRepository } from './repositories/postgres-user-repository.js';
+import { createPostgresMembershipRepository } from './repositories/postgres-membership-repository.js';
+import { createPostgresPasswordCredentialRepository } from './repositories/postgres-password-credential-repository.js';
+import { createPostgresRefreshSessionRepository } from './repositories/postgres-refresh-session-repository.js';
+import { createPostgresPasswordResetTokenRepository } from './repositories/postgres-password-reset-token-repository.js';
+import { createPostgresTenantLookup } from './repositories/postgres-tenant-lookup.js';
+import { createNoopPasswordResetNotifier } from './repositories/noop-password-reset-notifier.js';
+
 export async function createIdentityModule(deps) {
     const passwordHasher = createArgon2PasswordHasher();
     const accessTokenService = await JoseAccessTokenService.create(deps.config.auth);
     const secretEncryptor = new AesSecretEncryptor(deps.config.auth.mfaEncryptionKey);
-    const users = new PostgresUserRepository();
-    const memberships = new PostgresMembershipRepository();
-    const credentials = new PostgresPasswordCredentialRepository();
-    const refreshSessions = new PostgresRefreshSessionRepository();
-    const resetTokens = new PostgresPasswordResetTokenRepository();
-    const tenants = new PostgresTenantLookup();
-    const resetNotifier = new NoopPasswordResetNotifier();
+    const users = createPostgresUserRepository();
+    const memberships = createPostgresMembershipRepository();
+    const credentials = createPostgresPasswordCredentialRepository();
+    const refreshSessions = createPostgresRefreshSessionRepository();
+    const resetTokens = createPostgresPasswordResetTokenRepository();
+    const tenants = createPostgresTenantLookup();
+    const resetNotifier = createNoopPasswordResetNotifier();
     const passwordPolicy = {
         minLength: deps.config.auth.passwordMinLength,
         maxLength: deps.config.auth.passwordMaxLength,
@@ -43,20 +44,20 @@ export async function createIdentityModule(deps) {
         refreshTokenTtlSeconds: deps.config.auth.refreshTokenTtlSeconds,
     };
     const useCases = {
-        createUser: new CreateUserUseCase({
+        createUser: createCreateUser({
             db: deps.database,
             users,
             credentials,
             passwordHasher,
             passwordPolicy,
         }),
-        getUser: new GetUserUseCase({ db: deps.database, users }),
-        addMembership: new AddMembershipUseCase({ db: deps.database, users, memberships }),
-        getMembership: new GetMembershipUseCase({ db: deps.database, memberships }),
-        activateMembership: new ActivateMembershipUseCase({ db: deps.database, memberships }),
-        suspendMembership: new SuspendMembershipUseCase({ db: deps.database, memberships }),
-        revokeMembership: new RevokeMembershipUseCase({ db: deps.database, memberships }),
-        login: new LoginUseCase({
+        getUser: createGetUser({ db: deps.database, users }),
+        addMembership: createAddMembership({ db: deps.database, users, memberships }),
+        getMembership: createGetMembership({ db: deps.database, memberships }),
+        activateMembership: createActivateMembership({ db: deps.database, memberships }),
+        suspendMembership: createSuspendMembership({ db: deps.database, memberships }),
+        revokeMembership: createRevokeMembership({ db: deps.database, memberships }),
+        login: createLogin({
             db: deps.database,
             tenants,
             users,
@@ -68,29 +69,29 @@ export async function createIdentityModule(deps) {
             ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
             ...authDeps,
         }),
-        refreshToken: new RefreshTokenUseCase({
+        refreshToken: createRefreshToken({
             db: deps.database,
             refreshSessions,
             ...(deps.rateLimiter === undefined ? {} : { rateLimiter: deps.rateLimiter }),
             ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
             ...authDeps,
         }),
-        logout: new LogoutUseCase({ db: deps.database, refreshSessions }),
-        getCurrentUser: new GetCurrentUserUseCase({
+        logout: createLogout({ db: deps.database, refreshSessions }),
+        getCurrentUser: createGetCurrentUser({
             db: deps.database,
             accessTokenService,
             users,
             memberships,
             refreshSessions,
         }),
-        requestPasswordReset: new RequestPasswordResetUseCase({
+        requestPasswordReset: createRequestPasswordReset({
             db: deps.database,
             users,
             resetTokens,
             notifier: resetNotifier,
             ...(deps.rateLimiter === undefined ? {} : { rateLimiter: deps.rateLimiter }),
         }),
-        confirmPasswordReset: new ConfirmPasswordResetUseCase({
+        confirmPasswordReset: createConfirmPasswordReset({
             db: deps.database,
             resetTokens,
             credentials,
@@ -100,16 +101,17 @@ export async function createIdentityModule(deps) {
             ...(deps.rateLimiter === undefined ? {} : { rateLimiter: deps.rateLimiter }),
         }),
     };
-    const authRoutes = createAuthRoutes({
-        login: useCases.login,
-        refreshToken: useCases.refreshToken,
-        logout: useCases.logout,
-        getCurrentUser: useCases.getCurrentUser,
+    const authenticateAccessToken = createAuthenticateAccessToken({
+        db: deps.database,
+        accessTokenService,
+        refreshSessions,
+        users,
+        membershipPermissions: deps.membershipPermissionResolver,
     });
     return {
         useCases,
+        authenticateAccessToken,
         auth: { passwordHasher, accessTokenService, secretEncryptor },
-        routes: { auth: authRoutes },
         repositories: { users, refreshSessions },
     };
 }

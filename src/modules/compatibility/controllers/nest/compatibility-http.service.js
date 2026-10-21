@@ -18,7 +18,7 @@ function readMerchantProductNosFromQuery(query) {
   );
 }
 
-export @Injectable()
+@Injectable()
 class CompatibilityHttpService {
   constructor(
     @Inject(CORE_SERVICES) coreServices,
@@ -535,3 +535,4 @@ class CompatibilityHttpService {
     });
   }
 }
+export { CompatibilityHttpService };

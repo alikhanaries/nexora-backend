@@ -11,7 +11,7 @@ import {
 import { commerceActorFields } from '../../../../app/common/commerce-actor.js';
 import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
-export @Injectable()
+@Injectable()
 class CompatibilityOrdersService {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.coreServices = coreServices;
@@ -191,3 +191,4 @@ class CompatibilityOrdersService {
     });
   }
 }
+export { CompatibilityOrdersService };

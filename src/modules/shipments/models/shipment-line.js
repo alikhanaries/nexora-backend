@@ -1,36 +1,33 @@
-export class ShipmentLine {
-    props;
-    constructor(props) {
-        this.props = props;
-    }
-    static create(props) {
-        return new ShipmentLine({
-            ...props,
-            createdAt: props.createdAt ?? new Date(),
-        });
-    }
-    static reconstitute(props) {
-        return new ShipmentLine(props);
-    }
-    get id() {
-        return this.props.id;
-    }
-    get tenantId() {
-        return this.props.tenantId;
-    }
-    get shipmentId() {
-        return this.props.shipmentId;
-    }
-    get orderLineId() {
-        return this.props.orderLineId;
-    }
-    get quantity() {
-        return this.props.quantity;
-    }
-    get createdAt() {
-        return this.props.createdAt;
-    }
-    toProps() {
-        return { ...this.props };
-    }
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   shipmentId: string,
+ *   orderLineId: string,
+ *   quantity: number,
+ *   createdAt: Date,
+ * }} ShipmentLine
+ */
+
+/**
+ * @param {Omit<ShipmentLine, 'createdAt'> & { createdAt?: Date }} props
+ * @returns {ShipmentLine}
+ */
+export function createShipmentLineEntity(props) {
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        shipmentId: props.shipmentId,
+        orderLineId: props.orderLineId,
+        quantity: props.quantity,
+        createdAt: props.createdAt ?? new Date(),
+    };
+}
+
+/**
+ * @param {ShipmentLine} props
+ * @returns {ShipmentLine}
+ */
+export function reconstituteShipmentLine(props) {
+    return { ...props };
 }

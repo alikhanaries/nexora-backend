@@ -6,18 +6,18 @@ import { createLastAdminGuard } from './services/last-admin-guard.js';
 import { createListPermissions } from './services/list-permissions.js';
 import { createListRoles } from './services/list-roles.js';
 import { createRemoveRole } from './services/remove-role.js';
+import { requireAuthorizationDeps } from './services/require-deps.js';
 import { createSystemRoleSeeder } from './services/system-role-seeder.js';
-import { PostgresMembershipRoleRepository } from './repositories/postgres-membership-role-repository.js';
-import { PostgresPermissionRepository } from './repositories/postgres-permission-repository.js';
-import { PostgresRoleRepository } from './repositories/postgres-role-repository.js';
-import authorizationRoutes from './views/authorization.routes.js';
+import { createPostgresMembershipRoleRepository } from './repositories/postgres-membership-role-repository.js';
+import { createPostgresPermissionRepository } from './repositories/postgres-permission-repository.js';
+import { createPostgresRoleRepository } from './repositories/postgres-role-repository.js';
 
 export function createAuthorizationModule(deps) {
-    requireAuthorizationModuleDeps(deps);
+    requireAuthorizationDeps(deps, 'createAuthorizationModule', ['database']);
     const authorization = createDefaultAuthorizationService();
-    const permissions = new PostgresPermissionRepository(deps.database);
-    const roles = new PostgresRoleRepository();
-    const membershipRoles = new PostgresMembershipRoleRepository();
+    const permissions = createPostgresPermissionRepository(deps.database);
+    const roles = createPostgresRoleRepository();
+    const membershipRoles = createPostgresMembershipRoleRepository();
     const lastAdminGuard = createLastAdminGuard({ roles, membershipRoles });
     const createRole = createCreateRole({ authorization, roles, database: deps.database });
     const listRoles = createListRoles({ authorization, roles, database: deps.database });
@@ -45,7 +45,6 @@ export function createAuthorizationModule(deps) {
         roles,
         database: deps.database,
     });
-    const routes = authorizationRoutes;
     return {
         authorizationService: authorization,
         useCases: {
@@ -57,28 +56,5 @@ export function createAuthorizationModule(deps) {
             getEffectivePermissions,
             systemRoleSeeder,
         },
-        routes: {
-            plugin: routes,
-            options: {
-                createRole,
-                listRoles,
-                assignRole,
-                removeRole,
-                listPermissions,
-                getEffectivePermissions,
-            },
-        },
     };
-}
-
-/**
- * @param {object} deps
- */
-function requireAuthorizationModuleDeps(deps) {
-    if (deps === undefined || deps === null || typeof deps !== 'object') {
-        throw new Error('createAuthorizationModule requires a deps object');
-    }
-    if (deps.database === undefined || deps.database === null) {
-        throw new Error('createAuthorizationModule requires deps.database');
-    }
 }

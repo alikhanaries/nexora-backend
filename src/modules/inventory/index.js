@@ -1,52 +1,61 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { AdjustInventory, CreateStockLocation, GetInventory, GetStockLocation, ListStockLocations, ReceiveInventory, ReleaseInventory, ReserveInventory, } from './services/index.js';
-import { DefaultInventoryService } from './services/default-inventory-service.js';
-import { PostgresInventoryRepository, PostgresStockLocationRepository, } from './repositories/index.js';
-import inventoryRoutes, {} from './views/inventory.routes.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
+import {
+    createAdjustInventory,
+    createCreateStockLocation,
+    createDefaultInventoryService,
+    createGetInventory,
+    createGetStockLocation,
+    createListStockLocations,
+    createReceiveInventory,
+    createReleaseInventory,
+    createReserveInventory,
+} from './services/index.js';
+import { createPostgresInventoryRepository, createPostgresStockLocationRepository } from './repositories/index.js';
+
 export function createInventoryModule(deps) {
-    const stockLocationRepository = new PostgresStockLocationRepository();
-    const inventoryRepository = new PostgresInventoryRepository();
-    const authorization = new DefaultAuthorizationService();
-    const inventoryService = new DefaultInventoryService({
+    const stockLocationRepository = createPostgresStockLocationRepository();
+    const inventoryRepository = createPostgresInventoryRepository();
+    const authorization = createDefaultAuthorizationService();
+    const inventoryService = createDefaultInventoryService({
         transactionManager: deps.transactionManager,
         queryable: deps.queryable,
         inventoryRepository,
         stockLocationRepository,
         productQueryService: deps.productQueryService,
         eventRecorder: deps.eventRecorder,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     });
     const useCases = {
-        createStockLocation: new CreateStockLocation({
+        createStockLocation: createCreateStockLocation({
             transactionManager: deps.transactionManager,
             stockLocations: stockLocationRepository,
             authorization,
-            ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+            ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
         }),
-        listStockLocations: new ListStockLocations({
+        listStockLocations: createListStockLocations({
             queryable: deps.queryable,
             stockLocations: stockLocationRepository,
-            authorization,
+            authorization
         }),
-        getStockLocation: new GetStockLocation({
+        getStockLocation: createGetStockLocation({
             queryable: deps.queryable,
             stockLocations: stockLocationRepository,
-            authorization,
+            authorization
         }),
-        getInventory: new GetInventory({
+        getInventory: createGetInventory({
             queryable: deps.queryable,
             inventoryRepository,
-            authorization,
+            authorization
         }),
-        adjustInventory: new AdjustInventory({ inventoryService, authorization }),
-        receiveInventory: new ReceiveInventory({ inventoryService, authorization }),
-        reserveInventory: new ReserveInventory({ inventoryService, authorization }),
-        releaseInventory: new ReleaseInventory({ inventoryService, authorization }),
+        adjustInventory: createAdjustInventory({ inventoryService, authorization }),
+        receiveInventory: createReceiveInventory({ inventoryService, authorization }),
+        reserveInventory: createReserveInventory({ inventoryService, authorization }),
+        releaseInventory: createReleaseInventory({ inventoryService, authorization })
     };
     return {
         inventoryService,
-        useCases,
-        routes: inventoryRoutes,
+        useCases
     };
 }
-export { DefaultInventoryService } from './public/index.js';
+
+export { createDefaultInventoryService } from './public/index.js';

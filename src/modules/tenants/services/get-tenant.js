@@ -18,14 +18,3 @@ export function createGetTenant(deps) {
 
     return { execute };
 }
-
-/** @deprecated Prefer {@link createGetTenant}; kept for existing import sites. */
-export class GetTenant {
-    /**
-     * @param {object} repository
-     * @param {object} queryable
-     */
-    constructor(repository, queryable) {
-        return createGetTenant({ repository, queryable });
-    }
-}

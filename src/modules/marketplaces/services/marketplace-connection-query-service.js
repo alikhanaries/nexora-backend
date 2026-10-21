@@ -6,7 +6,7 @@ export class MarketplaceConnectionQueryService {
 
     /**
      * @param {object} deps
-     * @param {import('../../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
+     * @param {ReturnType<typeof import('../../authorization/public/index.js').createDefaultAuthorizationService>} deps.authorization
      * @param {import('../repositories/postgres-marketplace-connection-repository.js').PostgresMarketplaceConnectionRepository} deps.connections
      * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
      * @param {object} deps.queryable

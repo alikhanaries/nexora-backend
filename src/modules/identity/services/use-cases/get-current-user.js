@@ -1,28 +1,30 @@
 import { AuthenticationError } from '../../../../shared/errors/index.js';
-export class GetCurrentUserUseCase {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
+import { canAuthenticate, isRefreshSessionExpired, membershipGrantsAccess } from '../../models/index.js';
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createGetCurrentUser(deps) {
+    async function execute(input) {
         let payload;
         try {
-            payload = await this.deps.accessTokenService.verify(input.accessToken);
+            payload = await deps.accessTokenService.verify(input.accessToken);
         }
         catch {
             throw new AuthenticationError();
         }
-        return this.deps.db.execute(async (tx) => {
-            const session = await this.deps.refreshSessions.findById(tx, payload.sessionId);
-            if (session === null || session.status !== 'ACTIVE' || session.isExpired()) {
+        return deps.db.execute(async (tx) => {
+            const session = await deps.refreshSessions.findById(tx, payload.sessionId);
+            if (session === null || session.status !== 'ACTIVE' || isRefreshSessionExpired(session)) {
                 throw new AuthenticationError();
             }
-            const user = await this.deps.users.findById(tx, payload.sub);
-            if (user === null || !user.canAuthenticate()) {
+            const user = await deps.users.findById(tx, payload.sub);
+            if (user === null || !canAuthenticate(user)) {
                 throw new AuthenticationError();
             }
-            const membership = await this.deps.memberships.findByTenantAndUser(tx, payload.tenantId, user.id);
-            if (membership === null || !membership.grantsAccess()) {
+            const membership = await deps.memberships.findByTenantAndUser(tx, payload.tenantId, user.id);
+            if (membership === null || !membershipGrantsAccess(membership)) {
                 throw new AuthenticationError();
             }
             return {
@@ -34,4 +36,6 @@ export class GetCurrentUserUseCase {
             };
         }, { tenantId: payload.tenantId });
     }
+
+    return { execute };
 }

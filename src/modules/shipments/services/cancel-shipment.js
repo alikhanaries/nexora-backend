@@ -1,5 +1,6 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { cancelShipmentEntity } from '../models/shipment.js';
 import { toShipmentDetailDto } from '../views/shipment-dto.js';
 import { shipmentCancelledEvent, shipmentStatusChangedEvent } from './shipment-events.js';
 import { requireShipmentsUpdate } from './shipment-permissions.js';
@@ -21,7 +22,7 @@ export function createCancelShipment(deps) {
             }
             const lines = await deps.shipments.listShipmentLines(tx, input.tenantId, existing.id);
             const previousStatus = existing.status;
-            const updated = existing.cancel();
+            const updated = cancelShipmentEntity(existing);
             await deps.shipments.updateShipment(tx, updated);
             await deps.orderFulfillmentService.reverseShipmentQuantities(input.tenantId, existing.orderId, lines.map((line) => ({
                 orderLineId: line.orderLineId,

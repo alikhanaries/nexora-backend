@@ -1,4 +1,4 @@
-import { DefaultAuthorizationService } from '../../authorization/public/index.js';
+import { createDefaultAuthorizationService } from '../../authorization/public/index.js';
 import { createMarketplaceAdapterRegistry } from './create-marketplace-adapter-registry.js';
 import { MarketplaceConnectionCommandService } from './marketplace-connection-command-service.js';
 import { MarketplaceConnectionQueryService } from './marketplace-connection-query-service.js';
@@ -16,7 +16,7 @@ import { PostgresMarketplaceRepository } from '../repositories/postgres-marketpl
  * @param {string | null | undefined} [deps.noonUserAgent]
  */
 export function createMarketplaceConnectionServices(deps) {
-    const authorization = new DefaultAuthorizationService();
+    const authorization = createDefaultAuthorizationService();
     const connections = new PostgresMarketplaceConnectionRepository();
     const marketplaces = new PostgresMarketplaceRepository();
     const adapterRegistry = createMarketplaceAdapterRegistry({

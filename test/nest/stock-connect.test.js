@@ -159,7 +159,7 @@ function wireStockConnectMocks(coreServices) {
       totalCount: 1,
     }),
   };
-  coreServices.channelRouteDeps.listChannels.execute.mockResolvedValue({
+  coreServices.channelRouteDeps.listCommerceIntegrations.execute.mockResolvedValue({
     channels: [channelEntity()],
   });
   coreServices.products.useCases.listProducts.execute.mockResolvedValue({
@@ -231,7 +231,16 @@ function wireStockConnectMocks(coreServices) {
     order: orderEntity(),
   });
   coreServices.cancellations.useCases.createCancellation.execute.mockResolvedValue({
-    cancellation: { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', status: 'COMPLETED' },
+    cancellation: {
+      id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      tenantId: TENANT_A,
+      orderId: ORDER_ID,
+      status: 'COMPLETED',
+      reason: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      lines: [],
+    },
   });
   coreServices.shipments.useCases.createShipment.execute.mockResolvedValue({
     shipment: shipmentEntity('CREATED'),
@@ -265,7 +274,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
       expect(response.body).toEqual({
         success: true,
         integration: 'stock-connect',
-        data: { message: 'pong' },
+        data: { message: 'ok', apiVersion: 'v2' },
       });
     });
 
@@ -409,7 +418,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .post('/api/v2/stock-connect/products')
         .set('Authorization', `Bearer ${API_KEY}`)
         .send({ merchantSku: 'SC-SKU-001' })
-        .expect(201);
+        .expect(200);
       expect(createdProduct.body.integration).toBe('stock-connect');
       expect(coreServices.products.useCases.createProduct.execute).toHaveBeenCalled();
 
@@ -427,6 +436,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
       const published = await request(app.getHttpServer())
         .post(`/api/v2/stock-connect/products/${PRODUCT_ID}/publish`)
         .set('Authorization', `Bearer ${API_KEY}`)
+        .set('Idempotency-Key', 'sc-publish-1')
         .send({ channelId: CHANNEL_ID })
         .expect(200);
       expect(published.body.data.offer.status).toBe('ACTIVE');
@@ -447,12 +457,14 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .get(`/api/v2/stock-connect/inventory/${PRODUCT_ID}`)
         .set('Authorization', `Bearer ${API_KEY}`)
         .expect(200);
-      expect(inv.body.data.available).toBe(8);
-      expect(inv.body.data.merchantSku).toBe('SC-SKU-001');
+      expect(inv.body.data.productId).toBe(PRODUCT_ID);
+      expect(inv.body.data.balances).toHaveLength(1);
+      expect(inv.body.data.balances[0].available).toBe(8);
 
       await request(app.getHttpServer())
         .post('/api/v2/stock-connect/inventory/adjustments')
         .set('Authorization', `Bearer ${API_KEY}`)
+        .set('Idempotency-Key', 'sc-inv-adj-1')
         .send({
           productId: PRODUCT_ID,
           stockLocationId: LOCATION_ID,
@@ -487,25 +499,27 @@ describe('StockConnect ERP adapter HTTP contract', () => {
         .get('/api/v2/stock-connect/orders?limit=10')
         .set('Authorization', `Bearer ${API_KEY}`)
         .expect(200);
-      expect(list.body.data.items[0].merchantOrderNo).toBe('ORD-100');
-      expect(list.body.data.items[0].lines[0].merchantSku).toBe('SC-SKU-001');
+      expect(list.body.data.items[0].orderNumber).toBe('ORD-100');
+      expect(list.body.data.items[0].externalOrderReference).toBe('EXT-100');
 
       const sync = await request(app.getHttpServer())
         .get('/api/v2/stock-connect/orders/sync?limit=50')
         .set('Authorization', `Bearer ${API_KEY}`)
         .expect(200);
-      expect(coreServices.orders.orderQueryService.listOrders).toHaveBeenCalled();
+      expect(coreServices.orders.useCases.listOrders.execute).toHaveBeenCalled();
       expect(sync.body.data.items).toHaveLength(1);
 
       const detail = await request(app.getHttpServer())
         .get(`/api/v2/stock-connect/orders/${ORDER_ID}`)
         .set('Authorization', `Bearer ${API_KEY}`)
         .expect(200);
-      expect(detail.body.data.externalOrderId).toBe('EXT-100');
+      expect(detail.body.data.externalOrderReference).toBe('EXT-100');
+      expect(detail.body.data.lines[0].merchantSku).toBe('SC-SKU-001');
 
       const cancel = await request(app.getHttpServer())
         .post(`/api/v2/stock-connect/orders/${ORDER_ID}/cancel`)
         .set('Authorization', `Bearer ${API_KEY}`)
+        .set('Idempotency-Key', 'sc-cancel-1')
         .send({ reason: 'customer request' })
         .expect(200);
       expect(coreServices.cancellations.useCases.createCancellation.execute).toHaveBeenCalledWith(
@@ -515,7 +529,8 @@ describe('StockConnect ERP adapter HTTP contract', () => {
           permission: 'orders.cancel',
         }),
       );
-      expect(cancel.body.data.cancellationId).toBeTruthy();
+      expect(cancel.body.data.id).toBe(ORDER_ID);
+      expect(cancel.body.data.orderNumber).toBe('ORD-100');
     });
 
     it('creates, gets, and ships shipments', async () => {
@@ -530,7 +545,7 @@ describe('StockConnect ERP adapter HTTP contract', () => {
           trackingNumber: 'TRACK-1',
           lines: [{ orderLineId: LINE_ID, quantity: 2 }],
         })
-        .expect(201);
+        .expect(200);
       expect(createdShipment.body.data.id).toBe(SHIPMENT_ID);
       expect(coreServices.shipments.useCases.createShipment.execute).toHaveBeenCalled();
 

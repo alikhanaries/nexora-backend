@@ -26,7 +26,7 @@ export class MarketplaceConnectionCommandService {
 
      * @param {object} deps
 
-     * @param {import('../../authorization/public/index.js').DefaultAuthorizationService} deps.authorization
+     * @param {ReturnType<typeof import('../../authorization/public/index.js').createDefaultAuthorizationService>} deps.authorization
 
      * @param {import('../repositories/postgres-marketplace-connection-repository.js').PostgresMarketplaceConnectionRepository} deps.connections
 

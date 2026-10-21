@@ -1,9 +1,9 @@
 export { toOfferDto } from './offer-dto.js';
-export { DefaultOfferQueryService, } from './offer-query-service.js';
-export { CreateOffer } from './create-offer.js';
-export { UpdateOffer } from './update-offer.js';
-export { ActivateOffer } from './activate-offer.js';
-export { SuspendOffer } from './suspend-offer.js';
-export { DeactivateOffer } from './deactivate-offer.js';
-export { GetOffer } from './get-offer.js';
-export { ListOffers } from './list-offers.js';
+export { createDefaultOfferQueryService } from './offer-query-service.js';
+export { createCreateOffer } from './create-offer.js';
+export { createGetOffer } from './get-offer.js';
+export { createListOffers } from './list-offers.js';
+export { createUpdateOffer } from './update-offer.js';
+export { createActivateOffer } from './activate-offer.js';
+export { createSuspendOffer } from './suspend-offer.js';
+export { createDeactivateOffer } from './deactivate-offer.js';

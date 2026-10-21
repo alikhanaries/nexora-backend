@@ -23,7 +23,7 @@ import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
 /** StockConnect Integration — products */
-export @Controller()
+@Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectProductsController {
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
@@ -32,7 +32,7 @@ class StockConnectProductsController {
 
   @Get('/api/v2/stock-connect/products')
   async list(@Query() query) {
-    const parsed = stockConnectListProductsQuerySchema.parse(query);
+    const parsed = parseOrThrow(stockConnectListProductsQuerySchema, query, 'query');
     return this.stockConnectIntegrationService.listProducts(parsed);
   }
 
@@ -69,3 +69,4 @@ class StockConnectProductsController {
     return this.stockConnectIntegrationService.publishProduct(productId, parsed, idempotencyKey);
   }
 }
+export { StockConnectProductsController };

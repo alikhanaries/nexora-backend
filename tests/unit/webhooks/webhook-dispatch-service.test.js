@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { WebhookDispatchService } from '../../../src/modules/webhooks/outbound/services/webhook-dispatch-service.js';
+import { createWebhookDispatchService } from '../../../src/modules/webhooks/outbound/services/webhook-dispatch-service.js';
 import { ConflictError, ServiceUnavailableError } from '../../../src/shared/errors/index.js';
 import { JobName, QueueName } from '../../../src/infrastructure/queue/queue-names.js';
 
@@ -57,7 +57,7 @@ function createService(overrides = {}) {
         ...overrides,
     };
     return {
-        service: new WebhookDispatchService(deps),
+        service: createWebhookDispatchService(deps),
         deps,
     };
 }

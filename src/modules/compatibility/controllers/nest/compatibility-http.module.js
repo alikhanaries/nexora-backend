@@ -4,9 +4,10 @@ import { CompatV2Controller } from './compat-v2.controller.js';
 import { CompatibilityV2Controller } from './compatibility-v2.controller.js';
 import { CompatibilityHttpService } from './compatibility-http.service.js';
 
-export @Module({
+@Module({
   imports: [CompatibilityOrdersModule],
   controllers: [CompatibilityV2Controller, CompatV2Controller],
   providers: [CompatibilityHttpService],
 })
 class CompatibilityHttpModule {}
+export { CompatibilityHttpModule };

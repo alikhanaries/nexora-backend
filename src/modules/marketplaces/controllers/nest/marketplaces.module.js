@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MarketplacesController } from './marketplaces.controller.js';
-import { MarketplacesService } from './marketplaces.service.js';
 
-export @Module({
+@Module({
   controllers: [MarketplacesController],
-  providers: [MarketplacesService],
+  providers: [],
 })
 class MarketplacesModule {}
+export { MarketplacesModule };

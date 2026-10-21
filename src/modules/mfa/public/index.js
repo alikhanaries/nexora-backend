@@ -1,1 +1,1 @@
-export { StepUpService } from '../services/step-up-verifier.js';
+export { createStepUpService } from '../services/step-up-verifier.js';

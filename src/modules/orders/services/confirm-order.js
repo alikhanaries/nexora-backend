@@ -1,5 +1,6 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { BusinessRuleError, NotFoundError } from '../../../shared/errors/index.js';
+import { transitionOrderEntity } from '../models/order.js';
 import { OrderStatus } from '../models/order-status.js';
 import { toCustomerSnapshotDto, toOrderDto, toOrderLineDto, } from '../views/order-dto.js';
 import { orderConfirmedEvent, orderStatusChangedEvent } from './order-events.js';
@@ -33,7 +34,7 @@ export function createConfirmOrder(deps) {
         }
         let updated;
         try {
-            updated = existing.transitionTo(OrderStatus.CONFIRMED);
+            updated = transitionOrderEntity(existing, OrderStatus.CONFIRMED);
         }
         catch {
             throw new BusinessRuleError('Order cannot be confirmed in its current status', {

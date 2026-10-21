@@ -1,26 +1,28 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { archiveProductEntity } from '../models/product.js';
 import { toProductDto } from './product-dto.js';
 import { productStatusChangedEvent } from './product-events.js';
-export class ArchiveProduct {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        this.deps.authorization.requirePermission(input.actorPermissions, 'products.update');
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createArchiveProduct(deps) {
+    async function execute(input) {
+        deps.authorization.requirePermission(input.actorPermissions, 'products.update');
         const now = new Date();
-        const product = await this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.products.findById(tx, input.tenantId, input.productId);
+        const product = await deps.database.execute(async (tx) => {
+            const existing = await deps.products.findById(tx, input.tenantId, input.productId);
             if (existing === null) {
                 throw new NotFoundError('Product was not found');
             }
             const previousStatus = existing.status;
-            const updated = existing.archive(now);
-            await this.deps.products.update(tx, updated);
+            const updated = archiveProductEntity(existing, now);
+            await deps.products.update(tx, updated);
             const dto = toProductDto(updated);
-            await this.deps.eventRecorder?.record(tx, productStatusChangedEvent(dto, previousStatus));
-            await this.deps.auditRecorder?.record(tx, {
+            await deps.eventRecorder?.record(tx, productStatusChangedEvent(dto, previousStatus));
+            await deps.auditRecorder?.record(tx, {
                 tenantId: input.tenantId,
                 actorKind: input.actorKind,
                 actorId: input.actorId,
@@ -34,4 +36,5 @@ export class ArchiveProduct {
         }, { tenantId: input.tenantId });
         return { product };
     }
+    return { execute };
 }

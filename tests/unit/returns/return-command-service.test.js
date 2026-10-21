@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     createReturnCommandService,
-    DefaultReturnCommandService,
 } from '../../../src/modules/returns/public/return-command-service.js';
 
 const returnDetail = {
@@ -76,23 +75,5 @@ describe('createReturnCommandService', () => {
             idempotencyKey: 'idem-return-1',
         }, 'body-1', expect.any(Function), expect.any(Function), { useTransaction: true });
         expect(result.return).toMatchObject({ transactionProvided: true });
-    });
-
-    it('keeps DefaultReturnCommandService constructor-return wrapper working', async () => {
-        const createReturn = {
-            execute: vi.fn().mockResolvedValue({ return: returnDetail }),
-        };
-        const service = new DefaultReturnCommandService({ createReturn });
-
-        const result = await service.createReturn({
-            tenantId: 'tenant-1',
-            actorId: 'actor-1',
-            actorKind: 'user',
-            actorPermissions: ['returns.create'],
-            orderId: 'order-1',
-            lines: [{ orderLineId: 'line-1', quantity: 2 }],
-        });
-
-        expect(result).toEqual({ return: returnDetail });
     });
 });

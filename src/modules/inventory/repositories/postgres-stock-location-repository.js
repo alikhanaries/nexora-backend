@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { parseOrThrow } from '../../../shared/validation/index.js';
-import { StockLocation } from '../models/stock-location.js';
+import { reconstituteStockLocation } from '../models/stock-location.js';
 import { StockLocationStatus } from '../models/stock-location-status.js';
 const stockLocationRowSchema = z.object({
     id: z.string().uuid(),
@@ -12,7 +12,7 @@ const stockLocationRowSchema = z.object({
     updated_at: z.date(),
 });
 function toStockLocation(row) {
-    return StockLocation.reconstitute({
+    return reconstituteStockLocation({
         id: row.id,
         tenantId: row.tenant_id,
         name: row.name,
@@ -22,8 +22,9 @@ function toStockLocation(row) {
         updatedAt: row.updated_at,
     });
 }
-export class PostgresStockLocationRepository {
-    async findById(queryable, tenantId, id) {
+export function createPostgresStockLocationRepository() {
+    return {
+        async findById(queryable, tenantId, id) {
         const result = await queryable.query(`SELECT id, tenant_id, name, external_reference, status, created_at, updated_at
        FROM stock_locations
        WHERE tenant_id = $1 AND id = $2`, [tenantId, id], { operation: 'inventory.stock_locations.find_by_id' });
@@ -31,15 +32,15 @@ export class PostgresStockLocationRepository {
         if (row === undefined)
             return null;
         return toStockLocation(parseOrThrow(stockLocationRowSchema, row, 'stock_locations row'));
-    }
-    async list(queryable, tenantId) {
+    },
+        async list(queryable, tenantId) {
         const result = await queryable.query(`SELECT id, tenant_id, name, external_reference, status, created_at, updated_at
        FROM stock_locations
        WHERE tenant_id = $1
        ORDER BY name ASC, id ASC`, [tenantId], { operation: 'inventory.stock_locations.list' });
         return result.rows.map((row) => toStockLocation(parseOrThrow(stockLocationRowSchema, row, 'stock_locations row')));
-    }
-    async insert(transaction, location) {
+    },
+        async insert(transaction, location) {
         await transaction.query(`INSERT INTO stock_locations
          (id, tenant_id, name, external_reference, status, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`, [
@@ -52,4 +53,5 @@ export class PostgresStockLocationRepository {
             location.updatedAt,
         ], { operation: 'inventory.stock_locations.insert' });
     }
+    };
 }

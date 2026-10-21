@@ -19,7 +19,7 @@ import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
 /** StockConnect Integration — orders */
-export @Controller()
+@Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectOrdersController {
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
@@ -28,13 +28,13 @@ class StockConnectOrdersController {
 
   @Get('/api/v2/stock-connect/orders')
   async list(@Query() query) {
-    const parsed = stockConnectListOrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(stockConnectListOrdersQuerySchema, query, 'query');
     return this.stockConnectIntegrationService.listOrders(parsed);
   }
 
   @Get('/api/v2/stock-connect/orders/sync')
   async sync(@Query() query) {
-    const parsed = stockConnectSyncOrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(stockConnectSyncOrdersQuerySchema, query, 'query');
     return this.stockConnectIntegrationService.syncOrders(parsed);
   }
 
@@ -51,3 +51,4 @@ class StockConnectOrdersController {
     return this.stockConnectIntegrationService.cancelOrder(orderId, idempotencyKey);
   }
 }
+export { StockConnectOrdersController };

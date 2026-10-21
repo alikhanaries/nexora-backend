@@ -11,12 +11,12 @@
 const LEGACY_CROSS_MODULE_PRIVATE = '(domain|infrastructure|presentation)';
 
 /** Cross-module private layers (physical MVC, e.g. orders). services/ omitted for the same reason as application/. */
-const MVC_CROSS_MODULE_PRIVATE = '(models|repositories|views|controllers)';
+const MVC_CROSS_MODULE_PRIVATE = '(models|repositories|views|routes|controllers)';
 
 const CROSS_MODULE_PRIVATE_LAYER = `(?:${LEGACY_CROSS_MODULE_PRIVATE}|${MVC_CROSS_MODULE_PRIVATE})`;
 
 /** Compatibility adapter may not import these private layers in other modules. */
-const COMPAT_FORBIDDEN_PRIVATE = '(domain|application|infrastructure|presentation|models|services|repositories|controllers|views)';
+const COMPAT_FORBIDDEN_PRIVATE = '(domain|application|infrastructure|presentation|models|services|repositories|controllers|views|routes)';
 
 /**
  * Business module slug under src/modules/:
@@ -125,6 +125,20 @@ module.exports = {
       comment: 'API views/presenters must not perform persistence.',
       from: { path: `^src/modules/${MODULE}/views/` },
       to: { path: `^src/modules/${MODULE}/repositories/` },
+    },
+    {
+      name: 'routes-no-repositories',
+      severity: 'error',
+      comment: 'HTTP route plugins must not perform persistence directly.',
+      from: { path: `^src/modules/${MODULE}/routes/` },
+      to: { path: `^src/modules/${MODULE}/repositories/` },
+    },
+    {
+      name: 'services-no-routes',
+      severity: 'error',
+      comment: 'Application services must not depend on HTTP route plugins.',
+      from: { path: `^src/modules/${MODULE}/services/` },
+      to: { path: `^src/modules/${MODULE}/routes/` },
     },
     {
       name: 'repositories-no-controllers',

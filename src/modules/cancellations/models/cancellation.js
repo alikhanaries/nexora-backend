@@ -1,78 +1,86 @@
 import { BusinessRuleError } from '../../../shared/errors/index.js';
-import { CancellationStatus, } from './cancellation-status.js';
-export class Cancellation {
-    props;
-    constructor(props) {
-        this.props = props;
-    }
-    static create(props) {
-        const now = props.createdAt ?? new Date();
-        return new Cancellation({
-            ...props,
-            status: props.status ?? CancellationStatus.REQUESTED,
-            completedAt: props.completedAt ?? null,
-            createdAt: now,
-            updatedAt: props.updatedAt ?? now,
+import { CancellationStatus } from './cancellation-status.js';
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   orderId: string,
+ *   externalReference: string | null,
+ *   status: string,
+ *   reason: string | null,
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ *   completedAt: Date | null,
+ * }} Cancellation
+ */
+
+/**
+ * @param {Omit<Cancellation, 'status' | 'completedAt' | 'updatedAt'> & {
+ *   status?: string,
+ *   completedAt?: Date | null,
+ *   updatedAt?: Date,
+ * }} props
+ * @returns {Cancellation}
+ */
+export function createCancellationEntity(props) {
+    const now = props.createdAt ?? new Date();
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        orderId: props.orderId,
+        externalReference: props.externalReference ?? null,
+        status: props.status ?? CancellationStatus.REQUESTED,
+        reason: props.reason,
+        createdAt: now,
+        updatedAt: props.updatedAt ?? now,
+        completedAt: props.completedAt ?? null,
+    };
+}
+
+/**
+ * @param {Cancellation} props
+ * @returns {Cancellation}
+ */
+export function reconstituteCancellation(props) {
+    return { ...props };
+}
+
+/**
+ * @param {Cancellation} cancellation
+ * @param {Date} [at]
+ * @returns {Cancellation}
+ */
+export function completeCancellationEntity(cancellation, at = new Date()) {
+    if (cancellation.status !== CancellationStatus.REQUESTED) {
+        throw new BusinessRuleError('Only requested cancellations can be completed', {
+            cancellationId: cancellation.id,
+            status: cancellation.status,
         });
     }
-    static reconstitute(props) {
-        return new Cancellation(props);
-    }
-    get id() {
-        return this.props.id;
-    }
-    get tenantId() {
-        return this.props.tenantId;
-    }
-    get orderId() {
-        return this.props.orderId;
-    }
-    get externalReference() {
-        return this.props.externalReference ?? null;
-    }
-    get status() {
-        return this.props.status;
-    }
-    get reason() {
-        return this.props.reason;
-    }
-    get createdAt() {
-        return this.props.createdAt;
-    }
-    get updatedAt() {
-        return this.props.updatedAt;
-    }
-    get completedAt() {
-        return this.props.completedAt;
-    }
-    complete(at = new Date()) {
-        if (this.props.status !== CancellationStatus.REQUESTED) {
-            throw new BusinessRuleError('Only requested cancellations can be completed', {
-                cancellationId: this.props.id,
-                status: this.props.status,
-            });
-        }
-        return new Cancellation({
-            ...this.props,
-            status: CancellationStatus.COMPLETED,
-            completedAt: at,
-            updatedAt: at,
+    return {
+        ...cancellation,
+        status: CancellationStatus.COMPLETED,
+        completedAt: at,
+        updatedAt: at,
+    };
+}
+
+/**
+ * @param {Cancellation} cancellation
+ * @param {Date} [at]
+ * @returns {Cancellation}
+ */
+export function rejectCancellationEntity(cancellation, at = new Date()) {
+    if (cancellation.status !== CancellationStatus.REQUESTED) {
+        throw new BusinessRuleError('Only requested cancellations can be rejected', {
+            cancellationId: cancellation.id,
+            status: cancellation.status,
         });
     }
-    reject(at = new Date()) {
-        if (this.props.status !== CancellationStatus.REQUESTED) {
-            throw new BusinessRuleError('Only requested cancellations can be rejected', {
-                cancellationId: this.props.id,
-                status: this.props.status,
-            });
-        }
-        return new Cancellation({
-            ...this.props,
-            status: CancellationStatus.REJECTED,
-            updatedAt: at,
-        });
-    }
-    toProps() {
-        return { ...this.props };
-    }
+    return {
+        ...cancellation,
+        status: CancellationStatus.REJECTED,
+        updatedAt: at,
+    };
 }

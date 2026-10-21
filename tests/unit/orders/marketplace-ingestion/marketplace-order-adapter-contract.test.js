@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MarketplaceOrderAdapterRegistry } from '../../../../src/modules/orders/marketplace-ingestion/public/marketplace-order-adapter-registry.js';
+import { createMarketplaceOrderAdapterRegistry } from '../../../../src/modules/orders/marketplace-ingestion/public/marketplace-order-adapter-registry.js';
 import { MarketplaceOrderIngestionPermanentError } from '../../../../src/modules/orders/marketplace-ingestion/public/marketplace-order-ingestion-errors.js';
 import { registerMarketplaceCatalogAdapters } from '../../../../src/modules/marketplaces/repositories/adapters/register-marketplace-catalog-adapters.js';
 import { registerMarketplaceOrderAdapters } from '../../../../src/modules/marketplaces/repositories/adapters/register-marketplace-order-adapters.js';
@@ -60,7 +60,7 @@ describe('marketplace order adapter registry', () => {
     it('catalog adapters remain separate from order registry', () => {
         const catalogRegistry = new MarketplaceCatalogAdapterRegistry();
         registerMarketplaceCatalogAdapters(catalogRegistry, {});
-        const orderRegistry = new MarketplaceOrderAdapterRegistry();
+        const orderRegistry = createMarketplaceOrderAdapterRegistry();
         registerMarketplaceOrderAdapters(orderRegistry);
         expect(orderRegistry.resolve('shopify')).toBeInstanceOf(ShopifyOrderAdapter);
         expect(orderRegistry.resolve('amazon')).toBeInstanceOf(AmazonOrderAdapter);
@@ -72,10 +72,10 @@ describe('marketplace order adapter registry', () => {
 
 describe('ingest fetch guard', () => {
     it('fetch without adapter is permanent', async () => {
-        const { IngestNormalizedMarketplaceOrder } = await import('../../../../src/modules/orders/marketplace-ingestion/services/ingest-normalized-marketplace-order.js');
-        const useCase = new IngestNormalizedMarketplaceOrder({
+        const { createIngestNormalizedMarketplaceOrder } = await import('../../../../src/modules/orders/marketplace-ingestion/services/ingest-normalized-marketplace-order.js');
+        const useCase = createIngestNormalizedMarketplaceOrder({
             ingestionService: { ingest: async () => ({}) },
-            orderAdapterRegistry: new MarketplaceOrderAdapterRegistry(),
+            orderAdapterRegistry: createMarketplaceOrderAdapterRegistry(),
             commerceIntegrationQueryService: { getCommerceIntegrationById: async () => ({ tenantId: '00000000-0000-4000-8000-000000000001', stockLocationId: '00000000-0000-4000-8000-000000000099' }) },
             database: { execute: async (fn) => fn({}) },
         });

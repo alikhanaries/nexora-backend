@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { parseOrThrow } from '../../../../shared/validation/index.js';
-import { WebhookDelivery } from '../models/webhook-delivery.js';
+import { reconstituteWebhookDelivery } from '../models/webhook-delivery.js';
 import { WebhookDeliveryStatus } from '../models/webhook-delivery-status.js';
 
 const deliveryRowSchema = z.object({
@@ -27,7 +27,7 @@ const deliveryRowSchema = z.object({
 const deliverySelect = `id, tenant_id, subscription_id, event_id, event_type, status, attempt_count, next_attempt_at, last_http_status, last_error, delivered_at, created_at`;
 
 function toDelivery(row) {
-    return WebhookDelivery.reconstitute({
+    return reconstituteWebhookDelivery({
         id: row.id,
         tenantId: row.tenant_id,
         subscriptionId: row.subscription_id,
@@ -43,8 +43,9 @@ function toDelivery(row) {
     });
 }
 
-export class PostgresWebhookDeliveryRepository {
-    async insert(queryable, delivery) {
+export function createPostgresWebhookDeliveryRepository() {
+    return {
+        async insert(queryable, delivery) {
         await queryable.query(`INSERT INTO webhook_deliveries
          (id, tenant_id, subscription_id, event_id, event_type, status, attempt_count, next_attempt_at, last_http_status, last_error, delivered_at, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`, [
@@ -61,8 +62,8 @@ export class PostgresWebhookDeliveryRepository {
             delivery.deliveredAt,
             delivery.createdAt,
         ], { operation: 'webhooks.deliveries.insert' });
-    }
-    async findById(queryable, tenantId, deliveryId) {
+        },
+        async findById(queryable, tenantId, deliveryId) {
         const result = await queryable.query(`SELECT ${deliverySelect}
        FROM webhook_deliveries
        WHERE tenant_id = $1 AND id = $2`, [tenantId, deliveryId], { operation: 'webhooks.deliveries.find_by_id' });
@@ -70,8 +71,8 @@ export class PostgresWebhookDeliveryRepository {
         if (row === undefined)
             return null;
         return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
-    }
-    async findBySubscriptionAndEventId(queryable, tenantId, subscriptionId, eventId) {
+        },
+        async findBySubscriptionAndEventId(queryable, tenantId, subscriptionId, eventId) {
         const result = await queryable.query(`SELECT ${deliverySelect}
        FROM webhook_deliveries
        WHERE tenant_id = $1 AND subscription_id = $2 AND event_id = $3`, [tenantId, subscriptionId, eventId], { operation: 'webhooks.deliveries.find_by_subscription_event' });
@@ -79,8 +80,8 @@ export class PostgresWebhookDeliveryRepository {
         if (row === undefined)
             return null;
         return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
-    }
-    async update(queryable, delivery, options = {}) {
+        },
+        async update(queryable, delivery, options = {}) {
         const params = [
             delivery.tenantId,
             delivery.id,
@@ -105,13 +106,13 @@ export class PostgresWebhookDeliveryRepository {
         }
         const result = await queryable.query(sql, params, { operation: 'webhooks.deliveries.update' });
         return result.rowCount > 0;
-    }
-    /**
-     * Atomically claims a delivery attempt and increments attempt_count.
-     *
-     * Reclaims stale DELIVERING rows once their lease expires.
-     */
-    async claimAttempt(queryable, tenantId, deliveryId, leaseSeconds) {
+        },
+        /**
+         * Atomically claims a delivery attempt and increments attempt_count.
+         *
+         * Reclaims stale DELIVERING rows once their lease expires.
+         */
+        async claimAttempt(queryable, tenantId, deliveryId, leaseSeconds) {
         const result = await queryable.query(`UPDATE webhook_deliveries
        SET status = $4,
            attempt_count = attempt_count + 1,
@@ -134,8 +135,8 @@ export class PostgresWebhookDeliveryRepository {
             return null;
         }
         return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
-    }
-    async listBySubscription(queryable, tenantId, subscriptionId, input = {}) {
+        },
+        async listBySubscription(queryable, tenantId, subscriptionId, input = {}) {
         const limit = input.limit ?? 100;
         const result = await queryable.query(`SELECT ${deliverySelect}
        FROM webhook_deliveries
@@ -143,8 +144,8 @@ export class PostgresWebhookDeliveryRepository {
        ORDER BY created_at DESC, id DESC
        LIMIT $3`, [tenantId, subscriptionId, limit], { operation: 'webhooks.deliveries.list_by_subscription' });
         return result.rows.map((row) => toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row')));
-    }
-    async listPage(queryable, tenantId, subscriptionId, filter, limit, cursorCreatedAt, cursorId) {
+        },
+        async listPage(queryable, tenantId, subscriptionId, filter, limit, cursorCreatedAt, cursorId) {
         const conditions = ['tenant_id = $1', 'subscription_id = $2'];
         const params = [tenantId, subscriptionId];
         if (filter.status !== undefined) {
@@ -167,5 +168,6 @@ export class PostgresWebhookDeliveryRepository {
        ORDER BY created_at DESC, id DESC
        LIMIT ${limitParam}`, params, { operation: 'webhooks.deliveries.list_page' });
         return result.rows.map((row) => toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row')));
-    }
+        },
+    };
 }

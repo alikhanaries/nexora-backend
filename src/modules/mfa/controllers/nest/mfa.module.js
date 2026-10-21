@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MfaController } from './mfa.controller.js';
-import { MfaService } from './mfa.service.js';
 
-export @Module({
+@Module({
   controllers: [MfaController],
-  providers: [MfaService],
+  providers: [],
 })
 class MfaModule {}
+export { MfaModule };

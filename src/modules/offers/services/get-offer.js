@@ -1,12 +1,14 @@
 import { requireOffersRead } from './offer-permissions.js';
-export class GetOffer {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireOffersRead(this.deps.authorization, input.actorPermissions);
-        const offer = await this.deps.offerQueryService.getOfferById(input.tenantId, input.offerId);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createGetOffer(deps) {
+    async function execute(input) {
+        requireOffersRead(deps.authorization, input.actorPermissions);
+        const offer = await deps.offerQueryService.getOfferById(input.tenantId, input.offerId);
         return { offer };
     }
+    return { execute };
 }

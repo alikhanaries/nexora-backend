@@ -6,7 +6,7 @@ import { getRequestContext } from '../../../shared/context/request-context.js';
 /**
  * Merchant / StockConnect CE external API error envelope.
  */
-export @Catch()
+@Catch()
 class CompatibilityExceptionFilter {
   constructor() {
     this.logger = new Logger(CompatibilityExceptionFilter.name);
@@ -36,3 +36,4 @@ class CompatibilityExceptionFilter {
     response.status(mapped.statusCode).json(mapped.body);
   }
 }
+export { CompatibilityExceptionFilter };

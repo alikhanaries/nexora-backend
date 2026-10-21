@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { normalizeTenantSlug, validateTenantSlug } from '../../../shared/security/index.js';
 import { ValidationError } from '../../../shared/errors/index.js';
-import { Tenant } from '../models/tenant.js';
+import { createTenantEntity } from '../models/tenant.js';
 
 /**
  * @param {{ repository: object, transactionManager: object }} deps
@@ -19,7 +19,7 @@ export function createCreateTenant(deps) {
         validateTenantSlug(input.slug);
         const slug = normalizeTenantSlug(input.slug);
         const now = new Date();
-        const tenant = Tenant.create({
+        const tenant = createTenantEntity({
             id: randomUUID(),
             slug,
             name,
@@ -32,15 +32,4 @@ export function createCreateTenant(deps) {
     }
 
     return { execute };
-}
-
-/** @deprecated Prefer {@link createCreateTenant}; kept for existing import sites. */
-export class CreateTenant {
-    /**
-     * @param {object} repository
-     * @param {object} transactionManager
-     */
-    constructor(repository, transactionManager) {
-        return createCreateTenant({ repository, transactionManager });
-    }
 }

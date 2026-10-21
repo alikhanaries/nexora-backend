@@ -17,13 +17,3 @@ export function createListPermissions(deps) {
 
     return { execute };
 }
-
-/** @deprecated Prefer {@link createListPermissions}; kept for existing import sites. */
-export class ListPermissions {
-    /**
-     * @param {object} deps
-     */
-    constructor(deps) {
-        return createListPermissions(deps);
-    }
-}

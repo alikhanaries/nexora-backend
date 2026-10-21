@@ -9,7 +9,7 @@ import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
 /** StockConnect Integration — inventory */
-export @Controller()
+@Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectInventoryController {
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
@@ -19,7 +19,7 @@ class StockConnectInventoryController {
   @Get('/api/v2/stock-connect/inventory/:productId')
   async getForProduct(@Param() params, @Query() query) {
     const { productId } = parseOrThrow(stockConnectProductIdParamsSchema, params, 'product params');
-    const parsed = stockConnectInventoryQuerySchema.parse(query);
+    const parsed = parseOrThrow(stockConnectInventoryQuerySchema, query, 'query');
     return this.stockConnectIntegrationService.getProductInventory(productId, parsed);
   }
 
@@ -30,3 +30,4 @@ class StockConnectInventoryController {
     return this.stockConnectIntegrationService.adjustInventory(parsed, idempotencyKey);
   }
 }
+export { StockConnectInventoryController };

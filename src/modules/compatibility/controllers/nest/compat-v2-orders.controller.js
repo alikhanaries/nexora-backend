@@ -28,7 +28,7 @@ const merchantOrderNoParamsSchema = z.object({
   merchantOrderNo: z.string().min(1).max(250),
 });
 
-export @Controller()
+@Controller()
 @UseFilters(CompatibilityExceptionFilter)
 class CompatV2OrdersController {
   constructor(@Inject(CompatibilityOrdersService) compatibilityOrdersService) {
@@ -53,7 +53,7 @@ class CompatV2OrdersController {
 
   @Get('/api/v2/ce/orders')
   async list(@Query() query) {
-    const parsed = compatV2OrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(compatV2OrdersQuerySchema, query, 'query');
     return this.compatibilityOrdersService.listCeOrders({
       page: parsed.page,
       pageSize: parsed.pageSize,
@@ -67,3 +67,4 @@ class CompatV2OrdersController {
     return this.compatibilityOrdersService.acknowledgeOrderCe(parsed, idempotencyKey);
   }
 }
+export { CompatV2OrdersController };

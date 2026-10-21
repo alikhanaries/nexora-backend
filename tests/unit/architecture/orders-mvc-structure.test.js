@@ -39,9 +39,9 @@ describe('orders module physical MVC layout', () => {
   });
 
   it('keeps NestJS adapters under controllers/nest without business logic imports from repositories', () => {
-    const nestService = join(ordersRoot, 'controllers/nest/orders.service.js');
-    expect(existsSync(nestService)).toBe(true);
-    const content = readFileSync(nestService, 'utf8');
+    const nestController = join(ordersRoot, 'controllers/nest/orders.controller.js');
+    expect(existsSync(nestController)).toBe(true);
+    const content = readFileSync(nestController, 'utf8');
     expect(content).not.toMatch(/repositories\//);
     expect(content).toMatch(/views\/order\.mapper\.js/);
   });

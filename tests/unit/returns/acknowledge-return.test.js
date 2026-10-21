@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BusinessRuleError, NotFoundError } from '../../../src/shared/errors/index.js';
-import { Return } from '../../../src/modules/returns/models/return.js';
+import { createReturnEntity } from '../../../src/modules/returns/models/return.js';
 import { ReturnStatus } from '../../../src/modules/returns/models/return-status.js';
 import { createAcknowledgeReturn } from '../../../src/modules/returns/services/acknowledge-return.js';
 
 function makeRequestedReturn() {
   const createdAt = new Date('2024-01-15T10:00:00.000Z');
-  return Return.create({
+  return createReturnEntity({
     id: 'r1',
     tenantId: 't1',
     orderId: 'o1',
@@ -49,7 +49,7 @@ describe('createAcknowledgeReturn', () => {
 
   it('is idempotent when return is already APPROVED', async () => {
     const createdAt = new Date('2024-01-15T10:00:00.000Z');
-    const existing = Return.create({
+    const existing = createReturnEntity({
       id: 'r1',
       tenantId: 't1',
       orderId: 'o1',
@@ -113,7 +113,7 @@ describe('createAcknowledgeReturn', () => {
 
   it('rejects acknowledge from a non-REQUESTED status that is not already handled', async () => {
     const createdAt = new Date('2024-01-15T10:00:00.000Z');
-    const existing = Return.create({
+    const existing = createReturnEntity({
       id: 'r1',
       tenantId: 't1',
       orderId: 'o1',

@@ -31,8 +31,12 @@ function mapRole(row) {
         updatedAt: row.updated_at,
     };
 }
-export class PostgresMembershipRoleRepository {
-    async findMembership(membershipId, tx) {
+/**
+ * Postgres persistence (function-based repository).
+ * @returns {object}
+ */
+export function createPostgresMembershipRoleRepository() {
+    async function findMembership(membershipId, tx) {
         const result = await tx.query(`SELECT id, tenant_id, status
        FROM tenant_memberships
        WHERE id = $1`, [membershipId], { operation: 'authorization.memberships.find' });
@@ -46,7 +50,7 @@ export class PostgresMembershipRoleRepository {
             status: row.status,
         };
     }
-    async assignRole(membershipId, roleId, tx) {
+    async function assignRole(membershipId, roleId, tx) {
         try {
             await tx.query(`INSERT INTO membership_roles (membership_id, role_id)
          VALUES ($1, $2)`, [membershipId, roleId], { operation: 'authorization.membership_roles.assign' });
@@ -58,11 +62,11 @@ export class PostgresMembershipRoleRepository {
             throw error;
         }
     }
-    async removeRole(membershipId, roleId, tx) {
+    async function removeRole(membershipId, roleId, tx) {
         await tx.query(`DELETE FROM membership_roles
        WHERE membership_id = $1 AND role_id = $2`, [membershipId, roleId], { operation: 'authorization.membership_roles.remove' });
     }
-    async listRolesForMembership(membershipId, tx) {
+    async function listRolesForMembership(membershipId, tx) {
         const result = await tx.query(`SELECT r.id, r.tenant_id, r.name, r.system_key, r.status, r.is_system, r.cloned_from_role_id, r.created_at, r.updated_at
        FROM membership_roles mr
        JOIN roles r ON r.id = mr.role_id
@@ -70,7 +74,7 @@ export class PostgresMembershipRoleRepository {
        ORDER BY r.name ASC`, [membershipId], { operation: 'authorization.membership_roles.list_roles' });
         return result.rows.map((row) => mapRole(parseOrThrow(roleRowSchema, row, 'role row')));
     }
-    async loadPermissionContextByUserAndTenant(userId, tenantId, tx) {
+    async function loadPermissionContextByUserAndTenant(userId, tenantId, tx) {
         const result = await tx.query(`SELECT id, tenant_id, status
        FROM tenant_memberships
        WHERE user_id = $1 AND tenant_id = $2`, [userId, tenantId], { operation: 'authorization.memberships.find_by_user_tenant' });
@@ -78,10 +82,10 @@ export class PostgresMembershipRoleRepository {
             return null;
         }
         const row = parseOrThrow(membershipRowSchema, result.rows[0], 'membership row');
-        return this.loadPermissionContext(row.id, tx);
+        return loadPermissionContext(row.id, tx);
     }
-    async loadPermissionContext(membershipId, tx) {
-        const membership = await this.findMembership(membershipId, tx);
+    async function loadPermissionContext(membershipId, tx) {
+        const membership = await findMembership(membershipId, tx);
         if (membership === null) {
             return null;
         }
@@ -114,7 +118,7 @@ export class PostgresMembershipRoleRepository {
             })),
         };
     }
-    async lockAdminCapableMemberships(tenantId, tx) {
+    async function lockAdminCapableMemberships(tenantId, tx) {
         await tx.query(`SELECT tm.id
        FROM tenant_memberships tm
        WHERE tm.tenant_id = $1
@@ -130,7 +134,7 @@ export class PostgresMembershipRoleRepository {
          )
        FOR UPDATE OF tm`, [tenantId, TENANT_ADMIN_PERMISSION], { operation: 'authorization.membership_roles.lock_admin_memberships' });
     }
-    async countAdminCapableMemberships(tenantId, tx) {
+    async function countAdminCapableMemberships(tenantId, tx) {
         const result = await tx.query(`SELECT COUNT(DISTINCT tm.id)::int AS admin_count
        FROM tenant_memberships tm
        WHERE tm.tenant_id = $1
@@ -147,7 +151,7 @@ export class PostgresMembershipRoleRepository {
         const count = result.rows[0]?.['admin_count'];
         return typeof count === 'number' ? count : Number(count);
     }
-    async membershipHasAdminViaOtherRoles(membershipId, excludingRoleId, tx) {
+    async function membershipHasAdminViaOtherRoles(membershipId, excludingRoleId, tx) {
         const result = await tx.query(`SELECT 1
        FROM membership_roles mr
        JOIN roles r ON r.id = mr.role_id AND r.status = 'ACTIVE'
@@ -159,4 +163,15 @@ export class PostgresMembershipRoleRepository {
        LIMIT 1`, [membershipId, excludingRoleId, TENANT_ADMIN_PERMISSION], { operation: 'authorization.membership_roles.has_admin_via_other_roles' });
         return result.rowCount > 0;
     }
+    return {
+        findMembership,
+        assignRole,
+        removeRole,
+        listRolesForMembership,
+        loadPermissionContextByUserAndTenant,
+        loadPermissionContext,
+        lockAdminCapableMemberships,
+        countAdminCapableMemberships,
+        membershipHasAdminViaOtherRoles,
+    };
 }

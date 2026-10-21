@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DefaultAuthorizationService } from '../../../src/modules/authorization/public/index.js';
-import { RotateWebhookSecret } from '../../../src/modules/webhooks/outbound/services/rotate-webhook-secret.js';
-import { WebhookSubscription } from '../../../src/modules/webhooks/outbound/models/webhook-subscription.js';
+import { createDefaultAuthorizationService } from '../../../src/modules/authorization/public/index.js';
+import { createRotateWebhookSecret } from '../../../src/modules/webhooks/outbound/services/rotate-webhook-secret.js';
+import { reconstituteWebhookSubscription } from '../../../src/modules/webhooks/outbound/models/webhook-subscription.js';
 import { AuthorizationError, ValidationError } from '../../../src/shared/errors/index.js';
 
 const WEBHOOK_PERMISSIONS = ['webhooks.read', 'webhooks.manage'];
 
 function buildSubscription() {
-    return WebhookSubscription.reconstitute({
+    return reconstituteWebhookSubscription({
         id: '11111111-1111-4111-8111-111111111111',
         tenantId: '22222222-2222-4222-8222-222222222222',
         url: 'https://example.com/hook',
@@ -23,8 +23,8 @@ function buildSubscription() {
 
 describe('RotateWebhookSecret', () => {
     it('requires step-up authentication', async () => {
-        const useCase = new RotateWebhookSecret({
-            authorization: new DefaultAuthorizationService(),
+        const useCase = createRotateWebhookSecret({
+            authorization: createDefaultAuthorizationService(),
             rateLimiter: { consume: vi.fn(async () => ({ allowed: true })) },
             stepUpVerifier: { hasValidStepUp: vi.fn(async () => false) },
             secretEncryptor: { encrypt: vi.fn(() => 'new-ciphertext') },
@@ -41,8 +41,8 @@ describe('RotateWebhookSecret', () => {
     });
 
     it('rejects callers without recent step-up proof', async () => {
-        const useCase = new RotateWebhookSecret({
-            authorization: new DefaultAuthorizationService(),
+        const useCase = createRotateWebhookSecret({
+            authorization: createDefaultAuthorizationService(),
             rateLimiter: { consume: vi.fn(async () => ({ allowed: true })) },
             stepUpVerifier: { hasValidStepUp: vi.fn(async () => false) },
             secretEncryptor: { encrypt: vi.fn(() => 'new-ciphertext') },
@@ -62,8 +62,8 @@ describe('RotateWebhookSecret', () => {
     it('returns a new secret without exposing the old secret', async () => {
         const subscription = buildSubscription();
         const updateSecret = vi.fn(async () => undefined);
-        const useCase = new RotateWebhookSecret({
-            authorization: new DefaultAuthorizationService(),
+        const useCase = createRotateWebhookSecret({
+            authorization: createDefaultAuthorizationService(),
             rateLimiter: { consume: vi.fn(async () => ({ allowed: true })) },
             stepUpVerifier: { hasValidStepUp: vi.fn(async () => true) },
             secretEncryptor: { encrypt: vi.fn(() => 'new-ciphertext') },

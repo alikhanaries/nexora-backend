@@ -5,52 +5,75 @@ import {
 } from '../../views/tenant.schemas.js';
 import { parseOrThrow } from '../../../../shared/validation/index.js';
 import { Public } from '../../../../app/common/decorators/public.decorator.js';
-import { TenantsService } from './tenants.service.js';
+import { requireActorContext } from '../../../../shared/context/require-principal.js';
+import { toTenantResponse } from '../../views/tenant.mapper.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
+import { TENANT_ROUTES } from '../../routes/tenant.routes.js';
 
-export @Controller()
+/**
+ * Thin Nest HTTP adapter — API methods only.
+ * Business rules live in services/; paths live in routes/.
+ */
+@Controller()
 class TenantsController {
-  constructor(@Inject(TenantsService) tenantsService) {
-    this.tenantsService = tenantsService;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.useCases = coreServices.tenants.useCases;
   }
 
   @Public()
-  @Post('/api/v1/tenants')
+  @Post(TENANT_ROUTES.create.path)
   @HttpCode(201)
   async create(@Body() body) {
     const parsed = parseOrThrow(createTenantBodySchema, body, 'create tenant');
-    const data = await this.tenantsService.createTenant(parsed);
-    return { success: true, data };
+    const { tenant } = await this.useCases.createTenant.execute(parsed);
+    return { success: true, data: toTenantResponse(tenant) };
   }
 
   @Public()
-  @Get('/api/v1/tenants/:tenantId')
+  @Get(TENANT_ROUTES.getById.path)
   async getById(@Param() params) {
     const { tenantId } = parseOrThrow(tenantIdParamsSchema, params, 'tenant params');
-    const data = await this.tenantsService.getTenant(tenantId);
-    return { success: true, data };
+    const { tenant } = await this.useCases.getTenant.execute({ tenantId });
+    return { success: true, data: toTenantResponse(tenant) };
   }
 
-  @Post('/api/v1/tenants/:tenantId/suspend')
+  @Post(TENANT_ROUTES.suspend.path)
   @HttpCode(200)
   async suspend(@Param() params) {
     const { tenantId } = parseOrThrow(tenantIdParamsSchema, params, 'tenant params');
-    const data = await this.tenantsService.suspendTenant(tenantId);
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { tenant } = await this.useCases.suspendTenant.execute({
+      tenantId,
+      actorTenantId: actor.tenantId,
+      actorPermissions: actor.permissions,
+    });
+    return { success: true, data: toTenantResponse(tenant) };
   }
 
-  @Post('/api/v1/tenants/:tenantId/reactivate')
+  @Post(TENANT_ROUTES.reactivate.path)
   @HttpCode(200)
   async reactivate(@Param() params) {
     const { tenantId } = parseOrThrow(tenantIdParamsSchema, params, 'tenant params');
-    const data = await this.tenantsService.reactivateTenant(tenantId);
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { tenant } = await this.useCases.reactivateTenant.execute({
+      tenantId,
+      actorTenantId: actor.tenantId,
+      actorPermissions: actor.permissions,
+    });
+    return { success: true, data: toTenantResponse(tenant) };
   }
 
-  @Post('/api/v1/tenants/:tenantId/close')
+  @Post(TENANT_ROUTES.close.path)
   @HttpCode(200)
   async close(@Param() params) {
     const { tenantId } = parseOrThrow(tenantIdParamsSchema, params, 'tenant params');
-    const data = await this.tenantsService.closeTenant(tenantId);
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { tenant } = await this.useCases.closeTenant.execute({
+      tenantId,
+      actorTenantId: actor.tenantId,
+      actorPermissions: actor.permissions,
+    });
+    return { success: true, data: toTenantResponse(tenant) };
   }
 }
+export { TenantsController };

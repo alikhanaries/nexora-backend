@@ -1,13 +1,11 @@
 import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
+import { updateCommerceIntegrationDetails } from '../models/commerce-integration.js';
 import { channelUpdatedEvent } from './commerce-integration-events.js';
 import { requireChannelUpdate } from './commerce-integration-permissions.js';
-export class UpdateCommerceIntegration {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireChannelUpdate(this.deps.authorization, input.actorPermissions);
+
+export function createUpdateCommerceIntegration(deps) {
+    async function execute(input) {
+        requireChannelUpdate(deps.authorization, input.actorPermissions);
         if (input.name === undefined &&
             input.externalReference === undefined &&
             input.configurationReference === undefined &&
@@ -17,15 +15,15 @@ export class UpdateCommerceIntegration {
         if (input.name !== undefined && input.name.trim().length === 0) {
             throw new ValidationError('Channel name is required');
         }
-        const channel = await this.deps.database.execute(async (tx) => {
-            const existing = await this.deps.repository.findById(tx, input.tenantId, input.channelId);
+        const channel = await deps.database.execute(async (tx) => {
+            const existing = await deps.repository.findById(tx, input.tenantId, input.channelId);
             if (existing === null) {
                 throw new NotFoundError('Channel was not found', {
                     tenantId: input.tenantId,
                     channelId: input.channelId,
                 });
             }
-            const updated = existing.updateDetails({
+            const updated = updateCommerceIntegrationDetails(existing, {
                 ...(input.name === undefined ? {} : { name: input.name.trim() }),
                 ...(input.externalReference === undefined
                     ? {}
@@ -45,16 +43,17 @@ export class UpdateCommerceIntegration {
             }
             if (input.defaultStockLocationId !== undefined &&
                 input.defaultStockLocationId !== null) {
-                await this.deps.inventoryService.verifyUsableStockLocation(
+                await deps.inventoryService.verifyUsableStockLocation(
                     input.tenantId,
                     input.defaultStockLocationId,
                     tx,
                 );
             }
-            await this.deps.repository.update(tx, updated);
-            await this.deps.eventRecorder.record(tx, channelUpdatedEvent(updated));
+            await deps.repository.update(tx, updated);
+            await deps.eventRecorder.record(tx, channelUpdatedEvent(updated));
             return updated;
         }, { tenantId: input.tenantId });
         return { channel };
     }
+    return { execute };
 }

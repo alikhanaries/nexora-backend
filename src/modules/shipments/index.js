@@ -1,4 +1,4 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import {
     createCreateShipment,
     createGetShipment,
@@ -8,18 +8,17 @@ import {
     createCancelShipment,
     createUpdateShipmentTracking,
     createShipmentQueryService,
-    createShipmentCommandService,
+    createShipmentCommandService
 } from './services/index.js';
 import { toShipmentDetailDto } from './views/shipment-dto.js';
-import { PostgresShipmentRepository } from './repositories/index.js';
-import shipmentRoutes, {} from './controllers/shipment.routes.js';
+import { createPostgresShipmentRepository } from './repositories/index.js';
 export function createShipmentsModule(deps) {
-    const authorization = new DefaultAuthorizationService();
-    const shipments = new PostgresShipmentRepository();
+    const authorization = createDefaultAuthorizationService();
+    const shipments = createPostgresShipmentRepository();
     const shipmentQueryService = createShipmentQueryService({
         authorization,
         queryable: deps.database,
-        shipments,
+        shipments
     });
     const lifecycleDeps = {
         authorization,
@@ -29,25 +28,25 @@ export function createShipmentsModule(deps) {
         idempotency: deps.idempotency,
         inventoryService: deps.inventoryService,
         orderQueryService: deps.orderQueryService,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     };
     const createShipment = createCreateShipment({
         ...lifecycleDeps,
         orderFulfillmentService: deps.orderFulfillmentService,
-        externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
+        externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService
     });
     const updateShipmentTracking = createUpdateShipmentTracking(lifecycleDeps);
     const shipmentCommandService = createShipmentCommandService({
         createShipment,
         updateShipmentTracking,
-        idempotency: deps.idempotency,
+        idempotency: deps.idempotency
     });
     const useCases = {
         createShipment,
         listShipments: createListShipments({
             authorization,
             queryable: deps.database,
-            shipments,
+            shipments
         }),
         getShipment: createGetShipment({ authorization, shipmentQueryService }),
         shipShipment: createShipShipment(lifecycleDeps),
@@ -55,9 +54,9 @@ export function createShipmentsModule(deps) {
         deliverShipment: createDeliverShipment(lifecycleDeps),
         cancelShipment: createCancelShipment({
             ...lifecycleDeps,
-            orderFulfillmentService: deps.orderFulfillmentService,
+            orderFulfillmentService: deps.orderFulfillmentService
         }),
-        idempotency: deps.idempotency,
+        idempotency: deps.idempotency
     };
     async function listShipmentsForOrder(tx, tenantId, orderId) {
         const result = await shipments.listPage(tx, tenantId, { orderId }, 100, null, null);
@@ -70,9 +69,15 @@ export function createShipmentsModule(deps) {
         shipmentCommandService,
         shipmentQueryService,
         listShipmentsForOrder,
-        useCases,
-        routes: shipmentRoutes,
+        useCases
     };
 }
-export { Shipment } from './models/shipment.js';
+export {
+    createShipmentEntity,
+    reconstituteShipment,
+    transitionShipmentEntity,
+    shipShipmentEntity,
+    deliverShipmentEntity,
+    cancelShipmentEntity,
+} from './models/shipment.js';
 export { ShipmentStatus } from './models/shipment-status.js';

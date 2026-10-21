@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { parseOrThrow } from '../../../shared/validation/index.js';
-import { InventoryBalance } from '../models/inventory-balance.js';
-import { InventoryReservation } from '../models/reservation.js';
+import { reconstituteInventoryBalance, assertInventoryBalanceInvariant } from '../models/inventory-balance.js';
+import { reconstituteInventoryReservation } from '../models/reservation.js';
 import { ReservationStatus } from '../models/reservation-status.js';
 const balanceRowSchema = z.object({
     id: z.string().uuid(),
@@ -28,7 +28,7 @@ const reservationRowSchema = z.object({
     released_at: z.date().nullable(),
 });
 function toBalance(row) {
-    return InventoryBalance.reconstitute({
+    return reconstituteInventoryBalance({
         id: row.id,
         tenantId: row.tenant_id,
         stockLocationId: row.stock_location_id,
@@ -41,7 +41,7 @@ function toBalance(row) {
     });
 }
 function toReservation(row) {
-    return InventoryReservation.reconstitute({
+    return reconstituteInventoryReservation({
         id: row.id,
         tenantId: row.tenant_id,
         stockLocationId: row.stock_location_id,
@@ -54,8 +54,9 @@ function toReservation(row) {
         releasedAt: row.released_at,
     });
 }
-export class PostgresInventoryRepository {
-    async listBalances(queryable, tenantId, filters) {
+export function createPostgresInventoryRepository() {
+    return {
+        async listBalances(queryable, tenantId, filters) {
         const conditions = ['tenant_id = $1'];
         const params = [tenantId];
         if (filters.productId !== undefined) {
@@ -72,14 +73,14 @@ export class PostgresInventoryRepository {
        WHERE ${conditions.join(' AND ')}
        ORDER BY product_id ASC, stock_location_id ASC`, params, { operation: 'inventory.balances.list' });
         return result.rows.map((row) => toBalance(parseOrThrow(balanceRowSchema, row, 'inventory_balances row')));
-    }
-    async ensureBalanceRow(transaction, tenantId, stockLocationId, productId, balanceId) {
+    },
+        async ensureBalanceRow(transaction, tenantId, stockLocationId, productId, balanceId) {
         await transaction.query(`INSERT INTO inventory_balances
          (id, tenant_id, stock_location_id, product_id, on_hand, reserved, available, created_at, updated_at)
        VALUES ($1, $2, $3, $4, 0, 0, 0, now(), now())
        ON CONFLICT (tenant_id, stock_location_id, product_id) DO NOTHING`, [balanceId, tenantId, stockLocationId, productId], { operation: 'inventory.balances.ensure' });
-    }
-    async lockBalanceForUpdate(transaction, tenantId, stockLocationId, productId) {
+    },
+        async lockBalanceForUpdate(transaction, tenantId, stockLocationId, productId) {
         await this.ensureBalanceRow(transaction, tenantId, stockLocationId, productId, randomUUID());
         const result = await transaction.query(`SELECT id, tenant_id, stock_location_id, product_id, on_hand, reserved, available,
               created_at, updated_at
@@ -91,14 +92,14 @@ export class PostgresInventoryRepository {
             throw new Error('Inventory balance row missing after ensure');
         }
         return toBalance(parseOrThrow(balanceRowSchema, row, 'inventory_balances row'));
-    }
-    async updateBalance(transaction, balanceId, values, updatedAt) {
-        InventoryBalance.assertInvariant(values.onHand, values.reserved, values.available);
+    },
+        async updateBalance(transaction, balanceId, values, updatedAt) {
+        assertInventoryBalanceInvariant(values.onHand, values.reserved, values.available);
         await transaction.query(`UPDATE inventory_balances
        SET on_hand = $2, reserved = $3, available = $4, updated_at = $5
        WHERE id = $1`, [balanceId, values.onHand, values.reserved, values.available, updatedAt], { operation: 'inventory.balances.update' });
-    }
-    async insertMovement(transaction, input) {
+    },
+        async insertMovement(transaction, input) {
         const values = [
             input.id,
             input.tenantId,
@@ -138,8 +139,8 @@ export class PostgresInventoryRepository {
             operation: 'inventory.movements.insert',
         });
         return result.rows.length > 0;
-    }
-    async insertReservation(transaction, input) {
+    },
+        async insertReservation(transaction, input) {
         const insertResult = await transaction.query(`INSERT INTO inventory_reservations
          (id, tenant_id, stock_location_id, product_id, reference_type, reference_id, quantity, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE')
@@ -164,8 +165,8 @@ export class PostgresInventoryRepository {
             throw new Error('Reservation conflict without existing row');
         }
         return { inserted: false, reservation: existing };
-    }
-    async findReservationByReference(transaction, tenantId, referenceType, referenceId, stockLocationId, productId) {
+    },
+        async findReservationByReference(transaction, tenantId, referenceType, referenceId, stockLocationId, productId) {
         const result = await transaction.query(`SELECT id, tenant_id, stock_location_id, product_id, reference_type, reference_id,
               quantity, status, created_at, released_at
        FROM inventory_reservations
@@ -178,13 +179,13 @@ export class PostgresInventoryRepository {
         if (row === undefined)
             return null;
         return toReservation(parseOrThrow(reservationRowSchema, row, 'inventory_reservations row'));
-    }
-    async markReservationReleased(transaction, reservationId, releasedAt) {
+    },
+        async markReservationReleased(transaction, reservationId, releasedAt) {
         await transaction.query(`UPDATE inventory_reservations
        SET status = 'RELEASED', released_at = $2
        WHERE id = $1 AND status = 'ACTIVE'`, [reservationId, releasedAt], { operation: 'inventory.reservations.release' });
-    }
-    async updateReservationQuantity(transaction, reservationId, quantity, releasedAt) {
+    },
+        async updateReservationQuantity(transaction, reservationId, quantity, releasedAt) {
         if (quantity <= 0) {
             await this.markReservationReleased(transaction, reservationId, releasedAt);
             return;
@@ -192,8 +193,8 @@ export class PostgresInventoryRepository {
         await transaction.query(`UPDATE inventory_reservations
        SET quantity = $2
        WHERE id = $1 AND status = 'ACTIVE'`, [reservationId, quantity], { operation: 'inventory.reservations.update_quantity' });
-    }
-    async findMovementByIdempotency(transaction, tenantId, referenceType, referenceId, movementType, idempotencyKey) {
+    },
+        async findMovementByIdempotency(transaction, tenantId, referenceType, referenceId, movementType, idempotencyKey) {
         const result = await transaction.query(`SELECT id
        FROM inventory_movements
        WHERE tenant_id = $1
@@ -203,4 +204,5 @@ export class PostgresInventoryRepository {
          AND idempotency_key = $5`, [tenantId, referenceType, referenceId, movementType, idempotencyKey], { operation: 'inventory.movements.find_by_idempotency' });
         return result.rows[0]?.id ?? null;
     }
+    };
 }

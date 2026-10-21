@@ -119,10 +119,3 @@ export function createOrderQueryService(deps) {
         listOrders,
     };
 }
-
-/** @deprecated Prefer {@link createOrderQueryService}; kept for existing import sites and JSDoc typedefs. */
-export class DefaultOrderQueryService {
-    constructor(deps) {
-        return createOrderQueryService(deps);
-    }
-}

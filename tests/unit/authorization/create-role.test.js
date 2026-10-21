@@ -6,7 +6,6 @@ import {
 } from '../../../src/shared/errors/index.js';
 import {
     createCreateRole,
-    CreateRole,
 } from '../../../src/modules/authorization/services/create-role.js';
 import { createDefaultAuthorizationService } from '../../../src/modules/authorization/services/authorization-service.js';
 
@@ -84,16 +83,5 @@ describe('createCreateRole', () => {
         });
         expect(result.name).toBe('Ops');
         expect(deps.roles.create).toHaveBeenCalledOnce();
-    });
-
-    it('compatibility wrapper preserves create behavior', async () => {
-        const deps = createDeps();
-        const useCase = new CreateRole(deps);
-        await expect(useCase.execute({
-            tenantId: TENANT_ID,
-            name: 'Ops',
-            permissionKeys: ['orders.read'],
-            actorPermissions: [],
-        })).rejects.toBeInstanceOf(AuthorizationError);
     });
 });

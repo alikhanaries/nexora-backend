@@ -1,5 +1,10 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { BusinessRuleError, ConflictError, NotFoundError, ValidationError } from '../../../shared/errors/index.js';
+import {
+    approveReturnEntity,
+    receiveReturnEntity,
+    rejectReturnEntity,
+} from '../models/return.js';
 import { ReturnStatus } from '../models/return-status.js';
 import { toReturnDetailDto } from '../views/return-dto.js';
 import { returnStatusChangedEvent } from './return-events.js';
@@ -24,7 +29,7 @@ export function createProcessReturnReceive(deps) {
             return toReturnDetailDto(existing, lines);
         }
         const previousStatus = existing.status;
-        const updated = existing.reject(now);
+        const updated = rejectReturnEntity(existing, now);
         await deps.returns.updateReturn(tx, updated);
         const detail = toReturnDetailDto(updated, lines);
         if (previousStatus !== updated.status) {
@@ -59,7 +64,7 @@ export function createProcessReturnReceive(deps) {
         const now = new Date();
         if (updated.status === ReturnStatus.REQUESTED) {
             const previousStatus = updated.status;
-            updated = updated.approve(now);
+            updated = approveReturnEntity(updated, now);
             await deps.returns.updateReturn(tx, updated);
             const approvedDetail = toReturnDetailDto(updated, lines);
             await deps.eventRecorder.record(tx, returnStatusChangedEvent(approvedDetail, previousStatus));
@@ -96,7 +101,7 @@ export function createProcessReturnReceive(deps) {
             );
         }
         const previousStatus = updated.status;
-        updated = updated.receive(now);
+        updated = receiveReturnEntity(updated, now);
         await deps.returns.updateReturn(tx, updated);
         const detail = toReturnDetailDto(updated, lines);
         if (previousStatus !== updated.status) {
@@ -165,12 +170,6 @@ export function createProcessReturnReceive(deps) {
     return { execute };
 }
 
-/** @deprecated Prefer createProcessReturnReceive */
-export class ProcessReturnReceive {
-    constructor(deps) {
-        return createProcessReturnReceive(deps);
-    }
-}
 
 /**
  * @param {Array<{ merchantProductNo: string, acceptedQuantity: number, rejectedQuantity: number }>} lineDecisions

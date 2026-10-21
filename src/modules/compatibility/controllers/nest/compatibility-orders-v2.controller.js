@@ -19,7 +19,7 @@ import { parseOrThrow } from '../../../../shared/validation/index.js';
 import { CompatibilityExceptionFilter } from '../../../../app/common/filters/compatibility-exception.filter.js';
 import { CompatibilityOrdersService } from './compatibility-orders.service.js';
 
-export @Controller()
+@Controller()
 @UseFilters(CompatibilityExceptionFilter)
 class CompatibilityOrdersV2Controller {
   constructor(@Inject(CompatibilityOrdersService) compatibilityOrdersService) {
@@ -28,13 +28,13 @@ class CompatibilityOrdersV2Controller {
 
   @Get('/api/v2/orders')
   async list(@Query() query) {
-    const parsed = listOrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(listOrdersQuerySchema, query, 'list query');
     return this.compatibilityOrdersService.listOrdersV2(parsed);
   }
 
   @Get('/api/v2/orders/new')
   async listNew(@Query() query) {
-    const parsed = listNewOrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(listNewOrdersQuerySchema, query, 'list query');
     return this.compatibilityOrdersService.listNewOrdersV2(parsed);
   }
 
@@ -71,3 +71,4 @@ class CompatibilityOrdersV2Controller {
     return this.compatibilityOrdersService.acknowledgeOrderV2(parsed, idempotencyKey);
   }
 }
+export { CompatibilityOrdersV2Controller };

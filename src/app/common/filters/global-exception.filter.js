@@ -3,7 +3,7 @@ import { mapErrorToHttp } from '../../errors/error-mapper.js';
 import { AppError, describeErrorForLog } from '../../../shared/errors/index.js';
 import { getRequestContext } from '../../../shared/context/request-context.js';
 
-export @Catch()
+@Catch()
 class GlobalExceptionFilter {
   constructor() {
     this.logger = new Logger(GlobalExceptionFilter.name);
@@ -39,3 +39,4 @@ class GlobalExceptionFilter {
     response.status(mapped.statusCode).json(mapped.body);
   }
 }
+export { GlobalExceptionFilter };

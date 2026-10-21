@@ -1,12 +1,11 @@
-import { CommerceIntegrationQueryService } from '../modules/commerce-integrations/public/index.js';
-import { PostgresCommerceIntegrationRepository } from '../modules/commerce-integrations/repositories/postgres-commerce-integration-repository.js';
+import { createDefaultCommerceIntegrationQueryService } from '../modules/commerce-integrations/public/index.js';
 import { PostgresMarketplaceRepository } from '../modules/marketplaces/repositories/postgres-marketplace-repository.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../modules/marketplaces/public/index.js';
 import { PostgresMarketplaceEntityMappingRepository } from '../modules/marketplaces/repositories/postgres-marketplace-entity-mapping-repository.js';
 import { registerMarketplaceOrderAdapters } from '../modules/marketplaces/repositories/adapters/register-marketplace-order-adapters.js';
 import { createMarketplaceOrderIngestionModule } from '../modules/orders/marketplace-ingestion/index.js';
-import { DefaultProductQueryService } from '../modules/products/public/index.js';
-import { PostgresProductRepository } from '../modules/products/repositories/postgres-product-repository.js';
+import { createDefaultProductQueryService } from '../modules/products/public/index.js';
+import { createPostgresProductRepository } from '../modules/products/repositories/index.js';
 
 /**
  * @param {object} deps
@@ -36,15 +35,10 @@ export function wireMarketplaceOrderIngestion(deps) {
             noonApiBaseUrl: deps.noonApiBaseUrl,
             noonUserAgent: deps.noonUserAgent,
         }));
-    const channelRepository = new PostgresCommerceIntegrationRepository();
-    const commerceIntegrationQueryService = new CommerceIntegrationQueryService({
+    const commerceIntegrationQueryService = createDefaultCommerceIntegrationQueryService({
         // Same as createChannelsModule: `database.withTenant` sets the RLS tenant
         // from the validated job tenant, not from the webhook body.
-        queryable: deps.database,
         database: deps.database,
-        getCommerceIntegrationById: (tenantId, channelId, queryable) => channelRepository.findById(queryable, tenantId, channelId),
-        getCommerceIntegrationByExternalReference: (tenantId, externalReference, queryable) => channelRepository.findByExternalReference(queryable, tenantId, externalReference),
-        listCommerceIntegrations: (tenantId, filters, queryable) => channelRepository.list(queryable, tenantId, filters),
     });
     const marketplaceRepository = new PostgresMarketplaceRepository();
     const marketplaceLookup = {
@@ -60,9 +54,9 @@ export function wireMarketplaceOrderIngestion(deps) {
             };
         },
     };
-    const productQueryService = new DefaultProductQueryService({
+    const productQueryService = createDefaultProductQueryService({
         database: deps.database,
-        products: new PostgresProductRepository(),
+        products: createPostgresProductRepository(),
     });
     const marketplaceEntityMappingLookup = new DefaultMarketplaceEntityMappingLookup({
         mappings: new PostgresMarketplaceEntityMappingRepository(),

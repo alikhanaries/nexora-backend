@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { parseOrThrow } from '../../../shared/validation/index.js';
-import { CommerceIntegration } from '../models/commerce-integration.js';
+import { reconstituteCommerceIntegration } from '../models/commerce-integration.js';
 import { IntegrationStatus } from '../models/integration-status.js';
 const channelRowSchema = z.object({
     id: z.string().uuid(),
@@ -15,7 +15,7 @@ const channelRowSchema = z.object({
     updated_at: z.date(),
 });
 function toChannel(row) {
-    return CommerceIntegration.reconstitute({
+    return reconstituteCommerceIntegration({
         id: row.id,
         tenantId: row.tenant_id,
         marketplaceId: row.marketplace_id,
@@ -28,66 +28,67 @@ function toChannel(row) {
         updatedAt: row.updated_at,
     });
 }
-export class PostgresCommerceIntegrationRepository {
-    async findById(queryable, tenantId, channelId) {
-        const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
+export function createPostgresCommerceIntegrationRepository() {
+    return {
+        async findById(queryable, tenantId, channelId) {
+            const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
               configuration_reference, default_stock_location_id, created_at, updated_at
        FROM channels
        WHERE tenant_id = $1 AND id = $2`, [tenantId, channelId], { operation: 'channels.find_by_id' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toChannel(parseOrThrow(channelRowSchema, row, 'channels row'));
-    }
-    async findByExternalReference(queryable, tenantId, externalReference) {
-        const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
+            const row = result.rows[0];
+            if (row === undefined)
+                return null;
+            return toChannel(parseOrThrow(channelRowSchema, row, 'channels row'));
+        },
+        async findByExternalReference(queryable, tenantId, externalReference) {
+            const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
               configuration_reference, default_stock_location_id, created_at, updated_at
        FROM channels
        WHERE tenant_id = $1 AND external_reference = $2
        ORDER BY created_at ASC
        LIMIT 1`, [tenantId, externalReference], { operation: 'channels.find_by_external_reference' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toChannel(parseOrThrow(channelRowSchema, row, 'channels row'));
-    }
-    async list(queryable, tenantId, filters) {
-        const conditions = ['tenant_id = $1'];
-        const parameters = [tenantId];
-        if (filters.status !== undefined) {
-            parameters.push(filters.status);
-            conditions.push(`status = $${parameters.length}`);
-        }
-        if (filters.marketplaceId !== undefined) {
-            parameters.push(filters.marketplaceId);
-            conditions.push(`marketplace_id = $${parameters.length}`);
-        }
-        const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
+            const row = result.rows[0];
+            if (row === undefined)
+                return null;
+            return toChannel(parseOrThrow(channelRowSchema, row, 'channels row'));
+        },
+        async list(queryable, tenantId, filters) {
+            const conditions = ['tenant_id = $1'];
+            const parameters = [tenantId];
+            if (filters.status !== undefined) {
+                parameters.push(filters.status);
+                conditions.push(`status = $${parameters.length}`);
+            }
+            if (filters.marketplaceId !== undefined) {
+                parameters.push(filters.marketplaceId);
+                conditions.push(`marketplace_id = $${parameters.length}`);
+            }
+            const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
               configuration_reference, default_stock_location_id, created_at, updated_at
        FROM channels
        WHERE ${conditions.join(' AND ')}
        ORDER BY created_at DESC`, parameters, { operation: 'channels.list' });
-        return result.rows.map((row) => toChannel(parseOrThrow(channelRowSchema, row, 'channels row')));
-    }
-    async insert(transaction, channel) {
-        await transaction.query(`INSERT INTO channels (
+            return result.rows.map((row) => toChannel(parseOrThrow(channelRowSchema, row, 'channels row')));
+        },
+        async insert(transaction, channel) {
+            await transaction.query(`INSERT INTO channels (
          id, tenant_id, marketplace_id, name, external_reference, status,
          configuration_reference, default_stock_location_id, created_at, updated_at
        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, [
-            channel.id,
-            channel.tenantId,
-            channel.marketplaceId,
-            channel.name,
-            channel.externalReference,
-            channel.status,
-            channel.configurationReference,
-            channel.defaultStockLocationId,
-            channel.createdAt,
-            channel.updatedAt,
-        ], { operation: 'channels.insert' });
-    }
-    async update(transaction, channel) {
-        await transaction.query(`UPDATE channels
+                channel.id,
+                channel.tenantId,
+                channel.marketplaceId,
+                channel.name,
+                channel.externalReference,
+                channel.status,
+                channel.configurationReference,
+                channel.defaultStockLocationId,
+                channel.createdAt,
+                channel.updatedAt,
+            ], { operation: 'channels.insert' });
+        },
+        async update(transaction, channel) {
+            await transaction.query(`UPDATE channels
        SET name = $3,
            external_reference = $4,
            status = $5,
@@ -95,14 +96,15 @@ export class PostgresCommerceIntegrationRepository {
            default_stock_location_id = $7,
            updated_at = $8
        WHERE tenant_id = $1 AND id = $2`, [
-            channel.tenantId,
-            channel.id,
-            channel.name,
-            channel.externalReference,
-            channel.status,
-            channel.configurationReference,
-            channel.defaultStockLocationId,
-            channel.updatedAt,
-        ], { operation: 'channels.update' });
-    }
+                channel.tenantId,
+                channel.id,
+                channel.name,
+                channel.externalReference,
+                channel.status,
+                channel.configurationReference,
+                channel.defaultStockLocationId,
+                channel.updatedAt,
+            ], { operation: 'channels.update' });
+        },
+    };
 }

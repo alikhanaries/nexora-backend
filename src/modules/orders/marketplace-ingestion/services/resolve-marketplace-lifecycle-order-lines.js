@@ -1,10 +1,11 @@
 import { NotFoundError, ValidationError } from '../../../../shared/errors/index.js';
+import { orderLineCancellableQuantity } from '../../models/order-line.js';
 
 /**
  * Maps normalized lifecycle line hints to Wasl order line ids.
  *
  * @param {object} deps
- * @param {import('../../repositories/postgres-order-repository.js').PostgresOrderRepository} deps.orders
+ * @param {ReturnType<import('../../repositories/postgres-order-repository.js').createPostgresOrderRepository>} deps.orders
  * @param {import('../../../products/public/index.js').ProductQueryService} deps.productQueryService
  * @param {object} input
  * @param {string} input.tenantId
@@ -19,10 +20,10 @@ export async function resolveMarketplaceLifecycleOrderLines(deps, input, queryab
     }
     if (input.lines === undefined || input.lines.length === 0) {
         return orderLines
-            .filter((line) => line.cancellableQuantity() > 0)
+            .filter((line) => orderLineCancellableQuantity(line) > 0)
             .map((line) => ({
                 orderLineId: line.id,
-                quantity: line.cancellableQuantity(),
+                quantity: orderLineCancellableQuantity(line),
             }));
     }
     const resolved = [];

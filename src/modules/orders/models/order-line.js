@@ -1,101 +1,107 @@
-import { OrderLineStatus, } from './order-line-status.js';
-export class OrderLine {
-    props;
-    constructor(props) {
-        this.props = props;
-    }
-    static create(props) {
-        const now = props.createdAt ?? new Date();
-        return new OrderLine({
-            ...props,
-            cancelledQuantity: props.cancelledQuantity ?? 0,
-            shippedQuantity: props.shippedQuantity ?? 0,
-            returnedQuantity: props.returnedQuantity ?? 0,
-            status: props.status ?? OrderLineStatus.OPEN,
-            createdAt: now,
-            updatedAt: props.updatedAt ?? now,
-        });
-    }
-    static reconstitute(props) {
-        return new OrderLine(props);
-    }
-    get id() {
-        return this.props.id;
-    }
-    get tenantId() {
-        return this.props.tenantId;
-    }
-    get orderId() {
-        return this.props.orderId;
-    }
-    get productId() {
-        return this.props.productId;
-    }
-    get offerId() {
-        return this.props.offerId;
-    }
-    get stockLocationId() {
-        return this.props.stockLocationId;
-    }
-    get merchantSku() {
-        return this.props.merchantSku;
-    }
-    get productTypeSnapshot() {
-        return this.props.productTypeSnapshot;
-    }
-    get quantity() {
-        return this.props.quantity;
-    }
-    get cancelledQuantity() {
-        return this.props.cancelledQuantity;
-    }
-    get shippedQuantity() {
-        return this.props.shippedQuantity;
-    }
-    get returnedQuantity() {
-        return this.props.returnedQuantity;
-    }
-    get unitPriceMinor() {
-        return this.props.unitPriceMinor;
-    }
-    get discountMinor() {
-        return this.props.discountMinor;
-    }
-    get taxMinor() {
-        return this.props.taxMinor;
-    }
-    get lineTotalMinor() {
-        return this.props.lineTotalMinor;
-    }
-    get currency() {
-        return this.props.currency;
-    }
-    get status() {
-        return this.props.status;
-    }
-    get createdAt() {
-        return this.props.createdAt;
-    }
-    get updatedAt() {
-        return this.props.updatedAt;
-    }
-    cancellableQuantity() {
-        return this.props.quantity - this.props.cancelledQuantity - this.props.shippedQuantity;
-    }
-    shippableQuantity() {
-        return this.props.quantity - this.props.cancelledQuantity - this.props.shippedQuantity;
-    }
-    returnableQuantity() {
-        return this.props.shippedQuantity - this.props.returnedQuantity;
-    }
-    withUpdatedQuantities(patch) {
-        return new OrderLine({
-            ...this.props,
-            ...patch,
-            updatedAt: patch.updatedAt ?? new Date(),
-        });
-    }
-    toProps() {
-        return { ...this.props };
-    }
+import { OrderLineStatus } from './order-line-status.js';
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   orderId: string,
+ *   productId: string,
+ *   offerId: string | null,
+ *   stockLocationId: string,
+ *   merchantSku: string,
+ *   productTypeSnapshot: string,
+ *   quantity: number,
+ *   cancelledQuantity: number,
+ *   shippedQuantity: number,
+ *   returnedQuantity: number,
+ *   unitPriceMinor: number,
+ *   discountMinor: number,
+ *   taxMinor: number,
+ *   lineTotalMinor: number,
+ *   currency: string,
+ *   status: string,
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ * }} OrderLine
+ */
+
+/**
+ * @param {Omit<OrderLine, 'cancelledQuantity' | 'shippedQuantity' | 'returnedQuantity' | 'status' | 'updatedAt'> & {
+ *   cancelledQuantity?: number,
+ *   shippedQuantity?: number,
+ *   returnedQuantity?: number,
+ *   status?: string,
+ *   updatedAt?: Date,
+ * }} props
+ * @returns {OrderLine}
+ */
+export function createOrderLineEntity(props) {
+    const now = props.createdAt ?? new Date();
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        orderId: props.orderId,
+        productId: props.productId,
+        offerId: props.offerId,
+        stockLocationId: props.stockLocationId,
+        merchantSku: props.merchantSku,
+        productTypeSnapshot: props.productTypeSnapshot,
+        quantity: props.quantity,
+        cancelledQuantity: props.cancelledQuantity ?? 0,
+        shippedQuantity: props.shippedQuantity ?? 0,
+        returnedQuantity: props.returnedQuantity ?? 0,
+        unitPriceMinor: props.unitPriceMinor,
+        discountMinor: props.discountMinor,
+        taxMinor: props.taxMinor,
+        lineTotalMinor: props.lineTotalMinor,
+        currency: props.currency,
+        status: props.status ?? OrderLineStatus.OPEN,
+        createdAt: now,
+        updatedAt: props.updatedAt ?? now,
+    };
+}
+
+/**
+ * @param {OrderLine} props
+ * @returns {OrderLine}
+ */
+export function reconstituteOrderLine(props) {
+    return { ...props };
+}
+
+/**
+ * @param {OrderLine} line
+ * @returns {number}
+ */
+export function orderLineCancellableQuantity(line) {
+    return line.quantity - line.cancelledQuantity - line.shippedQuantity;
+}
+
+/**
+ * @param {OrderLine} line
+ * @returns {number}
+ */
+export function orderLineShippableQuantity(line) {
+    return line.quantity - line.cancelledQuantity - line.shippedQuantity;
+}
+
+/**
+ * @param {OrderLine} line
+ * @returns {number}
+ */
+export function orderLineReturnableQuantity(line) {
+    return line.shippedQuantity - line.returnedQuantity;
+}
+
+/**
+ * @param {OrderLine} line
+ * @param {Partial<Pick<OrderLine, 'cancelledQuantity' | 'shippedQuantity' | 'returnedQuantity' | 'status' | 'updatedAt'>>} patch
+ * @returns {OrderLine}
+ */
+export function withOrderLineUpdatedQuantities(line, patch) {
+    return {
+        ...line,
+        ...patch,
+        updatedAt: patch.updatedAt ?? new Date(),
+    };
 }

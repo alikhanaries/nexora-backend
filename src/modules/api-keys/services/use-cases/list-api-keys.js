@@ -19,10 +19,3 @@ export function createListApiKeys(deps) {
 
     return { execute };
 }
-
-/** @deprecated Prefer {@link createListApiKeys}; kept for existing import sites. */
-export class ListApiKeysUseCase {
-    constructor(deps) {
-        return createListApiKeys(deps);
-    }
-}

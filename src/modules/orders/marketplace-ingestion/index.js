@@ -1,36 +1,36 @@
-import { ExecuteMarketplaceOrderLifecycleOperation } from './services/execute-marketplace-order-lifecycle-operation.js';
-import { FetchAndIngestMarketplaceOrders } from './services/fetch-and-ingest-marketplace-orders.js';
-import { IngestNormalizedMarketplaceOrder } from './services/ingest-normalized-marketplace-order.js';
-import { MarketplaceOrderIngestionService } from './services/marketplace-order-ingestion-service.js';
-import { MarketplaceOrderLifecycleService } from './services/marketplace-order-lifecycle-service.js';
-import { ProcessMarketplaceLifecyclePayload } from './services/process-marketplace-lifecycle-payload.js';
-import { EnsureMarketplaceOrderIngestedFromLifecycle } from './services/ensure-marketplace-order-ingested-from-lifecycle.js';
-import { MarketplaceOrderAdapterRegistry } from './public/marketplace-order-adapter-registry.js';
+import { createExecuteMarketplaceOrderLifecycleOperation } from './services/execute-marketplace-order-lifecycle-operation.js';
+import { createFetchAndIngestMarketplaceOrders } from './services/fetch-and-ingest-marketplace-orders.js';
+import { createIngestNormalizedMarketplaceOrder } from './services/ingest-normalized-marketplace-order.js';
+import { createMarketplaceOrderIngestionService } from './services/marketplace-order-ingestion-service.js';
+import { createMarketplaceOrderLifecycleService } from './services/marketplace-order-lifecycle-service.js';
+import { createProcessMarketplaceLifecyclePayload } from './services/process-marketplace-lifecycle-payload.js';
+import { createEnsureMarketplaceOrderIngestedFromLifecycle } from './services/ensure-marketplace-order-ingested-from-lifecycle.js';
+import { createMarketplaceOrderAdapterRegistry } from './public/marketplace-order-adapter-registry.js';
 
 /**
  * @param {object} deps
  * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
  * @param {import('../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
  * @param {import('./public/marketplace-channel-lookup.port.js').MarketplaceChannelLookup} deps.marketplaceLookup
- * @param {import('../public/index.js').CreateIntegrationOrder} deps.createIntegrationOrder
+ * @param {{ execute: Function }} deps.createIntegrationOrder
  * @param {import('./public/marketplace-entity-mapping-lookup.port.js').MarketplaceEntityMappingLookup} deps.marketplaceEntityMappingLookup
  * @param {import('../../products/public/index.js').ProductQueryService} deps.productQueryService
  * @param {import('../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
  * @param {import('../../../shared/logging/logger.port.js').Logger} [deps.logger]
  * @param {import('../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
- * @param {(registry: MarketplaceOrderAdapterRegistry) => void} [deps.registerMarketplaceOrderAdapters]
- * @param {import('../repositories/postgres-order-repository.js').PostgresOrderRepository} [deps.orders]
- * @param {import('../services/confirm-order.js').ConfirmOrder} [deps.confirmOrder]
- * @param {import('../../cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} [deps.cancellationCommandService]
- * @param {import('../../returns/public/return-command-service.js').DefaultReturnCommandService} [deps.returnCommandService]
- * @param {import('../../shipments/public/shipment-command-service.js').DefaultShipmentCommandService} [deps.shipmentCommandService]
+ * @param {(registry: ReturnType<typeof createMarketplaceOrderAdapterRegistry>) => void} [deps.registerMarketplaceOrderAdapters]
+ * @param {ReturnType<import('../repositories/postgres-order-repository.js').createPostgresOrderRepository>} [deps.orders]
+ * @param {{ execute: Function }} [deps.confirmOrder]
+ * @param {{ createCancellation: Function }} [deps.cancellationCommandService]
+ * @param {{ createReturn: Function }} [deps.returnCommandService]
+ * @param {{ createShipment: Function }} [deps.shipmentCommandService]
  * @param {{ execute: (input: object) => Promise<{ shipment: object }> }} [deps.shipShipment]
  * @param {import('../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
  */
 export function createMarketplaceOrderIngestionModule(deps) {
-    const orderAdapterRegistry = new MarketplaceOrderAdapterRegistry();
+    const orderAdapterRegistry = createMarketplaceOrderAdapterRegistry();
     deps.registerMarketplaceOrderAdapters?.(orderAdapterRegistry);
-    const ingestionService = new MarketplaceOrderIngestionService({
+    const ingestionService = createMarketplaceOrderIngestionService({
         database: deps.database,
         commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
         marketplaceLookup: deps.marketplaceLookup,
@@ -40,7 +40,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
         metrics: deps.metrics,
         logger: deps.logger,
     });
-    const ingestNormalizedMarketplaceOrder = new IngestNormalizedMarketplaceOrder({
+    const ingestNormalizedMarketplaceOrder = createIngestNormalizedMarketplaceOrder({
         ingestionService,
         orderAdapterRegistry,
         commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
@@ -51,7 +51,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
     });
     const fetchAndIngestMarketplaceOrders = deps.marketplaceAdapterRuntimeFactory === undefined
         ? undefined
-        : new FetchAndIngestMarketplaceOrders({
+        : createFetchAndIngestMarketplaceOrders({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry,
             commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
@@ -62,7 +62,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
         && deps.confirmOrder !== undefined
         && deps.cancellationCommandService !== undefined;
     const executeLifecycleOperation = lifecycleEnabled
-        ? new ExecuteMarketplaceOrderLifecycleOperation({
+        ? createExecuteMarketplaceOrderLifecycleOperation({
             orders: deps.orders,
             productQueryService: deps.productQueryService,
             confirmOrder: deps.confirmOrder,
@@ -73,7 +73,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
         })
         : undefined;
     const lifecycleService = lifecycleEnabled
-        ? new MarketplaceOrderLifecycleService({
+        ? createMarketplaceOrderLifecycleService({
             database: deps.database,
             commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
             marketplaceLookup: deps.marketplaceLookup,
@@ -86,7 +86,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
         })
         : undefined;
     const ensureMarketplaceOrderIngestedFromLifecycle = lifecycleEnabled
-        ? new EnsureMarketplaceOrderIngestedFromLifecycle({
+        ? createEnsureMarketplaceOrderIngestedFromLifecycle({
             ingestNormalizedMarketplaceOrder,
             orderAdapterRegistry,
             commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
@@ -99,7 +99,7 @@ export function createMarketplaceOrderIngestionModule(deps) {
         : undefined;
     const processMarketplaceLifecyclePayload = lifecycleService === undefined
         ? undefined
-        : new ProcessMarketplaceLifecyclePayload({
+        : createProcessMarketplaceLifecyclePayload({
             lifecycleService,
             orderAdapterRegistry,
             commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
@@ -123,10 +123,10 @@ export function createMarketplaceOrderIngestionModule(deps) {
     };
 }
 
-export { MarketplaceOrderIngestionService } from './services/marketplace-order-ingestion-service.js';
-export { MarketplaceOrderLifecycleService } from './services/marketplace-order-lifecycle-service.js';
+export { createMarketplaceOrderIngestionService } from './services/marketplace-order-ingestion-service.js';
+export { createMarketplaceOrderLifecycleService } from './services/marketplace-order-lifecycle-service.js';
 export { normalizedMarketplaceOrderSchema } from './services/normalized-marketplace-order.schema.js';
 export { normalizedMarketplaceLifecycleCommandSchema } from './services/normalized-marketplace-lifecycle-command.schema.js';
 export { MarketplaceOrderLifecycleOperation } from './models/marketplace-order-lifecycle-operation.js';
 export { MarketplaceOrderLifecycleOutcome } from './models/marketplace-order-lifecycle-outcome.js';
-export { MarketplaceOrderAdapterRegistry } from './public/marketplace-order-adapter-registry.js';
+export { createMarketplaceOrderAdapterRegistry } from './public/marketplace-order-adapter-registry.js';

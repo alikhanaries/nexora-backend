@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { withChannelQueryable } from '../../../src/modules/commerce-integrations/services/resolve-commerce-integration-queryable.js';
-import { CommerceIntegrationQueryService } from '../../../src/modules/commerce-integrations/services/commerce-integration-query-service.js';
+import { createCommerceIntegrationQueryService } from '../../../src/modules/commerce-integrations/services/commerce-integration-query-service.js';
 
 describe('withChannelQueryable tenant context', () => {
     it('uses database.withTenant when no tx is provided', async () => {
@@ -37,12 +37,12 @@ describe('CommerceIntegrationQueryService worker-style wiring', () => {
         const channel = {
             id: 'channel-1',
             tenantId: 'tenant-a',
-            isUsable: () => true,
+            status: 'ACTIVE',
         };
         const getCommerceIntegrationById = vi.fn(async () => channel);
         const withTenant = vi.fn(async (_tenantId, work) => work({ kind: 'tenant-tx' }));
 
-        const service = new CommerceIntegrationQueryService({
+        const service = createCommerceIntegrationQueryService({
             queryable: { kind: 'bare-queryable' },
             database: { withTenant },
             getCommerceIntegrationById,
@@ -61,7 +61,7 @@ describe('CommerceIntegrationQueryService worker-style wiring', () => {
 
     it('looks up against bare queryable without withTenant (RLS-blind path)', async () => {
         const getCommerceIntegrationById = vi.fn(async () => null);
-        const service = new CommerceIntegrationQueryService({
+        const service = createCommerceIntegrationQueryService({
             queryable: { kind: 'bare-queryable' },
             getCommerceIntegrationById,
             getCommerceIntegrationByExternalReference: vi.fn(),

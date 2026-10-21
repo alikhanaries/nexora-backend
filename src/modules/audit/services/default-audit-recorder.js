@@ -1,9 +1,16 @@
-export class DefaultAuditRecorder {
-    repository;
-    constructor(repository) {
-        this.repository = repository;
+/**
+ * Append-only audit recorder used inside business transactions.
+ * @param {{ insert: Function }} repository
+ * @returns {{ record: Function }}
+ */
+export function createDefaultAuditRecorder(repository) {
+    /**
+     * @param {object} tx
+     * @param {object} event
+     */
+    async function record(tx, event) {
+        await repository.insert(tx, event);
     }
-    async record(tx, event) {
-        await this.repository.insert(tx, event);
-    }
+
+    return { record };
 }

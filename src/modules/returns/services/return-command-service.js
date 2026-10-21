@@ -177,10 +177,3 @@ export function createReturnCommandService(deps) {
 
     return { createReturn, acknowledgeReturn, processReturnReceive };
 }
-
-/** @deprecated Prefer {@link createReturnCommandService}; kept for existing import sites and tests. */
-export class DefaultReturnCommandService {
-    constructor(deps) {
-        return createReturnCommandService(deps);
-    }
-}

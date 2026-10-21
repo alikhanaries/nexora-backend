@@ -1,1 +1,1 @@
-export { PostgresTenantRepository } from './postgres-tenant-repository.js';
+export { createPostgresTenantRepository } from './postgres-tenant-repository.js';

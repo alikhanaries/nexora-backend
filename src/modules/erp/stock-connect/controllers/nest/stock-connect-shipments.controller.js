@@ -20,7 +20,7 @@ import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
 /** StockConnect Integration — shipments */
-export @Controller()
+@Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectShipmentsController {
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
@@ -53,3 +53,4 @@ class StockConnectShipmentsController {
     return this.stockConnectIntegrationService.shipShipment(shipmentId, parsed);
   }
 }
+export { StockConnectShipmentsController };

@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "checkJs": false,
+    "allowJs": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictNullChecks": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "test/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist", "coverage"]
+}

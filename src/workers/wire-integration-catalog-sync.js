@@ -1,19 +1,18 @@
-import { CommerceIntegrationQueryService } from '../modules/commerce-integrations/public/index.js';
-import { PostgresCommerceIntegrationRepository } from '../modules/commerce-integrations/repositories/postgres-commerce-integration-repository.js';
-import { DefaultOfferQueryService } from '../modules/offers/public/offer-query-service.js';
-import { PostgresOfferRepository } from '../modules/offers/repositories/postgres-offer-repository.js';
+import { createDefaultCommerceIntegrationQueryService } from '../modules/commerce-integrations/public/index.js';
+import { createDefaultOfferQueryService } from '../modules/offers/public/offer-query-service.js';
+import { createPostgresOfferRepository } from '../modules/offers/repositories/index.js';
 import { PostgresMarketplaceRepository } from '../modules/marketplaces/repositories/postgres-marketplace-repository.js';
 import { createIntegrationCatalogSyncModule } from '../modules/integration-catalog-sync/index.js';
 import { MarketplaceAdapterRuntimeFactory } from '../modules/marketplaces/services/marketplace-adapter-runtime-factory.js';
 import { PostgresMarketplaceConnectionRepository } from '../modules/marketplaces/repositories/postgres-marketplace-connection-repository.js';
 import { registerMarketplaceCatalogAdapters } from '../modules/marketplaces/repositories/adapters/register-marketplace-catalog-adapters.js';
 import { createMarketplaceEntityMappingRecorder } from '../modules/marketplaces/services/create-marketplace-entity-mapping-recorder.js';
-import { DefaultInventoryService } from '../modules/inventory/public/index.js';
-import { PostgresInventoryRepository, PostgresStockLocationRepository, } from '../modules/inventory/repositories/index.js';
-import { DefaultProductQueryService } from '../modules/products/public/index.js';
-import { PostgresProductRepository } from '../modules/products/repositories/postgres-product-repository.js';
-import { DefaultPricingService } from '../modules/pricing/public/index.js';
-import { PostgresPriceRepository } from '../modules/pricing/repositories/index.js';
+import { createDefaultInventoryService } from '../modules/inventory/public/index.js';
+import { createPostgresInventoryRepository, createPostgresStockLocationRepository, } from '../modules/inventory/repositories/index.js';
+import { createDefaultProductQueryService } from '../modules/products/public/index.js';
+import { createPostgresProductRepository } from '../modules/products/repositories/index.js';
+import { createDefaultPricingService } from '../modules/pricing/public/index.js';
+import { createPostgresPriceRepository } from '../modules/pricing/repositories/index.js';
 
 /**
  * Worker-only wiring for channel catalog sync query ports (composition root).
@@ -29,15 +28,11 @@ import { PostgresPriceRepository } from '../modules/pricing/repositories/index.j
  * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
  */
 export function wireIntegrationCatalogSync(deps) {
-    const channelRepository = new PostgresCommerceIntegrationRepository();
-    const commerceIntegrationQueryService = new CommerceIntegrationQueryService({
-        queryable: deps.database,
-        getCommerceIntegrationById: (tenantId, channelId, queryable) => channelRepository.findById(queryable, tenantId, channelId),
-        getCommerceIntegrationByExternalReference: (tenantId, externalReference, queryable) => channelRepository.findByExternalReference(queryable, tenantId, externalReference),
-        listCommerceIntegrations: (tenantId, filters, queryable) => channelRepository.list(queryable, tenantId, filters),
+    const commerceIntegrationQueryService = createDefaultCommerceIntegrationQueryService({
+        database: deps.database,
     });
-    const offerRepository = new PostgresOfferRepository();
-    const offerQueryService = new DefaultOfferQueryService({
+    const offerRepository = createPostgresOfferRepository();
+    const offerQueryService = createDefaultOfferQueryService({
         queryable: deps.database,
         offers: offerRepository,
     });
@@ -55,16 +50,16 @@ export function wireIntegrationCatalogSync(deps) {
             };
         },
     };
-    const productRepository = new PostgresProductRepository();
-    const productQueryService = new DefaultProductQueryService({
+    const productRepository = createPostgresProductRepository();
+    const productQueryService = createDefaultProductQueryService({
         database: deps.database,
         products: productRepository,
     });
-    const inventoryService = new DefaultInventoryService({
+    const inventoryService = createDefaultInventoryService({
         transactionManager: deps.database,
         queryable: deps.database,
-        inventoryRepository: new PostgresInventoryRepository(),
-        stockLocationRepository: new PostgresStockLocationRepository(),
+        inventoryRepository: createPostgresInventoryRepository(),
+        stockLocationRepository: createPostgresStockLocationRepository(),
         productQueryService,
         eventRecorder: {
             recordIntegrationEvent: async () => {},
@@ -76,10 +71,10 @@ export function wireIntegrationCatalogSync(deps) {
         recordIntegrationEvent: async () => {},
         recordDomainEvent: async () => {},
     };
-    const pricingService = new DefaultPricingService({
+    const pricingService = createDefaultPricingService({
         transactionManager: deps.database,
         queryable: deps.database,
-        prices: new PostgresPriceRepository(),
+        prices: createPostgresPriceRepository(),
         productQueryService,
         commerceIntegrationQueryService,
         eventRecorder: noopEventRecorder,

@@ -14,11 +14,7 @@ import {
 } from './webhook-request-signer.js';
 import { sanitizeWebhookDestinationForLog } from './sanitize-webhook-destination-for-log.js';
 
-export class WebhookDeliveryService {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
+export function createWebhookDeliveryService(deps) {
     /**
      * @param {object} job
      * @param {string} job.tenantId
@@ -28,9 +24,9 @@ export class WebhookDeliveryService {
      * @param {string} job.eventType
      * @param {import('../../../../infrastructure/queue/bullmq-worker-runtime.js').JobContext} context
      */
-    async deliver(job, context) {
+    async function deliver(job, context) {
         const startedAt = Date.now();
-        this.deps.logger.info({
+        deps.logger.info({
             tenantId: job.tenantId,
             deliveryId: job.deliveryId,
             subscriptionId: job.subscriptionId,
@@ -39,26 +35,26 @@ export class WebhookDeliveryService {
             attempt: context.attempt,
             maxAttempts: context.maxAttempts,
         }, 'Webhook delivery started');
-        recordWebhookDeliveryOutcome(this.deps.metrics, 'attempt');
-        const preparation = await this.prepareDelivery(job);
+        recordWebhookDeliveryOutcome(deps.metrics, 'attempt');
+        const preparation = await prepareDelivery(job);
         if (preparation.kind !== 'ready') {
             if (preparation.kind === 'subscription_inactive') {
-                recordWebhookDeliveryOutcome(this.deps.metrics, 'dead_lettered');
+                recordWebhookDeliveryOutcome(deps.metrics, 'dead_lettered');
             }
-            this.logSkipped(preparation, job);
+            logSkipped(preparation, job);
             return;
         }
         const { delivery, subscription } = preparation;
         const destination = sanitizeWebhookDestinationForLog(subscription.url);
-        const event = await this.deps.outbox.findByIdForTenant(job.tenantId, job.eventId);
+        const event = await deps.outbox.findByIdForTenant(job.tenantId, job.eventId);
         if (event === null || event.type !== job.eventType) {
-            await this.persistTerminalFailure(job.tenantId, delivery, {
+            await persistTerminalFailure(job.tenantId, delivery, {
                 status: WebhookDeliveryStatus.DEAD_LETTERED,
                 lastError: 'Integration event payload not found',
                 lastHttpStatus: null,
             });
-            recordWebhookDeliveryOutcome(this.deps.metrics, 'dead_lettered');
-            this.deps.logger.warn({
+            recordWebhookDeliveryOutcome(deps.metrics, 'dead_lettered');
+            deps.logger.warn({
                 tenantId: job.tenantId,
                 deliveryId: job.deliveryId,
                 eventId: job.eventId,
@@ -66,16 +62,16 @@ export class WebhookDeliveryService {
             return;
         }
         try {
-            await this.deps.ssrfValidator(subscription.url);
+            await deps.ssrfValidator(subscription.url);
         }
         catch (error) {
-            await this.persistTerminalFailure(job.tenantId, delivery, {
+            await persistTerminalFailure(job.tenantId, delivery, {
                 status: WebhookDeliveryStatus.DEAD_LETTERED,
                 lastError: sanitizeWebhookDeliveryError(error),
                 lastHttpStatus: null,
             });
-            recordWebhookDeliveryOutcome(this.deps.metrics, 'dead_lettered');
-            this.deps.logger.warn({
+            recordWebhookDeliveryOutcome(deps.metrics, 'dead_lettered');
+            deps.logger.warn({
                 tenantId: job.tenantId,
                 deliveryId: job.deliveryId,
                 reason: sanitizeWebhookDeliveryError(error),
@@ -84,31 +80,31 @@ export class WebhookDeliveryService {
         }
         let secret;
         try {
-            secret = this.deps.secretEncryptor.decrypt(subscription.secretCiphertext);
+            secret = deps.secretEncryptor.decrypt(subscription.secretCiphertext);
         }
         catch {
-            await this.persistTerminalFailure(job.tenantId, delivery, {
+            await persistTerminalFailure(job.tenantId, delivery, {
                 status: WebhookDeliveryStatus.DEAD_LETTERED,
                 lastError: 'Webhook secret decryption failed',
                 lastHttpStatus: null,
             });
-            recordWebhookDeliveryOutcome(this.deps.metrics, 'dead_lettered');
-            this.deps.logger.error({
+            recordWebhookDeliveryOutcome(deps.metrics, 'dead_lettered');
+            deps.logger.error({
                 tenantId: job.tenantId,
                 deliveryId: job.deliveryId,
                 subscriptionId: job.subscriptionId,
             }, 'Webhook delivery dead-lettered because secret decryption failed');
             return;
         }
-        const body = await this.resolveWebhookRequestBody(subscription, event);
+        const body = await resolveWebhookRequestBody(subscription, event);
         if (body === null) {
-            await this.persistTerminalFailure(job.tenantId, delivery, {
+            await persistTerminalFailure(job.tenantId, delivery, {
                 status: WebhookDeliveryStatus.DEAD_LETTERED,
                 lastError: 'Webhook payload could not be built for this subscription',
                 lastHttpStatus: null,
             });
-            recordWebhookDeliveryOutcome(this.deps.metrics, 'dead_lettered');
-            this.deps.logger.warn({
+            recordWebhookDeliveryOutcome(deps.metrics, 'dead_lettered');
+            deps.logger.warn({
                 tenantId: job.tenantId,
                 deliveryId: job.deliveryId,
                 subscriptionId: job.subscriptionId,
@@ -120,7 +116,7 @@ export class WebhookDeliveryService {
         const signature = signWebhookRequestBody(secret, body);
         secret = '';
         try {
-            const response = await this.deps.httpClient.send({
+            const response = await deps.httpClient.send({
                 operation: 'webhooks.deliver',
                 method: 'POST',
                 url: subscription.url,
@@ -132,15 +128,15 @@ export class WebhookDeliveryService {
                     [WEBHOOK_SIGNATURE_HEADER]: signature,
                 },
                 body,
-                timeoutMs: this.deps.config.timeoutMs,
+                timeoutMs: deps.config.timeoutMs,
                 returnErrorResponses: true,
                 redirect: 'manual',
             });
             const classification = classifyWebhookHttpResponse(response.status);
             if (classification.outcome === 'success') {
-                await this.persistSuccess(job.tenantId, delivery, response.status);
-                recordWebhookDeliveryOutcome(this.deps.metrics, 'success', Date.now() - startedAt);
-                this.deps.logger.info({
+                await persistSuccess(job.tenantId, delivery, response.status);
+                recordWebhookDeliveryOutcome(deps.metrics, 'success', Date.now() - startedAt);
+                deps.logger.info({
                     tenantId: job.tenantId,
                     deliveryId: job.deliveryId,
                     subscriptionId: job.subscriptionId,
@@ -158,20 +154,20 @@ export class WebhookDeliveryService {
                 ? `Upstream returned HTTP ${response.status}`
                 : `Upstream returned HTTP ${response.status}; Retry-After=${retryAfterSeconds}s`;
             if (classification.retryable) {
-                await this.handleRetryableFailure(job, delivery, context, {
+                await handleRetryableFailure(job, delivery, context, {
                     lastHttpStatus: response.status,
                     lastError,
                     retryAfterSeconds,
                 }, destination);
                 return;
             }
-            await this.persistTerminalFailure(job.tenantId, delivery, {
+            await persistTerminalFailure(job.tenantId, delivery, {
                 status: WebhookDeliveryStatus.DEAD_LETTERED,
                 lastError,
                 lastHttpStatus: response.status,
             });
-            recordWebhookDeliveryOutcome(this.deps.metrics, 'dead_lettered');
-            this.deps.logger.warn({
+            recordWebhookDeliveryOutcome(deps.metrics, 'dead_lettered');
+            deps.logger.warn({
                 tenantId: job.tenantId,
                 deliveryId: job.deliveryId,
                 httpStatus: response.status,
@@ -182,7 +178,7 @@ export class WebhookDeliveryService {
             if (error instanceof WebhookDeliveryRetryError) {
                 throw error;
             }
-            await this.handleRetryableFailure(job, delivery, context, {
+            await handleRetryableFailure(job, delivery, context, {
                 lastHttpStatus: null,
                 lastError: sanitizeWebhookDeliveryError(error),
             }, destination);
@@ -193,13 +189,13 @@ export class WebhookDeliveryService {
      * @param {import('../../../../shared/events/integration-event.js').IntegrationEvent} event
      * @returns {Promise<string|null>}
      */
-    async resolveWebhookRequestBody(subscription, event) {
-        return resolveWebhookPayload(this.deps.webhookPayloadStrategies, subscription, event);
+    async function resolveWebhookRequestBody(subscription, event) {
+        return resolveWebhookPayload(deps.webhookPayloadStrategies, subscription, event);
     }
 
-    async prepareDelivery(job) {
-        return this.deps.database.execute(async (tx) => {
-            const delivery = await this.deps.deliveries.findById(tx, job.tenantId, job.deliveryId);
+    async function prepareDelivery(job) {
+        return deps.database.execute(async (tx) => {
+            const delivery = await deps.deliveries.findById(tx, job.tenantId, job.deliveryId);
             if (delivery === null) {
                 return { kind: 'missing_delivery' };
             }
@@ -214,11 +210,11 @@ export class WebhookDeliveryService {
                 || delivery.eventType !== job.eventType) {
                 return { kind: 'job_mismatch' };
             }
-            const subscription = await this.deps.subscriptions.findById(tx, job.tenantId, job.subscriptionId);
+            const subscription = await deps.subscriptions.findById(tx, job.tenantId, job.subscriptionId);
             if (subscription === null || subscription.status !== WebhookSubscriptionStatus.ACTIVE) {
                 if (delivery.status !== WebhookDeliveryStatus.DELIVERED
                     && delivery.status !== WebhookDeliveryStatus.DEAD_LETTERED) {
-                    await this.persistTerminalFailureInTx(tx, delivery, {
+                    await persistTerminalFailureInTx(tx, delivery, {
                         status: WebhookDeliveryStatus.DEAD_LETTERED,
                         lastError: 'Webhook subscription is not active',
                         lastHttpStatus: null,
@@ -226,19 +222,19 @@ export class WebhookDeliveryService {
                 }
                 return { kind: 'subscription_inactive' };
             }
-            const claimed = await this.deps.deliveries.claimAttempt(tx, job.tenantId, job.deliveryId, this.deps.config.leaseSeconds);
+            const claimed = await deps.deliveries.claimAttempt(tx, job.tenantId, job.deliveryId, deps.config.leaseSeconds);
             if (claimed === null) {
                 return { kind: 'already_in_progress' };
             }
             return { kind: 'ready', delivery: claimed, subscription };
         }, { tenantId: job.tenantId });
     }
-    async handleRetryableFailure(job, delivery, context, failure, destination = null) {
+    async function handleRetryableFailure(job, delivery, context, failure, destination = null) {
         const exhausted = context.attempt >= context.maxAttempts;
-        const retryDelayMs = resolveWebhookRetryDelayMs(failure.retryAfterSeconds ?? null, this.deps.config.maxRetryAfterSeconds);
+        const retryDelayMs = resolveWebhookRetryDelayMs(failure.retryAfterSeconds ?? null, deps.config.maxRetryAfterSeconds);
         const nextAttemptAt = retryDelayMs === null ? null : new Date(Date.now() + retryDelayMs);
-        await this.deps.database.execute(async (tx) => {
-            await this.persistTerminalFailureInTx(tx, delivery, {
+        await deps.database.execute(async (tx) => {
+            await persistTerminalFailureInTx(tx, delivery, {
                 status: exhausted ? WebhookDeliveryStatus.DEAD_LETTERED : WebhookDeliveryStatus.FAILED,
                 lastError: failure.lastError,
                 lastHttpStatus: failure.lastHttpStatus,
@@ -246,8 +242,8 @@ export class WebhookDeliveryService {
             }, [WebhookDeliveryStatus.DELIVERING]);
         }, { tenantId: job.tenantId });
         if (exhausted) {
-            recordWebhookDeliveryOutcome(this.deps.metrics, 'dead_lettered');
-            this.deps.logger.warn({
+            recordWebhookDeliveryOutcome(deps.metrics, 'dead_lettered');
+            deps.logger.warn({
                 tenantId: job.tenantId,
                 deliveryId: job.deliveryId,
                 subscriptionId: job.subscriptionId,
@@ -257,8 +253,8 @@ export class WebhookDeliveryService {
             }, 'Webhook delivery dead-lettered after retry exhaustion');
             return;
         }
-        recordWebhookDeliveryOutcome(this.deps.metrics, 'retryable_failure');
-        this.deps.logger.warn({
+        recordWebhookDeliveryOutcome(deps.metrics, 'retryable_failure');
+        deps.logger.warn({
             tenantId: job.tenantId,
             deliveryId: job.deliveryId,
             subscriptionId: job.subscriptionId,
@@ -276,8 +272,8 @@ export class WebhookDeliveryService {
             retryDelayMs: retryDelayMs ?? undefined,
         });
     }
-    async persistSuccess(tenantId, delivery, httpStatus) {
-        const applied = await this.deps.database.execute(async (tx) => this.deps.deliveries.update(tx, {
+    async function persistSuccess(tenantId, delivery, httpStatus) {
+        const applied = await deps.database.execute(async (tx) => deps.deliveries.update(tx, {
             ...delivery,
             status: WebhookDeliveryStatus.DELIVERED,
             nextAttemptAt: null,
@@ -286,24 +282,24 @@ export class WebhookDeliveryService {
             deliveredAt: new Date(),
         }, { expectedStatuses: [WebhookDeliveryStatus.DELIVERING] }), { tenantId });
         if (!applied) {
-            this.deps.logger.debug({
+            deps.logger.debug({
                 tenantId,
                 deliveryId: delivery.id,
             }, 'Webhook delivery result ignored because the row is no longer DELIVERING');
         }
     }
-    async persistTerminalFailure(tenantId, delivery, outcome) {
-        await this.deps.database.execute(async (tx) => {
-            await this.persistTerminalFailureInTx(tx, delivery, outcome, [WebhookDeliveryStatus.DELIVERING]);
+    async function persistTerminalFailure(tenantId, delivery, outcome) {
+        await deps.database.execute(async (tx) => {
+            await persistTerminalFailureInTx(tx, delivery, outcome, [WebhookDeliveryStatus.DELIVERING]);
         }, { tenantId });
     }
-    async persistTerminalFailureInTx(tx, delivery, outcome, expectedStatuses) {
+    async function persistTerminalFailureInTx(tx, delivery, outcome, expectedStatuses) {
         const statuses = expectedStatuses ?? [
             WebhookDeliveryStatus.PENDING,
             WebhookDeliveryStatus.FAILED,
             WebhookDeliveryStatus.DELIVERING,
         ];
-        await this.deps.deliveries.update(tx, {
+        await deps.deliveries.update(tx, {
             ...delivery,
             status: outcome.status,
             nextAttemptAt: outcome.nextAttemptAt ?? null,
@@ -312,9 +308,9 @@ export class WebhookDeliveryService {
             deliveredAt: null,
         }, { expectedStatuses: statuses });
     }
-    logSkipped(preparation, job) {
+    function logSkipped(preparation, job) {
         if (preparation.kind === 'already_delivered' || preparation.kind === 'terminal') {
-            this.deps.logger.debug({
+            deps.logger.debug({
                 tenantId: job.tenantId,
                 deliveryId: job.deliveryId,
                 reason: preparation.kind,
@@ -322,17 +318,18 @@ export class WebhookDeliveryService {
             return;
         }
         if (preparation.kind === 'subscription_inactive') {
-            this.deps.logger.info({
+            deps.logger.info({
                 tenantId: job.tenantId,
                 deliveryId: job.deliveryId,
                 subscriptionId: job.subscriptionId,
             }, 'Webhook delivery skipped because subscription is inactive');
             return;
         }
-        this.deps.logger.debug({
+        deps.logger.debug({
             tenantId: job.tenantId,
             deliveryId: job.deliveryId,
             reason: preparation.kind,
         }, 'Webhook delivery skipped');
     }
+    return { deliver };
 }

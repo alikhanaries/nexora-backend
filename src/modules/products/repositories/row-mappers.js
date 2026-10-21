@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { parseOrThrow } from '../../../shared/validation/index.js';
-import { Product } from '../models/product.js';
-import { ProductContent } from '../models/product-content.js';
+import { reconstituteProduct } from '../models/product.js';
+import { reconstituteProductContent } from '../models/product-content.js';
 import { ProductStatus } from '../models/product-status.js';
 import { ProductType } from '../models/product-type.js';
 const productRowSchema = z.object({
@@ -28,7 +28,7 @@ const productContentRowSchema = z.object({
 });
 export function toProduct(row) {
     const parsed = parseOrThrow(productRowSchema, row, 'products row');
-    return Product.reconstitute({
+    return reconstituteProduct({
         id: parsed.id,
         tenantId: parsed.tenant_id,
         merchantSku: parsed.merchant_sku,
@@ -41,7 +41,7 @@ export function toProduct(row) {
 }
 export function toProductContent(row) {
     const parsed = parseOrThrow(productContentRowSchema, row, 'product_content row');
-    return ProductContent.reconstitute({
+    return reconstituteProductContent({
         id: parsed.id,
         productId: parsed.product_id,
         tenantId: parsed.tenant_id,

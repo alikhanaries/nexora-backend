@@ -1,1 +1,1 @@
-export { PostgresCancellationRepository } from './postgres-cancellation-repository.js';
+export { createPostgresCancellationRepository } from './postgres-cancellation-repository.js';

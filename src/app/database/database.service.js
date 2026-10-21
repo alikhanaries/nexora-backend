@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { WASL_DATABASE } from './database.tokens.js';
 
-export @Injectable()
+@Injectable()
 class DatabaseService {
   constructor(@Inject(WASL_DATABASE) database) {
     this.database = database;
@@ -30,3 +30,4 @@ class DatabaseService {
     await this.database.close();
   }
 }
+export { DatabaseService };

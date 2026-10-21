@@ -260,7 +260,7 @@ describe('Order route inventory parity', () => {
     { method: 'post', path: '/api/v1/orders/:orderId/confirm', auth: true },
   ];
 
-  it('matches Fastify order.routes.js (4 routes)', () => {
+  it('matches Nest OrdersController surface (4 routes)', () => {
     expect(expectedRoutes).toHaveLength(4);
   });
 });

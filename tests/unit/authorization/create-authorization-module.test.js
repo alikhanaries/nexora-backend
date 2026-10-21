@@ -2,26 +2,23 @@ import { describe, expect, it, vi } from 'vitest';
 import { createAuthorizationModule } from '../../../src/modules/authorization/create-authorization-module.js';
 
 vi.mock('../../../src/modules/authorization/repositories/postgres-permission-repository.js', () => ({
-    PostgresPermissionRepository: vi.fn(function PostgresPermissionRepository() {}),
+    createPostgresPermissionRepository: vi.fn(() => ({})),
 }));
 vi.mock('../../../src/modules/authorization/repositories/postgres-role-repository.js', () => ({
-    PostgresRoleRepository: vi.fn(function PostgresRoleRepository() {}),
+    createPostgresRoleRepository: vi.fn(() => ({})),
 }));
 vi.mock('../../../src/modules/authorization/repositories/postgres-membership-role-repository.js', () => ({
-    PostgresMembershipRoleRepository: vi.fn(function PostgresMembershipRoleRepository() {}),
-}));
-vi.mock('../../../src/modules/authorization/views/authorization.routes.js', () => ({
-    default: { plugin: true },
+    createPostgresMembershipRoleRepository: vi.fn(() => ({})),
 }));
 
 describe('createAuthorizationModule', () => {
     it('fails fast when database is missing', () => {
         expect(() => createAuthorizationModule({})).toThrow(
-            'createAuthorizationModule requires deps.database',
+            /createAuthorizationModule requires deps\.database/,
         );
     });
 
-    it('wires factory-based use cases and authorization service', () => {
+    it('wires factory-based use cases and authorization service without legacy routes', () => {
         const module = createAuthorizationModule({
             database: { execute: vi.fn() },
         });
@@ -33,6 +30,6 @@ describe('createAuthorizationModule', () => {
         expect(module.useCases.listPermissions).toHaveProperty('execute');
         expect(module.useCases.getEffectivePermissions).toHaveProperty('execute');
         expect(module.useCases.systemRoleSeeder).toHaveProperty('execute');
-        expect(module.routes.options.createRole).toBe(module.useCases.createRole);
+        expect(module.routes).toBeUndefined();
     });
 });

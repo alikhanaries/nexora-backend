@@ -3,24 +3,26 @@ import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-pol
 import { passwordResetRequestRateLimitSubject } from '../../../../shared/auth/rate-limit-subject.js';
 import { RateLimitError } from '../../../../shared/errors/index.js';
 import { generateSecureToken, hashSecret } from '../../../../shared/security/index.js';
-import { Email } from '../../models/index.js';
+import { parseEmail } from '../../models/index.js';
+
 const RESET_TOKEN_TTL_SECONDS = 3_600;
+
 /** Always completes silently to avoid email enumeration. */
-export class RequestPasswordResetUseCase {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createRequestPasswordReset(deps) {
+    async function execute(input) {
         let email;
         try {
-            email = Email.create(input.email);
+            email = parseEmail(input.email);
         }
         catch {
             return;
         }
-        if (this.deps.rateLimiter !== undefined) {
-            const rateLimit = await this.deps.rateLimiter.consume({
+        if (deps.rateLimiter !== undefined) {
+            const rateLimit = await deps.rateLimiter.consume({
                 policy: AUTH_RATE_LIMIT_POLICIES.passwordResetRequest,
                 subject: passwordResetRequestRateLimitSubject(email.normalized),
             });
@@ -28,17 +30,17 @@ export class RequestPasswordResetUseCase {
                 throw new RateLimitError(rateLimit.retryAfterSeconds);
             }
         }
-        await this.deps.db.execute(async (tx) => {
-            const user = await this.deps.users.findByNormalizedEmail(tx, email.normalized);
+        await deps.db.execute(async (tx) => {
+            const user = await deps.users.findByNormalizedEmail(tx, email.normalized);
             if (user === null) {
                 return;
             }
-            await this.deps.resetTokens.revokeActiveForUser(tx, user.id);
+            await deps.resetTokens.revokeActiveForUser(tx, user.id);
             const resetToken = generateSecureToken(32);
             const tokenHash = hashSecret(resetToken);
             const now = new Date();
             const expiresAt = new Date(now.getTime() + RESET_TOKEN_TTL_SECONDS * 1_000);
-            await this.deps.resetTokens.save(tx, {
+            await deps.resetTokens.save(tx, {
                 id: randomUUID(),
                 userId: user.id,
                 tokenHash,
@@ -47,11 +49,13 @@ export class RequestPasswordResetUseCase {
                 createdAt: now,
                 usedAt: null,
             });
-            await this.deps.notifier.notifyPasswordReset({
+            await deps.notifier.notifyPasswordReset({
                 userId: user.id,
                 email: user.email.raw,
                 resetToken,
             });
         });
     }
+
+    return { execute };
 }

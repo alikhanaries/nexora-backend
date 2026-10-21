@@ -5,14 +5,10 @@ import { WebhookSubscriptionStatus } from '../models/webhook-subscription-status
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
 import { requireWebhooksRead } from './webhook-permissions.js';
 
-export class ListWebhookSubscriptions {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireWebhooksRead(this.deps.authorization, input.actorPermissions);
-        const rateLimit = await this.deps.rateLimiter.consume({
+export function createListWebhookSubscriptions(deps) {
+    async function execute(input) {
+        requireWebhooksRead(deps.authorization, input.actorPermissions);
+        const rateLimit = await deps.rateLimiter.consume({
             policy: AUTH_RATE_LIMIT_POLICIES.webhookRead,
             subject: `${input.tenantId}:${input.actorId ?? input.tenantId}`,
         });
@@ -36,7 +32,7 @@ export class ListWebhookSubscriptions {
             : input.includeDeleted === true
                 ? undefined
                 : [WebhookSubscriptionStatus.ACTIVE, WebhookSubscriptionStatus.DISABLED];
-        const page = await this.deps.database.execute(async (tx) => this.deps.subscriptions.listPage(tx, input.tenantId, {
+        const page = await deps.database.execute(async (tx) => deps.subscriptions.listPage(tx, input.tenantId, {
             ...(statuses === undefined ? {} : { statuses }),
         }, fetchLimit, cursorCreatedAt, cursorId), { tenantId: input.tenantId });
         const hasMore = page.length > limit;
@@ -50,4 +46,5 @@ export class ListWebhookSubscriptions {
                 : null,
         };
     }
+    return { execute };
 }
