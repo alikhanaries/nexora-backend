@@ -1,1 +1,1 @@
-export { PostgresOrderRepository, orderListCursor } from './postgres-order-repository.js';
+export { createPostgresOrderRepository, orderListCursor } from './postgres-order-repository.js';

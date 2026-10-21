@@ -1,4 +1,8 @@
-export const AUDIT_EVENT_TYPES = [
+/**
+ * Audit event type vocabulary (persisted `event_type` values).
+ * @type {readonly string[]}
+ */
+export const AUDIT_EVENT_TYPES = Object.freeze([
     'USER_CREATED',
     'USER_STATUS_CHANGED',
     'MEMBERSHIP_CREATED',
@@ -56,4 +60,53 @@ export const AUDIT_EVENT_TYPES = [
     'WEBHOOK_SUBSCRIPTION_UPDATED',
     'WEBHOOK_SUBSCRIPTION_DISABLED',
     'WEBHOOK_SECRET_ROTATED',
-];
+]);
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string | null,
+ *   actorKind: 'user' | 'api-key' | 'system',
+ *   actorId: string | null,
+ *   eventType: string,
+ *   resourceType: string | null,
+ *   resourceId: string | null,
+ *   metadata: Record<string, unknown>,
+ *   ipAddress: string | null,
+ *   requestId: string | null,
+ *   createdAt: Date,
+ * }} AuditEvent
+ */
+
+/**
+ * Maps a validated audit_log row into a plain audit event entity.
+ * @param {{
+ *   id: string,
+ *   tenant_id: string | null,
+ *   actor_kind: 'user' | 'api-key' | 'system',
+ *   actor_id: string | null,
+ *   event_type: string,
+ *   resource_type: string | null,
+ *   resource_id: string | null,
+ *   metadata: Record<string, unknown>,
+ *   ip_address: string | null,
+ *   request_id: string | null,
+ *   created_at: Date,
+ * }} row
+ * @returns {AuditEvent}
+ */
+export function reconstituteAuditEvent(row) {
+    return {
+        id: row.id,
+        tenantId: row.tenant_id,
+        actorKind: row.actor_kind,
+        actorId: row.actor_id,
+        eventType: row.event_type,
+        resourceType: row.resource_type,
+        resourceId: row.resource_id,
+        metadata: row.metadata,
+        ipAddress: row.ip_address,
+        requestId: row.request_id,
+        createdAt: row.created_at,
+    };
+}

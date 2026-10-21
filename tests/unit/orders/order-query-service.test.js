@@ -116,18 +116,4 @@ describe('createOrderQueryService', () => {
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
-  it('DefaultOrderQueryService constructor returns same API as factory', async () => {
-    const { DefaultOrderQueryService } = await import(
-      '../../../src/modules/orders/services/order-query-service.js'
-    );
-    const order = { id: 'o1', tenantId: 't1', status: 'NEW' };
-    const service = new DefaultOrderQueryService({
-      authorization: createAuth(),
-      queryable: {},
-      orders: { findById: vi.fn(async () => order) },
-    });
-
-    const dto = await service.findOrderById('t1', 'o1');
-    expect(dto.id).toBe('o1');
-  });
 });

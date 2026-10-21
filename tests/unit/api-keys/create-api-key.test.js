@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     createCreateApiKey,
-    CreateApiKeyUseCase,
 } from '../../../src/modules/api-keys/services/use-cases/create-api-key.js';
 import { AuthorizationError } from '../../../src/shared/errors/index.js';
 
@@ -57,17 +56,5 @@ describe('createCreateApiKey authorization', () => {
         });
         expect(result.prefix).toBe('nxk_test');
         expect(deps.rateLimiter.consume).toHaveBeenCalledOnce();
-    });
-
-    it('compatibility wrapper preserves authorization behavior', async () => {
-        const deps = createDeps();
-        const useCase = new CreateApiKeyUseCase(deps);
-        await expect(useCase.execute({
-            tenantId: '22222222-2222-2222-2222-222222222222',
-            actorId: '33333333-3333-3333-3333-333333333333',
-            actorPermissions: ['api_keys.read'],
-            name: 'Denied',
-            scopes: ['orders.read'],
-        })).rejects.toBeInstanceOf(AuthorizationError);
     });
 });

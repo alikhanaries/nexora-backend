@@ -1,1 +1,1 @@
-export { PostgresOfferRepository } from './postgres-offer-repository.js';
+export { createPostgresOfferRepository } from './postgres-offer-repository.js';

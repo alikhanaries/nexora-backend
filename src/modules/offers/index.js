@@ -1,47 +1,66 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { ActivateOffer, CreateOffer, DeactivateOffer, DefaultOfferQueryService, GetOffer, ListOffers, SuspendOffer, UpdateOffer, } from './services/index.js';
-import { PostgresOfferRepository } from './repositories/index.js';
-import offerRoutes, {} from './views/offer.routes.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
+import {
+    createActivateOffer,
+    createCreateOffer,
+    createDeactivateOffer,
+    createDefaultOfferQueryService,
+    createGetOffer,
+    createListOffers,
+    createSuspendOffer,
+    createUpdateOffer,
+} from './services/index.js';
+import { createPostgresOfferRepository } from './repositories/index.js';
+
 export function createOffersModule(deps) {
-    const authorization = new DefaultAuthorizationService();
-    const offers = new PostgresOfferRepository();
-    const offerQueryService = new DefaultOfferQueryService({
+    const authorization = createDefaultAuthorizationService();
+    const offers = createPostgresOfferRepository();
+    const offerQueryService = createDefaultOfferQueryService({
         queryable: deps.database,
-        offers,
+        offers
     });
     const lifecycleDeps = {
         authorization,
         database: deps.database,
         offers,
         eventRecorder: deps.eventRecorder,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     };
     const useCases = {
-        createOffer: new CreateOffer({
+        createOffer: createCreateOffer({
             ...lifecycleDeps,
             productQueryService: deps.productQueryService,
-            commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
+            commerceIntegrationQueryService: deps.commerceIntegrationQueryService
         }),
-        getOffer: new GetOffer({ authorization, offerQueryService }),
-        listOffers: new ListOffers({
+        getOffer: createGetOffer({ authorization, offerQueryService }),
+        listOffers: createListOffers({
             authorization,
             queryable: deps.database,
-            offers,
+            offers
         }),
-        updateOffer: new UpdateOffer(lifecycleDeps),
-        activateOffer: new ActivateOffer({
+        updateOffer: createUpdateOffer(lifecycleDeps),
+        activateOffer: createActivateOffer({
             ...lifecycleDeps,
             productQueryService: deps.productQueryService,
             commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
-            pricingService: deps.pricingService,
+            pricingService: deps.pricingService
         }),
-        suspendOffer: new SuspendOffer(lifecycleDeps),
-        deactivateOffer: new DeactivateOffer(lifecycleDeps),
+        suspendOffer: createSuspendOffer(lifecycleDeps),
+        deactivateOffer: createDeactivateOffer(lifecycleDeps)
     };
     return {
         offerQueryService,
-        useCases,
-        routes: offerRoutes,
+        useCases
     };
 }
-export { Offer, OfferStatus, ListingStatus } from './models/index.js';
+
+export {
+    createOfferEntity,
+    reconstituteOffer,
+    isOfferUsable,
+    updateOfferEntity,
+    activateOfferEntity,
+    suspendOfferEntity,
+    deactivateOfferEntity,
+    OfferStatus,
+    ListingStatus,
+} from './models/index.js';

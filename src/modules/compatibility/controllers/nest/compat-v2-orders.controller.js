@@ -53,7 +53,7 @@ class CompatV2OrdersController {
 
   @Get('/api/v2/ce/orders')
   async list(@Query() query) {
-    const parsed = compatV2OrdersQuerySchema.parse(query);
+    const parsed = parseOrThrow(compatV2OrdersQuerySchema, query, 'query');
     return this.compatibilityOrdersService.listCeOrders({
       page: parsed.page,
       pageSize: parsed.pageSize,

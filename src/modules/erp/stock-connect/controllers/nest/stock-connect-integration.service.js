@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { toProductResponse } from '../../../../products/views/product.mapper.js';
-import { toBalanceResponse } from '../../../../inventory/views/inventory.mapper.js';
 import { toStockConnectChannel } from '../../mappers/stock-connect-channel.mapper.js';
 import {
   toStockConnectOrderDetail,
@@ -12,13 +11,8 @@ import { actorFingerprint } from '../../../../../shared/http/actor-fingerprint.j
 import { fingerprintRequest, requireIdempotencyKey } from '../../../../../shared/idempotency/index.js';
 import { commerceActorFields } from '../../../../../app/common/commerce-actor.js';
 import { CORE_SERVICES } from '../../../../../app/di/core-services.tokens.js';
-import { ProductsService } from '../../../../products/controllers/nest/products.service.js';
-import { OrdersService } from '../../../../orders/controllers/nest/orders.service.js';
-import { InventoryService } from '../../../../inventory/controllers/nest/inventory.service.js';
-import { ShipmentsService } from '../../../../shipments/public/nest-shipments-service.js';
-import { CommerceIntegrationsService } from '../../../../commerce-integrations/controllers/nest/commerce-integrations.service.js';
-import { OffersService } from '../../../../offers/controllers/nest/offers.service.js';
-import { CancellationsService } from '../../../../cancellations/public/nest-cancellations-service.js';
+import { createStockConnectCatalogCommands } from '../../services/stock-connect-catalog-commands.js';
+import { createStockConnectCommerceCommands } from '../../services/stock-connect-commerce-commands.js';
 
 const ROUTE_PREFIX = '/api/v2/stock-connect';
 
@@ -36,24 +30,17 @@ function paginationEnvelope(page, mapItem) {
 
 export @Injectable()
 class StockConnectIntegrationService {
-  constructor(
-    @Inject(CORE_SERVICES) coreServices,
-    @Inject(ProductsService) productsService,
-    @Inject(OrdersService) ordersService,
-    @Inject(InventoryService) inventoryService,
-    @Inject(ShipmentsService) shipmentsService,
-    @Inject(CommerceIntegrationsService) channelsService,
-    @Inject(OffersService) offersService,
-    @Inject(CancellationsService) cancellationsService,
-  ) {
+  constructor(@Inject(CORE_SERVICES) coreServices) {
     this.coreServices = coreServices;
-    this.productsService = productsService;
-    this.ordersService = ordersService;
-    this.inventoryService = inventoryService;
-    this.shipmentsService = shipmentsService;
-    this.channelsService = channelsService;
-    this.offersService = offersService;
-    this.cancellationsService = cancellationsService;
+    const catalog = createStockConnectCatalogCommands(coreServices);
+    this.productsService = catalog;
+    this.inventoryService = catalog;
+    this.offersService = catalog;
+    const commerce = createStockConnectCommerceCommands(coreServices);
+    this.ordersService = commerce;
+    this.shipmentsService = commerce;
+    this.channelsService = commerce;
+    this.cancellationsService = commerce;
   }
 
   ping() {
@@ -248,7 +235,8 @@ class StockConnectIntegrationService {
       integration: 'stock-connect',
       data: {
         productId,
-        balances: balances.map(toBalanceResponse),
+        // listInventory already returns mapped balance responses.
+        balances,
       },
     };
   }

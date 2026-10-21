@@ -15,21 +15,11 @@ const DEFAULT_MAX_PAGES = 1;
 /**
  * Bounded Shopify/marketplace order polling: list via adapter, ingest through generic pipeline.
  */
-export class FetchAndIngestMarketplaceOrders {
-    deps;
-
-    /**
-     * @param {object} deps
-     * @param {import('./ingest-normalized-marketplace-order.js').IngestNormalizedMarketplaceOrder} deps.ingestNormalizedMarketplaceOrder
-     * @param {import('../public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
-     * @param {import('../../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
-     * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
-     * @param {import('../../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
-     */
-    constructor(deps) {
-        this.deps = deps;
-    }
-
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createFetchAndIngestMarketplaceOrders(deps) {
     /**
      * @param {object} input
      * @param {string} input.tenantId
@@ -42,8 +32,8 @@ export class FetchAndIngestMarketplaceOrders {
      * @param {string|null} [input.correlationId]
      * @param {string} [input.jobId]
      */
-    async execute(input) {
-        const adapter = this.deps.orderAdapterRegistry.resolve(input.marketplaceKey);
+    async function execute(input) {
+        const adapter = deps.orderAdapterRegistry.resolve(input.marketplaceKey);
         if (adapter === null || typeof adapter.listOrders !== 'function') {
             throw new MarketplaceOrderIngestionPermanentError('Marketplace order polling is not supported', {
                 marketplaceKey: input.marketplaceKey,
@@ -55,7 +45,7 @@ export class FetchAndIngestMarketplaceOrders {
                 marketplaceKey: input.marketplaceKey,
             });
         }
-        const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.channelId);
+        const channel = await deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.channelId);
         if (channel.tenantId !== input.tenantId) {
             throw new MarketplaceOrderIngestionPermanentError('Channel tenant mismatch', {
                 channelId: input.channelId,
@@ -73,7 +63,7 @@ export class FetchAndIngestMarketplaceOrders {
         let endCursor = null;
         try {
             while (pagesFetched < maxPages) {
-                const page = await this.fetchPage(input, adapter, stockLocationId, first, after);
+                const page = await fetchPage(input, adapter, stockLocationId, first, after);
                 pagesFetched += 1;
                 hasNextPage = page.hasNextPage;
                 endCursor = page.endCursor;
@@ -82,7 +72,7 @@ export class FetchAndIngestMarketplaceOrders {
                         skippedNonIngestible += 1;
                         continue;
                     }
-                    const ingestResult = await this.deps.ingestNormalizedMarketplaceOrder.execute({
+                    const ingestResult = await deps.ingestNormalizedMarketplaceOrder.execute({
                         tenantId: input.tenantId,
                         channelId: input.channelId,
                         marketplaceKey: input.marketplaceKey,
@@ -134,9 +124,9 @@ export class FetchAndIngestMarketplaceOrders {
      * @param {number} first
      * @param {string|null} after
      */
-    async fetchPage(input, adapter, stockLocationId, first, after) {
-        return this.deps.database.execute(async (tx) => {
-            const runtime = await this.deps.marketplaceAdapterRuntimeFactory.createForSync({
+    async function fetchPage(input, adapter, stockLocationId, first, after) {
+        return deps.database.execute(async (tx) => {
+            const runtime = await deps.marketplaceAdapterRuntimeFactory.createForSync({
                 tenantId: input.tenantId,
                 channelId: input.channelId,
                 marketplaceKey: input.marketplaceKey,
@@ -155,4 +145,5 @@ export class FetchAndIngestMarketplaceOrders {
             });
         }, { tenantId: input.tenantId });
     }
+    return { execute };
 }

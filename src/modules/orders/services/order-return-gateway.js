@@ -1,9 +1,10 @@
 import { BusinessRuleError, NotFoundError } from '../../../shared/errors/index.js';
+import { orderLineReturnableQuantity, withOrderLineUpdatedQuantities } from '../models/order-line.js';
 import { toOrderDto } from '../views/order-dto.js';
 
 /**
  * @param {object} deps
- * @param {import('../repositories/postgres-order-repository.js').PostgresOrderRepository} deps.orders
+ * @param {ReturnType<import('../repositories/postgres-order-repository.js').createPostgresOrderRepository>} deps.orders
  */
 export function createOrderReturnGateway(deps) {
     async function findOrder(queryable, tenantId, orderId) {
@@ -42,7 +43,7 @@ export function createOrderReturnGateway(deps) {
         if (line === null) {
             throw new NotFoundError('Order line was not found', { tenantId, orderLineId });
         }
-        const eligibleQuantity = line.returnableQuantity();
+        const eligibleQuantity = orderLineReturnableQuantity(line);
         if (quantity > eligibleQuantity) {
             throw new BusinessRuleError('Return quantity exceeds eligible amount for order line', {
                 orderLineId,
@@ -50,7 +51,7 @@ export function createOrderReturnGateway(deps) {
                 eligibleQuantity,
             });
         }
-        const updated = line.withUpdatedQuantities({
+        const updated = withOrderLineUpdatedQuantities(line, {
             shippedQuantity: line.shippedQuantity - quantity,
             returnedQuantity: line.returnedQuantity + quantity,
             updatedAt,
@@ -64,11 +65,4 @@ export function createOrderReturnGateway(deps) {
         updateOrderLineReturnedQuantity,
         applyReturnReceivedOnOrderLine,
     };
-}
-
-/** @deprecated Prefer {@link createOrderReturnGateway}; kept for existing import sites. */
-export class DefaultOrderReturnGateway {
-    constructor(deps) {
-        return createOrderReturnGateway(deps);
-    }
 }

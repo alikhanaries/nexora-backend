@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MarketplaceOrderLifecycleService } from '../../../../src/modules/orders/marketplace-ingestion/services/marketplace-order-lifecycle-service.js';
-import { ExecuteMarketplaceOrderLifecycleOperation } from '../../../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-order-lifecycle-operation.js';
+import { createMarketplaceOrderLifecycleService } from '../../../../src/modules/orders/marketplace-ingestion/services/marketplace-order-lifecycle-service.js';
+import { createExecuteMarketplaceOrderLifecycleOperation } from '../../../../src/modules/orders/marketplace-ingestion/services/execute-marketplace-order-lifecycle-operation.js';
 import { MarketplaceOrderLifecycleOperation } from '../../../../src/modules/orders/marketplace-ingestion/models/marketplace-order-lifecycle-operation.js';
 import { MarketplaceOrderLifecycleOutcome } from '../../../../src/modules/orders/marketplace-ingestion/models/marketplace-order-lifecycle-outcome.js';
 import { NormalizedMarketplaceLifecycleTargetStatus } from '../../../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-lifecycle-target-status.js';
-import { MarketplaceOrderAdapterRegistry } from '../../../../src/modules/orders/marketplace-ingestion/public/marketplace-order-adapter-registry.js';
+import { createMarketplaceOrderAdapterRegistry } from '../../../../src/modules/orders/marketplace-ingestion/public/marketplace-order-adapter-registry.js';
 import {
     MarketplaceOrderLifecyclePermanentError,
     MarketplaceOrderLifecycleUnsupportedError,
@@ -16,7 +16,7 @@ const channelId = '00000000-0000-4000-8000-000000000002';
 const marketplaceKey = 'lifecycle-test';
 
 function buildService(overrides = {}) {
-    const registry = new MarketplaceOrderAdapterRegistry();
+    const registry = createMarketplaceOrderAdapterRegistry();
     registry.register({
         marketplaceKey,
         getOrderLifecycleCapabilities: () => ({
@@ -35,7 +35,7 @@ function buildService(overrides = {}) {
         channelId,
         status: OrderStatus.NEW,
     };
-    const executeOperation = new ExecuteMarketplaceOrderLifecycleOperation({
+    const executeOperation = createExecuteMarketplaceOrderLifecycleOperation({
         orders: {
             listOrderLines: vi.fn(async () => []),
         },
@@ -43,7 +43,7 @@ function buildService(overrides = {}) {
         confirmOrder: { execute: vi.fn(async () => ({ order: {} })) },
         cancellationCommandService: { createCancellation: vi.fn(async () => ({ cancellation: {} })) },
     });
-    const service = new MarketplaceOrderLifecycleService({
+    const service = createMarketplaceOrderLifecycleService({
         database: {
             execute: vi.fn(async (fn) => fn({})),
         },

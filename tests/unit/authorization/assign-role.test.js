@@ -6,7 +6,6 @@ import {
 } from '../../../src/shared/errors/index.js';
 import {
     createAssignRole,
-    AssignRole,
 } from '../../../src/modules/authorization/services/assign-role.js';
 import { createDefaultAuthorizationService } from '../../../src/modules/authorization/services/authorization-service.js';
 
@@ -114,16 +113,5 @@ describe('createAssignRole', () => {
             roleId: ROLE_ID,
             actorPermissions: ['roles.manage'],
         })).rejects.toBeInstanceOf(ConflictError);
-    });
-
-    it('compatibility wrapper preserves assign behavior', async () => {
-        const deps = createDeps();
-        const useCase = new AssignRole(deps);
-        await expect(useCase.execute({
-            tenantId: TENANT_A,
-            membershipId: MEMBERSHIP_ID,
-            roleId: ROLE_ID,
-            actorPermissions: ['roles.read'],
-        })).rejects.toBeInstanceOf(AuthorizationError);
     });
 });

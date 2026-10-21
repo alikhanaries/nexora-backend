@@ -21,24 +21,18 @@ export function createMockCoreDomain(overrides = {}) {
       },
     },
     authorization: {
-      routes: {
-        options: {
-          listPermissions: { execute: jest.fn().mockResolvedValue([]) },
-          listRoles: { execute: jest.fn().mockResolvedValue([]) },
-          createRole: { execute: jest.fn() },
-          getEffectivePermissions: { execute: jest.fn() },
-          assignRole: { execute: jest.fn() },
-          removeRole: { execute: jest.fn() },
-        },
+      useCases: {
+        listPermissions: { execute: jest.fn().mockResolvedValue([]) },
+        listRoles: { execute: jest.fn().mockResolvedValue([]) },
+        createRole: { execute: jest.fn() },
+        getEffectivePermissions: { execute: jest.fn() },
+        assignRole: { execute: jest.fn() },
+        removeRole: { execute: jest.fn() },
       },
     },
     audit: {
-      routes: {
-        options: {
-          auditService: {
-            listEvents: jest.fn().mockResolvedValue({ total: 0, events: [] }),
-          },
-        },
+      auditService: {
+        listEvents: jest.fn().mockResolvedValue({ total: 0, events: [] }),
       },
     },
     apiKeys: {
@@ -51,14 +45,12 @@ export function createMockCoreDomain(overrides = {}) {
       },
     },
     mfa: {
-      routes: {
-        options: {
-          startTotpEnrollment: { execute: jest.fn() },
-          verifyTotpEnrollment: { execute: jest.fn() },
-          activateTotpFactor: { execute: jest.fn() },
-          verifyMfa: { execute: jest.fn() },
-          useRecoveryCode: { execute: jest.fn() },
-        },
+      useCases: {
+        startTotpEnrollment: { execute: jest.fn() },
+        verifyTotpEnrollment: { execute: jest.fn() },
+        activateTotpFactor: { execute: jest.fn() },
+        verifyMfa: { execute: jest.fn() },
+        useRecoveryCode: { execute: jest.fn() },
       },
     },
     products: {

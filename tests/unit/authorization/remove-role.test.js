@@ -6,7 +6,6 @@ import {
 } from '../../../src/shared/errors/index.js';
 import {
     createRemoveRole,
-    RemoveRole,
 } from '../../../src/modules/authorization/services/remove-role.js';
 import { createDefaultAuthorizationService } from '../../../src/modules/authorization/services/authorization-service.js';
 
@@ -106,16 +105,5 @@ describe('createRemoveRole', () => {
         });
         expect(deps.lastAdminGuard.assertCanRemoveRole).toHaveBeenCalled();
         expect(deps.membershipRoles.removeRole).toHaveBeenCalledWith(MEMBERSHIP_ID, ROLE_ID, {});
-    });
-
-    it('compatibility wrapper preserves remove behavior', async () => {
-        const deps = createDeps();
-        const useCase = new RemoveRole(deps);
-        await expect(useCase.execute({
-            tenantId: TENANT_A,
-            membershipId: MEMBERSHIP_ID,
-            roleId: ROLE_ID,
-            actorPermissions: [],
-        })).rejects.toBeInstanceOf(AuthorizationError);
     });
 });

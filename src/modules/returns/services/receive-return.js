@@ -1,6 +1,7 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { BusinessRuleError, NotFoundError } from '../../../shared/errors/index.js';
 import { ReturnStatus } from '../models/return-status.js';
+import { receiveReturnEntity } from '../models/return.js';
 import { toReturnDetailDto } from '../views/return-dto.js';
 import { returnStatusChangedEvent } from './return-events.js';
 import { requireReturnsUpdate } from './return-permissions.js';
@@ -62,7 +63,7 @@ export function createReceiveReturn(deps) {
                 );
             }
             const previousStatus = existing.status;
-            const updated = existing.receive(now);
+            const updated = receiveReturnEntity(existing, now);
             await deps.returns.updateReturn(tx, updated);
             const detail = toReturnDetailDto(updated, lines);
             if (previousStatus !== updated.status) {
@@ -89,11 +90,4 @@ export function createReceiveReturn(deps) {
     }
 
     return { execute };
-}
-
-/** @deprecated Prefer createReceiveReturn */
-export class ReceiveReturn {
-    constructor(deps) {
-        return createReceiveReturn(deps);
-    }
 }

@@ -1,2 +1,2 @@
-export { DefaultWebhookCommandService } from './webhook-command-service.js';
-export { DefaultWebhookQueryService } from './webhook-query-service.js';
+export { createDefaultWebhookCommandService } from './webhook-command-service.js';
+export { createDefaultWebhookQueryService } from './webhook-query-service.js';

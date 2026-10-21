@@ -1,13 +1,14 @@
 import { ValidationError } from '../../../shared/errors/index.js';
 import { clampCursorLimit, decodeCursor, encodeCursor, } from '../../../shared/pagination/index.js';
 import { toProductDto } from './product-dto.js';
-export class ListProducts {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        this.deps.authorization.requirePermission(input.actorPermissions, 'products.read');
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createListProducts(deps) {
+    async function execute(input) {
+        deps.authorization.requirePermission(input.actorPermissions, 'products.read');
         const limit = clampCursorLimit(input.limit);
         const fetchLimit = limit + 1;
         let cursorCreatedAt = null;
@@ -20,7 +21,7 @@ export class ListProducts {
             cursorCreatedAt = new Date(parts[0] ?? '');
             cursorId = parts[1] ?? null;
         }
-        const page = await this.deps.products.listPage(this.deps.database, input.tenantId, { status: input.status }, fetchLimit, cursorCreatedAt, cursorId);
+        const page = await deps.products.listPage(deps.database, input.tenantId, { status: input.status }, fetchLimit, cursorCreatedAt, cursorId);
         const hasMore = page.items.length > limit;
         const items = hasMore ? page.items.slice(0, limit) : page.items;
         const last = items.at(-1);
@@ -32,4 +33,5 @@ export class ListProducts {
                 : null,
         };
     }
+    return { execute };
 }

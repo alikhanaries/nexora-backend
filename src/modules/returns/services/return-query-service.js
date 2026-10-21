@@ -100,10 +100,3 @@ export function createReturnQueryService(deps) {
         listReturns,
     };
 }
-
-/** @deprecated Prefer {@link createReturnQueryService}; kept for existing import sites and JSDoc typedefs. */
-export class DefaultReturnQueryService {
-    constructor(deps) {
-        return createReturnQueryService(deps);
-    }
-}

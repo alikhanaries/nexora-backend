@@ -5,8 +5,8 @@ import {
     ExternalIdMappingResourceType,
 } from '../../external-id-mapping/public/index.js';
 import { AppError, BusinessRuleError, ConflictError, NotFoundError, ValidationError, } from '../../../shared/errors/index.js';
-import { Return } from '../models/return.js';
-import { ReturnLine } from '../models/return-line.js';
+import { createReturnEntity } from '../models/return.js';
+import { createReturnLineEntity } from '../models/return-line.js';
 import { toReturnDetailDto } from '../views/return-dto.js';
 import { returnCreatedEvent } from './return-events.js';
 import { requireReturnsCreate } from './return-permissions.js';
@@ -121,7 +121,7 @@ export function createCreateReturn(deps) {
                 const lineReason = lineInput?.reason === undefined || lineInput?.reason === null
                     ? null
                     : lineInput.reason.trim() || null;
-                returnLines.push(ReturnLine.create({
+                returnLines.push(createReturnLineEntity({
                     id: randomUUID(),
                     tenantId: input.tenantId,
                     returnId,
@@ -131,7 +131,7 @@ export function createCreateReturn(deps) {
                     createdAt: now,
                 }));
             }
-            const returnEntity = Return.create({
+            const returnEntity = createReturnEntity({
                 id: returnId,
                 tenantId: input.tenantId,
                 orderId: input.orderId,
@@ -189,12 +189,6 @@ export function createCreateReturn(deps) {
     return { execute };
 }
 
-/** @deprecated Prefer createCreateReturn */
-export class CreateReturn {
-    constructor(deps) {
-        return createCreateReturn(deps);
-    }
-}
 
 /**
  * @param {unknown} error

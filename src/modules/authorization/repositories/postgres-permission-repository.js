@@ -14,19 +14,23 @@ function mapPermission(row) {
         createdAt: row.created_at,
     };
 }
-export class PostgresPermissionRepository {
-    db;
-    constructor(db) {
-        this.db = db;
-    }
-    async listAll() {
-        const result = await this.db.query(`SELECT id, key, description, created_at
+/**
+ * Postgres persistence (function-based repository).
+ * @returns {object}
+ */
+export function createPostgresPermissionRepository(db) {
+    async function listAll() {
+        const result = await db.query(`SELECT id, key, description, created_at
        FROM permissions
        ORDER BY key ASC`, [], { operation: 'authorization.permissions.list_all' });
         return result.rows.map((row) => mapPermission(parseOrThrow(permissionRowSchema, row, 'permission row')));
     }
-    async listKeys() {
-        const permissions = await this.listAll();
+    async function listKeys() {
+        const permissions = await listAll();
         return permissions.map((permission) => permission.key);
     }
+    return {
+        listAll,
+        listKeys,
+    };
 }

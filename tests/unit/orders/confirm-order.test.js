@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from '../../../src/shared/errors/index.js';
-import { Order } from '../../../src/modules/orders/models/order.js';
+import { reconstituteOrder } from '../../../src/modules/orders/models/order.js';
 import { OrderStatus } from '../../../src/modules/orders/models/order-status.js';
 import { createConfirmOrder } from '../../../src/modules/orders/services/confirm-order.js';
 
 function makeOrder(overrides = {}) {
   const now = new Date('2024-01-01T00:00:00.000Z');
-  return Order.reconstitute({
+  return reconstituteOrder({
     id: 'o1',
     tenantId: 't1',
     channelId: 'ch-1',

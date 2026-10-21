@@ -18,79 +18,156 @@ import {
   updateProductBodySchema,
   upsertProductContentBodySchema,
 } from '../../views/product.schemas.js';
+import { toProductContentResponse, toProductResponse } from '../../views/product.mapper.js';
 import { parseOrThrow } from '../../../../shared/validation/index.js';
-import { ProductsService } from './products.service.js';
+import { requireActorContext } from '../../../../shared/context/require-principal.js';
+import { productActorFields } from '../../../../app/common/commerce-actor.js';
+import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
+import { PRODUCT_ROUTES } from '../../routes/product.routes.js';
 
+/**
+ * Thin Nest HTTP adapter — API methods only.
+ * Business rules live in services/; paths live in routes/.
+ */
 export @Controller()
 class ProductsController {
-  constructor(@Inject(ProductsService) productsService) {
-    this.productsService = productsService;
+  constructor(@Inject(CORE_SERVICES) coreServices) {
+    this.useCases = coreServices.products.useCases;
   }
 
-  @Get('/api/v1/products')
+  @Get(PRODUCT_ROUTES.list.path)
   async list(@Query() query) {
-    const parsed = listProductsQuerySchema.parse(query);
-    const data = await this.productsService.listProducts(parsed);
-    return { success: true, data };
+    const parsed = parseOrThrow(listProductsQuerySchema, query, 'list query');
+    const actor = requireActorContext();
+    const page = await this.useCases.listProducts.execute({
+      tenantId: actor.tenantId,
+      actorPermissions: actor.permissions,
+      ...(parsed.limit === undefined ? {} : { limit: parsed.limit }),
+      ...(parsed.cursor === undefined ? {} : { cursor: parsed.cursor }),
+      ...(parsed.status === undefined ? {} : { status: parsed.status }),
+    });
+    return {
+      success: true,
+      data: {
+        items: page.items.map(toProductResponse),
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
+      },
+    };
   }
 
-  @Post('/api/v1/products')
+  @Post(PRODUCT_ROUTES.create.path)
   @HttpCode(201)
   async create(@Body() body) {
     const parsed = parseOrThrow(createProductBodySchema, body, 'create product');
-    const data = await this.productsService.createProduct(parsed);
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { actorId, actorKind } = productActorFields(actor);
+    const { product } = await this.useCases.createProduct.execute({
+      tenantId: actor.tenantId,
+      actorId,
+      actorKind,
+      actorPermissions: actor.permissions,
+      merchantSku: parsed.merchantSku,
+      ...(parsed.externalReference === undefined ? {} : { externalReference: parsed.externalReference }),
+      ...(parsed.productType === undefined ? {} : { productType: parsed.productType }),
+    });
+    return { success: true, data: toProductResponse(product) };
   }
 
-  @Get('/api/v1/products/:productId')
+  @Get(PRODUCT_ROUTES.getById.path)
   async getById(@Param() params) {
     const { productId } = parseOrThrow(productIdParamsSchema, params, 'product params');
-    const data = await this.productsService.getProduct(productId);
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { product } = await this.useCases.getProduct.execute({
+      tenantId: actor.tenantId,
+      actorPermissions: actor.permissions,
+      productId,
+    });
+    return { success: true, data: toProductResponse(product) };
   }
 
-  @Patch('/api/v1/products/:productId')
+  @Patch(PRODUCT_ROUTES.update.path)
   @HttpCode(200)
   async update(@Param() params, @Body() body) {
     const { productId } = parseOrThrow(productIdParamsSchema, params, 'product params');
     const parsed = parseOrThrow(updateProductBodySchema, body, 'update product');
-    const data = await this.productsService.updateProduct(productId, parsed);
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { actorId, actorKind } = productActorFields(actor);
+    const { product } = await this.useCases.updateProduct.execute({
+      tenantId: actor.tenantId,
+      actorId,
+      actorKind,
+      actorPermissions: actor.permissions,
+      productId,
+      ...(parsed.externalReference === undefined ? {} : { externalReference: parsed.externalReference }),
+      ...(parsed.productType === undefined ? {} : { productType: parsed.productType }),
+    });
+    return { success: true, data: toProductResponse(product) };
   }
 
-  @Post('/api/v1/products/:productId/deactivate')
+  @Post(PRODUCT_ROUTES.deactivate.path)
   @HttpCode(200)
   async deactivate(@Param() params) {
     const { productId } = parseOrThrow(productIdParamsSchema, params, 'product params');
-    const data = await this.productsService.deactivateProduct(productId);
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { actorId, actorKind } = productActorFields(actor);
+    const { product } = await this.useCases.deactivateProduct.execute({
+      tenantId: actor.tenantId,
+      actorId,
+      actorKind,
+      actorPermissions: actor.permissions,
+      productId,
+    });
+    return { success: true, data: toProductResponse(product) };
   }
 
-  @Post('/api/v1/products/:productId/archive')
+  @Post(PRODUCT_ROUTES.archive.path)
   @HttpCode(200)
   async archive(@Param() params) {
     const { productId } = parseOrThrow(productIdParamsSchema, params, 'product params');
-    const data = await this.productsService.archiveProduct(productId);
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { actorId, actorKind } = productActorFields(actor);
+    const { product } = await this.useCases.archiveProduct.execute({
+      tenantId: actor.tenantId,
+      actorId,
+      actorKind,
+      actorPermissions: actor.permissions,
+      productId,
+    });
+    return { success: true, data: toProductResponse(product) };
   }
 
-  @Get('/api/v1/products/:productId/content')
+  @Get(PRODUCT_ROUTES.listContent.path)
   async listContent(@Param() params) {
     const { productId } = parseOrThrow(productIdParamsSchema, params, 'product params');
-    const data = await this.productsService.getProductContent(productId);
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { content } = await this.useCases.getProductContent.execute({
+      tenantId: actor.tenantId,
+      actorPermissions: actor.permissions,
+      productId,
+    });
+    return { success: true, data: content.map(toProductContentResponse) };
   }
 
-  @Put('/api/v1/products/:productId/content/:locale')
+  @Put(PRODUCT_ROUTES.upsertContent.path)
   @HttpCode(200)
   async upsertContent(@Param() params, @Body() body) {
     const parsedParams = parseOrThrow(productLocaleParamsSchema, params, 'product locale params');
     const parsedBody = parseOrThrow(upsertProductContentBodySchema, body, 'upsert product content');
-    const data = await this.productsService.upsertProductContent(
-      parsedParams.productId,
-      parsedParams.locale,
-      parsedBody,
-    );
-    return { success: true, data };
+    const actor = requireActorContext();
+    const { actorId, actorKind } = productActorFields(actor);
+    const { content } = await this.useCases.upsertProductContent.execute({
+      tenantId: actor.tenantId,
+      actorId,
+      actorKind,
+      actorPermissions: actor.permissions,
+      productId: parsedParams.productId,
+      locale: parsedParams.locale,
+      ...(parsedBody.title === undefined ? {} : { title: parsedBody.title }),
+      ...(parsedBody.description === undefined ? {} : { description: parsedBody.description }),
+      ...(parsedBody.brand === undefined ? {} : { brand: parsedBody.brand }),
+      ...(parsedBody.attributes === undefined ? {} : { attributes: parsedBody.attributes }),
+    });
+    return { success: true, data: toProductContentResponse(content) };
   }
 }

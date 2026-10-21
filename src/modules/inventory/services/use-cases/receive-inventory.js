@@ -1,17 +1,19 @@
-import { optionalReferenceFields } from '../optional-fields.js';
-export class ReceiveInventory {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        this.deps.authorization.requirePermission(input.actorPermissions, 'inventory.adjust');
-        return this.deps.inventoryService.receive({
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createReceiveInventory(deps) {
+    async function execute(input) {
+        deps.authorization.requirePermission(input.actorPermissions, 'inventory.adjust');
+        return deps.inventoryService.receive({
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
             quantity: input.quantity,
-            ...optionalReferenceFields(input),
+            ...(input.referenceType === undefined ? {} : { referenceType: input.referenceType }),
+            ...(input.referenceId === undefined ? {} : { referenceId: input.referenceId }),
+            ...(input.idempotencyKey === undefined ? {} : { idempotencyKey: input.idempotencyKey }),
         });
     }
+    return { execute };
 }

@@ -35,8 +35,8 @@ describe('shipments module physical MVC layout', () => {
   });
 
   it('keeps NestJS adapters thin (no repository imports)', () => {
-    const nestService = join(moduleRoot, 'controllers/nest/shipments.service.js');
-    const content = readFileSync(nestService, 'utf8');
+    const nestController = join(moduleRoot, 'controllers/nest/shipments.controller.js');
+    const content = readFileSync(nestController, 'utf8');
     expect(content).not.toMatch(/repositories\//);
     expect(content).toMatch(/views\/shipment\.mapper\.js/);
   });

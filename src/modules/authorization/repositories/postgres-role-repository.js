@@ -39,16 +39,20 @@ function mapPermission(row) {
         createdAt: row.created_at,
     };
 }
-export class PostgresRoleRepository {
-    async create(record, tx) {
+/**
+ * Postgres persistence (function-based repository).
+ * @returns {object}
+ */
+export function createPostgresRoleRepository() {
+    async function create(record, tx) {
         const insertResult = await tx.query(`INSERT INTO roles (tenant_id, name, system_key, is_system, status)
        VALUES ($1, $2, $3, $4, 'ACTIVE')
        RETURNING id, tenant_id, name, system_key, status, is_system, cloned_from_role_id, created_at, updated_at`, [record.tenantId, record.name, record.systemKey, record.isSystem], { operation: 'authorization.roles.create' });
         const role = mapRole(parseOrThrow(roleRowSchema, insertResult.rows[0], 'role row'));
-        await this.setRolePermissions(role.id, record.permissionKeys, tx);
+        await setRolePermissions(role.id, record.permissionKeys, tx);
         return { ...role, permissionKeys: [...record.permissionKeys].sort() };
     }
-    async findById(roleId, tx) {
+    async function findById(roleId, tx) {
         const result = await tx.query(`SELECT id, tenant_id, name, system_key, status, is_system, cloned_from_role_id, created_at, updated_at
        FROM roles
        WHERE id = $1`, [roleId], { operation: 'authorization.roles.find_by_id' });
@@ -57,7 +61,7 @@ export class PostgresRoleRepository {
         }
         return mapRole(parseOrThrow(roleRowSchema, result.rows[0], 'role row'));
     }
-    async findByTenantAndName(tenantId, name, tx) {
+    async function findByTenantAndName(tenantId, name, tx) {
         const result = await tx.query(`SELECT id, tenant_id, name, system_key, status, is_system, cloned_from_role_id, created_at, updated_at
        FROM roles
        WHERE tenant_id = $1 AND lower(name) = lower($2)`, [tenantId, name], { operation: 'authorization.roles.find_by_tenant_and_name' });
@@ -66,7 +70,7 @@ export class PostgresRoleRepository {
         }
         return mapRole(parseOrThrow(roleRowSchema, result.rows[0], 'role row'));
     }
-    async findSystemRoleByKey(tenantId, systemKey, tx) {
+    async function findSystemRoleByKey(tenantId, systemKey, tx) {
         const result = await tx.query(`SELECT id, tenant_id, name, system_key, status, is_system, cloned_from_role_id, created_at, updated_at
        FROM roles
        WHERE tenant_id = $1 AND system_key = $2`, [tenantId, systemKey], { operation: 'authorization.roles.find_system_by_key' });
@@ -75,14 +79,14 @@ export class PostgresRoleRepository {
         }
         return mapRole(parseOrThrow(roleRowSchema, result.rows[0], 'role row'));
     }
-    async listByTenant(tenantId, tx) {
+    async function listByTenant(tenantId, tx) {
         const result = await tx.query(`SELECT id, tenant_id, name, system_key, status, is_system, cloned_from_role_id, created_at, updated_at
        FROM roles
        WHERE tenant_id = $1
        ORDER BY name ASC`, [tenantId], { operation: 'authorization.roles.list_by_tenant' });
         return result.rows.map((row) => mapRole(parseOrThrow(roleRowSchema, row, 'role row')));
     }
-    async listPermissionsForRole(roleId, tx) {
+    async function listPermissionsForRole(roleId, tx) {
         const result = await tx.query(`SELECT p.id, p.key, p.description, p.created_at
        FROM role_permissions rp
        JOIN permissions p ON p.id = rp.permission_id
@@ -90,7 +94,7 @@ export class PostgresRoleRepository {
        ORDER BY p.key ASC`, [roleId], { operation: 'authorization.roles.list_permissions' });
         return result.rows.map((row) => mapPermission(parseOrThrow(permissionRowSchema, row, 'permission row')));
     }
-    async roleGrantsPermission(roleId, permissionKey, tx) {
+    async function roleGrantsPermission(roleId, permissionKey, tx) {
         const result = await tx.query(`SELECT 1
        FROM role_permissions rp
        JOIN permissions p ON p.id = rp.permission_id
@@ -98,7 +102,7 @@ export class PostgresRoleRepository {
        LIMIT 1`, [roleId, permissionKey], { operation: 'authorization.roles.grants_permission' });
         return result.rowCount > 0;
     }
-    async setRolePermissions(roleId, permissionKeys, tx) {
+    async function setRolePermissions(roleId, permissionKeys, tx) {
         const permissionResult = await tx.query(`SELECT id, key
        FROM permissions
        WHERE key = ANY($1::text[])`, [permissionKeys], { operation: 'authorization.roles.resolve_permission_ids' });
@@ -123,4 +127,14 @@ export class PostgresRoleRepository {
             }
         }
     }
+    return {
+        create,
+        findById,
+        findByTenantAndName,
+        findSystemRoleByKey,
+        listByTenant,
+        listPermissionsForRole,
+        roleGrantsPermission,
+        setRolePermissions,
+    };
 }

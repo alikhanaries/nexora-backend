@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { ProcessMarketplaceLifecyclePayload } from '../../../../src/modules/orders/marketplace-ingestion/services/process-marketplace-lifecycle-payload.js';
+import { createProcessMarketplaceLifecyclePayload } from '../../../../src/modules/orders/marketplace-ingestion/services/process-marketplace-lifecycle-payload.js';
 
 describe('ProcessMarketplaceLifecyclePayload', () => {
     it('ensures ingest before applying lifecycle', async () => {
@@ -19,7 +19,7 @@ describe('ProcessMarketplaceLifecyclePayload', () => {
         const lifecycleService = {
             apply: vi.fn(async () => ({ outcome: 'applied' })),
         };
-        const processor = new ProcessMarketplaceLifecyclePayload({
+        const processor = createProcessMarketplaceLifecyclePayload({
             lifecycleService,
             orderAdapterRegistry: { resolve: vi.fn(() => adapter) },
             commerceIntegrationQueryService: { getCommerceIntegrationById: vi.fn() },

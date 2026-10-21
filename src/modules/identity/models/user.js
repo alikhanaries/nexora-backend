@@ -1,54 +1,89 @@
 import { BusinessRuleError } from '../../../shared/errors/index.js';
+
+/** @typedef {import('./email.js').EmailValue} EmailValue */
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   email: EmailValue,
+ *   status: string,
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ * }} User
+ */
+
 const USER_TRANSITIONS = {
     ACTIVE: ['LOCKED', 'DISABLED'],
     LOCKED: ['ACTIVE', 'DISABLED'],
     DISABLED: [],
 };
-export class User {
-    id;
-    email;
-    status;
-    createdAt;
-    updatedAt;
-    constructor(props) {
-        this.id = props.id;
-        this.email = props.email;
-        this.status = props.status;
-        this.createdAt = props.createdAt;
-        this.updatedAt = props.updatedAt;
-    }
-    static create(props) {
-        return new User(props);
-    }
-    static createNew(id, email) {
-        const now = new Date();
-        return new User({
-            id,
-            email,
-            status: 'ACTIVE',
-            createdAt: now,
-            updatedAt: now,
-        });
-    }
-    canAuthenticate() {
-        return this.status === 'ACTIVE';
-    }
-    transitionTo(nextStatus) {
-        if (this.status === nextStatus)
-            return this;
-        const allowed = USER_TRANSITIONS[this.status];
-        if (!allowed.includes(nextStatus)) {
-            throw new BusinessRuleError(`User status cannot transition from ${this.status} to ${nextStatus}`);
-        }
-        return new User({
-            ...this,
-            status: nextStatus,
-            updatedAt: new Date(),
-        });
-    }
+
+/**
+ * @param {User} props
+ * @returns {User}
+ */
+export function reconstituteUser(props) {
+    return {
+        id: props.id,
+        email: props.email,
+        status: props.status,
+        createdAt: props.createdAt,
+        updatedAt: props.updatedAt,
+    };
 }
+
+/**
+ * @param {string} id
+ * @param {EmailValue} email
+ * @returns {User}
+ */
+export function createUserEntity(id, email) {
+    const now = new Date();
+    return reconstituteUser({
+        id,
+        email,
+        status: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+    });
+}
+
+/**
+ * @param {User} user
+ * @returns {boolean}
+ */
+export function canAuthenticate(user) {
+    return user.status === 'ACTIVE';
+}
+
+/**
+ * @param {User} user
+ * @param {string} nextStatus
+ * @returns {User}
+ */
+export function transitionUserStatus(user, nextStatus) {
+    if (user.status === nextStatus) {
+        return user;
+    }
+    const allowed = USER_TRANSITIONS[user.status];
+    if (!allowed.includes(nextStatus)) {
+        throw new BusinessRuleError(`User status cannot transition from ${user.status} to ${nextStatus}`);
+    }
+    return reconstituteUser({
+        ...user,
+        status: nextStatus,
+        updatedAt: new Date(),
+    });
+}
+
+/**
+ * @param {string} from
+ * @param {string} to
+ * @returns {boolean}
+ */
 export function canTransitionUserStatus(from, to) {
-    if (from === to)
+    if (from === to) {
         return true;
+    }
     return USER_TRANSITIONS[from].includes(to);
 }

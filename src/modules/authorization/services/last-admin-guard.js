@@ -1,5 +1,6 @@
 import { BusinessRuleError } from '../../../shared/errors/index.js';
 import { TENANT_ADMIN_PERMISSION } from '../models/permission.js';
+import { requireAuthorizationDeps } from './require-deps.js';
 
 /**
  * Prevents removing `tenant.admin` from the last active membership that holds
@@ -9,7 +10,7 @@ import { TENANT_ADMIN_PERMISSION } from '../models/permission.js';
  * @returns {{ assertCanRemoveRole: Function }}
  */
 export function createLastAdminGuard(deps) {
-    requireLastAdminGuardDeps(deps);
+    requireAuthorizationDeps(deps, 'createLastAdminGuard', ['roles', 'membershipRoles']);
 
     /**
      * @param {string} tenantId
@@ -34,28 +35,4 @@ export function createLastAdminGuard(deps) {
     }
 
     return { assertCanRemoveRole };
-}
-
-/** @deprecated Prefer {@link createLastAdminGuard}; kept for existing import sites. */
-export class LastAdminGuard {
-    /**
-     * @param {{ roles: object, membershipRoles: object }} deps
-     */
-    constructor(deps) {
-        return createLastAdminGuard(deps);
-    }
-}
-
-/**
- * @param {object} deps
- */
-function requireLastAdminGuardDeps(deps) {
-    if (deps === undefined || deps === null || typeof deps !== 'object') {
-        throw new Error('createLastAdminGuard requires a deps object');
-    }
-    for (const name of ['roles', 'membershipRoles']) {
-        if (deps[name] === undefined || deps[name] === null) {
-            throw new Error(`createLastAdminGuard requires deps.${name}`);
-        }
-    }
 }

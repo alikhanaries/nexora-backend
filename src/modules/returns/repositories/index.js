@@ -1,1 +1,1 @@
-export { PostgresReturnRepository } from './postgres-return-repository.js';
+export { createPostgresReturnRepository } from './postgres-return-repository.js';

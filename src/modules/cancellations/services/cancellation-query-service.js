@@ -89,10 +89,3 @@ export function createCancellationQueryService(deps) {
         listCancellations,
     };
 }
-
-/** @deprecated Prefer {@link createCancellationQueryService}; kept for existing import sites and JSDoc typedefs. */
-export class DefaultCancellationQueryService {
-    constructor(deps) {
-        return createCancellationQueryService(deps);
-    }
-}

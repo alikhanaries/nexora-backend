@@ -56,7 +56,7 @@ class CompatibilityV2Controller {
 
   @Get('/api/v2/shipments/merchant')
   async listMerchantShipments(@Query() query) {
-    const parsed = listMerchantShipmentsQuerySchema.parse(query);
+    const parsed = parseOrThrow(listMerchantShipmentsQuerySchema, query, 'list query');
     return this.compatibilityHttpService.listMerchantShipmentsV2(parsed);
   }
 
@@ -88,7 +88,7 @@ class CompatibilityV2Controller {
 
   @Get('/api/v2/cancellations/merchant')
   async listMerchantCancellations(@Query() query) {
-    const parsed = listMerchantCancellationsQuerySchema.parse(query);
+    const parsed = parseOrThrow(listMerchantCancellationsQuerySchema, query, 'list query');
     return this.compatibilityHttpService.listMerchantCancellationsV2(parsed);
   }
 
@@ -101,7 +101,7 @@ class CompatibilityV2Controller {
 
   @Get('/api/v2/returns/merchant/new')
   async listNewMerchantReturns(@Query() query) {
-    const parsed = listNewMerchantReturnsQuerySchema.parse(query);
+    const parsed = parseOrThrow(listNewMerchantReturnsQuerySchema, query, 'list query');
     return this.compatibilityHttpService.listNewMerchantReturnsV2(parsed);
   }
 
@@ -117,7 +117,7 @@ class CompatibilityV2Controller {
 
   @Get('/api/v2/returns/merchant')
   async listMerchantReturns(@Query() query) {
-    const parsed = listMerchantReturnsQuerySchema.parse(query);
+    const parsed = parseOrThrow(listMerchantReturnsQuerySchema, query, 'list query');
     return this.compatibilityHttpService.listMerchantReturnsV2(parsed);
   }
 
@@ -143,7 +143,7 @@ class CompatibilityV2Controller {
 
   @Get('/api/v2/products')
   async listProducts(@Query() query) {
-    const parsed = listProductsByMerchantSkuQuerySchema.parse(query);
+    const parsed = parseOrThrow(listProductsByMerchantSkuQuerySchema, query, 'list query');
     return this.compatibilityHttpService.listProductsV2(parsed);
   }
 

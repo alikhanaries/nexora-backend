@@ -1,1 +1,1 @@
-export { PostgresShipmentRepository } from './postgres-shipment-repository.js';
+export { createPostgresShipmentRepository } from './postgres-shipment-repository.js';

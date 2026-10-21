@@ -18,23 +18,11 @@ const LIFECYCLE_PERMISSIONS = Object.freeze([
 /**
  * Applies a normalized lifecycle command to Wasl order services (no provider HTTP).
  */
-export class ExecuteMarketplaceOrderLifecycleOperation {
-    deps;
-
-    /**
-     * @param {object} deps
-     * @param {{ listOrderLines: (queryable: object, tenantId: string, orderId: string) => Promise<import('../../models/order-line.js').OrderLine[]> }} deps.orders
-     * @param {import('../../../products/public/index.js').ProductQueryService} deps.productQueryService
-     * @param {import('../../services/confirm-order.js').ConfirmOrder} deps.confirmOrder
-     * @param {import('../../../cancellations/public/cancellation-command-service.js').DefaultCancellationCommandService} deps.cancellationCommandService
-     * @param {import('../../../returns/public/return-command-service.js').DefaultReturnCommandService} [deps.returnCommandService]
-     * @param {import('../../../shipments/public/shipment-command-service.js').DefaultShipmentCommandService} [deps.shipmentCommandService]
-     * @param {{ execute: (input: object) => Promise<{ shipment: object }> }} [deps.shipShipment]
-     */
-    constructor(deps) {
-        this.deps = deps;
-    }
-
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createExecuteMarketplaceOrderLifecycleOperation(deps) {
     /**
      * @param {object} input
      * @param {string} input.tenantId
@@ -43,16 +31,16 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
      * @param {import('../../models/order.js').Order} order
      * @param {object} tx
      */
-    async execute(input, command, order, tx) {
+    async function execute(input, command, order, tx) {
         switch (command.operation) {
             case MarketplaceOrderLifecycleOperation.STATUS_SYNC:
-                return this.applyStatusSync(input, command, order, tx);
+                return applyStatusSync(input, command, order, tx);
             case MarketplaceOrderLifecycleOperation.CANCEL_ORDER:
-                return this.applyCancelOrder(input, command, order, tx);
+                return applyCancelOrder(input, command, order, tx);
             case MarketplaceOrderLifecycleOperation.UPDATE_ORDER:
                 return { outcome: MarketplaceOrderLifecycleOutcome.NOOP, orderId: order.id };
             case MarketplaceOrderLifecycleOperation.RETURN_ORDER:
-                return this.applyReturnOrder(input, command, order, tx);
+                return applyReturnOrder(input, command, order, tx);
             case MarketplaceOrderLifecycleOperation.REFUND_ORDER:
             case MarketplaceOrderLifecycleOperation.FULFILL_ORDER:
             case MarketplaceOrderLifecycleOperation.SHIPMENT_UPDATE:
@@ -72,7 +60,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
      * @param {import('../../models/order.js').Order} order
      * @param {object} tx
      */
-    async applyStatusSync(input, command, order, tx) {
+    async function applyStatusSync(input, command, order, tx) {
         if (command.targetStatus === NormalizedMarketplaceLifecycleTargetStatus.UNKNOWN) {
             return { outcome: MarketplaceOrderLifecycleOutcome.NOOP, orderId: order.id };
         }
@@ -80,7 +68,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
             if (order.status === 'CONFIRMED') {
                 return { outcome: MarketplaceOrderLifecycleOutcome.DUPLICATE, orderId: order.id };
             }
-            await this.deps.confirmOrder.execute({
+            await deps.confirmOrder.execute({
                 tenantId: input.tenantId,
                 actorId: SYSTEM_ACTOR_ID,
                 actorKind: 'api-key',
@@ -91,17 +79,17 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
             return { outcome: MarketplaceOrderLifecycleOutcome.APPLIED, orderId: order.id };
         }
         if (command.targetStatus === NormalizedMarketplaceLifecycleTargetStatus.CANCELLED) {
-            return this.applyCancelOrder(input, {
+            return applyCancelOrder(input, {
                 ...command,
                 operation: MarketplaceOrderLifecycleOperation.CANCEL_ORDER,
                 lines: undefined,
             }, order, tx);
         }
         if (command.targetStatus === NormalizedMarketplaceLifecycleTargetStatus.FULFILLED) {
-            return this.applyFulfilledStatusSync(input, command, order, tx);
+            return applyFulfilledStatusSync(input, command, order, tx);
         }
         if (command.targetStatus === NormalizedMarketplaceLifecycleTargetStatus.RETURNED) {
-            return this.applyReturnOrder(input, {
+            return applyReturnOrder(input, {
                 ...command,
                 operation: MarketplaceOrderLifecycleOperation.RETURN_ORDER,
                 lines: command.lines ?? [],
@@ -118,16 +106,16 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
      * @param {import('../../models/order.js').Order} order
      * @param {object} tx
      */
-    async applyFulfilledStatusSync(input, command, order, tx) {
+    async function applyFulfilledStatusSync(input, command, order, tx) {
         if (order.status === 'SHIPPED' || order.status === 'DELIVERED') {
             return { outcome: MarketplaceOrderLifecycleOutcome.DUPLICATE, orderId: order.id };
         }
-        if (this.deps.shipmentCommandService === undefined || this.deps.shipShipment === undefined) {
+        if (deps.shipmentCommandService === undefined || deps.shipShipment === undefined) {
             throw new MarketplaceOrderLifecyclePermanentError('Shipment services are not configured for fulfillment sync');
         }
         const lines = await resolveMarketplaceLifecycleOrderLines({
-            orders: this.deps.orders,
-            productQueryService: this.deps.productQueryService,
+            orders: deps.orders,
+            productQueryService: deps.productQueryService,
         }, {
             tenantId: input.tenantId,
             orderId: order.id,
@@ -139,7 +127,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
         if (shipmentLines.length === 0) {
             return { outcome: MarketplaceOrderLifecycleOutcome.NOOP, orderId: order.id };
         }
-        const { shipment } = await this.deps.shipmentCommandService.createShipment({
+        const { shipment } = await deps.shipmentCommandService.createShipment({
             tenantId: input.tenantId,
             actorId: SYSTEM_ACTOR_ID,
             actorKind: 'api-key',
@@ -150,7 +138,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
             skipAuthorization: true,
             transaction: tx,
         });
-        await this.deps.shipShipment.execute({
+        await deps.shipShipment.execute({
             tenantId: input.tenantId,
             actorId: SYSTEM_ACTOR_ID,
             actorKind: 'api-key',
@@ -168,13 +156,13 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
      * @param {import('../../models/order.js').Order} order
      * @param {object} tx
      */
-    async applyReturnOrder(input, command, order, tx) {
-        if (this.deps.returnCommandService === undefined) {
+    async function applyReturnOrder(input, command, order, tx) {
+        if (deps.returnCommandService === undefined) {
             throw new MarketplaceOrderLifecyclePermanentError('Return command service is not configured');
         }
         const lines = await resolveMarketplaceLifecycleOrderLines({
-            orders: this.deps.orders,
-            productQueryService: this.deps.productQueryService,
+            orders: deps.orders,
+            productQueryService: deps.productQueryService,
         }, {
             tenantId: input.tenantId,
             orderId: order.id,
@@ -186,7 +174,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
         if (returnLines.length === 0) {
             throw new BusinessRuleError('Return must include at least one line');
         }
-        const { return: createdReturn } = await this.deps.returnCommandService.createReturn({
+        const { return: createdReturn } = await deps.returnCommandService.createReturn({
             tenantId: input.tenantId,
             actorId: SYSTEM_ACTOR_ID,
             actorKind: 'api-key',
@@ -206,13 +194,13 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
      * @param {import('../../models/order.js').Order} order
      * @param {object} tx
      */
-    async applyCancelOrder(input, command, order, tx) {
+    async function applyCancelOrder(input, command, order, tx) {
         if (order.status === 'CANCELLED') {
             return { outcome: MarketplaceOrderLifecycleOutcome.DUPLICATE, orderId: order.id };
         }
         const lines = await resolveMarketplaceLifecycleOrderLines({
-            orders: this.deps.orders,
-            productQueryService: this.deps.productQueryService,
+            orders: deps.orders,
+            productQueryService: deps.productQueryService,
         }, {
             tenantId: input.tenantId,
             orderId: order.id,
@@ -225,7 +213,7 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
             throw new BusinessRuleError('No cancellable quantity remains on this order');
         }
         try {
-            await this.deps.cancellationCommandService.createCancellation({
+            await deps.cancellationCommandService.createCancellation({
                 tenantId: input.tenantId,
                 actorId: SYSTEM_ACTOR_ID,
                 actorKind: 'api-key',
@@ -248,4 +236,5 @@ export class ExecuteMarketplaceOrderLifecycleOperation {
         }
         return { outcome: MarketplaceOrderLifecycleOutcome.APPLIED, orderId: order.id };
     }
+    return { execute };
 }

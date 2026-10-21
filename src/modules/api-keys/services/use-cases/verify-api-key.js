@@ -46,10 +46,3 @@ export function createVerifyApiKey(deps) {
 
     return { execute };
 }
-
-/** @deprecated Prefer {@link createVerifyApiKey}; kept for existing import sites. */
-export class VerifyApiKeyUseCase {
-    constructor(deps) {
-        return createVerifyApiKey(deps);
-    }
-}

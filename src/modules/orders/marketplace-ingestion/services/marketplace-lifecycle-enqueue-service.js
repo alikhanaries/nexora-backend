@@ -6,19 +6,11 @@ import {
     externalOrderIdFromWebhookEvent,
 } from '../../../webhooks/marketplace/services/derive-marketplace-lifecycle-webhook-operation.js';
 
-export class MarketplaceLifecycleEnqueueService {
-    deps;
-
-    /**
-     * @param {object} deps
-     * @param {import('../../../../shared/queue/job-queue.port.js').JobQueue} deps.queue
-     * @param {import('../../../../shared/metrics/metrics-recorder.js').MetricsRecorder} [deps.metrics]
-     * @param {import('../../../../app/config/config.js').AppConfig['marketplaceLifecycle']} deps.lifecycleConfig
-     */
-    constructor(deps) {
-        this.deps = deps;
-    }
-
+/**
+ * @param {object} deps
+ * @returns {{ enqueue: Function }}
+ */
+export function createMarketplaceLifecycleEnqueueService(deps) {
     /**
      * @param {object} input
      * @param {import('../../../webhooks/marketplace/services/normalized-marketplace-webhook-event.schema.js').NormalizedMarketplaceWebhookEvent} input.event
@@ -26,12 +18,12 @@ export class MarketplaceLifecycleEnqueueService {
      * @param {string} input.channelId
      * @param {string|null} [input.correlationId]
      */
-    async enqueueFromWebhook(input) {
+    async function enqueueFromWebhook(input) {
         const { event } = input;
         const operation = deriveMarketplaceLifecycleWebhookOperation(event);
         const externalEventId = event.providerEventId ?? event.deduplicationKey;
         const externalOrderId = externalOrderIdFromWebhookEvent(event);
-        return this.enqueue({
+        return enqueue({
             tenantId: input.tenantId,
             channelId: input.channelId,
             marketplaceKey: event.marketplaceKey,
@@ -54,9 +46,9 @@ export class MarketplaceLifecycleEnqueueService {
      * @param {import('./normalized-marketplace-lifecycle-command.schema.js').normalizedMarketplaceLifecycleCommandSchema['_output']} input.command
      * @param {string|null} [input.correlationId]
      */
-    async enqueueInboundCommand(input) {
+    async function enqueueInboundCommand(input) {
         const { command } = input;
-        return this.enqueue({
+        return enqueue({
             tenantId: input.tenantId,
             channelId: input.channelId,
             marketplaceKey: command.marketplaceKey,
@@ -83,8 +75,8 @@ export class MarketplaceLifecycleEnqueueService {
      * @param {unknown} [input.payload]
      * @param {string|null} [input.correlationId]
      */
-    async enqueueOutboundCommand(input) {
-        return this.enqueue({
+    async function enqueueOutboundCommand(input) {
+        return enqueue({
             tenantId: input.tenantId,
             channelId: input.channelId,
             marketplaceKey: input.marketplaceKey,
@@ -105,28 +97,28 @@ export class MarketplaceLifecycleEnqueueService {
     /**
      * @param {object} job
      */
-    async enqueue(job) {
+    async function enqueue(job) {
         const jobId = buildMarketplaceLifecycleJobId({
             channelId: job.channelId,
             marketplaceKey: job.marketplaceKey,
             externalEventId: job.externalEventId,
             operation: job.operation,
         });
-        const queueName = this.deps.lifecycleConfig.queueName;
+        const queueName = deps.lifecycleConfig.queueName;
         const payload = {
             ...job,
             receivedAt: new Date().toISOString(),
         };
-        const enqueued = await this.deps.queue.enqueue(
+        const enqueued = await deps.queue.enqueue(
             queueName,
             JobName.PROCESS_MARKETPLACE_LIFECYCLE,
             payload,
             {
                 jobId,
-                attempts: this.deps.lifecycleConfig.jobAttempts,
+                attempts: deps.lifecycleConfig.jobAttempts,
             },
         );
-        this.deps.metrics?.recordMarketplaceLifecycleWorker?.({
+        deps.metrics?.recordMarketplaceLifecycleWorker?.({
             outcome: 'enqueued',
             marketplace: job.marketplaceKey,
             operation: job.operation,
@@ -134,4 +126,10 @@ export class MarketplaceLifecycleEnqueueService {
         });
         return enqueued;
     }
+    return {
+        enqueue,
+        enqueueFromWebhook,
+        enqueueInboundCommand,
+        enqueueOutboundCommand,
+    };
 }

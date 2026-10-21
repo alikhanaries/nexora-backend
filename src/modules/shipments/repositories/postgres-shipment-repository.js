@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { parseOrThrow } from '../../../shared/validation/index.js';
-import { ShipmentLine } from '../models/shipment-line.js';
-import { Shipment } from '../models/shipment.js';
+import { reconstituteShipmentLine } from '../models/shipment-line.js';
+import { reconstituteShipment } from '../models/shipment.js';
 import { ShipmentStatus } from '../models/shipment-status.js';
 const shipmentRowSchema = z.object({
     id: z.string().uuid(),
@@ -39,7 +39,7 @@ const shipmentSelectAliased = `s.id, s.tenant_id, s.order_id, s.external_referen
   s.shipped_at, s.delivered_at, s.created_at, s.updated_at`;
 const shipmentLineSelect = `id, tenant_id, shipment_id, order_line_id, quantity, created_at`;
 function toShipment(row) {
-    return Shipment.reconstitute({
+    return reconstituteShipment({
         id: row.id,
         tenantId: row.tenant_id,
         orderId: row.order_id,
@@ -55,7 +55,7 @@ function toShipment(row) {
     });
 }
 function toShipmentLine(row) {
-    return ShipmentLine.reconstitute({
+    return reconstituteShipmentLine({
         id: row.id,
         tenantId: row.tenant_id,
         shipmentId: row.shipment_id,
@@ -64,34 +64,7 @@ function toShipmentLine(row) {
         createdAt: row.created_at,
     });
 }
-export class PostgresShipmentRepository {
-    async findById(queryable, tenantId, shipmentId) {
-        const result = await queryable.query(`SELECT ${shipmentSelect} FROM shipments WHERE tenant_id = $1 AND id = $2`, [tenantId, shipmentId], { operation: 'shipments.find_by_id' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
-    }
-    async findByExternalReference(queryable, tenantId, externalReference) {
-        const result = await queryable.query(`SELECT ${shipmentSelect}
-       FROM shipments
-       WHERE tenant_id = $1 AND external_reference = $2`, [tenantId, externalReference], { operation: 'shipments.find_by_external_reference' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
-    }
-    async lockByExternalReferenceForUpdate(transaction, tenantId, externalReference) {
-        const result = await transaction.query(`SELECT ${shipmentSelect}
-       FROM shipments
-       WHERE tenant_id = $1 AND external_reference = $2
-       FOR UPDATE`, [tenantId, externalReference], { operation: 'shipments.lock_by_external_reference' });
-        const row = result.rows[0];
-        if (row === undefined)
-            return null;
-        return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
-    }
-    buildListConditions(tenantId, filters) {
+function buildListConditions(tenantId, filters) {
         const conditions = ['s.tenant_id = $1'];
         const params = [tenantId];
         let paramIndex = 2;
@@ -197,17 +170,47 @@ export class PostgresShipmentRepository {
             : '';
         return { conditions, params, nextParamIndex: paramIndex, joinClause };
     }
-    async count(queryable, tenantId, filters) {
-        const { conditions, params, joinClause } = this.buildListConditions(tenantId, filters);
+
+
+export function createPostgresShipmentRepository() {
+    return {
+        async findById(queryable, tenantId, shipmentId) {
+        const result = await queryable.query(`SELECT ${shipmentSelect} FROM shipments WHERE tenant_id = $1 AND id = $2`, [tenantId, shipmentId], { operation: 'shipments.find_by_id' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
+        },
+        async findByExternalReference(queryable, tenantId, externalReference) {
+        const result = await queryable.query(`SELECT ${shipmentSelect}
+       FROM shipments
+       WHERE tenant_id = $1 AND external_reference = $2`, [tenantId, externalReference], { operation: 'shipments.find_by_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
+        },
+        async lockByExternalReferenceForUpdate(transaction, tenantId, externalReference) {
+        const result = await transaction.query(`SELECT ${shipmentSelect}
+       FROM shipments
+       WHERE tenant_id = $1 AND external_reference = $2
+       FOR UPDATE`, [tenantId, externalReference], { operation: 'shipments.lock_by_external_reference' });
+        const row = result.rows[0];
+        if (row === undefined)
+            return null;
+        return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
+        },
+        async count(queryable, tenantId, filters) {
+        const { conditions, params, joinClause } = buildListConditions(tenantId, filters);
         const result = await queryable.query(`SELECT COUNT(*)::int AS total
        FROM shipments s
        ${joinClause}
        WHERE ${conditions.join(' AND ')}`, params, { operation: 'shipments.count' });
         const row = result.rows[0];
         return Number(row?.total ?? 0);
-    }
-    async listPageOffset(queryable, tenantId, filters, page, pageSize, sortDirection = 'desc') {
-        const { conditions, params, nextParamIndex, joinClause } = this.buildListConditions(tenantId, filters);
+        },
+        async listPageOffset(queryable, tenantId, filters, page, pageSize, sortDirection = 'desc') {
+        const { conditions, params, nextParamIndex, joinClause } = buildListConditions(tenantId, filters);
         const offset = (page - 1) * pageSize;
         const limitParam = nextParamIndex;
         const offsetParam = nextParamIndex + 1;
@@ -220,8 +223,8 @@ export class PostgresShipmentRepository {
        ORDER BY s.created_at ${orderDirection}, s.id ${orderDirection}
        LIMIT $${limitParam} OFFSET $${offsetParam}`, listParams, { operation: 'shipments.list_page_offset' });
         return result.rows.map((row) => toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row')));
-    }
-    async listPage(queryable, tenantId, filters, limit, cursorCreatedAt, cursorId) {
+        },
+        async listPage(queryable, tenantId, filters, limit, cursorCreatedAt, cursorId) {
         const conditions = ['tenant_id = $1'];
         const parameters = [tenantId];
         if (filters.orderId !== undefined) {
@@ -249,9 +252,9 @@ export class PostgresShipmentRepository {
         return {
             items: result.rows.map((row) => toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'))),
         };
-    }
-    async insertShipment(transaction, shipment) {
-        const p = shipment.toProps();
+        },
+        async insertShipment(transaction, shipment) {
+        const p = shipment;
         await transaction.query(`INSERT INTO shipments (
          id, tenant_id, order_id, external_reference, carrier, service, tracking_number, status,
          shipped_at, delivered_at, created_at, updated_at
@@ -269,9 +272,9 @@ export class PostgresShipmentRepository {
             p.createdAt,
             p.updatedAt,
         ], { operation: 'shipments.insert' });
-    }
-    async updateShipment(transaction, shipment) {
-        const p = shipment.toProps();
+        },
+        async updateShipment(transaction, shipment) {
+        const p = shipment;
         await transaction.query(`UPDATE shipments SET
          carrier = $3,
          service = $4,
@@ -291,21 +294,21 @@ export class PostgresShipmentRepository {
             p.deliveredAt,
             p.updatedAt,
         ], { operation: 'shipments.update' });
-    }
-    async insertShipmentLine(transaction, line) {
-        const p = line.toProps();
+        },
+        async insertShipmentLine(transaction, line) {
+        const p = line;
         await transaction.query(`INSERT INTO shipment_lines (
          id, tenant_id, shipment_id, order_line_id, quantity, created_at
        ) VALUES ($1,$2,$3,$4,$5,$6)`, [p.id, p.tenantId, p.shipmentId, p.orderLineId, p.quantity, p.createdAt], { operation: 'shipment_lines.insert' });
-    }
-    async listShipmentLines(queryable, tenantId, shipmentId) {
+        },
+        async listShipmentLines(queryable, tenantId, shipmentId) {
         const result = await queryable.query(`SELECT ${shipmentLineSelect}
        FROM shipment_lines
        WHERE tenant_id = $1 AND shipment_id = $2
        ORDER BY created_at`, [tenantId, shipmentId], { operation: 'shipment_lines.list' });
         return result.rows.map((row) => toShipmentLine(parseOrThrow(shipmentLineRowSchema, row, 'shipment_lines row')));
-    }
-    async lockShipmentForUpdate(transaction, tenantId, shipmentId) {
+        },
+        async lockShipmentForUpdate(transaction, tenantId, shipmentId) {
         const result = await transaction.query(`SELECT ${shipmentSelect}
        FROM shipments
        WHERE tenant_id = $1 AND id = $2
@@ -314,5 +317,6 @@ export class PostgresShipmentRepository {
         if (row === undefined)
             return null;
         return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
-    }
+        },
+    };
 }

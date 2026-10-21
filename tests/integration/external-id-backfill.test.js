@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createApplication } from '../../src/app/create-application.js';
 import { createExternalIdMappingModule } from '../../src/modules/external-id-mapping/index.js';
-import { BackfillExternalIntegerIdMappings } from '../../src/modules/external-id-mapping/services/backfill-external-integer-id-mappings.js';
-import { PostgresExternalIdBackfillQueries } from '../../src/modules/external-id-mapping/repositories/postgres-external-id-backfill-queries.js';
+import { createBackfillExternalIntegerIdMappings } from '../../src/modules/external-id-mapping/services/backfill-external-integer-id-mappings.js';
+import { createPostgresExternalIdBackfillQueries } from '../../src/modules/external-id-mapping/repositories/postgres-external-id-backfill-queries.js';
 import {
     ExternalIdMappingProvider,
     ExternalIdMappingResourceType,
@@ -91,11 +91,11 @@ async function findReturnId(database, tenantId, merchantReturnNo) {
 function createBackfillService(infra, overrides = {}) {
     const module = createExternalIdMappingModule({ database: infra.database, logger: infra.logger });
     const silentLogger = { info() {}, warn() {}, error() {}, debug() {}, child: () => silentLogger };
-    return new BackfillExternalIntegerIdMappings({
+    return createBackfillExternalIntegerIdMappings({
         database: infra.database,
         externalIntegerIdMappingCommandService:
             overrides.commandService ?? module.externalIntegerIdMappingCommandService,
-        backfillQueries: new PostgresExternalIdBackfillQueries(),
+        backfillQueries: createPostgresExternalIdBackfillQueries(),
         logger: silentLogger,
     });
 }

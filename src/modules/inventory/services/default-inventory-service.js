@@ -4,26 +4,24 @@ import { MovementType } from '../models/movement-type.js';
 import { ReservationStatus } from '../models/reservation-status.js';
 import { INVENTORY_AGGREGATE_TYPE, INVENTORY_EVENT_TYPES, INVENTORY_EVENT_VERSION, } from './inventory-events.js';
 import { optionalReferenceFields } from './optional-fields.js';
+import { assertStockLocationUsable } from '../models/stock-location.js';
+import { isInventoryReservationReleased } from '../models/reservation.js';
 
 const ORDER_REFERENCE_TYPE = 'ORDER';
 const SHIPMENT_REFERENCE_TYPE = 'SHIPMENT';
 
-export class DefaultInventoryService {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async verifyUsableStockLocation(tenantId, stockLocationId, tx) {
+export function createDefaultInventoryService(deps) {
+    async function verifyUsableStockLocation(tenantId, stockLocationId, tx) {
         if (tx !== undefined) {
-            await this.assertActiveStockLocation(tx, tenantId, stockLocationId);
+            await assertActiveStockLocation(tx, tenantId, stockLocationId);
             return;
         }
-        await this.runInTransaction(tenantId, undefined, (transaction) => this.assertActiveStockLocation(transaction, tenantId, stockLocationId));
+        await runInTransaction(tenantId, undefined, (transaction) => assertActiveStockLocation(transaction, tenantId, stockLocationId));
     }
-    async getAvailability(tenantId, productId, stockLocationId, tx) {
-        await this.assertProductExists(tenantId, productId, tx);
-        const queryable = tx ?? this.deps.queryable;
-        const balances = await this.deps.inventoryRepository.listBalances(queryable, tenantId, {
+    async function getAvailability(tenantId, productId, stockLocationId, tx) {
+        await assertProductExists(tenantId, productId, tx);
+        const queryable = tx ?? deps.queryable;
+        const balances = await deps.inventoryRepository.listBalances(queryable, tenantId, {
             productId,
             ...(stockLocationId === undefined ? {} : { stockLocationId }),
         });
@@ -45,17 +43,17 @@ export class DefaultInventoryService {
             totals,
         };
     }
-    async reserve(input, tx) {
-        return this.runInTransaction(input.tenantId, tx, (transaction) => this.reserveInTransaction(transaction, input));
+    async function reserve(input, tx) {
+        return runInTransaction(input.tenantId, tx, (transaction) => reserveInTransaction(transaction, input));
     }
-    async release(input, tx) {
-        return this.runInTransaction(input.tenantId, tx, (transaction) => this.releaseInTransaction(transaction, input));
+    async function release(input, tx) {
+        return runInTransaction(input.tenantId, tx, (transaction) => releaseInTransaction(transaction, input));
     }
-    async fulfillReservedForShipment(input, tx) {
-        return this.runInTransaction(input.tenantId, tx, (transaction) => this.fulfillReservedForShipmentInTransaction(transaction, input));
+    async function fulfillReservedForShipment(input, tx) {
+        return runInTransaction(input.tenantId, tx, (transaction) => fulfillReservedForShipmentInTransaction(transaction, input));
     }
-    async adjust(input, tx) {
-        return this.runInTransaction(input.tenantId, tx, (transaction) => this.mutateOnHand(transaction, {
+    async function adjust(input, tx) {
+        return runInTransaction(input.tenantId, tx, (transaction) => mutateOnHand(transaction, {
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
@@ -66,11 +64,11 @@ export class DefaultInventoryService {
             outboxEventType: INVENTORY_EVENT_TYPES.INVENTORY_CHANGED,
         }));
     }
-    async receive(input, tx) {
+    async function receive(input, tx) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Receive quantity must be positive');
         }
-        return this.runInTransaction(input.tenantId, tx, (transaction) => this.mutateOnHand(transaction, {
+        return runInTransaction(input.tenantId, tx, (transaction) => mutateOnHand(transaction, {
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
@@ -81,11 +79,11 @@ export class DefaultInventoryService {
             outboxEventType: INVENTORY_EVENT_TYPES.INVENTORY_CHANGED,
         }));
     }
-    async recordSale(input, tx) {
+    async function recordSale(input, tx) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Sale quantity must be positive');
         }
-        return this.runInTransaction(input.tenantId, tx, (transaction) => this.mutateOnHand(transaction, {
+        return runInTransaction(input.tenantId, tx, (transaction) => mutateOnHand(transaction, {
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
@@ -96,11 +94,11 @@ export class DefaultInventoryService {
             outboxEventType: INVENTORY_EVENT_TYPES.INVENTORY_CHANGED,
         }));
     }
-    async recordReturn(input, tx) {
+    async function recordReturn(input, tx) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Return quantity must be positive');
         }
-        return this.runInTransaction(input.tenantId, tx, (transaction) => this.mutateOnHand(transaction, {
+        return runInTransaction(input.tenantId, tx, (transaction) => mutateOnHand(transaction, {
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
@@ -111,19 +109,19 @@ export class DefaultInventoryService {
             outboxEventType: INVENTORY_EVENT_TYPES.INVENTORY_CHANGED,
         }));
     }
-    async runInTransaction(tenantId, tx, work) {
+    async function runInTransaction(tenantId, tx, work) {
         if (tx !== undefined) {
             return work(tx);
         }
-        return this.deps.transactionManager.execute(work, { tenantId });
+        return deps.transactionManager.execute(work, { tenantId });
     }
-    async reserveInTransaction(transaction, input) {
+    async function reserveInTransaction(transaction, input) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Reservation quantity must be positive');
         }
-        await this.assertProductExists(input.tenantId, input.productId, transaction);
-        await this.assertActiveStockLocation(transaction, input.tenantId, input.stockLocationId);
-        const reservationInsert = await this.deps.inventoryRepository.insertReservation(transaction, {
+        await assertProductExists(input.tenantId, input.productId, transaction);
+        await assertActiveStockLocation(transaction, input.tenantId, input.stockLocationId);
+        const reservationInsert = await deps.inventoryRepository.insertReservation(transaction, {
             id: randomUUID(),
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
@@ -148,14 +146,14 @@ export class DefaultInventoryService {
                     requestedQuantity: input.quantity,
                 });
             }
-            const balance = await this.deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
+            const balance = await deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
             return {
                 reservationId: reservation.id,
                 idempotent: true,
-                balance: this.toBalanceSnapshot(balance),
+                balance: toBalanceSnapshot(balance),
             };
         }
-        const balance = await this.deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
+        const balance = await deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
         if (balance.available < input.quantity) {
             throw new BusinessRuleError('Insufficient inventory to reserve', {
                 productId: input.productId,
@@ -167,8 +165,8 @@ export class DefaultInventoryService {
         const reserved = balance.reserved + input.quantity;
         const available = balance.onHand - reserved;
         const updatedAt = new Date();
-        await this.deps.inventoryRepository.updateBalance(transaction, balance.id, { onHand: balance.onHand, reserved, available }, updatedAt);
-        await this.insertMovementIfNew(transaction, {
+        await deps.inventoryRepository.updateBalance(transaction, balance.id, { onHand: balance.onHand, reserved, available }, updatedAt);
+        await insertMovementIfNew(transaction, {
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
@@ -178,7 +176,7 @@ export class DefaultInventoryService {
             referenceId: input.referenceId,
             ...optionalReferenceFields({ idempotencyKey: input.idempotencyKey }),
         });
-        await this.recordSideEffects(transaction, {
+        await recordSideEffects(transaction, {
             tenantId: input.tenantId,
             aggregateId: balance.id,
             auditEventType: 'INVENTORY_RESERVED',
@@ -199,22 +197,22 @@ export class DefaultInventoryService {
             balance: { onHand: balance.onHand, reserved, available },
         };
     }
-    async releaseInTransaction(transaction, input) {
-        await this.assertProductExists(input.tenantId, input.productId, transaction);
-        await this.assertActiveStockLocation(transaction, input.tenantId, input.stockLocationId);
-        const reservation = await this.deps.inventoryRepository.findReservationByReference(transaction, input.tenantId, input.referenceType, input.referenceId, input.stockLocationId, input.productId);
+    async function releaseInTransaction(transaction, input) {
+        await assertProductExists(input.tenantId, input.productId, transaction);
+        await assertActiveStockLocation(transaction, input.tenantId, input.stockLocationId);
+        const reservation = await deps.inventoryRepository.findReservationByReference(transaction, input.tenantId, input.referenceType, input.referenceId, input.stockLocationId, input.productId);
         if (reservation === null) {
             throw new NotFoundError('Inventory reservation was not found', {
                 referenceType: input.referenceType,
                 referenceId: input.referenceId,
             });
         }
-        if (reservation.isReleased()) {
-            const balance = await this.deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
+        if (isInventoryReservationReleased(reservation)) {
+            const balance = await deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
             return {
                 reservationId: reservation.id,
                 idempotent: true,
-                balance: this.toBalanceSnapshot(balance),
+                balance: toBalanceSnapshot(balance),
             };
         }
         const releaseQuantity = input.quantity ?? reservation.quantity;
@@ -227,7 +225,7 @@ export class DefaultInventoryService {
                 requestedRelease: releaseQuantity,
             });
         }
-        const balance = await this.deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
+        const balance = await deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
         if (balance.reserved < releaseQuantity) {
             throw new BusinessRuleError('Cannot release more than the current reserved balance', {
                 reserved: balance.reserved,
@@ -237,8 +235,8 @@ export class DefaultInventoryService {
         const reserved = balance.reserved - releaseQuantity;
         const available = balance.onHand - reserved;
         const updatedAt = new Date();
-        await this.deps.inventoryRepository.updateBalance(transaction, balance.id, { onHand: balance.onHand, reserved, available }, updatedAt);
-        await this.insertMovementIfNew(transaction, {
+        await deps.inventoryRepository.updateBalance(transaction, balance.id, { onHand: balance.onHand, reserved, available }, updatedAt);
+        await insertMovementIfNew(transaction, {
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
@@ -248,8 +246,8 @@ export class DefaultInventoryService {
             referenceId: input.referenceId,
             ...optionalReferenceFields({ idempotencyKey: input.idempotencyKey }),
         });
-        await this.deps.inventoryRepository.markReservationReleased(transaction, reservation.id, updatedAt);
-        await this.recordSideEffects(transaction, {
+        await deps.inventoryRepository.markReservationReleased(transaction, reservation.id, updatedAt);
+        await recordSideEffects(transaction, {
             tenantId: input.tenantId,
             aggregateId: balance.id,
             auditEventType: 'INVENTORY_RELEASED',
@@ -270,21 +268,21 @@ export class DefaultInventoryService {
             balance: { onHand: balance.onHand, reserved, available },
         };
     }
-    async fulfillReservedForShipmentInTransaction(transaction, input) {
+    async function fulfillReservedForShipmentInTransaction(transaction, input) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Fulfillment quantity must be positive');
         }
-        await this.assertProductExists(input.tenantId, input.productId, transaction);
-        await this.assertActiveStockLocation(transaction, input.tenantId, input.stockLocationId);
-        const existingMovement = await this.deps.inventoryRepository.findMovementByIdempotency(transaction, input.tenantId, SHIPMENT_REFERENCE_TYPE, input.shipmentId, MovementType.SALE, input.shipmentLineId);
+        await assertProductExists(input.tenantId, input.productId, transaction);
+        await assertActiveStockLocation(transaction, input.tenantId, input.stockLocationId);
+        const existingMovement = await deps.inventoryRepository.findMovementByIdempotency(transaction, input.tenantId, SHIPMENT_REFERENCE_TYPE, input.shipmentId, MovementType.SALE, input.shipmentLineId);
         if (existingMovement !== null) {
-            const balance = await this.deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
+            const balance = await deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
             return {
                 idempotent: true,
-                balance: this.toBalanceSnapshot(balance),
+                balance: toBalanceSnapshot(balance),
             };
         }
-        const reservation = await this.deps.inventoryRepository.findReservationByReference(transaction, input.tenantId, ORDER_REFERENCE_TYPE, input.orderId, input.stockLocationId, input.productId);
+        const reservation = await deps.inventoryRepository.findReservationByReference(transaction, input.tenantId, ORDER_REFERENCE_TYPE, input.orderId, input.stockLocationId, input.productId);
         if (reservation === null) {
             throw new NotFoundError('ORDER inventory reservation was not found for fulfillment', {
                 orderId: input.orderId,
@@ -292,7 +290,7 @@ export class DefaultInventoryService {
                 stockLocationId: input.stockLocationId,
             });
         }
-        if (reservation.isReleased()) {
+        if (isInventoryReservationReleased(reservation)) {
             throw new BusinessRuleError('ORDER reservation was already released', {
                 orderId: input.orderId,
                 productId: input.productId,
@@ -304,7 +302,7 @@ export class DefaultInventoryService {
                 requested: input.quantity,
             });
         }
-        const balance = await this.deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
+        const balance = await deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
         if (balance.reserved < input.quantity) {
             throw new BusinessRuleError('Insufficient reserved inventory to fulfill', {
                 reserved: balance.reserved,
@@ -321,10 +319,10 @@ export class DefaultInventoryService {
         const onHand = balance.onHand - input.quantity;
         const available = onHand - reserved;
         const updatedAt = new Date();
-        await this.deps.inventoryRepository.updateBalance(transaction, balance.id, { onHand, reserved, available }, updatedAt);
+        await deps.inventoryRepository.updateBalance(transaction, balance.id, { onHand, reserved, available }, updatedAt);
         const remainingReservationQuantity = reservation.quantity - input.quantity;
-        await this.deps.inventoryRepository.updateReservationQuantity(transaction, reservation.id, remainingReservationQuantity, updatedAt);
-        await this.insertMovementIfNew(transaction, {
+        await deps.inventoryRepository.updateReservationQuantity(transaction, reservation.id, remainingReservationQuantity, updatedAt);
+        await insertMovementIfNew(transaction, {
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
@@ -338,7 +336,7 @@ export class DefaultInventoryService {
                 orderLineId: input.orderLineId,
             },
         });
-        await this.recordSideEffects(transaction, {
+        await recordSideEffects(transaction, {
             tenantId: input.tenantId,
             aggregateId: balance.id,
             auditEventType: 'INVENTORY_SALE_RECORDED',
@@ -361,13 +359,13 @@ export class DefaultInventoryService {
             balance: { onHand, reserved, available },
         };
     }
-    async mutateOnHand(transaction, input) {
+    async function mutateOnHand(transaction, input) {
         if (input.delta === 0) {
             throw new BusinessRuleError('Inventory delta must be non-zero');
         }
-        await this.assertProductExists(input.tenantId, input.productId, transaction);
-        await this.assertActiveStockLocation(transaction, input.tenantId, input.stockLocationId);
-        const balance = await this.deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
+        await assertProductExists(input.tenantId, input.productId, transaction);
+        await assertActiveStockLocation(transaction, input.tenantId, input.stockLocationId);
+        const balance = await deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
         const onHand = balance.onHand + input.delta;
         const available = onHand - balance.reserved;
         if (onHand < 0 || available < 0) {
@@ -379,8 +377,8 @@ export class DefaultInventoryService {
             });
         }
         const updatedAt = new Date();
-        await this.deps.inventoryRepository.updateBalance(transaction, balance.id, { onHand, reserved: balance.reserved, available }, updatedAt);
-        const inserted = await this.insertMovementIfNew(transaction, {
+        await deps.inventoryRepository.updateBalance(transaction, balance.id, { onHand, reserved: balance.reserved, available }, updatedAt);
+        const inserted = await insertMovementIfNew(transaction, {
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
@@ -390,13 +388,13 @@ export class DefaultInventoryService {
             metadata: { ...(input.metadata ?? {}), delta: input.delta },
         });
         if (!inserted && input.idempotencyKey !== undefined) {
-            const current = await this.deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
+            const current = await deps.inventoryRepository.lockBalanceForUpdate(transaction, input.tenantId, input.stockLocationId, input.productId);
             return {
                 idempotent: true,
-                balance: this.toBalanceSnapshot(current),
+                balance: toBalanceSnapshot(current),
             };
         }
-        await this.recordSideEffects(transaction, {
+        await recordSideEffects(transaction, {
             tenantId: input.tenantId,
             aggregateId: balance.id,
             auditEventType: input.auditEventType,
@@ -415,21 +413,21 @@ export class DefaultInventoryService {
             balance: { onHand, reserved: balance.reserved, available },
         };
     }
-    async assertProductExists(tenantId, productId, tx) {
-        const exists = await this.deps.productQueryService.verifyProductBelongsToTenant(tenantId, productId, tx);
+    async function assertProductExists(tenantId, productId, tx) {
+        const exists = await deps.productQueryService.verifyProductBelongsToTenant(tenantId, productId, tx);
         if (!exists) {
             throw new NotFoundError('Product was not found', { tenantId, productId });
         }
     }
-    async assertActiveStockLocation(transaction, tenantId, stockLocationId) {
-        const location = await this.deps.stockLocationRepository.findById(transaction, tenantId, stockLocationId);
+    async function assertActiveStockLocation(transaction, tenantId, stockLocationId) {
+        const location = await deps.stockLocationRepository.findById(transaction, tenantId, stockLocationId);
         if (location === null) {
             throw new NotFoundError('Stock location was not found', { stockLocationId });
         }
-        location.assertUsable();
+        assertStockLocationUsable(location);
     }
-    async insertMovementIfNew(transaction, input) {
-        return this.deps.inventoryRepository.insertMovement(transaction, {
+    async function insertMovementIfNew(transaction, input) {
+        return deps.inventoryRepository.insertMovement(transaction, {
             id: randomUUID(),
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
@@ -442,9 +440,9 @@ export class DefaultInventoryService {
             ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
         });
     }
-    async recordSideEffects(transaction, input) {
-        if (this.deps.auditRecorder !== undefined) {
-            await this.deps.auditRecorder.record(transaction, {
+    async function recordSideEffects(transaction, input) {
+        if (deps.auditRecorder !== undefined) {
+            await deps.auditRecorder.record(transaction, {
                 tenantId: input.tenantId,
                 actorKind: 'system',
                 eventType: input.auditEventType,
@@ -453,7 +451,7 @@ export class DefaultInventoryService {
                 metadata: input.metadata,
             });
         }
-        await this.deps.eventRecorder.record(transaction, {
+        await deps.eventRecorder.record(transaction, {
             type: input.outboxEventType,
             version: INVENTORY_EVENT_VERSION,
             aggregateType: INVENTORY_AGGREGATE_TYPE,
@@ -465,11 +463,22 @@ export class DefaultInventoryService {
             },
         });
     }
-    toBalanceSnapshot(balance) {
+    function toBalanceSnapshot(balance) {
         return {
             onHand: balance.onHand,
             reserved: balance.reserved,
             available: balance.available,
         };
     }
+    return {
+        verifyUsableStockLocation,
+        getAvailability,
+        reserve,
+        release,
+        fulfillReservedForShipment,
+        adjust,
+        receive,
+        recordSale,
+        recordReturn,
+    };
 }

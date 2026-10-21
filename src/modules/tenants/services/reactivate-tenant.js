@@ -1,4 +1,5 @@
 import { NotFoundError } from '../../../shared/errors/index.js';
+import { reactivateTenantEntity } from '../models/tenant.js';
 import { requireTenantLifecycleAccess } from './tenant-permissions.js';
 
 /**
@@ -16,7 +17,7 @@ export function createReactivateTenant(deps) {
             if (existing === null) {
                 throw new NotFoundError('Tenant was not found', { tenantId: input.tenantId });
             }
-            const updated = existing.reactivate(new Date());
+            const updated = reactivateTenantEntity(existing, new Date());
             await deps.repository.update(tx, updated);
             return updated;
         });
@@ -24,16 +25,4 @@ export function createReactivateTenant(deps) {
     }
 
     return { execute };
-}
-
-/** @deprecated Prefer {@link createReactivateTenant}; kept for existing import sites. */
-export class ReactivateTenant {
-    /**
-     * @param {object} repository
-     * @param {object} transactionManager
-     * @param {object} authorization
-     */
-    constructor(repository, transactionManager, authorization) {
-        return createReactivateTenant({ repository, transactionManager, authorization });
-    }
 }

@@ -34,3 +34,9 @@ Membership and session operations run inside tenant-scoped transactions (`set_co
 ## Prohibited dependencies
 
 Domain and application layers must not import infrastructure adapters or Fastify.
+
+## Architecture notes
+
+Application services and Postgres adapters are **function factories** (`createLogin`, `createPostgresUserRepository`, etc.) returning `{ execute }` or repository method bags. Domain entities are plain objects with pure helpers (`parseEmail`, `canAuthenticate`, `createRefreshSessionEntity`).
+
+**Classes retained intentionally:** Nest `@Controller` / `@Module` only; `InvalidCredentialsError` extends `AuthenticationError` for typed auth failures.

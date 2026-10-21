@@ -1,4 +1,4 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import {
     createAcknowledgeReturn,
     createApproveReturn,
@@ -11,17 +11,16 @@ import {
     createReceiveReturn,
     createRejectReturn,
     createReturnQueryService,
-    createReturnCommandService,
+    createReturnCommandService
 } from './services/index.js';
-import { PostgresReturnRepository } from './repositories/index.js';
-import returnRoutes, {} from './controllers/return.routes.js';
+import { createPostgresReturnRepository } from './repositories/index.js';
 export function createReturnsModule(deps) {
-    const authorization = new DefaultAuthorizationService();
-    const returns = new PostgresReturnRepository();
+    const authorization = createDefaultAuthorizationService();
+    const returns = createPostgresReturnRepository();
     const returnQueryService = createReturnQueryService({
         authorization,
         queryable: deps.database,
-        returns,
+        returns
     });
     const lifecycleDeps = {
         authorization,
@@ -31,19 +30,19 @@ export function createReturnsModule(deps) {
         eventRecorder: deps.eventRecorder,
         idempotency: deps.idempotency,
         externalIntegerIdMappingCommandService: deps.externalIntegerIdMappingCommandService,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     };
     const createReturn = createCreateReturn(lifecycleDeps);
     const acknowledgeReturn = createAcknowledgeReturn(lifecycleDeps);
     const processReturnReceive = createProcessReturnReceive({
         ...lifecycleDeps,
-        inventoryService: deps.inventoryService,
+        inventoryService: deps.inventoryService
     });
     const returnCommandService = createReturnCommandService({
         createReturn,
         acknowledgeReturn,
         processReturnReceive,
-        idempotency: deps.idempotency,
+        idempotency: deps.idempotency
     });
     const useCases = {
         createReturn,
@@ -51,25 +50,30 @@ export function createReturnsModule(deps) {
         listReturns: createListReturns({
             authorization,
             queryable: deps.database,
-            returns,
+            returns
         }),
         acknowledgeReturn,
         approveReturn: createApproveReturn(lifecycleDeps),
         processReturnReceive,
         receiveReturn: createReceiveReturn({
             ...lifecycleDeps,
-            inventoryService: deps.inventoryService,
+            inventoryService: deps.inventoryService
         }),
         completeReturn: createCompleteReturn(lifecycleDeps),
         rejectReturn: createRejectReturn(lifecycleDeps),
         cancelReturn: createCancelReturn(lifecycleDeps),
-        idempotency: deps.idempotency,
+        idempotency: deps.idempotency
     };
     return {
         returnCommandService,
         returnQueryService,
-        useCases,
-        routes: returnRoutes,
+        useCases
     };
 }
-export { Return, ReturnLine, ReturnStatus } from './models/index.js';
+export {
+    createReturnEntity,
+    reconstituteReturn,
+    createReturnLineEntity,
+    reconstituteReturnLine,
+    ReturnStatus,
+} from './models/index.js';

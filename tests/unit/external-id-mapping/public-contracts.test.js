@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-    DefaultExternalIntegerIdMappingCommandService,
-    DefaultExternalIntegerIdMappingQueryService,
     ExternalIdMappingProvider,
     ExternalIdMappingResourceType,
 } from '../../../src/modules/external-id-mapping/public/index.js';
@@ -17,12 +15,8 @@ describe('external integer ID mapping public contracts', () => {
             },
         });
 
-        expect(module.externalIntegerIdMappingCommandService).toBeInstanceOf(
-            DefaultExternalIntegerIdMappingCommandService,
-        );
-        expect(module.externalIntegerIdMappingQueryService).toBeInstanceOf(
-            DefaultExternalIntegerIdMappingQueryService,
-        );
+        expect(typeof module.externalIntegerIdMappingCommandService.assignMapping).toBe('function');
+        expect(typeof module.externalIntegerIdMappingQueryService.findExternalIdByResourceId).toBe('function');
         expect(module).not.toHaveProperty('mappings');
         expect(module).not.toHaveProperty('assignExternalIntegerIdMapping');
     });

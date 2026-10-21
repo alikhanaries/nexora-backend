@@ -1,20 +1,21 @@
 import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../../audit/public/index.js';
 import { ValidationError } from '../../../../shared/errors/index.js';
-import { StockLocation } from '../../models/stock-location.js';
-export class CreateStockLocation {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        this.deps.authorization.requirePermission(input.actorPermissions, 'inventory.adjust');
+import { createStockLocationEntity } from '../../models/stock-location.js';
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createCreateStockLocation(deps) {
+    async function execute(input) {
+        deps.authorization.requirePermission(input.actorPermissions, 'inventory.adjust');
         const name = input.name.trim();
         if (name.length === 0) {
             throw new ValidationError('Stock location name is required');
         }
         const now = new Date();
-        const location = StockLocation.create({
+        const location = createStockLocationEntity({
             id: randomUUID(),
             tenantId: input.tenantId,
             name,
@@ -23,10 +24,10 @@ export class CreateStockLocation {
                 : { externalReference: input.externalReference }),
             createdAt: now,
         });
-        await this.deps.transactionManager.execute(async (tx) => {
-            await this.deps.stockLocations.insert(tx, location);
-            if (this.deps.auditRecorder !== undefined) {
-                await this.deps.auditRecorder.record(tx, {
+        await deps.transactionManager.execute(async (tx) => {
+            await deps.stockLocations.insert(tx, location);
+            if (deps.auditRecorder !== undefined) {
+                await deps.auditRecorder.record(tx, {
                     tenantId: input.tenantId,
                     actorKind: input.actorId === undefined ? 'system' : 'user',
                     ...(input.actorId === undefined ? {} : { actorId: input.actorId }),
@@ -43,4 +44,5 @@ export class CreateStockLocation {
         }, { tenantId: input.tenantId });
         return { location };
     }
+    return { execute };
 }

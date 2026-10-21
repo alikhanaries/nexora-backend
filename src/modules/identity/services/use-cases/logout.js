@@ -1,19 +1,22 @@
 import { hashSecret } from '../../../../shared/security/index.js';
 import { InvalidCredentialsError } from '../../models/index.js';
-export class LogoutUseCase {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createLogout(deps) {
+    async function execute(input) {
         const tokenHash = hashSecret(input.refreshToken);
         const now = new Date();
-        await this.deps.db.executeAsOwner(async (tx) => {
-            const session = await this.deps.refreshSessions.findByTokenHash(tx, tokenHash);
+        await deps.db.executeAsOwner(async (tx) => {
+            const session = await deps.refreshSessions.findByTokenHash(tx, tokenHash);
             if (session === null || session.status !== 'ACTIVE') {
                 throw new InvalidCredentialsError();
             }
-            await this.deps.refreshSessions.revokeById(tx, session.id, now);
+            await deps.refreshSessions.revokeById(tx, session.id, now);
         });
     }
+
+    return { execute };
 }

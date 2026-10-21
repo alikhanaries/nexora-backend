@@ -2,13 +2,14 @@ import { clampCursorLimit, decodeCursor, encodeCursor, } from '../../../shared/p
 import { ValidationError } from '../../../shared/errors/index.js';
 import { toOfferDto } from './offer-dto.js';
 import { requireOffersRead } from './offer-permissions.js';
-export class ListOffers {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        requireOffersRead(this.deps.authorization, input.actorPermissions);
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createListOffers(deps) {
+    async function execute(input) {
+        requireOffersRead(deps.authorization, input.actorPermissions);
         const limit = clampCursorLimit(input.limit);
         const fetchLimit = limit + 1;
         let cursorCreatedAt = null;
@@ -21,7 +22,7 @@ export class ListOffers {
             cursorCreatedAt = new Date(parts[0] ?? '');
             cursorId = parts[1] ?? null;
         }
-        const page = await this.deps.offers.listPage(this.deps.queryable, input.tenantId, {
+        const page = await deps.offers.listPage(deps.queryable, input.tenantId, {
             ...(input.productId === undefined ? {} : { productId: input.productId }),
             ...(input.channelId === undefined ? {} : { channelId: input.channelId }),
             ...(input.status === undefined ? {} : { status: input.status }),
@@ -37,4 +38,5 @@ export class ListOffers {
                 : null,
         };
     }
+    return { execute };
 }

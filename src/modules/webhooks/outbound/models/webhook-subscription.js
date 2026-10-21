@@ -1,97 +1,127 @@
 import { BusinessRuleError } from '../../../../shared/errors/index.js';
 import { WebhookSubscriptionStatus } from './webhook-subscription-status.js';
 
-export class WebhookSubscription {
-    id;
-    tenantId;
-    url;
-    description;
-    secretCiphertext;
-    eventTypes;
-    status;
-    createdBy;
-    createdAt;
-    updatedAt;
-    constructor(props) {
-        this.id = props.id;
-        this.tenantId = props.tenantId;
-        this.url = props.url;
-        this.description = props.description;
-        this.secretCiphertext = props.secretCiphertext;
-        this.eventTypes = props.eventTypes;
-        this.status = props.status;
-        this.createdBy = props.createdBy;
-        this.createdAt = props.createdAt;
-        this.updatedAt = props.updatedAt;
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   url: string,
+ *   description: string | null,
+ *   secretCiphertext: string,
+ *   eventTypes: string[],
+ *   status: string,
+ *   createdBy: string | null,
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ * }} WebhookSubscription
+ */
+
+/**
+ * @param {object} props
+ * @returns {WebhookSubscription}
+ */
+export function createWebhookSubscriptionEntity(props) {
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        url: props.url,
+        description: props.description ?? null,
+        secretCiphertext: props.secretCiphertext,
+        eventTypes: [...props.eventTypes],
+        status: WebhookSubscriptionStatus.ACTIVE,
+        createdBy: props.createdBy ?? null,
+        createdAt: props.createdAt,
+        updatedAt: props.createdAt,
+    };
+}
+
+/**
+ * @param {WebhookSubscription} props
+ * @returns {WebhookSubscription}
+ */
+export function reconstituteWebhookSubscription(props) {
+    return {
+        ...props,
+        eventTypes: [...props.eventTypes],
+    };
+}
+
+/**
+ * @param {WebhookSubscription} subscription
+ */
+export function isWebhookSubscriptionActive(subscription) {
+    return subscription.status === WebhookSubscriptionStatus.ACTIVE;
+}
+
+/**
+ * @param {WebhookSubscription} subscription
+ * @param {object} input
+ * @param {Date} at
+ * @returns {WebhookSubscription}
+ */
+export function updateWebhookSubscriptionDetails(subscription, input, at) {
+    if (subscription.status === WebhookSubscriptionStatus.DELETED) {
+        throw new BusinessRuleError('Deleted webhook subscriptions cannot be updated');
     }
-    static create(props) {
-        return new WebhookSubscription({
-            id: props.id,
-            tenantId: props.tenantId,
-            url: props.url,
-            description: props.description ?? null,
-            secretCiphertext: props.secretCiphertext,
-            eventTypes: [...props.eventTypes],
-            status: WebhookSubscriptionStatus.ACTIVE,
-            createdBy: props.createdBy ?? null,
-            createdAt: props.createdAt,
-            updatedAt: props.createdAt,
-        });
+    return {
+        id: subscription.id,
+        tenantId: subscription.tenantId,
+        url: input.url ?? subscription.url,
+        description: input.description === undefined ? subscription.description : input.description,
+        secretCiphertext: subscription.secretCiphertext,
+        eventTypes: input.eventTypes === undefined ? subscription.eventTypes : [...input.eventTypes],
+        status: input.status ?? subscription.status,
+        createdBy: subscription.createdBy,
+        createdAt: subscription.createdAt,
+        updatedAt: at,
+    };
+}
+
+/**
+ * @param {WebhookSubscription} subscription
+ * @param {Date} at
+ * @returns {WebhookSubscription}
+ */
+export function disableWebhookSubscriptionEntity(subscription, at) {
+    if (subscription.status === WebhookSubscriptionStatus.DELETED) {
+        throw new BusinessRuleError('Deleted webhook subscriptions cannot be disabled');
     }
-    static reconstitute(props) {
-        return new WebhookSubscription({
-            ...props,
-            eventTypes: [...props.eventTypes],
-        });
+    return {
+        ...subscription,
+        eventTypes: [...subscription.eventTypes],
+        status: WebhookSubscriptionStatus.DISABLED,
+        updatedAt: at,
+    };
+}
+
+/**
+ * @param {WebhookSubscription} subscription
+ * @param {Date} at
+ * @returns {WebhookSubscription}
+ */
+export function markWebhookSubscriptionDeleted(subscription, at) {
+    return {
+        ...subscription,
+        eventTypes: [...subscription.eventTypes],
+        status: WebhookSubscriptionStatus.DELETED,
+        updatedAt: at,
+    };
+}
+
+/**
+ * @param {WebhookSubscription} subscription
+ * @param {string} secretCiphertext
+ * @param {Date} at
+ * @returns {WebhookSubscription}
+ */
+export function rotateWebhookSubscriptionSecret(subscription, secretCiphertext, at) {
+    if (subscription.status === WebhookSubscriptionStatus.DELETED) {
+        throw new BusinessRuleError('Deleted webhook subscriptions cannot rotate secrets');
     }
-    isActive() {
-        return this.status === WebhookSubscriptionStatus.ACTIVE;
-    }
-    updateDetails(input, at) {
-        if (this.status === WebhookSubscriptionStatus.DELETED) {
-            throw new BusinessRuleError('Deleted webhook subscriptions cannot be updated');
-        }
-        return new WebhookSubscription({
-            id: this.id,
-            tenantId: this.tenantId,
-            url: input.url ?? this.url,
-            description: input.description === undefined ? this.description : input.description,
-            secretCiphertext: this.secretCiphertext,
-            eventTypes: input.eventTypes === undefined ? this.eventTypes : [...input.eventTypes],
-            status: input.status ?? this.status,
-            createdBy: this.createdBy,
-            createdAt: this.createdAt,
-            updatedAt: at,
-        });
-    }
-    disable(at) {
-        if (this.status === WebhookSubscriptionStatus.DELETED) {
-            throw new BusinessRuleError('Deleted webhook subscriptions cannot be disabled');
-        }
-        return new WebhookSubscription({
-            ...this,
-            eventTypes: [...this.eventTypes],
-            status: WebhookSubscriptionStatus.DISABLED,
-            updatedAt: at,
-        });
-    }
-    delete(at) {
-        return new WebhookSubscription({
-            ...this,
-            eventTypes: [...this.eventTypes],
-            status: WebhookSubscriptionStatus.DELETED,
-            updatedAt: at,
-        });
-    }
-    rotateSecret(secretCiphertext, at) {
-        if (this.status === WebhookSubscriptionStatus.DELETED) {
-            throw new BusinessRuleError('Deleted webhook subscriptions cannot rotate secrets');
-        }
-        return new WebhookSubscription({
-            ...this,
-            eventTypes: [...this.eventTypes],
-            secretCiphertext,
-            updatedAt: at,
-        });
-    }
+    return {
+        ...subscription,
+        eventTypes: [...subscription.eventTypes],
+        secretCiphertext,
+        updatedAt: at,
+    };
 }

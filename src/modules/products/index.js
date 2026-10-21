@@ -1,34 +1,44 @@
-import { ArchiveProduct, CreateProduct, DeactivateProduct, DefaultProductQueryService, GetProduct, GetProductContent, ListProducts, UpdateProduct, UpsertProductContent, } from './services/index.js';
-import { PostgresProductContentRepository, PostgresProductRepository, } from './repositories/index.js';
-import productRoutes, {} from './views/product.routes.js';
+import {
+    createArchiveProduct,
+    createCreateProduct,
+    createDeactivateProduct,
+    createDefaultProductQueryService,
+    createGetProduct,
+    createGetProductContent,
+    createListProducts,
+    createUpdateProduct,
+    createUpsertProductContent,
+} from './services/index.js';
+import { createPostgresProductContentRepository, createPostgresProductRepository } from './repositories/index.js';
+
 export function createProductsModule(deps) {
-    const products = new PostgresProductRepository();
-    const productContent = new PostgresProductContentRepository();
+    const products = createPostgresProductRepository();
+    const productContent = createPostgresProductContentRepository();
     const sharedDeps = {
         authorization: deps.authorization,
         database: deps.database,
         products,
         ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
-        ...(deps.eventRecorder === undefined ? {} : { eventRecorder: deps.eventRecorder }),
+        ...(deps.eventRecorder === undefined ? {} : { eventRecorder: deps.eventRecorder })
     };
-    const createProduct = new CreateProduct(sharedDeps);
-    const getProduct = new GetProduct({ ...sharedDeps, database: deps.database });
-    const listProducts = new ListProducts({ ...sharedDeps, database: deps.database });
-    const updateProduct = new UpdateProduct(sharedDeps);
-    const deactivateProduct = new DeactivateProduct(sharedDeps);
-    const archiveProduct = new ArchiveProduct(sharedDeps);
-    const upsertProductContent = new UpsertProductContent({
+    const createProduct = createCreateProduct(sharedDeps);
+    const getProduct = createGetProduct({ ...sharedDeps, database: deps.database });
+    const listProducts = createListProducts({ ...sharedDeps, database: deps.database });
+    const updateProduct = createUpdateProduct(sharedDeps);
+    const deactivateProduct = createDeactivateProduct(sharedDeps);
+    const archiveProduct = createArchiveProduct(sharedDeps);
+    const upsertProductContent = createUpsertProductContent({
         ...sharedDeps,
-        productContent,
+        productContent
     });
-    const getProductContent = new GetProductContent({
+    const getProductContent = createGetProductContent({
         ...sharedDeps,
         database: deps.database,
-        productContent,
+        productContent
     });
-    const productQueryService = new DefaultProductQueryService({
+    const productQueryService = createDefaultProductQueryService({
         database: deps.database,
-        products,
+        products
     });
     const useCases = {
         createProduct,
@@ -38,12 +48,21 @@ export function createProductsModule(deps) {
         deactivateProduct,
         archiveProduct,
         upsertProductContent,
-        getProductContent,
+        getProductContent
     };
     return {
         useCases,
-        productQueryService,
-        routes: productRoutes,
+        productQueryService
     };
 }
-export { Product, ProductContent, ProductStatus, ProductType, normalizeMerchantSku, } from './models/index.js';
+
+export {
+    createProductEntity,
+    reconstituteProduct,
+    updateProductEntity,
+    deactivateProductEntity,
+    archiveProductEntity,
+    ProductStatus,
+    ProductType,
+    normalizeMerchantSku,
+} from './models/index.js';

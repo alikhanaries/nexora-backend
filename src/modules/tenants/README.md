@@ -2,6 +2,19 @@
 
 Global tenant registry for Wasl. Tenants are platform-level records — the `tenants` table is **not** tenant-scoped and has no row-level security policy.
 
+This module is the **reference function-based MVC** layout for Wasl.
+
+## Layout
+
+| Folder | Role |
+| ------ | ---- |
+| `routes/` | Endpoint method + path registry only |
+| `controllers/nest/` | Thin Nest HTTP adapters |
+| `services/` | Business use-case factories (`createX`) |
+| `repositories/` | Postgres access (`createPostgresTenantRepository`) |
+| `models/` | Entity plain objects + pure transition functions |
+| `views/` | HTTP Zod schemas + response mappers |
+
 ## Lifecycle
 
 ```
@@ -10,42 +23,28 @@ ACTIVE ──suspend──▶ SUSPENDED ──reactivate──▶ ACTIVE
    └──────close──────────┴──────close──────▶ CLOSED (terminal)
 ```
 
-| Current status | Allowed transitions   |
-| -------------- | --------------------- |
-| `ACTIVE`       | `SUSPENDED`, `CLOSED` |
-| `SUSPENDED`    | `ACTIVE`, `CLOSED`    |
-| `CLOSED`       | _(none — terminal)_   |
-
-Rules enforced in the domain entity (`Tenant.suspend`, `Tenant.reactivate`, `Tenant.close`):
+Rules enforced in model functions (`suspendTenantEntity`, `reactivateTenantEntity`, `closeTenantEntity`):
 
 - Invalid transitions throw `BusinessRuleError` (HTTP 422).
 - Physical deletion is prohibited; use `close` to retire a tenant.
 - New tenants are always created in `ACTIVE` status.
 
-## Slug rules
-
-Slugs are normalised with `normalizeTenantSlug` (trim + lowercase) and validated with `validateTenantSlug` before persistence. The database enforces the same format via check constraints.
-
 ## HTTP API
 
-| Method | Path                                   | Use case           |
-| ------ | -------------------------------------- | ------------------ |
-| `POST` | `/api/v1/tenants`                      | `CreateTenant`     |
-| `GET`  | `/api/v1/tenants/:tenantId`            | `GetTenant`        |
-| `POST` | `/api/v1/tenants/:tenantId/suspend`    | `SuspendTenant`    |
-| `POST` | `/api/v1/tenants/:tenantId/reactivate` | `ReactivateTenant` |
-| `POST` | `/api/v1/tenants/:tenantId/close`      | `CloseTenant`      |
+Paths are declared in `routes/tenant.routes.js` and wired by `controllers/nest/tenants.controller.js`.
+
+| Method | Path | Use case |
+| ------ | ---- | -------- |
+| `POST` | `/api/v1/tenants` | `createCreateTenant` |
+| `GET` | `/api/v1/tenants/:tenantId` | `createGetTenant` |
+| `POST` | `/api/v1/tenants/:tenantId/suspend` | `createSuspendTenant` |
+| `POST` | `/api/v1/tenants/:tenantId/reactivate` | `createReactivateTenant` |
+| `POST` | `/api/v1/tenants/:tenantId/close` | `createCloseTenant` |
 
 ## Cross-module usage
 
-Import use cases from the public API only:
-
-```typescript
-import { GetTenant } from '../tenants/public/index.js';
+```javascript
+import { createGetTenant, createTenantEntity } from '../tenants/public/index.js';
 ```
 
-Do not import `PostgresTenantRepository` or route plugins from other modules.
-
-## Persistence
-
-Migration `0005_tenants.sql` defines the `tenants` table. The PostgreSQL adapter lives in `infrastructure/postgres-tenant-repository.ts` and accepts `Queryable` / `Transaction` ports from `shared/persistence`.
+Do not import the Postgres repository or Nest controller from other modules.

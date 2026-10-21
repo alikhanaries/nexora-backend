@@ -22,7 +22,7 @@ Effective permissions for a membership are computed as the sorted union of permi
 
 ## System roles
 
-Seven system roles are seeded per tenant via `SystemRoleSeeder`. See [ADR-012](../../../docs/decisions/ADR-012-standard-system-roles.md).
+Seven system roles are seeded per tenant via `createSystemRoleSeeder`. See [ADR-012](../../../docs/decisions/ADR-012-standard-system-roles.md).
 
 ## API
 
@@ -39,8 +39,8 @@ Seven system roles are seeded per tenant via `SystemRoleSeeder`. See [ADR-012](.
 
 Other modules import from `public/index.ts` only:
 
-- `AuthorizationService` / `DefaultAuthorizationService`
-- `SystemRoleSeeder`
+- `createDefaultAuthorizationService`
+- `createSystemRoleSeeder`
 - `resolveEffectivePermissions`
 
 ## Dependencies

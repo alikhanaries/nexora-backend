@@ -1,12 +1,13 @@
 import { optionalReferenceFields } from '../optional-fields.js';
-export class ReleaseInventory {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
-        this.deps.authorization.requirePermission(input.actorPermissions, 'inventory.reserve');
-        return this.deps.inventoryService.release({
+
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createReleaseInventory(deps) {
+    async function execute(input) {
+        deps.authorization.requirePermission(input.actorPermissions, 'inventory.reserve');
+        return deps.inventoryService.release({
             tenantId: input.tenantId,
             stockLocationId: input.stockLocationId,
             productId: input.productId,
@@ -16,4 +17,5 @@ export class ReleaseInventory {
             ...optionalReferenceFields({ idempotencyKey: input.idempotencyKey }),
         });
     }
+    return { execute };
 }

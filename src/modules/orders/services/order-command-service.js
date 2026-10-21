@@ -269,10 +269,3 @@ export function createOrderCommandService(deps) {
         acknowledgeOrder,
     };
 }
-
-/** @deprecated Prefer {@link createOrderCommandService}; kept for existing import sites and tests. */
-export class DefaultOrderCommandService {
-    constructor(deps) {
-        return createOrderCommandService(deps);
-    }
-}

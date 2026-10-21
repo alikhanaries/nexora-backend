@@ -35,7 +35,7 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
   it('GET /api/v1/permissions returns data when authenticated', async () => {
     const coreServices = createMockCoreDomain();
     coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
-    coreServices.authorization.routes.options.listPermissions.execute.mockResolvedValue([
+    coreServices.authorization.useCases.listPermissions.execute.mockResolvedValue([
       {
         id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
         key: 'roles:read',
@@ -59,7 +59,7 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
   it('GET /api/v1/audit lists events for authenticated tenant', async () => {
     const coreServices = createMockCoreDomain();
     coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
-    coreServices.audit.routes.options.auditService.listEvents.mockResolvedValue({
+    coreServices.audit.auditService.listEvents.mockResolvedValue({
       total: 1,
       events: [
         {
@@ -135,7 +135,7 @@ describe('Nest feature modules (authorization, audit, api-keys, mfa)', () => {
   it('DELETE /api/v1/memberships/:membershipId/roles/:roleId returns removed envelope', async () => {
     const coreServices = createMockCoreDomain();
     coreServices.authenticateAccessToken.execute.mockResolvedValue(actorPrincipal);
-    coreServices.authorization.routes.options.removeRole.execute.mockResolvedValue(undefined);
+    coreServices.authorization.useCases.removeRole.execute.mockResolvedValue(undefined);
 
     const created = await createTestNestApp({ coreServices });
     app = created.app;

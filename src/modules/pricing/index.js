@@ -1,39 +1,53 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
-import { CreatePrice, DeactivatePrice, DefaultPricingService, GetPrice, ListPrices, UpdatePrice, } from './services/index.js';
-import { PostgresPriceRepository } from './repositories/index.js';
-import priceRoutes, {} from './views/price.routes.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
+import {
+    createCreatePrice,
+    createDeactivatePrice,
+    createDefaultPricingService,
+    createGetPrice,
+    createListPrices,
+    createUpdatePrice,
+} from './services/index.js';
+import { createPostgresPriceRepository } from './repositories/index.js';
+
 export function createPricingModule(deps) {
-    const authorization = new DefaultAuthorizationService();
-    const prices = new PostgresPriceRepository();
-    const pricingService = new DefaultPricingService({
+    const authorization = createDefaultAuthorizationService();
+    const prices = createPostgresPriceRepository();
+    const pricingService = createDefaultPricingService({
         transactionManager: deps.database,
         queryable: deps.database,
         prices,
         productQueryService: deps.productQueryService,
         commerceIntegrationQueryService: deps.commerceIntegrationQueryService,
-        eventRecorder: deps.eventRecorder,
+        eventRecorder: deps.eventRecorder
     });
     const sharedDeps = {
         authorization,
         pricingService,
         database: deps.database,
-        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder }),
+        ...(deps.auditRecorder === undefined ? {} : { auditRecorder: deps.auditRecorder })
     };
     const useCases = {
-        createPrice: new CreatePrice(sharedDeps),
-        getPrice: new GetPrice({
+        createPrice: createCreatePrice(sharedDeps),
+        getPrice: createGetPrice({
             authorization,
             queryable: deps.database,
-            prices,
+            prices
         }),
-        listPrices: new ListPrices({ authorization, pricingService }),
-        updatePrice: new UpdatePrice(sharedDeps),
-        deactivatePrice: new DeactivatePrice(sharedDeps),
+        listPrices: createListPrices({ authorization, pricingService }),
+        updatePrice: createUpdatePrice(sharedDeps),
+        deactivatePrice: createDeactivatePrice(sharedDeps)
     };
     return {
         pricingService,
-        useCases,
-        routes: priceRoutes,
+        useCases
     };
 }
-export { Price, PriceStatus } from './models/index.js';
+
+export {
+    createPriceEntity,
+    reconstitutePrice,
+    isPriceEffectiveAt,
+    updatePriceEntity,
+    deactivatePriceEntity,
+    PriceStatus,
+} from './models/index.js';

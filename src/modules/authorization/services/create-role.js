@@ -39,13 +39,3 @@ export function createCreateRole(deps) {
 
     return { execute };
 }
-
-/** @deprecated Prefer {@link createCreateRole}; kept for existing import sites. */
-export class CreateRole {
-    /**
-     * @param {object} deps
-     */
-    constructor(deps) {
-        return createCreateRole(deps);
-    }
-}

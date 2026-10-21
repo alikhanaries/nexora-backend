@@ -1,93 +1,87 @@
-import { assertOrderTransition, OrderStatus, } from './order-status.js';
-export class Order {
-    props;
-    constructor(props) {
-        this.props = props;
-    }
-    static create(props) {
-        const now = props.createdAt ?? new Date();
-        const status = props.status ?? OrderStatus.CONFIRMED;
-        return new Order({
-            ...props,
-            status,
-            confirmedAt: props.confirmedAt ?? (status === OrderStatus.CONFIRMED ? now : null),
-            cancelledAt: props.cancelledAt ?? null,
-            shippedAt: props.shippedAt ?? null,
-            deliveredAt: props.deliveredAt ?? null,
-            createdAt: now,
-            updatedAt: props.updatedAt ?? now,
-        });
-    }
-    static reconstitute(props) {
-        return new Order(props);
-    }
-    get id() {
-        return this.props.id;
-    }
-    get tenantId() {
-        return this.props.tenantId;
-    }
-    get channelId() {
-        return this.props.channelId;
-    }
-    get externalOrderReference() {
-        return this.props.externalOrderReference;
-    }
-    get orderNumber() {
-        return this.props.orderNumber;
-    }
-    get status() {
-        return this.props.status;
-    }
-    get currency() {
-        return this.props.currency;
-    }
-    get subtotalMinor() {
-        return this.props.subtotalMinor;
-    }
-    get discountMinor() {
-        return this.props.discountMinor;
-    }
-    get taxMinor() {
-        return this.props.taxMinor;
-    }
-    get shippingMinor() {
-        return this.props.shippingMinor;
-    }
-    get totalMinor() {
-        return this.props.totalMinor;
-    }
-    get createdAt() {
-        return this.props.createdAt;
-    }
-    get updatedAt() {
-        return this.props.updatedAt;
-    }
-    get confirmedAt() {
-        return this.props.confirmedAt;
-    }
-    get cancelledAt() {
-        return this.props.cancelledAt;
-    }
-    get shippedAt() {
-        return this.props.shippedAt;
-    }
-    get deliveredAt() {
-        return this.props.deliveredAt;
-    }
-    transitionTo(next, at = new Date()) {
-        assertOrderTransition(this.props.status, next);
-        return new Order({
-            ...this.props,
-            status: next,
-            updatedAt: at,
-            ...(next === OrderStatus.CONFIRMED ? { confirmedAt: at } : {}),
-            ...(next === OrderStatus.CANCELLED ? { cancelledAt: at } : {}),
-            ...(next === OrderStatus.SHIPPED ? { shippedAt: at } : {}),
-            ...(next === OrderStatus.DELIVERED ? { deliveredAt: at } : {}),
-        });
-    }
-    toProps() {
-        return { ...this.props };
-    }
+import { assertOrderTransition, OrderStatus } from './order-status.js';
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   tenantId: string,
+ *   channelId: string,
+ *   externalOrderReference: string | null,
+ *   orderNumber: string,
+ *   status: string,
+ *   currency: string,
+ *   subtotalMinor: number,
+ *   discountMinor: number,
+ *   taxMinor: number,
+ *   shippingMinor: number,
+ *   totalMinor: number,
+ *   createdAt: Date,
+ *   updatedAt: Date,
+ *   confirmedAt: Date | null,
+ *   cancelledAt: Date | null,
+ *   shippedAt: Date | null,
+ *   deliveredAt: Date | null,
+ * }} Order
+ */
+
+/**
+ * @param {Omit<Order, 'status' | 'confirmedAt' | 'cancelledAt' | 'shippedAt' | 'deliveredAt' | 'updatedAt'> & {
+ *   status?: string,
+ *   confirmedAt?: Date | null,
+ *   cancelledAt?: Date | null,
+ *   shippedAt?: Date | null,
+ *   deliveredAt?: Date | null,
+ *   updatedAt?: Date,
+ * }} props
+ * @returns {Order}
+ */
+export function createOrderEntity(props) {
+    const now = props.createdAt ?? new Date();
+    const status = props.status ?? OrderStatus.CONFIRMED;
+    return {
+        id: props.id,
+        tenantId: props.tenantId,
+        channelId: props.channelId,
+        externalOrderReference: props.externalOrderReference,
+        orderNumber: props.orderNumber,
+        status,
+        currency: props.currency,
+        subtotalMinor: props.subtotalMinor,
+        discountMinor: props.discountMinor,
+        taxMinor: props.taxMinor,
+        shippingMinor: props.shippingMinor,
+        totalMinor: props.totalMinor,
+        createdAt: now,
+        updatedAt: props.updatedAt ?? now,
+        confirmedAt: props.confirmedAt ?? (status === OrderStatus.CONFIRMED ? now : null),
+        cancelledAt: props.cancelledAt ?? null,
+        shippedAt: props.shippedAt ?? null,
+        deliveredAt: props.deliveredAt ?? null,
+    };
+}
+
+/**
+ * @param {Order} props
+ * @returns {Order}
+ */
+export function reconstituteOrder(props) {
+    return { ...props };
+}
+
+/**
+ * @param {Order} order
+ * @param {string} next
+ * @param {Date} [at]
+ * @returns {Order}
+ */
+export function transitionOrderEntity(order, next, at = new Date()) {
+    assertOrderTransition(order.status, next);
+    return {
+        ...order,
+        status: next,
+        updatedAt: at,
+        ...(next === OrderStatus.CONFIRMED ? { confirmedAt: at } : {}),
+        ...(next === OrderStatus.CANCELLED ? { cancelledAt: at } : {}),
+        ...(next === OrderStatus.SHIPPED ? { shippedAt: at } : {}),
+        ...(next === OrderStatus.DELIVERED ? { deliveredAt: at } : {}),
+    };
 }

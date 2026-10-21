@@ -1,5 +1,11 @@
 import { auditRequestFields } from '../../audit/public/index.js';
 import { BusinessRuleError, NotFoundError } from '../../../shared/errors/index.js';
+import {
+    approveReturnEntity,
+    cancelReturnEntity,
+    completeReturnEntity,
+    rejectReturnEntity,
+} from '../models/return.js';
 import { ReturnStatus } from '../models/return-status.js';
 import { toReturnDetailDto } from '../views/return-dto.js';
 import { returnStatusChangedEvent } from './return-events.js';
@@ -70,7 +76,7 @@ function createTransitionReturn(deps, transition, auditEventType) {
 export function createApproveReturn(deps) {
     return createTransitionReturn(
         deps,
-        (returnEntity, at) => returnEntity.approve(at),
+        (returnEntity, at) => approveReturnEntity(returnEntity, at),
         'RETURN_APPROVED',
     );
 }
@@ -82,7 +88,7 @@ export function createApproveReturn(deps) {
 export function createRejectReturn(deps) {
     return createTransitionReturn(
         deps,
-        (returnEntity, at) => returnEntity.reject(at),
+        (returnEntity, at) => rejectReturnEntity(returnEntity, at),
         'RETURN_REJECTED',
     );
 }
@@ -94,7 +100,7 @@ export function createRejectReturn(deps) {
 export function createCancelReturn(deps) {
     return createTransitionReturn(
         deps,
-        (returnEntity, at) => returnEntity.cancel(at),
+        (returnEntity, at) => cancelReturnEntity(returnEntity, at),
         'RETURN_CANCELLED',
     );
 }
@@ -122,7 +128,7 @@ export function createCompleteReturn(deps) {
             }
             const previousStatus = existing.status;
             const now = new Date();
-            const updated = existing.complete(now);
+            const updated = completeReturnEntity(existing, now);
             await deps.returns.updateReturn(tx, updated);
             const lines = await deps.returns.listReturnLines(tx, input.tenantId, input.returnId);
             const detail = toReturnDetailDto(updated, lines);
@@ -147,32 +153,4 @@ export function createCompleteReturn(deps) {
     }
 
     return { execute };
-}
-
-/** @deprecated Prefer createApproveReturn */
-export class ApproveReturn {
-    constructor(deps) {
-        return createApproveReturn(deps);
-    }
-}
-
-/** @deprecated Prefer createRejectReturn */
-export class RejectReturn {
-    constructor(deps) {
-        return createRejectReturn(deps);
-    }
-}
-
-/** @deprecated Prefer createCancelReturn */
-export class CancelReturn {
-    constructor(deps) {
-        return createCancelReturn(deps);
-    }
-}
-
-/** @deprecated Prefer createCompleteReturn */
-export class CompleteReturn {
-    constructor(deps) {
-        return createCompleteReturn(deps);
-    }
 }

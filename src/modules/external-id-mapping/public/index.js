@@ -1,5 +1,5 @@
-export { DefaultExternalIntegerIdMappingCommandService } from './external-integer-id-mapping-command-service.js';
-export { DefaultExternalIntegerIdMappingQueryService } from './external-integer-id-mapping-query-service.js';
+export { createDefaultExternalIntegerIdMappingCommandService } from './external-integer-id-mapping-command-service.js';
+export { createDefaultExternalIntegerIdMappingQueryService } from './external-integer-id-mapping-query-service.js';
 export {
     ExternalIdMappingProvider,
     ExternalIdMappingResourceType,

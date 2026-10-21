@@ -19,7 +19,7 @@ class StockConnectInventoryController {
   @Get('/api/v2/stock-connect/inventory/:productId')
   async getForProduct(@Param() params, @Query() query) {
     const { productId } = parseOrThrow(stockConnectProductIdParamsSchema, params, 'product params');
-    const parsed = stockConnectInventoryQuerySchema.parse(query);
+    const parsed = parseOrThrow(stockConnectInventoryQuerySchema, query, 'query');
     return this.stockConnectIntegrationService.getProductInventory(productId, parsed);
   }
 

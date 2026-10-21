@@ -1,38 +1,61 @@
-export class RefreshSession {
-    id;
-    userId;
-    tenantId;
-    tokenHash;
-    familyId;
-    status;
-    expiresAt;
-    createdAt;
-    lastUsedAt;
-    revokedAt;
-    replacedBy;
-    constructor(props) {
-        this.id = props.id;
-        this.userId = props.userId;
-        this.tenantId = props.tenantId;
-        this.tokenHash = props.tokenHash;
-        this.familyId = props.familyId;
-        this.status = props.status;
-        this.expiresAt = props.expiresAt;
-        this.createdAt = props.createdAt;
-        this.lastUsedAt = props.lastUsedAt;
-        this.revokedAt = props.revokedAt;
-        this.replacedBy = props.replacedBy;
-    }
-    static create(props) {
-        return new RefreshSession(props);
-    }
-    isExpired(now = new Date()) {
-        return now >= this.expiresAt;
-    }
-    isUsable(now = new Date()) {
-        return this.status === 'ACTIVE' && !this.isExpired(now);
-    }
-    indicatesFamilyReuse() {
-        return this.status === 'REPLACED' || this.status === 'REVOKED';
-    }
+/**
+ * @typedef {{
+ *   id: string,
+ *   userId: string,
+ *   tenantId: string,
+ *   tokenHash: string,
+ *   familyId: string,
+ *   status: string,
+ *   expiresAt: Date,
+ *   createdAt: Date,
+ *   lastUsedAt: Date | null,
+ *   revokedAt: Date | null,
+ *   replacedBy: string | null,
+ * }} RefreshSession
+ */
+
+/**
+ * @param {RefreshSession} props
+ * @returns {RefreshSession}
+ */
+export function createRefreshSessionEntity(props) {
+    return {
+        id: props.id,
+        userId: props.userId,
+        tenantId: props.tenantId,
+        tokenHash: props.tokenHash,
+        familyId: props.familyId,
+        status: props.status,
+        expiresAt: props.expiresAt,
+        createdAt: props.createdAt,
+        lastUsedAt: props.lastUsedAt,
+        revokedAt: props.revokedAt,
+        replacedBy: props.replacedBy,
+    };
+}
+
+/**
+ * @param {RefreshSession} session
+ * @param {Date} [now]
+ * @returns {boolean}
+ */
+export function isRefreshSessionExpired(session, now = new Date()) {
+    return now >= session.expiresAt;
+}
+
+/**
+ * @param {RefreshSession} session
+ * @param {Date} [now]
+ * @returns {boolean}
+ */
+export function isRefreshSessionUsable(session, now = new Date()) {
+    return session.status === 'ACTIVE' && !isRefreshSessionExpired(session, now);
+}
+
+/**
+ * @param {RefreshSession} session
+ * @returns {boolean}
+ */
+export function refreshSessionIndicatesFamilyReuse(session) {
+    return session.status === 'REPLACED' || session.status === 'REVOKED';
 }

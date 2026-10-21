@@ -11,21 +11,11 @@ import {
 /**
  * Polls a single order lifecycle command via the order adapter and enqueues worker processing.
  */
-export class FetchAndEnqueueMarketplaceOrderLifecycle {
-    deps;
-
-    /**
-     * @param {object} deps
-     * @param {import('./marketplace-lifecycle-enqueue-service.js').MarketplaceLifecycleEnqueueService} deps.lifecycleEnqueueService
-     * @param {import('../public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} deps.orderAdapterRegistry
-     * @param {import('../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntimeFactory} deps.marketplaceAdapterRuntimeFactory
-     * @param {import('../../../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
-     * @param {import('../../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
-     */
-    constructor(deps) {
-        this.deps = deps;
-    }
-
+/**
+ * @param {object} deps
+ * @returns {{ execute: Function }}
+ */
+export function createFetchAndEnqueueMarketplaceOrderLifecycle(deps) {
     /**
      * @param {object} input
      * @param {string} input.tenantId
@@ -35,22 +25,22 @@ export class FetchAndEnqueueMarketplaceOrderLifecycle {
      * @param {string} input.externalEventId
      * @param {string|null} [input.correlationId]
      */
-    async execute(input) {
-        const adapter = this.deps.orderAdapterRegistry.resolve(input.marketplaceKey);
+    async function execute(input) {
+        const adapter = deps.orderAdapterRegistry.resolve(input.marketplaceKey);
         if (adapter === null || typeof adapter.fetchOrderLifecycleCommand !== 'function') {
             throw new MarketplaceOrderIngestionPermanentError('Marketplace order lifecycle polling is not supported', {
                 marketplaceKey: input.marketplaceKey,
             });
         }
-        const channel = await this.deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.channelId);
+        const channel = await deps.commerceIntegrationQueryService.getCommerceIntegrationById(input.tenantId, input.channelId);
         if (channel.tenantId !== input.tenantId) {
             throw new MarketplaceOrderIngestionPermanentError('Channel tenant mismatch', {
                 channelId: input.channelId,
             });
         }
         try {
-            const command = await this.deps.database.execute(async (tx) => {
-                const runtime = await this.deps.marketplaceAdapterRuntimeFactory.createForSync({
+            const command = await deps.database.execute(async (tx) => {
+                const runtime = await deps.marketplaceAdapterRuntimeFactory.createForSync({
                     tenantId: input.tenantId,
                     channelId: input.channelId,
                     marketplaceKey: input.marketplaceKey,
@@ -64,7 +54,7 @@ export class FetchAndEnqueueMarketplaceOrderLifecycle {
                     correlationId: input.correlationId ?? null,
                 }, input.externalEventId);
             }, { tenantId: input.tenantId });
-            return this.deps.lifecycleEnqueueService.enqueueInboundCommand({
+            return deps.lifecycleEnqueueService.enqueueInboundCommand({
                 tenantId: input.tenantId,
                 channelId: input.channelId,
                 command,
@@ -88,4 +78,5 @@ export class FetchAndEnqueueMarketplaceOrderLifecycle {
             throw mapped;
         }
     }
+    return { execute };
 }

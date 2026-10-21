@@ -1,4 +1,4 @@
-import { DefaultAuthorizationService } from '../authorization/public/index.js';
+import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import {
     createCloseTenant,
     createCreateTenant,
@@ -6,12 +6,11 @@ import {
     createReactivateTenant,
     createSuspendTenant,
 } from './services/index.js';
-import { PostgresTenantRepository } from './repositories/index.js';
-import tenantRoutes, {} from './views/tenant.routes.js';
+import { createPostgresTenantRepository } from './repositories/index.js';
 
 export function createTenantsModule(deps) {
-    const repository = new PostgresTenantRepository();
-    const authorization = deps.authorization ?? new DefaultAuthorizationService();
+    const repository = createPostgresTenantRepository();
+    const authorization = deps.authorization ?? createDefaultAuthorizationService();
     const useCases = {
         createTenant: createCreateTenant({
             repository,
@@ -39,7 +38,14 @@ export function createTenantsModule(deps) {
     };
     return {
         useCases,
-        routes: tenantRoutes,
     };
 }
-export { Tenant, TenantStatus } from './models/index.js';
+
+export {
+    createTenantEntity,
+    reconstituteTenant,
+    suspendTenantEntity,
+    reactivateTenantEntity,
+    closeTenantEntity,
+    TenantStatus,
+} from './models/index.js';

@@ -3,8 +3,8 @@ import { createApplication } from '../../src/app/create-application.js';
 import { DefaultMarketplaceEntityMappingLookup } from '../../src/modules/marketplaces/public/index.js';
 import { PostgresMarketplaceEntityMappingRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-entity-mapping-repository.js';
 import { PostgresMarketplaceRepository } from '../../src/modules/marketplaces/repositories/postgres-marketplace-repository.js';
-import { PostgresProductRepository } from '../../src/modules/products/repositories/postgres-product-repository.js';
-import { DefaultProductQueryService } from '../../src/modules/products/public/index.js';
+import { createPostgresProductRepository } from '../../src/modules/products/repositories/index.js';
+import { createDefaultProductQueryService } from '../../src/modules/products/public/index.js';
 import { createMarketplaceOrderIngestionModule } from '../../src/modules/orders/marketplace-ingestion/index.js';
 import { NormalizedMarketplaceOrderStatus } from '../../src/modules/orders/marketplace-ingestion/models/normalized-marketplace-order-status.js';
 import { MarketplaceOrderIngestionPermanentError } from '../../src/modules/orders/marketplace-ingestion/public/marketplace-order-ingestion-errors.js';
@@ -114,9 +114,9 @@ describe('marketplace order ingestion integration', () => {
                 return m === null ? null : { id: m.id, key: m.key, status: m.status };
             },
         };
-        const productQueryService = new DefaultProductQueryService({
+        const productQueryService = createDefaultProductQueryService({
             queryable: infra.database,
-            products: new PostgresProductRepository(),
+            products: createPostgresProductRepository(),
         });
         ingestionModule = createMarketplaceOrderIngestionModule({
             database: infra.database,

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { NotFoundError } from '../../../../shared/errors/index.js';
-import { WebhookDelivery } from '../models/webhook-delivery.js';
+import { createPendingWebhookDelivery } from '../models/webhook-delivery.js';
 import { WebhookSubscriptionStatus } from '../models/webhook-subscription-status.js';
 import { toWebhookDeliveryDto } from './webhook-delivery-dto.js';
 
@@ -8,19 +8,15 @@ import { toWebhookDeliveryDto } from './webhook-delivery-dto.js';
  * Persists a pending delivery row for a subscription and integration event.
  * Used by future dispatch workers — not exposed over HTTP in Phase 6.2.
  */
-export class CreateWebhookDelivery {
-    deps;
-    constructor(deps) {
-        this.deps = deps;
-    }
-    async execute(input) {
+export function createCreateWebhookDelivery(deps) {
+    async function execute(input) {
         const now = new Date();
-        const delivery = await this.deps.database.execute(async (tx) => {
-            const subscription = await this.deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId);
+        const delivery = await deps.database.execute(async (tx) => {
+            const subscription = await deps.subscriptions.findById(tx, input.tenantId, input.subscriptionId);
             if (subscription === null || subscription.status === WebhookSubscriptionStatus.DELETED) {
                 throw new NotFoundError('Webhook subscription was not found', { subscriptionId: input.subscriptionId });
             }
-            const pending = WebhookDelivery.createPending({
+            const pending = createPendingWebhookDelivery({
                 id: randomUUID(),
                 tenantId: input.tenantId,
                 subscriptionId: input.subscriptionId,
@@ -29,9 +25,10 @@ export class CreateWebhookDelivery {
                 nextAttemptAt: input.nextAttemptAt ?? null,
                 createdAt: now,
             });
-            await this.deps.deliveries.insert(tx, pending);
+            await deps.deliveries.insert(tx, pending);
             return pending;
         }, { tenantId: input.tenantId });
         return { delivery: toWebhookDeliveryDto(delivery) };
     }
+    return { execute };
 }
