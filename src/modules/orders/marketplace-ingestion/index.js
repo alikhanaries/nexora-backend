@@ -1,3 +1,7 @@
+/**
+ * Marketplace order ingestion and optional lifecycle processing: adapter registry, normalized order ingest,
+ * pull-based fetch, and confirm/cancel/return/shipment operations when order domain deps are supplied.
+ */
 import { createExecuteMarketplaceOrderLifecycleOperation } from './services/execute-marketplace-order-lifecycle-operation.js';
 import { createFetchAndIngestMarketplaceOrders } from './services/fetch-and-ingest-marketplace-orders.js';
 import { createIngestNormalizedMarketplaceOrder } from './services/ingest-normalized-marketplace-order.js';
@@ -26,6 +30,7 @@ import { createMarketplaceOrderAdapterRegistry } from './public/marketplace-orde
  * @param {{ createShipment: Function }} [deps.shipmentCommandService]
  * @param {{ execute: (input: object) => Promise<{ shipment: object }> }} [deps.shipShipment]
  * @param {import('../../../shared/idempotency/idempotency-service.js')} [deps.idempotency]
+ * @returns {{ ingestionService: object, ingestNormalizedMarketplaceOrder: Function, fetchAndIngestMarketplaceOrders?: Function, lifecycleService?: object, processMarketplaceLifecyclePayload?: Function, orderAdapterRegistry: ReturnType<typeof createMarketplaceOrderAdapterRegistry> }}
  */
 export function createMarketplaceOrderIngestionModule(deps) {
     const orderAdapterRegistry = createMarketplaceOrderAdapterRegistry();

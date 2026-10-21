@@ -4,7 +4,9 @@ import { deactivateCommerceIntegration } from '../models/commerce-integration.js
 import { channelStatusChangedEvent } from './commerce-integration-events.js';
 import { requireChannelUpdate } from './commerce-integration-permissions.js';
 
+/** @param {object} deps @returns {{ execute: Function }} */
 export function createDeactivateCommerceIntegration(deps) {
+    /** Sets channel INACTIVE with audit/event on status change. Authz: `channels.update`. */
     async function execute(input) {
         requireChannelUpdate(deps.authorization, input.actorPermissions);
         const channel = await deps.database.execute(async (tx) => {

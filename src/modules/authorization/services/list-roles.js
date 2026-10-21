@@ -1,3 +1,6 @@
+/**
+ * Use case: paginated listing of roles visible to the authenticated tenant.
+ */
 import { requireAuthorizationDeps } from './require-deps.js';
 
 /**

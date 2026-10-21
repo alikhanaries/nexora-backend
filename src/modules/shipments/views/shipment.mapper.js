@@ -1,3 +1,4 @@
+/** Maps an internal shipment shape into an API-safe ShipmentResponse object (dates serialized where needed). */
 export function toShipmentResponse(shipment) {
     return {
         id: shipment.id,
@@ -14,6 +15,7 @@ export function toShipmentResponse(shipment) {
         updatedAt: shipment.updatedAt.toISOString(),
     };
 }
+/** Maps an internal shipment shape into an API-safe ShipmentLineResponse object (dates serialized where needed). */
 export function toShipmentLineResponse(line) {
     return {
         id: line.id,
@@ -24,6 +26,7 @@ export function toShipmentLineResponse(line) {
         createdAt: line.createdAt.toISOString(),
     };
 }
+/** Maps an internal shipment shape into an API-safe ShipmentDetailResponse object (dates serialized where needed). */
 export function toShipmentDetailResponse(shipment) {
     return {
         ...toShipmentResponse(shipment),

@@ -22,14 +22,19 @@ import { ORDER_ROUTES } from '../../routes/order.routes.js';
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  * Idempotency orchestration stays here (HTTP adaptation); request mapping is in views/.
+ * Route family `/api/v1/orders` (ORDER_ROUTES); handlers call `CORE_SERVICES.orders` / cancellations use cases.
  */
 @Controller()
 class OrdersController {
+  /** Resolves order and cancellation use cases from core DI. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.orders.useCases;
     this.cancellationUseCases = coreServices.cancellations.useCases;
   }
 
+  /**
+   * POST tenant order with Idempotency-Key; wraps createOrder in idempotency.execute + DB transaction.
+   */
   @Post(ORDER_ROUTES.create.path)
   @HttpCode(201)
   async create(@Body() body, @Headers('idempotency-key') idempotencyKeyHeader) {
@@ -79,6 +84,7 @@ class OrdersController {
     return outcome.value;
   }
 
+  /** Cursor-paginated tenant order list with filters (`orders.read`). */
   @Get(ORDER_ROUTES.list.path)
   async list(@Query() query) {
     const parsed = parseOrThrow(listOrdersQuerySchema, query, 'list orders');
@@ -109,6 +115,7 @@ class OrdersController {
     };
   }
 
+  /** GET order detail including lines and customer snapshot. */
   @Get(ORDER_ROUTES.getById.path)
   async getById(@Param() params) {
     const { orderId } = parseOrThrow(orderIdParamsSchema, params, 'order params');
@@ -121,6 +128,7 @@ class OrdersController {
     return { success: true, data: toOrderDetailResponse(order) };
   }
 
+  /** POST confirm transition; emits order.confirmed (outbound webhook dispatch may follow). */
   @Post(ORDER_ROUTES.confirm.path)
   @HttpCode(200)
   async confirm(@Param() params) {

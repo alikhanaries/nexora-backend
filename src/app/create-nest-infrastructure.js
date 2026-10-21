@@ -1,3 +1,7 @@
+/**
+ * Test-oriented infrastructure bootstrap (optional Postgres/Redis/queue).
+ * Production entry uses {@link createInfrastructure} from `main.js` instead.
+ */
 import { PostgresDatabase } from '../infrastructure/postgres/postgres-database.js';
 import { createPinoLogger } from '../infrastructure/observability/pino-logger.js';
 import { PrometheusMetrics } from '../infrastructure/observability/prometheus-metrics.js';

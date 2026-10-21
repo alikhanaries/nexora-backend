@@ -10,11 +10,13 @@ export class RedisCache {
     connection;
     keys;
     logger;
+    /** @param {import('./redis-client.js').RedisConnection} connection @param {ReturnType<import('./redis-keys.js').createRedisKeyBuilder>} keys */
     constructor(connection, keys, logger) {
         this.connection = connection;
         this.keys = keys;
         this.logger = logger.child({ component: 'cache' });
     }
+    /** JSON-deserializes cached value; treats corrupt entries as miss and deletes them. */
     async get(namespace, key) {
         const raw = await this.connection.run('cache.get', () => this.connection.client.get(this.keys.cache(namespace, key)));
         if (raw === null)
@@ -30,6 +32,7 @@ export class RedisCache {
             return undefined;
         }
     }
+    /** Stores JSON with a positive TTL (`EX`). */
     async set(namespace, key, value, ttlSeconds) {
         if (ttlSeconds <= 0) {
             throw new Error('Cache entries must have a positive TTL');
@@ -37,6 +40,7 @@ export class RedisCache {
         const serialised = JSON.stringify(value);
         await this.connection.run('cache.set', () => this.connection.client.set(this.keys.cache(namespace, key), serialised, 'EX', ttlSeconds));
     }
+    /** Removes one cache entry. */
     async delete(namespace, key) {
         await this.connection.run('cache.delete', () => this.connection.client.del(this.keys.cache(namespace, key)));
     }

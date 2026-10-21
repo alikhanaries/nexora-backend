@@ -1,3 +1,6 @@
+/**
+ * External compatibility CE order read queries (pagination, status filters, CE DTO shape).
+ */
 import { loadOrderExternalIdMaps } from './compatibility-external-id-enrichment.js';
 import {
     mapEmptyOrderPageToExternalCollection,
@@ -7,6 +10,7 @@ import { mapCompatV2OrderPageToExternalCollection } from './mappers/compat-v2-or
 
 const DEFAULT_PAGE_SIZE = 50;
 
+/** Latest defined instant among date filters (inclusive lower bound for created-after). */
 function mergeInclusiveLowerBound(...dates) {
     const defined = dates.filter((value) => value !== undefined);
     if (defined.length === 0) {
@@ -15,6 +19,7 @@ function mergeInclusiveLowerBound(...dates) {
     return new Date(Math.max(...defined.map((value) => value.getTime())));
 }
 
+/** Earliest defined instant among date filters (upper bound for created-before). */
 function mergeExclusiveUpperBound(...dates) {
     const defined = dates.filter((value) => value !== undefined);
     if (defined.length === 0) {
@@ -35,6 +40,11 @@ export class CompatV2OrderQuery {
         this.deps = deps;
     }
 
+    /**
+     * GET `/api/v2/ce/orders` poll — same core list as merchant v2 but CE DTO mapper on output.
+     * @param {object} input Tenant, permissions, page/pageSize (and optional filters when extended).
+     * @returns {Promise<object>} CE-shaped order page with external integer ids.
+     */
     async listOrdersForCompatV2Poll(input) {
         const pageSize = input.pageSize ?? DEFAULT_PAGE_SIZE;
         const page = input.page ?? 1;

@@ -38,6 +38,7 @@ export class PrometheusMetrics {
     catalogSyncJobsTotal;
     marketplaceOrderIngestionTotal;
     marketplaceOrderLifecycleTotal;
+    /** Registers Prometheus counters/histograms and default process metrics for `serviceName`. */
     constructor(serviceName) {
         this.registry = new Registry();
         this.registry.setDefaultLabels({ service: serviceName });
@@ -207,6 +208,7 @@ export class PrometheusMetrics {
             registers: [this.registry],
         });
     }
+    /** Increments HTTP counters and observes latency; counts 4xx/5xx as errors. */
     recordHttpRequest(sample) {
         const statusClass = classifyStatus(sample.statusCode);
         this.httpRequestsTotal.inc({
@@ -223,9 +225,11 @@ export class PrometheusMetrics {
             });
         }
     }
+    /** Observes Postgres query duration by operation name and success/error. */
     recordDbQuery(sample) {
         this.dbQueryDuration.observe({ operation: sample.operation, result: sample.success ? 'success' : 'error' }, sample.durationSeconds);
     }
+    /** Counts Redis ops and observes duration by operation. */
     recordRedisOperation(sample) {
         this.redisOperationsTotal.inc({
             operation: sample.operation,
@@ -233,9 +237,11 @@ export class PrometheusMetrics {
         });
         this.redisOperationDuration.observe({ operation: sample.operation }, sample.durationSeconds);
     }
+    /** Increments enqueued job counter before a worker picks up the job. */
     recordQueueJobEnqueued(queue, jobName) {
         this.queueJobsTotal.inc({ queue, job_name: jobName, state: 'enqueued' });
     }
+    /** Records job completion outcome and processing duration. */
     recordQueueJob(sample) {
         this.queueJobsTotal.inc({
             queue: sample.queue,
@@ -244,24 +250,29 @@ export class PrometheusMetrics {
         });
         this.queueJobDuration.observe({ queue: sample.queue, job_name: sample.jobName }, sample.durationSeconds);
     }
+    /** Counts rate-limit policy evaluations as allowed vs limited. */
     recordRateLimitHit(policy, allowed) {
         this.rateLimitHitsTotal.inc({ policy, outcome: allowed ? 'allowed' : 'limited' });
     }
+    /** Counts authentication attempts by method (jwt/api-key) and outcome. */
     recordAuthEvent(sample) {
         this.authEventsTotal.inc({ method: sample.method, outcome: sample.outcome });
     }
+    /** Counts domain commerce commands/queries by operation label and outcome. */
     recordCommerceOperation(sample) {
         this.commerceOperationsTotal.inc({
             operation: sample.operation,
             outcome: sample.outcome,
         });
     }
+    /** Counts outbound webhook delivery attempts; observes duration on success samples. */
     recordWebhookDelivery(sample) {
         this.webhookDeliveryAttemptsTotal.inc({ outcome: sample.outcome });
         if (sample.durationMs !== undefined) {
             this.webhookDeliveryDuration.observe({ outcome: sample.outcome }, sample.durationMs / 1_000);
         }
     }
+    /** Counts catalog sync worker jobs by marketplace, operation, and outcome. */
     recordCatalogSync(sample) {
         this.catalogSyncJobsTotal.inc({
             outcome: sample.outcome,
@@ -269,6 +280,7 @@ export class PrometheusMetrics {
             operation: sample.operation ?? 'unknown',
         });
     }
+    /** Counts marketplace order ingestion pipeline outcomes. */
     recordMarketplaceOrderIngestion(sample) {
         this.marketplaceOrderIngestionTotal.inc({
             outcome: sample.outcome,
@@ -276,6 +288,7 @@ export class PrometheusMetrics {
             operation: sample.operation ?? 'ingest',
         });
     }
+    /** Counts inbound marketplace webhook handling outcomes. */
     recordMarketplaceWebhook(sample) {
         this.marketplaceWebhookTotal.inc({
             outcome: sample.outcome,
@@ -283,6 +296,7 @@ export class PrometheusMetrics {
             operation: sample.operation ?? 'webhook',
         });
     }
+    /** Counts marketplace order lifecycle command outcomes. */
     recordMarketplaceOrderLifecycle(sample) {
         this.marketplaceOrderLifecycleTotal.inc({
             outcome: sample.outcome,
@@ -290,6 +304,7 @@ export class PrometheusMetrics {
             operation: sample.operation ?? 'unknown',
         });
     }
+    /** Counts lifecycle queue worker job outcomes including source label. */
     recordMarketplaceLifecycleWorker(sample) {
         this.marketplaceLifecycleWorkerTotal.inc({
             outcome: sample.outcome,
@@ -298,6 +313,7 @@ export class PrometheusMetrics {
             source: sample.source ?? 'unknown',
         });
     }
+    /** Records scheduled catalog reconciliation runs, planned/skipped jobs, and duration. */
     recordCatalogSyncReconciliation(sample) {
         this.catalogSyncReconciliationRunsTotal.inc({ outcome: sample.outcome });
         if (sample.outcome === 'success') {
@@ -312,6 +328,7 @@ export class PrometheusMetrics {
             }
         }
     }
+    /** Records retention sweep runs, per-resource deletes, failures, and duration. */
     recordRetentionCleanup(sample) {
         if (sample.outcome === 'success') {
             this.retentionCleanupRunsTotal.inc({ outcome: 'success' });
@@ -335,11 +352,13 @@ export class PrometheusMetrics {
         this.retentionCleanupRunsTotal.inc({ outcome: 'failure' });
         this.retentionCleanupFailuresTotal.inc({ resource: sample.resource ?? 'run' });
     }
+    /** Updates gauge labels for total, idle, and waiting pool connections. */
     setDbPoolConnections(snapshot) {
         this.dbPoolConnections.set({ state: 'total' }, snapshot.total);
         this.dbPoolConnections.set({ state: 'idle' }, snapshot.idle);
         this.dbPoolConnections.set({ state: 'waiting' }, snapshot.waiting);
     }
+    /** Returns the Prometheus text exposition format for scraping. */
     render() {
         return this.registry.metrics();
     }

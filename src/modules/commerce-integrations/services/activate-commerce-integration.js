@@ -4,7 +4,9 @@ import { activateCommerceIntegration } from '../models/commerce-integration.js';
 import { channelStatusChangedEvent } from './commerce-integration-events.js';
 import { requireChannelUpdate } from './commerce-integration-permissions.js';
 
+/** @param {object} deps @returns {{ execute: Function }} */
 export function createActivateCommerceIntegration(deps) {
+    /** Sets channel ACTIVE; emits status event and audit when changed. Authz: `channels.update`. Tenant-scoped tx. */
     async function execute(input) {
         requireChannelUpdate(deps.authorization, input.actorPermissions);
         const channel = await deps.database.execute(async (tx) => {

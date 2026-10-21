@@ -1,3 +1,6 @@
+/**
+ * Use case: list flattened permission strings granted to a membership via its roles.
+ */
 import { NotFoundError } from '../../../shared/errors/index.js';
 import { requireAuthorizationDeps } from './require-deps.js';
 

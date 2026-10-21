@@ -1,3 +1,7 @@
+/**
+ * Offers (listings): lifecycle and query service for channel SKUs linked to products and integrations.
+ * Re-exports offer entity helpers from `./models`.
+ */
 import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import {
     createActivateOffer,
@@ -11,6 +15,16 @@ import {
 } from './services/index.js';
 import { createPostgresOfferRepository } from './repositories/index.js';
 
+/**
+ * @param {object} deps
+ * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @param {import('../products/public/index.js').DefaultProductQueryService} deps.productQueryService
+ * @param {import('../commerce-integrations/public/index.js').CommerceIntegrationQueryService} deps.commerceIntegrationQueryService
+ * @param {import('../pricing/public/index.js').DefaultPricingService} deps.pricingService
+ * @param {import('../../shared/events/event-recorder.port.js').EventRecorderPort} deps.eventRecorder
+ * @param {import('../audit/public/index.js').AuditRecorder} [deps.auditRecorder]
+ * @returns {{ offerQueryService: object, useCases: object }}
+ */
 export function createOffersModule(deps) {
     const authorization = createDefaultAuthorizationService();
     const offers = createPostgresOfferRepository();

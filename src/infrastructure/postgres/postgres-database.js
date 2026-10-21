@@ -1,3 +1,8 @@
+/**
+ * PostgreSQL access layer: connection pool, transactions, tenant GUC, migrations.
+ *
+ * Single pool per process; all repositories and inbox/outbox code share this type.
+ */
 import { performance } from 'node:perf_hooks';
 import { Pool } from 'pg';
 import { WASL_NAMING } from '../../shared/config/wasl-naming.config.js';
@@ -18,6 +23,7 @@ const ISOLATION_SQL = {
     serializable: 'SERIALIZABLE',
 };
 const UNLABELLED_OPERATION = 'unlabelled';
+/** Normalizes pg result into `{ rows, rowCount }`. */
 function toQueryResult(rows, rowCount) {
     return { rows, rowCount: rowCount ?? rows.length };
 }
@@ -26,15 +32,18 @@ class PostgresTransaction {
     client;
     tenantId;
     metrics;
+    /** Transaction-scoped query surface; does not release the underlying client. */
     constructor(client, tenantId, metrics) {
         this.client = client;
         this.tenantId = tenantId;
         this.metrics = metrics;
     }
+    /** Runs SQL on the open transaction connection with metrics and error mapping. */
     async query(sql, parameters = [], options) {
         return runQuery(this.client, sql, parameters, options, this.metrics);
     }
 }
+/** Executes SQL on a pool client, records duration metrics, maps driver errors. */
 async function runQuery(client, sql, parameters, options, metrics) {
     const operation = options?.operation ?? UNLABELLED_OPERATION;
     const startedAt = performance.now();
@@ -68,6 +77,7 @@ export class PostgresDatabase {
     logger;
     metrics;
     closed = false;
+    /** Creates runtime (and optional owner) pools from database config. */
     constructor({ config, logger, metrics }) {
         this.logger = logger.child({ component: 'postgres' });
         this.metrics = metrics;
@@ -107,6 +117,7 @@ export class PostgresDatabase {
             });
         }
     }
+    /** Pool query; wraps in a tenant transaction when request context carries `tenantId`. */
     async query(sql, parameters = [], options) {
         this.assertOpen();
         const tenantId = getRequestContext()?.tenantId;
@@ -140,6 +151,7 @@ export class PostgresDatabase {
             client.release();
         }
     }
+    /** Checks out a connection, runs a transaction with optional tenant GUC, releases client. */
     async execute(work, options = {}) {
         this.assertOpen();
         const client = await this.connect();
@@ -249,6 +261,7 @@ export class PostgresDatabase {
         }
         await migrateUp(this.pool, this.logger);
     }
+    /** Ends runtime and owner pools; subsequent queries throw. */
     async close() {
         if (this.closed)
             return;
@@ -259,9 +272,11 @@ export class PostgresDatabase {
         }
         this.logger.info({}, 'PostgreSQL pool closed');
     }
+    /** Acquires a client from the runtime pool. */
     async connect() {
         return this.connectFromPool(this.pool);
     }
+    /** Connects from a specific pool; maps acquisition failures to {@link DatabaseError}. */
     async connectFromPool(pool) {
         try {
             return await pool.connect();
@@ -270,6 +285,7 @@ export class PostgresDatabase {
             throw new DatabaseError('Could not acquire a database connection', error);
         }
     }
+    /** Best-effort ROLLBACK after a failed transaction (logs unlock failures). */
     async rollbackQuietly(client) {
         try {
             await client.query('ROLLBACK');
@@ -280,12 +296,14 @@ export class PostgresDatabase {
             this.logger.warn({ err: { message: rollbackError instanceof Error ? rollbackError.message : 'unknown' } }, 'ROLLBACK failed');
         }
     }
+    /** Throws when the pool has been closed. */
     assertOpen() {
         if (this.closed) {
             throw new DatabaseError('Database pool is closed');
         }
     }
 }
+/** Builds `BEGIN` with whitelisted isolation level and optional READ ONLY. */
 function buildBeginStatement(options) {
     const parts = ['BEGIN'];
     if (options.isolationLevel !== undefined) {

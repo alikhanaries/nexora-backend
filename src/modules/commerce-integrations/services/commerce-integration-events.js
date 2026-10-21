@@ -1,7 +1,11 @@
 import { getRequestContext } from '../../../shared/context/request-context.js';
+
+/** Request correlation id for domain events, when async context is set. */
 function correlationId() {
     return getRequestContext()?.requestId ?? null;
 }
+
+/** Stable integration event payload fields (no timestamps). */
 function channelPayload(channel) {
     return {
         id: channel.id,
@@ -14,6 +18,8 @@ function channelPayload(channel) {
         defaultStockLocationId: channel.defaultStockLocationId,
     };
 }
+
+/** Domain event after channel insert. */
 export function channelCreatedEvent(channel) {
     return {
         type: 'channel.created',
@@ -25,6 +31,8 @@ export function channelCreatedEvent(channel) {
         correlationId: correlationId(),
     };
 }
+
+/** Domain event after channel metadata update. */
 export function channelUpdatedEvent(channel) {
     return {
         type: 'channel.updated',
@@ -36,6 +44,8 @@ export function channelUpdatedEvent(channel) {
         correlationId: correlationId(),
     };
 }
+
+/** Domain event when integration status transitions (includes previousStatus). */
 export function channelStatusChangedEvent(channel, previousStatus) {
     return {
         type: 'channel.status_changed',

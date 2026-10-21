@@ -49,6 +49,7 @@ const passwordResetTokenRowSchema = z.object({
     created_at: z.date(),
     used_at: z.date().nullable(),
 });
+/** Postgres users row → domain user entity. */
 export function mapUserRow(row) {
     const parsed = parseOrThrow(userRowSchema, row, 'user row');
     return reconstituteUser({
@@ -59,6 +60,7 @@ export function mapUserRow(row) {
         updatedAt: parsed.updated_at,
     });
 }
+/** Postgres tenant_memberships row → domain membership. */
 export function mapMembershipRow(row) {
     const parsed = parseOrThrow(membershipRowSchema, row, 'membership row');
     return reconstituteMembership({
@@ -70,6 +72,7 @@ export function mapMembershipRow(row) {
         updatedAt: parsed.updated_at,
     });
 }
+/** Postgres refresh_sessions row → refresh session entity. */
 export function mapRefreshSessionRow(row) {
     const parsed = parseOrThrow(refreshSessionRowSchema, row, 'refresh session row');
     return createRefreshSessionEntity({
@@ -86,6 +89,7 @@ export function mapRefreshSessionRow(row) {
         replacedBy: parsed.replaced_by,
     });
 }
+/** Postgres tenants row → lightweight tenant lookup shape. */
 export function mapTenantRow(row) {
     const parsed = parseOrThrow(tenantRowSchema, row, 'tenant row');
     return {
@@ -95,6 +99,7 @@ export function mapTenantRow(row) {
         status: parsed.status,
     };
 }
+/** Postgres password_reset_tokens row → plain record for reset flow. */
 export function mapPasswordResetTokenRow(row) {
     const parsed = parseOrThrow(passwordResetTokenRowSchema, row, 'password reset token row');
     return {

@@ -1,3 +1,9 @@
+/**
+ * Postgres-backed HTTP idempotency records.
+ *
+ * Serialises concurrent replays with session advisory locks and maps row state
+ * to {@link ../../shared/errors/index.js} idempotency errors.
+ */
 import { DatabaseError, IdempotencyConflictError, IdempotentRequestInProgressError, } from '../../shared/errors/index.js';
 import { clampBatchSize } from '../../shared/pagination/index.js';
 
@@ -8,15 +14,21 @@ const NULL_TENANT = '00000000-0000-0000-0000-000000000000';
  * @property {(sql: string, parameters?: unknown[], options?: { operation?: string }) => Promise<{ rows: object[], rowCount: number }>} query
  */
 
+/** Infrastructure adapter for the idempotency port used by mutating API routes. */
 export class PostgresIdempotencyService {
     database;
     config;
 
+    /** @param {import('./postgres-database.js').PostgresDatabase} database @param {{ ttlSeconds: number }} config */
     constructor(database, config) {
         this.database = database;
         this.config = config;
     }
 
+    /**
+     * Runs `operation` once per idempotency key under a session advisory lock; replays stored responses on repeat.
+     * @returns {Promise<{ kind: 'executed' | 'replayed', value: unknown }>}
+     */
     async execute(key, fingerprint, operation, toRecord, options = {}) {
         return this.database.withSessionAdvisoryLock(this.buildAdvisoryLockKey(key), async (scope) => {
             return this.executeUnderLock(key, fingerprint, operation, toRecord, options, scope);
@@ -169,6 +181,7 @@ export class PostgresIdempotencyService {
         return result.rowCount > 0;
     }
 
+    /** Persists completed response body/status on the idempotency row inside the caller's transaction. */
     async markCompletedInTransaction(transaction, key, record) {
         const result = await transaction.query(`UPDATE idempotency_records
        SET status = 'completed',

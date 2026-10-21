@@ -63,6 +63,10 @@ async function transitionReturn(deps, input, transition, auditEventType) {
  * @returns {{ execute: Function }}
  */
 function createTransitionReturn(deps, transition, auditEventType) {
+/**
+   * Applies an allowed return status transition (approve/reject/cancel/complete) with locking and events.
+   * Two exported factories share this name for different transition commands.
+   */
     function execute(input) {
         return transitionReturn(deps, input, transition, auditEventType);
     }
@@ -110,6 +114,11 @@ export function createCancelReturn(deps) {
  * @returns {{ execute: Function }}
  */
 export function createCompleteReturn(deps) {
+/**
+     * Completes a return after receive processing: validates terminal transition rules and emits status change.
+     * @param {object} input Tenant, returnId, actor fields, permissions.
+     * @returns {Promise<{return: object}>} Updated return detail DTO.
+     */
     async function execute(input) {
         requireReturnsUpdate(deps.authorization, input.actorPermissions);
         const returnDetail = await deps.database.execute(async (tx) => {

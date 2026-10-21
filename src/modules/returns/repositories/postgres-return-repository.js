@@ -39,6 +39,7 @@ const returnSelectAliased = `r.id, r.tenant_id, r.order_id, r.external_reference
   r.created_at, r.updated_at, r.received_at, r.completed_at`;
 const returnLineSelect = `id, tenant_id, return_id, order_line_id, quantity, reason,
   created_at, updated_at`;
+/** Maps a validated SQL row into a domain return entity. */
 function toReturn(row) {
     return reconstituteReturn({
         id: row.id,
@@ -54,6 +55,7 @@ function toReturn(row) {
         completedAt: row.completed_at,
     });
 }
+/** Maps a validated SQL row into a domain return entity. */
 function toReturnLine(row) {
     return reconstituteReturnLine({
         id: row.id,
@@ -66,6 +68,7 @@ function toReturnLine(row) {
         updatedAt: row.updated_at,
     });
 }
+/** Builds tenant-scoped SQL WHERE fragments and optional order joins for list/count queries. */
 function buildListConditions(tenantId, filters) {
         const conditions = ['r.tenant_id = $1'];
         const params = [tenantId];
@@ -150,8 +153,10 @@ function buildListConditions(tenantId, filters) {
     }
 
 
+/** Postgres persistence factory; every query is scoped by `tenant_id`. */
 export function createPostgresReturnRepository() {
     return {
+/** Loads one return by id within the tenant; returns null when missing. */
         async findById(queryable, tenantId, returnId) {
         const result = await queryable.query(`SELECT ${returnSelect} FROM returns WHERE tenant_id = $1 AND id = $2`, [tenantId, returnId], { operation: 'returns.find_by_id' });
         const row = result.rows[0];
@@ -159,6 +164,7 @@ export function createPostgresReturnRepository() {
             return null;
         return toReturn(parseOrThrow(returnRowSchema, row, 'returns row'));
         },
+/** Resolves a return by tenant-scoped external reference for idempotent ingestion. */
         async findByExternalReference(queryable, tenantId, externalReference) {
         const result = await queryable.query(`SELECT ${returnSelect}
        FROM returns
@@ -168,6 +174,7 @@ export function createPostgresReturnRepository() {
             return null;
         return toReturn(parseOrThrow(returnRowSchema, row, 'returns row'));
         },
+/** `SELECT … FOR UPDATE` row lock on the return (and tenant) inside a transaction. */
         async lockByExternalReferenceForUpdate(transaction, tenantId, externalReference) {
         const result = await transaction.query(`SELECT ${returnSelect}
        FROM returns
@@ -178,6 +185,7 @@ export function createPostgresReturnRepository() {
             return null;
         return toReturn(parseOrThrow(returnRowSchema, row, 'returns row'));
         },
+/** `SELECT … FOR UPDATE` row lock on the return (and tenant) inside a transaction. */
         async lockForUpdate(transaction, tenantId, returnId) {
         const result = await transaction.query(`SELECT ${returnSelect}
        FROM returns
@@ -188,6 +196,7 @@ export function createPostgresReturnRepository() {
             return null;
         return toReturn(parseOrThrow(returnRowSchema, row, 'returns row'));
         },
+/** Counts returns matching filters for offset pagination totals. */
         async count(queryable, tenantId, filters) {
         const { conditions, params, joinClause } = buildListConditions(tenantId, filters);
         const result = await queryable.query(`SELECT COUNT(*)::int AS total
@@ -197,6 +206,7 @@ export function createPostgresReturnRepository() {
         const row = result.rows[0];
         return Number(row?.total ?? 0);
         },
+/** Offset page of returns with sort direction; uses shared list filter builder. */
         async listPageOffset(queryable, tenantId, filters, page, pageSize, sortDirection = 'desc') {
         const { conditions, params, nextParamIndex, joinClause } = buildListConditions(tenantId, filters);
         const offset = (page - 1) * pageSize;
@@ -212,6 +222,7 @@ export function createPostgresReturnRepository() {
        LIMIT $${limitParam} OFFSET $${offsetParam}`, listParams, { operation: 'returns.list_page_offset' });
         return result.rows.map((row) => toReturn(parseOrThrow(returnRowSchema, row, 'returns row')));
         },
+/** Keyset (cursor) page of returns ordered by created time within the tenant. */
         async listPage(queryable, tenantId, filters, limit, cursorCreatedAt, cursorId) {
         const conditions = ['tenant_id = $1'];
         const params = [tenantId];
@@ -238,6 +249,7 @@ export function createPostgresReturnRepository() {
             items: result.rows.map((row) => toReturn(parseOrThrow(returnRowSchema, row, 'returns row'))),
         };
         },
+/** Persists a new return row (and related lines when applicable) in the current transaction. */
         async insertReturn(transaction, returnEntity) {
         const p = returnEntity;
         await transaction.query(`INSERT INTO returns (
@@ -257,18 +269,21 @@ export function createPostgresReturnRepository() {
             p.completedAt,
         ], { operation: 'returns.insert' });
         },
+/** Updates mutable return columns; `tenant_id` and id constrain the row. */
         async updateReturn(transaction, returnEntity) {
         const p = returnEntity;
         await transaction.query(`UPDATE returns SET
          status = $3, reason = $4, updated_at = $5, received_at = $6, completed_at = $7
        WHERE tenant_id = $1 AND id = $2`, [p.tenantId, p.id, p.status, p.reason, p.updatedAt, p.receivedAt, p.completedAt], { operation: 'returns.update' });
         },
+/** Persists a new return row (and related lines when applicable) in the current transaction. */
         async insertReturnLine(transaction, line) {
         const p = line;
         await transaction.query(`INSERT INTO return_lines (
          id, tenant_id, return_id, order_line_id, quantity, reason, created_at, updated_at
        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, [p.id, p.tenantId, p.returnId, p.orderLineId, p.quantity, p.reason, p.createdAt, p.updatedAt], { operation: 'return_lines.insert' });
         },
+/** Lists child rows for a return within the tenant. */
         async listReturnLines(queryable, tenantId, returnId) {
         const result = await queryable.query(`SELECT ${returnLineSelect}
        FROM return_lines
@@ -276,6 +291,7 @@ export function createPostgresReturnRepository() {
        ORDER BY created_at`, [tenantId, returnId], { operation: 'return_lines.list' });
         return result.rows.map((row) => toReturnLine(parseOrThrow(returnLineRowSchema, row, 'return_lines row')));
         },
+/** Repository operation on return data (tenant-isolated SQL). */
         async sumPendingQuantitiesByOrderLine(transaction, tenantId, orderId, orderLineIds, excludeReturnId) {
         if (orderLineIds.length === 0) {
             return new Map();
@@ -308,6 +324,7 @@ export function createPostgresReturnRepository() {
         }
         return map;
         },
+/** Repository operation on return data (tenant-isolated SQL). */
         async verifyShipmentBelongsToOrder(queryable, tenantId, orderId, shipmentId) {
         const result = await queryable.query(`SELECT 1 FROM shipments
        WHERE tenant_id = $1 AND order_id = $2 AND id = $3`, [tenantId, orderId, shipmentId], { operation: 'returns.verify_shipment' });

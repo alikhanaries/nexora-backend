@@ -1,3 +1,8 @@
+/**
+ * OpenTelemetry tracing bootstrap for API and worker processes.
+ *
+ * Instruments HTTP, PostgreSQL, and Redis; exports traces via OTLP when enabled.
+ */
 import { trace } from '@opentelemetry/api';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -8,9 +13,11 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { toErrorMessage } from '../../shared/errors/index.js';
 const NOOP_TRACING = { shutdown: () => Promise.resolve() };
+/** True for health and metrics paths that should not create trace spans. */
 export function isObservabilityProbePath(url) {
     return url.startsWith('/health') || url.startsWith('/internal/metrics');
 }
+/** Starts the Node SDK or returns a no-op shutdown handle when tracing is off. */
 export function startTracing(config, logger, options = {}) {
     if (!config.observability.tracingEnabled) {
         logger.debug({}, 'Tracing disabled');

@@ -5,6 +5,7 @@ import { NotFoundError } from '../../../../shared/errors/index.js';
  * @returns {{ execute: Function }}
  */
 export function createGetUser(deps) {
+    /** Loads user by id or NotFound (internal/admin use). */
     async function execute(userId) {
         return deps.db.execute(async (tx) => {
             const user = await deps.users.findById(tx, userId);

@@ -1,3 +1,6 @@
+/**
+ * Creates a pending delivery row when manually replaying or testing a subscription endpoint.
+ */
 import { randomUUID } from 'node:crypto';
 import { NotFoundError } from '../../../../shared/errors/index.js';
 import { createPendingWebhookDelivery } from '../models/webhook-delivery.js';
@@ -9,6 +12,9 @@ import { toWebhookDeliveryDto } from './webhook-delivery-dto.js';
  * Used by future dispatch workers — not exposed over HTTP in Phase 6.2.
  */
 export function createCreateWebhookDelivery(deps) {
+    /**
+     * Tenant-scoped webhook subscription/delivery command; enforces webhooks.manage where required.
+     */
     async function execute(input) {
         const now = new Date();
         const delivery = await deps.database.execute(async (tx) => {

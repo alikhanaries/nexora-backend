@@ -1,3 +1,4 @@
+/** Maps an internal price record shape into an API-safe PriceResponse object (dates serialized where needed). */
 export function toPriceResponse(price) {
     return {
         id: price.id,

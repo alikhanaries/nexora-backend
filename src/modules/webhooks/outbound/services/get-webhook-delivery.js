@@ -3,7 +3,13 @@ import { AUTH_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-pol
 import { toWebhookDeliveryDto } from './webhook-delivery-dto.js';
 import { requireWebhooksRead } from './webhook-permissions.js';
 
+/**
+ * Factory closing over shared deps for webhook module services.
+ */
 export function createGetWebhookDelivery(deps) {
+    /**
+     * Tenant-scoped webhook subscription/delivery command; enforces webhooks.manage where required.
+     */
     async function execute(input) {
         requireWebhooksRead(deps.authorization, input.actorPermissions);
         const rateLimit = await deps.rateLimiter.consume({

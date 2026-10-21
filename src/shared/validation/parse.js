@@ -1,4 +1,12 @@
+/**
+ * Shared validation utilities built on Zod.
+ *
+ * Used by HTTP handlers, workers, and repositories to reject malformed payloads
+ * with consistent {@link ValidationError} shape.
+ */
 import { ValidationError } from '../errors/index.js';
+
+/** Maps Zod issues into stable `{ path, message }` records for API responses. */
 export function toFieldIssues(issues) {
     return issues.map((issue) => ({
         path: issue.path.length === 0 ? '(root)' : issue.path.join('.'),

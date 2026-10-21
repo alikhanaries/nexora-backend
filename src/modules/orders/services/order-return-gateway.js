@@ -7,6 +7,9 @@ import { toOrderDto } from '../views/order-dto.js';
  * @param {ReturnType<import('../repositories/postgres-order-repository.js').createPostgresOrderRepository>} deps.orders
  */
 export function createOrderReturnGateway(deps) {
+    /**
+     * Thin delegate to order repository for returns module (tenant-scoped line updates).
+     */
     async function findOrder(queryable, tenantId, orderId) {
         const order = await deps.orders.findById(queryable, tenantId, orderId);
         if (order === null) {
@@ -20,6 +23,9 @@ export function createOrderReturnGateway(deps) {
         };
     }
 
+    /**
+     * Line-level FOR UPDATE locks for shipment/cancel/return commands.
+     */
     async function lockOrderLinesForUpdate(transaction, tenantId, orderId) {
         const lines = await deps.orders.lockOrderLinesForUpdate(transaction, tenantId, orderId);
         return lines.map((line) => ({
@@ -34,10 +40,16 @@ export function createOrderReturnGateway(deps) {
         }));
     }
 
+    /**
+     * Increments returned qty on a line (returns module gateway).
+     */
     async function updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt) {
         await deps.orders.updateOrderLineReturnedQuantity(transaction, tenantId, orderLineId, returnedQuantity, updatedAt);
     }
 
+    /**
+     * Thin delegate to order repository for returns module (tenant-scoped line updates).
+     */
     async function applyReturnReceivedOnOrderLine(transaction, tenantId, orderLineId, quantity, updatedAt) {
         const line = await deps.orders.lockOrderLineForUpdate(transaction, tenantId, orderLineId);
         if (line === null) {

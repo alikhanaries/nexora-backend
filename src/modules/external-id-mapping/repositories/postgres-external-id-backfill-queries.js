@@ -2,6 +2,7 @@ import { TenantStatus } from '../../tenants/public/index.js';
 import { clampBatchSize } from '../../../shared/pagination/index.js';
 import { resolveExternalIdBackfillTable } from '../models/external-id-backfill.js';
 
+/** SQL helpers for scanning tenants and unmapped resources during external ID backfill jobs. */
 export function createPostgresExternalIdBackfillQueries() {
     return {
         /**

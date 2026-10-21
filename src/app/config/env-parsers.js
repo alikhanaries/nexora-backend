@@ -1,14 +1,15 @@
-import { z } from 'zod';
 /**
- * Environment variables are always strings, so every typed value needs an
- * explicit parser. These helpers keep the parsing rules in one place and make
- * failures readable: the schema reports which variable is wrong and why.
+ * Zod transform helpers for env strings (booleans, integers, URLs, lists).
+ * Shared by {@link configSchema} so mis-set variables fail with clear messages.
  */
+import { z } from 'zod';
 const TRUTHY = new Set(['true', '1', 'yes', 'on']);
 const FALSY = new Set(['false', '0', 'no', 'off']);
+/** True for undefined or whitespace-only env strings. */
 function isBlank(value) {
     return value === undefined || value.trim() === '';
 }
+/** Zod transform: optional env string → boolean, using TRUTHY/FALSY sets or `defaultValue`. */
 export function envBoolean(defaultValue) {
     return z
         .string()
@@ -28,6 +29,7 @@ export function envBoolean(defaultValue) {
         return z.NEVER;
     });
 }
+/** Zod transform: optional env string → integer with optional min/max bounds and default. */
 export function envInteger(options) {
     return z
         .string()
@@ -60,6 +62,7 @@ export function envInteger(options) {
         return parsed;
     });
 }
+/** Zod transform: trim required string or use default; fails validation when unset and no default. */
 export function envString(defaultValue) {
     return z
         .string()
@@ -73,12 +76,14 @@ export function envString(defaultValue) {
         return z.NEVER;
     });
 }
+/** Zod transform: blank/missing → undefined; otherwise trimmed string. */
 export function envOptionalString() {
     return z
         .string()
         .optional()
         .transform((value) => (isBlank(value) ? undefined : value.trim()));
 }
+/** Like {@link envString} with an additional URL.canParse check. */
 export function envUrl(defaultValue) {
     return envString(defaultValue).superRefine((value, ctx) => {
         if (!URL.canParse(value)) {

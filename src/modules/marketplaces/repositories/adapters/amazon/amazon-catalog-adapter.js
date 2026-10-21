@@ -19,6 +19,9 @@ export class AmazonCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         });
     }
 
+    /**
+     * Static catalog adapter capability flags (sync dimensions, connection test). No network I/O.
+     */
     getCapabilities() {
         return {
             ...createEmptyMarketplaceCapabilities(),

@@ -6,7 +6,13 @@ import { markWebhookSubscriptionDeleted } from '../models/webhook-subscription.j
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
 import { requireWebhooksManage } from './webhook-permissions.js';
 
+/**
+ * Factory closing over shared deps for webhook module services.
+ */
 export function createDeleteWebhookSubscription(deps) {
+    /**
+     * Tenant-scoped webhook subscription/delivery command; enforces webhooks.manage where required.
+     */
     async function execute(input) {
         requireWebhooksManage(deps.authorization, input.actorPermissions);
         const rateLimit = await deps.rateLimiter.consume({

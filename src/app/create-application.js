@@ -1,3 +1,11 @@
+/**
+ * Composition root for the API process.
+ *
+ * Wires every domain `create*Module` against shared infrastructure, builds
+ * marketplace ingest/outbound adapters, registers readiness probes, then
+ * hands `coreServices` to Nest (`createNestHttpServer`). Controllers stay thin:
+ * they resolve use cases / `routeDeps` from this bag — business rules live in modules.
+ */
 import { createAuditModule } from '../modules/audit/index.js';
 import { createApiKeysModule } from '../modules/api-keys/index.js';
 import { createAuthorizationModule } from '../modules/authorization/index.js';
@@ -42,6 +50,11 @@ import { createDefaultAuthorizationService } from '../modules/authorization/publ
 import { wireMarketplaceOrderIngestion } from './wire-marketplace-order-ingestion.js';
 import { createNestHttpServer } from './http/create-nest-http-server.js';
 import { createDefaultProbes, ReadinessService } from './observability/readiness.js';
+
+/**
+ * @param {Awaited<ReturnType<import('./create-infrastructure.js').createInfrastructure>>} infra
+ * @returns {Promise<object>} Wired domain modules + Nest `httpServer` + readiness
+ */
 export async function createApplication(infra) {
     const audit = createAuditModule({ database: infra.database });
     const authorization = createAuthorizationModule({ database: infra.database });

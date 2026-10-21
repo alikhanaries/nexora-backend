@@ -28,13 +28,16 @@ import { PRODUCT_ROUTES } from '../../routes/product.routes.js';
 /**
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
+ * Route family `/api/v1/products` (PRODUCT_ROUTES); handlers call `CORE_SERVICES.products.useCases`.
  */
 @Controller()
 class ProductsController {
+/** Binds `CORE_SERVICES` product use cases for this HTTP adapter. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.products.useCases;
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to product use case `list`. */
   @Get(PRODUCT_ROUTES.list.path)
   async list(@Query() query) {
     const parsed = parseOrThrow(listProductsQuerySchema, query, 'list query');
@@ -56,6 +59,7 @@ class ProductsController {
     };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to product use case `create`. */
   @Post(PRODUCT_ROUTES.create.path)
   @HttpCode(201)
   async create(@Body() body) {
@@ -74,6 +78,7 @@ class ProductsController {
     return { success: true, data: toProductResponse(product) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to product use case `getById`. */
   @Get(PRODUCT_ROUTES.getById.path)
   async getById(@Param() params) {
     const { productId } = parseOrThrow(productIdParamsSchema, params, 'product params');
@@ -86,6 +91,7 @@ class ProductsController {
     return { success: true, data: toProductResponse(product) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to product use case `update`. */
   @Patch(PRODUCT_ROUTES.update.path)
   @HttpCode(200)
   async update(@Param() params, @Body() body) {
@@ -105,6 +111,7 @@ class ProductsController {
     return { success: true, data: toProductResponse(product) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to product use case `deactivate`. */
   @Post(PRODUCT_ROUTES.deactivate.path)
   @HttpCode(200)
   async deactivate(@Param() params) {
@@ -121,6 +128,7 @@ class ProductsController {
     return { success: true, data: toProductResponse(product) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to product use case `archive`. */
   @Post(PRODUCT_ROUTES.archive.path)
   @HttpCode(200)
   async archive(@Param() params) {
@@ -137,6 +145,7 @@ class ProductsController {
     return { success: true, data: toProductResponse(product) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to product use case `listContent`. */
   @Get(PRODUCT_ROUTES.listContent.path)
   async listContent(@Param() params) {
     const { productId } = parseOrThrow(productIdParamsSchema, params, 'product params');
@@ -149,6 +158,7 @@ class ProductsController {
     return { success: true, data: content.map(toProductContentResponse) };
   }
 
+/** HTTP handler: validates input, reads tenant actor, delegates to product use case `upsertContent`. */
   @Put(PRODUCT_ROUTES.upsertContent.path)
   @HttpCode(200)
   async upsertContent(@Param() params, @Body() body) {

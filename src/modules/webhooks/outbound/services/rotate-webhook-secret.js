@@ -7,7 +7,13 @@ import { generateWebhookSecret } from '../models/webhook-secret.js';
 import { toWebhookSubscriptionDto } from './webhook-subscription-dto.js';
 import { requireWebhooksManage } from './webhook-permissions.js';
 
+/**
+ * Factory closing over shared deps for webhook module services.
+ */
 export function createRotateWebhookSecret(deps) {
+    /**
+     * Tenant-scoped webhook subscription/delivery command; enforces webhooks.manage where required.
+     */
     async function execute(input) {
         requireWebhooksManage(deps.authorization, input.actorPermissions);
         if (input.sessionId === undefined) {

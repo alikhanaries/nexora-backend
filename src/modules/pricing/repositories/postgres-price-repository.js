@@ -17,6 +17,7 @@ const priceRowSchema = z.object({
     updated_at: z.date(),
 });
 
+/** Maps a validated SQL row into a domain price record entity. */
 function toPrice(row) {
     return reconstitutePrice({
         id: row.id,
@@ -36,8 +37,10 @@ function toPrice(row) {
 const priceSelectColumns = `id, tenant_id, product_id, channel_id, currency, amount_minor,
   valid_from, valid_to, status, created_at, updated_at`;
 
+/** Postgres persistence factory; every query is scoped by `tenant_id`. */
 export function createPostgresPriceRepository() {
     return {
+/** Loads one price record by id within the tenant; returns null when missing. */
         async findById(queryable, tenantId, priceId) {
             const result = await queryable.query(`SELECT ${priceSelectColumns}
        FROM prices
@@ -47,6 +50,7 @@ export function createPostgresPriceRepository() {
                 return null;
             return toPrice(parseOrThrow(priceRowSchema, row, 'prices row'));
         },
+/** Repository operation on price record data (tenant-isolated SQL). */
         async findEffective(queryable, tenantId, productId, channelId, currency, at) {
             const result = await queryable.query(`SELECT ${priceSelectColumns}
        FROM prices
@@ -66,6 +70,7 @@ export function createPostgresPriceRepository() {
                 return null;
             return toPrice(parseOrThrow(priceRowSchema, row, 'prices row'));
         },
+/** Keyset (cursor) page of price records ordered by created time within the tenant. */
         async listPage(queryable, tenantId, filters, limit, cursorCreatedAt, cursorId) {
             const conditions = ['tenant_id = $1'];
             const parameters = [tenantId];
@@ -104,6 +109,7 @@ export function createPostgresPriceRepository() {
                 items: result.rows.map((row) => toPrice(parseOrThrow(priceRowSchema, row, 'prices row'))),
             };
         },
+/** Persists a new price record row (and related lines when applicable) in the current transaction. */
         async insert(transaction, price) {
             await transaction.query(`INSERT INTO prices (
          id, tenant_id, product_id, channel_id, currency, amount_minor,
@@ -122,6 +128,7 @@ export function createPostgresPriceRepository() {
                 price.updatedAt,
             ], { operation: 'prices.insert' });
         },
+/** Updates mutable price record columns; `tenant_id` and id constrain the row. */
         async update(transaction, price) {
             await transaction.query(`UPDATE prices
        SET channel_id = $3,

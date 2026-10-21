@@ -1,3 +1,7 @@
+/**
+ * Nest facade for the StockConnect ERP integration API (`/api/v2/stock-connect/*`).
+ * Maps DTOs and delegates catalog/commerce commands built from `CORE_SERVICES` — no HTTP concerns.
+ */
 import { Inject, Injectable } from '@nestjs/common';
 import { toProductResponse } from '../../../../products/views/product.mapper.js';
 import { toStockConnectChannel } from '../../mappers/stock-connect-channel.mapper.js';
@@ -16,6 +20,11 @@ import { createStockConnectCommerceCommands } from '../../services/stock-connect
 
 const ROUTE_PREFIX = '/api/v2/stock-connect';
 
+/**
+ * Standard Stock Connect list response wrapper with mapped items and cursor fields.
+ * @param {{ items: unknown[], nextCursor: string | null, hasMore: boolean }} page
+ * @param {(item: unknown) => unknown} mapItem
+ */
 function paginationEnvelope(page, mapItem) {
   return {
     success: true,
@@ -28,8 +37,10 @@ function paginationEnvelope(page, mapItem) {
   };
 }
 
+/** Shared service injected by split StockConnect controllers (products, orders, inventory, etc.). */
 @Injectable()
 class StockConnectIntegrationService {
+  /** Wires catalog and commerce command facades from injected core services. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.coreServices = coreServices;
     const catalog = createStockConnectCatalogCommands(coreServices);
@@ -43,6 +54,7 @@ class StockConnectIntegrationService {
     this.cancellationsService = commerce;
   }
 
+  /** Integration metadata and API version for health checks. */
   ping() {
     return {
       success: true,
@@ -51,6 +63,10 @@ class StockConnectIntegrationService {
     };
   }
 
+  /**
+   * Lists Stock Connect products or looks up one by `merchantSku` with inventory summary.
+   * @param {Record<string, unknown>} query
+   */
   async listProducts(query) {
     if (query.merchantSku !== undefined) {
       const actor = requireActorContext();
@@ -85,6 +101,7 @@ class StockConnectIntegrationService {
     return paginationEnvelope(page, (item) => toStockConnectProduct(item));
   }
 
+  /** Single product with optional aggregated available quantity. */
   async getProduct(productId) {
     const product = await this.productsService.getProduct(productId);
     const summary = await this.readInventorySummary(productId);
@@ -95,6 +112,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Creates a product and returns the Stock Connect product shape. */
   async createProduct(body) {
     const product = await this.productsService.createProduct(body);
     return {
@@ -104,6 +122,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Updates a product and returns the Stock Connect product shape. */
   async updateProduct(productId, body) {
     const product = await this.productsService.updateProduct(productId, body);
     return {
@@ -113,6 +132,12 @@ class StockConnectIntegrationService {
     };
   }
 
+  /**
+   * Idempotent publish: create offer when missing, then activate on the requested channel.
+   * @param {string} productId
+   * @param {Record<string, unknown>} body
+   * @param {string | string[] | undefined} idempotencyKeyHeader
+   */
   async publishProduct(productId, body, idempotencyKeyHeader) {
     const actor = requireActorContext();
     const { actorId, actorKind } = commerceActorFields(actor);
@@ -154,11 +179,13 @@ class StockConnectIntegrationService {
     return outcome.value;
   }
 
+  /** Paginated orders in Stock Connect summary shape. */
   async listOrders(query) {
     const page = await this.ordersService.listOrders(this.toOrderListQuery(query));
     return paginationEnvelope(page, (item) => toStockConnectOrderSummary(item));
   }
 
+  /** Same listing as `listOrders` with sync window echoed in the payload. */
   async syncOrders(query) {
     const page = await this.ordersService.listOrders(this.toOrderListQuery(query));
     return {
@@ -176,6 +203,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Maps HTTP query DTO fields to the commerce command list-orders input. */
   toOrderListQuery(query) {
     return {
       ...(query.limit === undefined ? {} : { limit: query.limit }),
@@ -193,6 +221,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Order detail in Stock Connect shape. */
   async getOrder(orderId) {
     const order = await this.ordersService.getOrder(orderId);
     return {
@@ -202,6 +231,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Idempotent order cancellation; returns refreshed order detail. */
   async cancelOrder(orderId, idempotencyKeyHeader) {
     const actor = requireActorContext();
     const idempotencyKey = requireIdempotencyKey(idempotencyKeyHeader);
@@ -228,6 +258,7 @@ class StockConnectIntegrationService {
     return outcome.value;
   }
 
+  /** Inventory balances for one product. */
   async getProductInventory(productId, query) {
     const balances = await this.inventoryService.listInventory(query, productId);
     return {
@@ -241,6 +272,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Idempotent stock adjustment at a location. */
   async adjustInventory(body, idempotencyKeyHeader) {
     const actor = requireActorContext();
     const idempotencyKey = requireIdempotencyKey(idempotencyKeyHeader);
@@ -271,6 +303,7 @@ class StockConnectIntegrationService {
     return outcome.value;
   }
 
+  /** Delegates shipment creation to commerce commands and wraps the Stock Connect envelope. */
   async createShipment(orderId, body, idempotencyKeyHeader) {
     const result = await this.shipmentsService.createShipment(orderId, body, idempotencyKeyHeader);
     return {
@@ -280,6 +313,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Transitions a shipment to shipped with optional carrier metadata. */
   async shipShipment(shipmentId, body) {
     const data = await this.shipmentsService.shipShipment(shipmentId, body);
     return {
@@ -289,6 +323,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Shipment detail in Stock Connect envelope. */
   async getShipment(shipmentId) {
     const data = await this.shipmentsService.getShipment(shipmentId);
     return {
@@ -298,6 +333,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Commerce integrations mapped to Stock Connect channel items. */
   async listCommerceIntegrations() {
     const channels = await this.channelsService.listCommerceIntegrations({});
     return {
@@ -309,6 +345,7 @@ class StockConnectIntegrationService {
     };
   }
 
+  /** Best-effort sum of available quantity across locations; zero when inventory is unreadable. */
   async readInventorySummary(productId) {
     try {
       const balances = await this.inventoryService.listInventory({}, productId);

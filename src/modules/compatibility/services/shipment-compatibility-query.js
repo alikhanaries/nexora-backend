@@ -1,3 +1,6 @@
+/**
+ * Compatibility v2 shipment list/get (`/api/v2/shipments*` and `/api/v2/ce/shipments*`) with order enrichment and external integer IDs on the wire.
+ */
 import { loadOrdersWithLines } from './compatibility-order-enrichment.js';
 import { loadShipmentExternalIdMaps } from './compatibility-external-id-enrichment.js';
 import { mapShipmentPageToExternalCollection, } from './mappers/compatibility-shipment.mapper.js';
@@ -6,9 +9,16 @@ const DEFAULT_PAGE_SIZE = 50;
 
 export class ShipmentCompatibilityQuery {
     deps;
+    /** @param {object} deps Shipment and order query services plus external integer id mapping. */
     constructor(deps) {
         this.deps = deps;
     }
+    /**
+     * Lists shipments for merchant `/api/v2/shipments/merchant` and simplified CE poll variants.
+     * Enriches with order lines and shipment external integer ids when mapped.
+     * @param {object} input Tenant, permissions, pagination, carrier/date/reference filters.
+     * @returns {Promise<object>} Shipment ApiResponse page (read-only).
+     */
     async listMerchantShipments(input) {
         const pageSize = input.pageSize ?? DEFAULT_PAGE_SIZE;
         const page = input.page ?? 1;

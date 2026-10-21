@@ -1,3 +1,4 @@
+/** Maps an internal inventory shape into an API-safe StockLocationResponse object (dates serialized where needed). */
 export function toStockLocationResponse(location) {
     return {
         id: location.id,
@@ -9,6 +10,7 @@ export function toStockLocationResponse(location) {
         updatedAt: location.updatedAt.toISOString(),
     };
 }
+/** Maps an internal inventory shape into an API-safe BalanceResponse object (dates serialized where needed). */
 export function toBalanceResponse(balance) {
     return {
         id: balance.id,
@@ -22,6 +24,7 @@ export function toBalanceResponse(balance) {
         updatedAt: balance.updatedAt.toISOString(),
     };
 }
+/** Maps an internal inventory shape into an API-safe BalanceSnapshotResponse object (dates serialized where needed). */
 export function toBalanceSnapshotResponse(snapshot) {
     return {
         onHand: snapshot.onHand,

@@ -61,6 +61,11 @@ export const SYSTEM_ROLE_TEMPLATES = [
         ],
     },
 ];
+/**
+ * Returns built-in role template metadata for tenant seeding; throws if key unknown.
+ * @param {string} systemKey
+ * @returns {object}
+ */
 export function findSystemRoleTemplate(systemKey) {
     const template = SYSTEM_ROLE_TEMPLATES.find((entry) => entry.systemKey === systemKey);
     if (template === undefined) {

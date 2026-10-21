@@ -1,9 +1,17 @@
+/**
+ * Builds inbox-backed integration event consumers for the worker process.
+ *
+ * Each handler gets its own {@link InboxConsumer} so deduplication stays
+ * per consumer name, then a router fans the same event through the pipeline.
+ */
 import { InboxConsumer } from '../infrastructure/postgres/inbox-consumer.js';
 import { CompositeIntegrationEventRouter } from './handlers/composite-integration-event-router.js';
 import { LoggingIntegrationEventHandler } from './handlers/integration-event.handler.js';
 import { WebhookDispatchEnqueueHandler } from './handlers/webhook-dispatch-enqueue.handler.js';
 
 /**
+ * Wires the composite router used when integration events are published from the outbox.
+ *
  * @param {object} deps
  * @param {import('../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
  * @param {import('../infrastructure/postgres/inbox-repository.js').PostgresInboxRepository} deps.inbox

@@ -1,3 +1,9 @@
+/**
+ * Worker composition root for commerce modules and marketplace order ingestion.
+ *
+ * Keeps heavy module wiring out of {@link ./main.js} while sharing one
+ * Postgres pool and event recorder from infrastructure.
+ */
 import { createAuditModule } from '../modules/audit/index.js';
 import { createDefaultAuthorizationService } from '../modules/authorization/public/index.js';
 import { createCancellationsModule } from '../modules/cancellations/index.js';

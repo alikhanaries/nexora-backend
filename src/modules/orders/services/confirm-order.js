@@ -69,6 +69,9 @@ export function createConfirmOrder(deps) {
         };
     }
 
+    /**
+     * Order command/query step: tenant isolation on all repository calls; may emit order.* events for outbound webhooks.
+     */
     async function execute(input) {
         requireOrdersUpdate(deps.authorization, input.actorPermissions);
         if (input.transaction !== undefined) {

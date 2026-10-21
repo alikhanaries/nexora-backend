@@ -8,7 +8,13 @@ import { requireWebhooksManage } from './webhook-permissions.js';
 import { validateWebhookEventTypes } from './validate-webhook-event-types.js';
 import { validateWebhookUrl } from './validate-webhook-url.js';
 
+/**
+ * Factory closing over shared deps for webhook module services.
+ */
 export function createUpdateWebhookSubscription(deps) {
+    /**
+     * Tenant-scoped webhook subscription/delivery command; enforces webhooks.manage where required.
+     */
     async function execute(input) {
         requireWebhooksManage(deps.authorization, input.actorPermissions);
         const rateLimit = await deps.rateLimiter.consume({

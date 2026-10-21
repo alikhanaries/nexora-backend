@@ -9,6 +9,7 @@ import { mapUserRow } from './row-mappers.js';
  */
 export function createPostgresUserRepository() {
     return {
+        /** Loads user by primary key or null. */
         async findById(tx, id) {
             const result = await tx.query(`SELECT id, email, normalized_email, status, created_at, updated_at
        FROM users WHERE id = $1`, [id], { operation: 'identity.users.find_by_id' });
@@ -18,6 +19,7 @@ export function createPostgresUserRepository() {
             return mapUserRow(result.rows[0]);
         },
 
+        /** Lookup by normalized email (login and uniqueness checks). */
         async findByNormalizedEmail(tx, normalizedEmail) {
             const result = await tx.query(`SELECT id, email, normalized_email, status, created_at, updated_at
        FROM users WHERE normalized_email = $1`, [normalizedEmail], { operation: 'identity.users.find_by_email' });
@@ -27,6 +29,7 @@ export function createPostgresUserRepository() {
             return mapUserRow(result.rows[0]);
         },
 
+        /** Upserts user row from domain entity. */
         async save(tx, user) {
             await tx.query(`INSERT INTO users (id, email, normalized_email, status, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6)

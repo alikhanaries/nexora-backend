@@ -1,3 +1,6 @@
+/**
+ * Invites or adds a user to a tenant with pending/active membership state.
+ */
 import { randomUUID } from 'node:crypto';
 import { ConflictError, NotFoundError } from '../../../../shared/errors/index.js';
 import { createPendingMembershipEntity, isTerminalMembership } from '../../models/index.js';
@@ -7,6 +10,7 @@ import { createPendingMembershipEntity, isTerminalMembership } from '../../model
  * @returns {{ execute: Function }}
  */
 export function createAddMembership(deps) {
+    /** Creates pending membership or rejects duplicate/terminal states. Tenant-scoped tx. */
     async function execute(input) {
         return deps.db.execute(async (tx) => {
             const user = await deps.users.findById(tx, input.userId);

@@ -1,3 +1,6 @@
+/**
+ * Resolves membership → permission strings for auth (login, JWT refresh, API checks).
+ */
 import { resolveEffectivePermissions } from '../models/effective-permissions.js';
 import { requireAuthorizationDeps } from './require-deps.js';
 

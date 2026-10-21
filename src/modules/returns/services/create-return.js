@@ -44,6 +44,7 @@ export function createCreateReturn(deps) {
         });
     }
 
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requireReturnsCreate(deps.authorization, input.actorPermissions);
         if (input.lines.length === 0) {
@@ -62,6 +63,7 @@ export function createCreateReturn(deps) {
         }
         const returnId = randomUUID();
         const now = new Date();
+/** Transactional unit of work executed inside idempotency/database `execute`. */
         const work = async (tx) => {
             if (externalReference !== null) {
                 const existing = await deps.returns.findByExternalReference(tx, input.tenantId, externalReference);

@@ -45,6 +45,7 @@ export function createCreateShipment(deps) {
         });
     }
 
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         if (input.skipAuthorization !== true) {
             requireShipmentsCreate(deps.authorization, input.actorPermissions);
@@ -52,6 +53,7 @@ export function createCreateShipment(deps) {
         if (input.lines.length === 0) {
             throw new ValidationError('Shipment must contain at least one line');
         }
+/** Transactional unit of work executed inside idempotency/database `execute`. */
         const work = async (tx) => {
             /** @type {Map<string, number>} */
             const requestedByLine = new Map();

@@ -21,6 +21,7 @@ export const listAuditQuerySchema = z.object({
     offset: z.coerce.number().int().min(0).optional(),
 });
 
+/** Standard `{ success: true, data }` zod wrapper for audit HTTP responses. */
 export function successEnvelope(dataSchema) {
     return z.object({
         success: z.literal(true),

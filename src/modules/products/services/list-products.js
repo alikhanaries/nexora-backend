@@ -7,6 +7,7 @@ import { toProductDto } from './product-dto.js';
  * @returns {{ execute: Function }}
  */
 export function createListProducts(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         deps.authorization.requirePermission(input.actorPermissions, 'products.read');
         const limit = clampCursorLimit(input.limit);

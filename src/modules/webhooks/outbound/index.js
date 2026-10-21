@@ -1,3 +1,7 @@
+/**
+ * Outbound merchant webhooks: subscription and delivery repositories, command/query services,
+ * plus standalone dispatch (queue) and delivery (HTTP/outbox) factories for background workers.
+ */
 import { createDefaultAuthorizationService } from '../../authorization/public/index.js';
 import { createDefaultWebhookCommandService } from './services/webhook-command-service.js';
 import { createDefaultWebhookQueryService } from './services/webhook-query-service.js';
@@ -7,6 +11,16 @@ import { createWebhookDispatchService as buildWebhookDispatchService } from './s
 import { createPostgresWebhookDeliveryRepository } from './repositories/postgres-webhook-delivery-repository.js';
 import { createPostgresWebhookSubscriptionRepository } from './repositories/postgres-webhook-subscription-repository.js';
 
+/**
+ * @param {object} deps
+ * @param {import('../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @param {import('../../../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
+ * @param {import('../../../infrastructure/redis/redis-rate-limiter.js').RedisRateLimiter} deps.rateLimiter
+ * @param {ReturnType<typeof import('../../authorization/public/index.js').createDefaultAuthorizationService>} [deps.authorization]
+ * @param {import('../../audit/public/index.js').AuditRecorder} [deps.auditRecorder]
+ * @param {import('../../mfa/public/index.js').StepUpVerifierPort} [deps.stepUpVerifier]
+ * @returns {{ webhookCommandService: object, webhookQueryService: object, repositories: { subscriptions: object, deliveries: object } }}
+ */
 export function createWebhooksModule(deps) {
     const subscriptions = createPostgresWebhookSubscriptionRepository();
     const deliveries = createPostgresWebhookDeliveryRepository();
@@ -39,6 +53,7 @@ export function createWebhooksModule(deps) {
  * @param {import('../../../infrastructure/queue/bullmq-job-queue.js').BullMqJobQueue} deps.queue
  * @param {ReturnType<typeof createPostgresWebhookSubscriptionRepository>} [deps.subscriptions]
  * @param {ReturnType<typeof createPostgresWebhookDeliveryRepository>} [deps.deliveries]
+ * @returns {ReturnType<typeof buildWebhookDispatchService>}
  */
 export function createWebhookDispatchService(deps) {
     return buildWebhookDispatchService({
@@ -61,6 +76,7 @@ export function createWebhookDispatchService(deps) {
  * @param {ReturnType<typeof createPostgresWebhookSubscriptionRepository>} [deps.subscriptions]
  * @param {ReturnType<typeof createPostgresWebhookDeliveryRepository>} [deps.deliveries]
  * @param {(url: string) => Promise<URL>} [deps.ssrfValidator]
+ * @returns {ReturnType<typeof buildWebhookDeliveryService>}
  */
 export function createWebhookDeliveryService(deps) {
     return buildWebhookDeliveryService({

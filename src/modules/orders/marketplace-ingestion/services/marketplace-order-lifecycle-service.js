@@ -45,6 +45,9 @@ export function createMarketplaceOrderLifecycleService(deps) {
             const lifecycleCaps = adapter?.getOrderLifecycleCapabilities?.();
             assertMarketplaceOrderLifecycleCapability(command.operation, lifecycleCaps, command.marketplaceKey);
             const fingerprint = buildRequestFingerprint(command);
+            /**
+             * Applies inbound marketplace lifecycle command inside tenant DB tx; records metrics and maps adapter errors.
+             */
             const run = async (tx) => {
                 const externalOrderReference = command.externalOrderId.trim();
                 const order = await deps.orders.findByChannelAndExternalReference(tx, input.tenantId, input.channelId, externalOrderReference);

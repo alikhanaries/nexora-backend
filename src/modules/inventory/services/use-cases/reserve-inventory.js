@@ -5,6 +5,11 @@ import { optionalReferenceFields } from '../optional-fields.js';
  * @returns {{ execute: Function }}
  */
 export function createReserveInventory(deps) {
+    /**
+     * HTTP use-case entry for inventory reservation.
+     * Requires `inventory.reserve`, forwards caller-supplied `tenantId` and reserve fields
+     * to the domain service (tenant boundary is established upstream, not re-validated here).
+     */
     async function execute(input) {
         deps.authorization.requirePermission(input.actorPermissions, 'inventory.reserve');
         return deps.inventoryService.reserve({

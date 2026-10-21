@@ -26,6 +26,7 @@ const productContentRowSchema = z.object({
     created_at: z.coerce.date(),
     updated_at: z.coerce.date(),
 });
+/** Maps an internal product shape into an API-safe Product object (dates serialized where needed). */
 export function toProduct(row) {
     const parsed = parseOrThrow(productRowSchema, row, 'products row');
     return reconstituteProduct({
@@ -39,6 +40,7 @@ export function toProduct(row) {
         updatedAt: parsed.updated_at,
     });
 }
+/** Maps an internal product shape into an API-safe ProductContent object (dates serialized where needed). */
 export function toProductContent(row) {
     const parsed = parseOrThrow(productContentRowSchema, row, 'product_content row');
     return reconstituteProductContent({

@@ -15,6 +15,7 @@ export class RetentionCleanupScheduler {
     timer;
     running = false;
     stopped = false;
+    /** @param {import('./retention-cleanup-service.js').RetentionCleanupService} service @param {import('../redis/redis-distributed-lock.js').RedisDistributedLock} lock */
     constructor(service, lock, config, logger, lockTtlSeconds) {
         this.service = service;
         this.lock = lock;
@@ -22,6 +23,7 @@ export class RetentionCleanupScheduler {
         this.logger = logger;
         this.lockTtlSeconds = lockTtlSeconds;
     }
+    /** Starts interval ticks and runs cleanup immediately. */
     start() {
         if (this.timer !== undefined)
             return;
@@ -31,6 +33,7 @@ export class RetentionCleanupScheduler {
         void this.runScheduledTick();
         this.logger.info({ intervalMs: this.config.intervalMs }, 'Retention cleanup scheduler started');
     }
+    /** Stops scheduling and waits for an in-flight tick. */
     async stop() {
         this.stopped = true;
         if (this.timer !== undefined) {
@@ -71,6 +74,7 @@ export class RetentionCleanupScheduler {
             this.logTickFailure(error);
         }
     }
+    /** Structured error log for tick failures, including partial retention stats when available. */
     logTickFailure(error) {
         const payload = {
             reason: toErrorMessage(error),
@@ -83,6 +87,7 @@ export class RetentionCleanupScheduler {
         this.logger.error(payload, 'Retention cleanup tick failed');
     }
 }
+/** Promise delay while waiting for an active tick during shutdown. */
 function sleep(ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);

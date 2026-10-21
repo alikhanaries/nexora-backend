@@ -1,3 +1,6 @@
+/**
+ * Compatibility v2 shipment create/update commands (`/api/v2/shipments*` and `/api/v2/ce/shipments*`) mapped to core shipment use cases.
+ */
 import { NotFoundError } from '../../../shared/errors/index.js';
 import { resolveExternalOrderLines } from './compatibility-external-id-resolution.js';
 import {

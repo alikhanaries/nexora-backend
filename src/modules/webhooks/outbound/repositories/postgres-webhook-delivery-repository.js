@@ -26,6 +26,9 @@ const deliveryRowSchema = z.object({
 
 const deliverySelect = `id, tenant_id, subscription_id, event_id, event_type, status, attempt_count, next_attempt_at, last_http_status, last_error, delivered_at, created_at`;
 
+/**
+ * Maps SQL row to webhook domain entity.
+ */
 function toDelivery(row) {
     return reconstituteWebhookDelivery({
         id: row.id,
@@ -43,8 +46,14 @@ function toDelivery(row) {
     });
 }
 
+/**
+ * Postgres repository factory; all queries scoped by tenant_id where applicable.
+ */
 export function createPostgresWebhookDeliveryRepository() {
     return {
+        /**
+         * Inserts tenant webhook row; unique constraints enforce idempotent deliveries/subscriptions.
+         */
         async insert(queryable, delivery) {
         await queryable.query(`INSERT INTO webhook_deliveries
          (id, tenant_id, subscription_id, event_id, event_type, status, attempt_count, next_attempt_at, last_http_status, last_error, delivered_at, created_at)
@@ -63,6 +72,7 @@ export function createPostgresWebhookDeliveryRepository() {
             delivery.createdAt,
         ], { operation: 'webhooks.deliveries.insert' });
         },
+        /**
         async findById(queryable, tenantId, deliveryId) {
         const result = await queryable.query(`SELECT ${deliverySelect}
        FROM webhook_deliveries
@@ -72,6 +82,9 @@ export function createPostgresWebhookDeliveryRepository() {
             return null;
         return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
         },
+        /**
+         * Idempotency lookup: one delivery row per subscription + domain event id.
+         */
         async findBySubscriptionAndEventId(queryable, tenantId, subscriptionId, eventId) {
         const result = await queryable.query(`SELECT ${deliverySelect}
        FROM webhook_deliveries
@@ -81,6 +94,7 @@ export function createPostgresWebhookDeliveryRepository() {
             return null;
         return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
         },
+        /**
         async update(queryable, delivery, options = {}) {
         const params = [
             delivery.tenantId,
@@ -136,6 +150,7 @@ export function createPostgresWebhookDeliveryRepository() {
         }
         return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
         },
+        /**
         async listBySubscription(queryable, tenantId, subscriptionId, input = {}) {
         const limit = input.limit ?? 100;
         const result = await queryable.query(`SELECT ${deliverySelect}
@@ -145,6 +160,9 @@ export function createPostgresWebhookDeliveryRepository() {
        LIMIT $3`, [tenantId, subscriptionId, limit], { operation: 'webhooks.deliveries.list_by_subscription' });
         return result.rows.map((row) => toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row')));
         },
+        /**
+         * Offset page of orders using buildListConditions filters.
+         */
         async listPage(queryable, tenantId, subscriptionId, filter, limit, cursorCreatedAt, cursorId) {
         const conditions = ['tenant_id = $1', 'subscription_id = $2'];
         const params = [tenantId, subscriptionId];

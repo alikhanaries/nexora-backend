@@ -6,9 +6,11 @@
  */
 export class CompositeIntegrationEventRouter {
     consumers;
+    /** @param {import('../../infrastructure/postgres/inbox-consumer.js').InboxConsumer[]} consumers */
     constructor(consumers) {
         this.consumers = consumers;
     }
+    /** Invokes each inbox consumer sequentially for the same integration event. */
     async route(event) {
         for (const consumer of this.consumers) {
             await consumer.handle(event);

@@ -22,6 +22,9 @@ export function createAcknowledgeOrder(deps) {
     async function execute(input) {
         requireOrdersUpdate(deps.authorization, input.actorPermissions);
 
+        /**
+         * Transactional body run inside idempotency or database.execute (same tenant throughout).
+         */
         const work = async (tx) => {
             const existing = await deps.orders.findByOrderNumber(tx, input.tenantId, input.orderNumber);
             if (existing === null) {

@@ -1,3 +1,7 @@
+/**
+ * Products and localized content: catalog CRUD, archive/deactivate, and product query service for other domains.
+ * Re-exports product entity helpers from `./models`.
+ */
 import {
     createArchiveProduct,
     createCreateProduct,
@@ -11,6 +15,14 @@ import {
 } from './services/index.js';
 import { createPostgresProductContentRepository, createPostgresProductRepository } from './repositories/index.js';
 
+/**
+ * @param {object} deps
+ * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.database
+ * @param {ReturnType<typeof import('../authorization/public/index.js').createDefaultAuthorizationService>} deps.authorization
+ * @param {import('../audit/public/index.js').AuditRecorder} [deps.auditRecorder]
+ * @param {import('../../shared/events/event-recorder.port.js').EventRecorderPort} [deps.eventRecorder]
+ * @returns {{ useCases: object, productQueryService: import('./public/index.js').DefaultProductQueryService }}
+ */
 export function createProductsModule(deps) {
     const products = createPostgresProductRepository();
     const productContent = createPostgresProductContentRepository();

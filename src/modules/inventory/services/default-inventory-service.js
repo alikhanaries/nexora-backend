@@ -10,7 +10,14 @@ import { isInventoryReservationReleased } from '../models/reservation.js';
 const ORDER_REFERENCE_TYPE = 'ORDER';
 const SHIPMENT_REFERENCE_TYPE = 'SHIPMENT';
 
+/** Factory for inventory mutations: reserve, release, fulfill, receive, and on-hand adjustments. */
 export function createDefaultInventoryService(deps) {
+/**
+     * Ensures the stock location exists, belongs to the tenant, and is active before mutations.
+     * @param {string} tenantId Tenant scope.
+     * @param {string} stockLocationId Location to validate.
+     * @param {object|undefined} tx Optional existing transaction.
+     */
     async function verifyUsableStockLocation(tenantId, stockLocationId, tx) {
         if (tx !== undefined) {
             await assertActiveStockLocation(tx, tenantId, stockLocationId);
@@ -18,6 +25,14 @@ export function createDefaultInventoryService(deps) {
         }
         await runInTransaction(tenantId, undefined, (transaction) => assertActiveStockLocation(transaction, tenantId, stockLocationId));
     }
+/**
+     * Aggregates on-hand, reserved, and available quantities for a product (optionally one location).
+     * @param {string} tenantId Tenant scope.
+     * @param {string} productId Product whose balances are read.
+     * @param {string|undefined} stockLocationId When set, limits to one location.
+     * @param {object|undefined} tx Optional queryable transaction.
+     * @returns {Promise<object>} Per-location breakdown and rolled-up totals.
+     */
     async function getAvailability(tenantId, productId, stockLocationId, tx) {
         await assertProductExists(tenantId, productId, tx);
         const queryable = tx ?? deps.queryable;
@@ -43,15 +58,30 @@ export function createDefaultInventoryService(deps) {
             totals,
         };
     }
+/**
+   * Public API: reserve stock (runs in tenant transaction unless caller supplies tx).
+   * @param {object} input tenantId, productId, stockLocationId, quantity, idempotency/reference fields.
+   */
     async function reserve(input, tx) {
         return runInTransaction(input.tenantId, tx, (transaction) => reserveInTransaction(transaction, input));
     }
+/**
+   * Public API: release previously reserved quantity; idempotent per reference key.
+   */
     async function release(input, tx) {
         return runInTransaction(input.tenantId, tx, (transaction) => releaseInTransaction(transaction, input));
     }
+/**
+   * Converts shipment-tied reservations into on-hand decrements when a shipment ships.
+   */
     async function fulfillReservedForShipment(input, tx) {
         return runInTransaction(input.tenantId, tx, (transaction) => fulfillReservedForShipmentInTransaction(transaction, input));
     }
+/**
+     * Applies a signed on-hand adjustment movement (audit + inventory.changed event).
+     * @param {object} input tenantId, stockLocationId, productId, delta, optional reference fields.
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function adjust(input, tx) {
         return runInTransaction(input.tenantId, tx, (transaction) => mutateOnHand(transaction, {
             tenantId: input.tenantId,
@@ -64,6 +94,11 @@ export function createDefaultInventoryService(deps) {
             outboxEventType: INVENTORY_EVENT_TYPES.INVENTORY_CHANGED,
         }));
     }
+/**
+     * Increments on-hand for inbound stock (positive quantity only).
+     * @param {object} input Receipt fields including quantity and tenant scope.
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function receive(input, tx) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Receive quantity must be positive');
@@ -79,6 +114,11 @@ export function createDefaultInventoryService(deps) {
             outboxEventType: INVENTORY_EVENT_TYPES.INVENTORY_CHANGED,
         }));
     }
+/**
+     * Decrements on-hand for a sale/consumption movement (positive quantity input).
+     * @param {object} input Sale fields tied to tenant, product, and location.
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function recordSale(input, tx) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Sale quantity must be positive');
@@ -94,6 +134,11 @@ export function createDefaultInventoryService(deps) {
             outboxEventType: INVENTORY_EVENT_TYPES.INVENTORY_CHANGED,
         }));
     }
+/**
+     * Increments on-hand when sellable goods are returned to stock.
+     * @param {object} input Return receipt fields (quantity must be positive).
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function recordReturn(input, tx) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Return quantity must be positive');
@@ -109,12 +154,23 @@ export function createDefaultInventoryService(deps) {
             outboxEventType: INVENTORY_EVENT_TYPES.INVENTORY_CHANGED,
         }));
     }
+/**
+     * Runs inventory work in the caller transaction or opens a tenant-scoped managed transaction.
+     * @param {string} tenantId Tenant passed to the transaction manager.
+     * @param {object|undefined} tx Existing transaction when participating in a larger unit of work.
+     * @param {Function} work Async callback receiving the queryable transaction.
+     * @returns {Promise<*>} Result of `work`.
+     */
     async function runInTransaction(tenantId, tx, work) {
         if (tx !== undefined) {
             return work(tx);
         }
         return deps.transactionManager.execute(work, { tenantId });
     }
+/**
+   * Core reserve algorithm: lock balance, verify available >= quantity, insert reservation + movement.
+   * Rejects duplicate active reservations for the same reference unless quantity merge applies.
+   */
     async function reserveInTransaction(transaction, input) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Reservation quantity must be positive');
@@ -197,6 +253,9 @@ export function createDefaultInventoryService(deps) {
             balance: { onHand: balance.onHand, reserved, available },
         };
     }
+/**
+   * Core release algorithm: locate reservation by reference, decrement reserved, mark released when zero.
+   */
     async function releaseInTransaction(transaction, input) {
         await assertProductExists(input.tenantId, input.productId, transaction);
         await assertActiveStockLocation(transaction, input.tenantId, input.stockLocationId);
@@ -268,6 +327,9 @@ export function createDefaultInventoryService(deps) {
             balance: { onHand: balance.onHand, reserved, available },
         };
     }
+/**
+   * Fulfills reservations referenced by shipment id (or order fallback), reducing on-hand and reserved atomically.
+   */
     async function fulfillReservedForShipmentInTransaction(transaction, input) {
         if (input.quantity <= 0) {
             throw new BusinessRuleError('Fulfillment quantity must be positive');
@@ -359,6 +421,9 @@ export function createDefaultInventoryService(deps) {
             balance: { onHand, reserved, available },
         };
     }
+/**
+   * Shared on-hand mutation path: lock balance, apply delta, write movement, audit/outbox side effects.
+   */
     async function mutateOnHand(transaction, input) {
         if (input.delta === 0) {
             throw new BusinessRuleError('Inventory delta must be non-zero');
@@ -413,12 +478,22 @@ export function createDefaultInventoryService(deps) {
             balance: { onHand, reserved: balance.reserved, available },
         };
     }
+/**
+     * Verifies the product belongs to the tenant before balance mutations.
+     * @throws {NotFoundError} When the product is missing for the tenant.
+     */
     async function assertProductExists(tenantId, productId, tx) {
         const exists = await deps.productQueryService.verifyProductBelongsToTenant(tenantId, productId, tx);
         if (!exists) {
             throw new NotFoundError('Product was not found', { tenantId, productId });
         }
     }
+/**
+     * Loads and validates the stock location is usable (tenant-isolated).
+     * @param {object} transaction Active SQL transaction.
+     * @param {string} tenantId Tenant scope.
+     * @param {string} stockLocationId Location id to assert.
+     */
     async function assertActiveStockLocation(transaction, tenantId, stockLocationId) {
         const location = await deps.stockLocationRepository.findById(transaction, tenantId, stockLocationId);
         if (location === null) {
@@ -426,6 +501,7 @@ export function createDefaultInventoryService(deps) {
         }
         assertStockLocationUsable(location);
     }
+/** Persists a new inventory row (and related lines when applicable) in the current transaction. */
     async function insertMovementIfNew(transaction, input) {
         return deps.inventoryRepository.insertMovement(transaction, {
             id: randomUUID(),
@@ -440,6 +516,11 @@ export function createDefaultInventoryService(deps) {
             ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
         });
     }
+/**
+     * Writes audit log and outbox inventory events after a balance mutation.
+     * @param {object} transaction Active transaction.
+     * @param {object} input Audit/outbox metadata and balance snapshot.
+     */
     async function recordSideEffects(transaction, input) {
         if (deps.auditRecorder !== undefined) {
             await deps.auditRecorder.record(transaction, {
@@ -463,6 +544,11 @@ export function createDefaultInventoryService(deps) {
             },
         });
     }
+/**
+     * Maps a locked balance row into a compact snapshot for API/event payloads.
+     * @param {object} balance Domain balance entity.
+     * @returns {{onHand:number,reserved:number,available:number}}
+     */
     function toBalanceSnapshot(balance) {
         return {
             onHand: balance.onHand,

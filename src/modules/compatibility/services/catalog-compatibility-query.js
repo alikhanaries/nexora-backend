@@ -1,3 +1,6 @@
+/**
+ * Merchant compatibility v2 `/api/v2/*` catalog reads: products, offers, and availability in merchant response shape.
+ */
 import { NotFoundError } from '../../../shared/errors/index.js';
 import { mapProductToCeCatalogItem } from './mappers/compatibility-catalog-product.mapper.js';
 

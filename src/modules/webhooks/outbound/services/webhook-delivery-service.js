@@ -1,3 +1,6 @@
+/**
+ * Worker-side HTTP delivery: sign payload, call subscriber URL, classify retries vs terminal failure.
+ */
 import { recordWebhookDeliveryOutcome } from '../../../../shared/metrics/record-webhook-delivery.js';
 import { WebhookDeliveryStatus } from '../models/webhook-delivery-status.js';
 import { WebhookSubscriptionStatus } from '../models/webhook-subscription-status.js';
@@ -14,6 +17,9 @@ import {
 } from './webhook-request-signer.js';
 import { sanitizeWebhookDestinationForLog } from './sanitize-webhook-destination-for-log.js';
 
+/**
+ * Factory closing over shared deps for webhook module services.
+ */
 export function createWebhookDeliveryService(deps) {
     /**
      * @param {object} job
@@ -193,6 +199,9 @@ export function createWebhookDeliveryService(deps) {
         return resolveWebhookPayload(deps.webhookPayloadStrategies, subscription, event);
     }
 
+    /**
+     * Loads subscription, signs payload, performs outbound HTTP POST with timeout.
+     */
     async function prepareDelivery(job) {
         return deps.database.execute(async (tx) => {
             const delivery = await deps.deliveries.findById(tx, job.tenantId, job.deliveryId);
@@ -229,6 +238,9 @@ export function createWebhookDeliveryService(deps) {
             return { kind: 'ready', delivery: claimed, subscription };
         }, { tenantId: job.tenantId });
     }
+    /**
+     * Schedules retry/backoff or re-enqueues delivery job when response is retryable.
+     */
     async function handleRetryableFailure(job, delivery, context, failure, destination = null) {
         const exhausted = context.attempt >= context.maxAttempts;
         const retryDelayMs = resolveWebhookRetryDelayMs(failure.retryAfterSeconds ?? null, deps.config.maxRetryAfterSeconds);
@@ -272,6 +284,9 @@ export function createWebhookDeliveryService(deps) {
             retryDelayMs: retryDelayMs ?? undefined,
         });
     }
+    /**
+     * Updates delivery attempt status in Postgres (terminal vs success timestamps).
+     */
     async function persistSuccess(tenantId, delivery, httpStatus) {
         const applied = await deps.database.execute(async (tx) => deps.deliveries.update(tx, {
             ...delivery,
@@ -288,11 +303,17 @@ export function createWebhookDeliveryService(deps) {
             }, 'Webhook delivery result ignored because the row is no longer DELIVERING');
         }
     }
+    /**
+     * Updates delivery attempt status in Postgres (terminal vs success timestamps).
+     */
     async function persistTerminalFailure(tenantId, delivery, outcome) {
         await deps.database.execute(async (tx) => {
             await persistTerminalFailureInTx(tx, delivery, outcome, [WebhookDeliveryStatus.DELIVERING]);
         }, { tenantId });
     }
+    /**
+     * Updates delivery attempt status in Postgres (terminal vs success timestamps).
+     */
     async function persistTerminalFailureInTx(tx, delivery, outcome, expectedStatuses) {
         const statuses = expectedStatuses ?? [
             WebhookDeliveryStatus.PENDING,
@@ -308,6 +329,9 @@ export function createWebhookDeliveryService(deps) {
             deliveredAt: null,
         }, { expectedStatuses: statuses });
     }
+    /**
+     * Observability when delivery skipped (disabled subscription, filtered event, etc.).
+     */
     function logSkipped(preparation, job) {
         if (preparation.kind === 'already_delivered' || preparation.kind === 'terminal') {
             deps.logger.debug({

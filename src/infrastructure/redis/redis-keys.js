@@ -29,18 +29,22 @@ export function createRedisKeyBuilder(dependencies = {}) {
     const { prefix, namespace } = dependencies;
     const root = `${sanitise(prefix)}:${sanitise(namespace)}:v${KEY_SCHEMA_VERSION}`;
 
+    /** Builds `root:kind:part1:part2...` with sanitised segments. */
     function build(kind, ...parts) {
         return [root, kind, ...parts.map(sanitise)].join(':');
     }
 
+    /** Cache key under a logical namespace. */
     function cache(cacheNamespace, key) {
         return build('cache', cacheNamespace, key);
     }
 
+    /** Distributed lock key for a resource id. */
     function lock(resource) {
         return build('lock', resource);
     }
 
+    /** Rate-limit counter key; subject is base64url-encoded. */
     function rateLimit(policy, subject) {
         // Subjects may contain tenant/user ids joined with reserved `:` separators.
         return build('ratelimit', policy, encodeRateLimitSubject(subject));
@@ -84,6 +88,7 @@ export class RedisKeyBuilder {
 function encodeRateLimitSubject(subject) {
     return Buffer.from(subject, 'utf8').toString('base64url');
 }
+/** Validates a single key segment; throws on empty or reserved characters. */
 function sanitise(segment) {
     if (segment.length === 0) {
         throw new Error('Redis key segment must not be empty');

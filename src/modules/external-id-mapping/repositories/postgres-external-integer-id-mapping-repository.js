@@ -34,7 +34,9 @@ function toMapping(row) {
     };
 }
 
+/** Tenant-scoped integer external ID mappings with sequence allocation and idempotent assign. */
 export function createPostgresExternalIntegerIdMappingRepository() {
+    /** Loads full mapping row by internal resource id or null. */
     async function findMappingRowByResourceId(queryable, tenantId, provider, resourceType, resourceId) {
         const result = await queryable.query(
             `SELECT ${mappingSelect}
@@ -53,6 +55,7 @@ export function createPostgresExternalIntegerIdMappingRepository() {
         return parseOrThrow(mappingRowSchema, row, 'external_integer_id_mappings row');
     }
 
+    /** Atomically increments per-tenant/provider/resource_type sequence (compat integer IDs). */
     async function allocateExternalId(transaction, tenantId, provider, resourceType) {
         const result = await transaction.query(
             `INSERT INTO external_integer_id_sequences (tenant_id, provider, resource_type, last_value)

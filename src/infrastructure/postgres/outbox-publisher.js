@@ -17,12 +17,14 @@ export class OutboxPublisher {
     timer;
     running = false;
     stopped = false;
+    /** @param {import('./outbox-repository.js').PostgresOutboxRepository} outbox @param {import('../queue/bullmq-job-queue.js').BullMqJobQueue} queue */
     constructor(outbox, queue, config, logger) {
         this.outbox = outbox;
         this.queue = queue;
         this.config = config;
         this.logger = logger;
     }
+    /** Starts interval polling and runs an immediate first tick. */
     start() {
         if (this.timer !== undefined)
             return;
@@ -32,6 +34,7 @@ export class OutboxPublisher {
         void this.tick();
         this.logger.info({ pollIntervalMs: this.config.pollIntervalMs }, 'Outbox publisher started');
     }
+    /** Clears the poll timer and waits for an in-flight tick to finish. */
     async stop() {
         this.stopped = true;
         if (this.timer !== undefined) {
@@ -82,6 +85,7 @@ export class OutboxPublisher {
         return published;
     }
 }
+/** Promise delay used while waiting for an active tick during shutdown. */
 function sleep(ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);

@@ -1,3 +1,6 @@
+/**
+ * Merchant compatibility v2 `/api/v2/orders*` write path: maps external payloads to core order commands + idempotency.
+ */
 import { BusinessRuleError } from '../../../shared/errors/index.js';
 import {
     fingerprintAcknowledgeCommand,
@@ -20,6 +23,7 @@ const ACKNOWLEDGE_ROUTE_ID = 'POST /api/v2/orders/acknowledge';
 const CREATE_CHANNEL_ORDER_ROUTE_ID = 'POST /api/v2/orders';
 const CREATE_CHANNEL_FULFILLED_ORDER_ROUTE_ID = 'POST /api/v2/orders/channel-fulfilled';
 
+/** Compatibility façade over {@link createOrderCommandService} for merchant integrations. */
 export class OrderCompatibilityCommand {
     deps;
 

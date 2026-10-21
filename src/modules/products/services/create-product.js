@@ -12,6 +12,7 @@ import { productCreatedEvent } from './product-events.js';
  * @returns {{ execute: Function }}
  */
 export function createCreateProduct(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         deps.authorization.requirePermission(input.actorPermissions, 'products.create');
         const merchantSku = normalizeMerchantSku(input.merchantSku);

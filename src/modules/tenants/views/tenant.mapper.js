@@ -1,3 +1,4 @@
+/** Maps domain tenant to ISO-dated public API response. */
 export function toTenantResponse(tenant) {
     return {
         id: tenant.id,

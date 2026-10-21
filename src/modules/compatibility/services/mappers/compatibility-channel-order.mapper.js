@@ -191,6 +191,12 @@ export function fingerprintChannelFulfilledOrderCommand(mapped) {
     });
 }
 
+/**
+ * Stable JSON fingerprint for POST `/api/v2/orders` idempotency (channel, lines, customer, totals).
+ * Excludes shipment block present on fulfilled-order fingerprint variant.
+ * @param {object} mapped Normalised channel order command payload.
+ * @returns {string} Serialised fingerprint for idempotency store request body hash.
+ */
 export function fingerprintChannelOrderCommand(mapped) {
     return JSON.stringify({
         channelId: mapped.channelId,

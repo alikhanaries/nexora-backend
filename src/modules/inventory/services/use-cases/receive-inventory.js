@@ -3,6 +3,7 @@
  * @returns {{ execute: Function }}
  */
 export function createReceiveInventory(deps) {
+/** HTTP use-case entry: enforces permissions, scopes to tenant, delegates to domain service. */
     async function execute(input) {
         deps.authorization.requirePermission(input.actorPermissions, 'inventory.adjust');
         return deps.inventoryService.receive({

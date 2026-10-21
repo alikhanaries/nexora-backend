@@ -207,6 +207,9 @@ export function createCreateIntegrationOrder(deps) {
         };
     }
 
+    /**
+     * Order command/query step: tenant isolation on all repository calls; may emit order.* events for outbound webhooks.
+     */
     async function execute(input) {
         requireOrdersIngest(deps.authorization, input.actorPermissions);
         if (input.lines.length === 0) {
@@ -233,6 +236,9 @@ export function createCreateIntegrationOrder(deps) {
         if (totalMinor < 0) {
             throw new BusinessRuleError('Order total cannot be negative');
         }
+        /**
+         * Transactional body run inside idempotency or database.execute (same tenant throughout).
+         */
         const work = async (tx) => {
             await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
                 `channel-order:${input.tenantId}:${input.channelId}:${externalOrderReference}`,

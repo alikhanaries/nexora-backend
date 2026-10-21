@@ -8,6 +8,7 @@ import { createStockLocationEntity } from '../../models/stock-location.js';
  * @returns {{ execute: Function }}
  */
 export function createCreateStockLocation(deps) {
+/** HTTP use-case entry: enforces permissions, scopes to tenant, delegates to domain service. */
     async function execute(input) {
         deps.authorization.requirePermission(input.actorPermissions, 'inventory.adjust');
         const name = input.name.trim();

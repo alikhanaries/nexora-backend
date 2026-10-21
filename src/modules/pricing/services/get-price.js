@@ -7,6 +7,7 @@ import { requirePricingRead } from './pricing-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createGetPrice(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requirePricingRead(deps.authorization, input.actorPermissions);
         const price = await deps.prices.findById(deps.queryable, input.tenantId, input.priceId);

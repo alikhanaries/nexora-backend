@@ -1,3 +1,8 @@
+/**
+ * Unauthenticated HTTP routes: health/metrics, OpenAPI docs, foundation, auth
+ * login/refresh/logout, tenant bootstrap (POST `/api/v1/tenants` and GET by id),
+ * and inbound marketplace webhooks. Used by AuthGuard with `@Public()` metadata.
+ */
 const PUBLIC_ROUTE_PATTERNS = [
   /^\/health\//,
   /^\/internal\/metrics$/,
@@ -13,6 +18,7 @@ const PUBLIC_ROUTE_PATTERNS = [
   /^\/api\/v1\/inbound\/marketplace-webhooks\/.+$/,
 ];
 
+/** @returns {boolean} Whether the HTTP method/path pair is allowed without credentials. */
 export function isPublicRoute(method, path) {
   if (method === 'POST' && path === '/api/v1/tenants') {
     return true;

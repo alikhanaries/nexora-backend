@@ -1,3 +1,4 @@
+/** Maps an internal cancellation shape into an API-safe CancellationDto object (dates serialized where needed). */
 export function toCancellationDto(cancellation) {
     return {
         id: cancellation.id,
@@ -11,6 +12,7 @@ export function toCancellationDto(cancellation) {
         completedAt: cancellation.completedAt,
     };
 }
+/** Maps an internal cancellation shape into an API-safe CancellationLineDto object (dates serialized where needed). */
 export function toCancellationLineDto(line) {
     return {
         id: line.id,

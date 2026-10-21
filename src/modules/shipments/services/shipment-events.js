@@ -1,8 +1,10 @@
 import { getRequestContext } from '../../../shared/context/request-context.js';
 const EVENT_VERSION = 1;
+/** Reads the current request id from async context for outbound domain events. */
 function correlationId() {
     return getRequestContext()?.requestId ?? null;
 }
+/** Serializes shipment fields needed by downstream consumers (tenant id included). */
 function shipmentPayload(shipment) {
     return {
         shipmentId: shipment.id,
@@ -14,6 +16,7 @@ function shipmentPayload(shipment) {
         trackingNumber: shipment.trackingNumber,
     };
 }
+/** Builds a versioned integration event envelope for the shipment aggregate. */
 export function shipmentCreatedEvent(shipment) {
     return {
         type: 'shipment.created',
@@ -25,6 +28,7 @@ export function shipmentCreatedEvent(shipment) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the shipment aggregate. */
 export function shipmentStatusChangedEvent(shipment, previousStatus) {
     return {
         type: 'shipment.status_changed',
@@ -39,6 +43,7 @@ export function shipmentStatusChangedEvent(shipment, previousStatus) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the shipment aggregate. */
 export function shipmentShippedEvent(shipment) {
     return {
         type: 'shipment.shipped',
@@ -50,6 +55,7 @@ export function shipmentShippedEvent(shipment) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the shipment aggregate. */
 export function shipmentDeliveredEvent(shipment) {
     return {
         type: 'shipment.delivered',
@@ -61,6 +67,7 @@ export function shipmentDeliveredEvent(shipment) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the shipment aggregate. */
 export function shipmentCancelledEvent(shipment) {
     return {
         type: 'shipment.cancelled',

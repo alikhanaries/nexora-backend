@@ -1,3 +1,6 @@
+/**
+ * Compatibility v2 return mutations (create, acknowledge, receive) for `/api/v2/returns*` and `/api/v2/ce/returns*` bridged to core returns commands.
+ */
 import { NotFoundError, ValidationError } from '../../../shared/errors/index.js';
 import {
     ExternalIdMappingResourceType,

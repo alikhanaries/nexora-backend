@@ -38,6 +38,7 @@ const shipmentSelect = `id, tenant_id, order_id, external_reference, carrier, se
 const shipmentSelectAliased = `s.id, s.tenant_id, s.order_id, s.external_reference, s.carrier, s.service, s.tracking_number, s.status,
   s.shipped_at, s.delivered_at, s.created_at, s.updated_at`;
 const shipmentLineSelect = `id, tenant_id, shipment_id, order_line_id, quantity, created_at`;
+/** Maps a validated SQL row into a domain shipment entity. */
 function toShipment(row) {
     return reconstituteShipment({
         id: row.id,
@@ -54,6 +55,7 @@ function toShipment(row) {
         updatedAt: row.updated_at,
     });
 }
+/** Maps a validated SQL row into a domain shipment entity. */
 function toShipmentLine(row) {
     return reconstituteShipmentLine({
         id: row.id,
@@ -64,6 +66,7 @@ function toShipmentLine(row) {
         createdAt: row.created_at,
     });
 }
+/** Builds tenant-scoped SQL WHERE fragments and optional order joins for list/count queries. */
 function buildListConditions(tenantId, filters) {
         const conditions = ['s.tenant_id = $1'];
         const params = [tenantId];
@@ -172,8 +175,10 @@ function buildListConditions(tenantId, filters) {
     }
 
 
+/** Postgres persistence factory; every query is scoped by `tenant_id`. */
 export function createPostgresShipmentRepository() {
     return {
+/** Loads one shipment by id within the tenant; returns null when missing. */
         async findById(queryable, tenantId, shipmentId) {
         const result = await queryable.query(`SELECT ${shipmentSelect} FROM shipments WHERE tenant_id = $1 AND id = $2`, [tenantId, shipmentId], { operation: 'shipments.find_by_id' });
         const row = result.rows[0];
@@ -181,6 +186,7 @@ export function createPostgresShipmentRepository() {
             return null;
         return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
         },
+/** Resolves a shipment by tenant-scoped external reference for idempotent ingestion. */
         async findByExternalReference(queryable, tenantId, externalReference) {
         const result = await queryable.query(`SELECT ${shipmentSelect}
        FROM shipments
@@ -190,6 +196,7 @@ export function createPostgresShipmentRepository() {
             return null;
         return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
         },
+/** `SELECT … FOR UPDATE` row lock on the shipment (and tenant) inside a transaction. */
         async lockByExternalReferenceForUpdate(transaction, tenantId, externalReference) {
         const result = await transaction.query(`SELECT ${shipmentSelect}
        FROM shipments
@@ -200,6 +207,7 @@ export function createPostgresShipmentRepository() {
             return null;
         return toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'));
         },
+/** Counts shipments matching filters for offset pagination totals. */
         async count(queryable, tenantId, filters) {
         const { conditions, params, joinClause } = buildListConditions(tenantId, filters);
         const result = await queryable.query(`SELECT COUNT(*)::int AS total
@@ -209,6 +217,7 @@ export function createPostgresShipmentRepository() {
         const row = result.rows[0];
         return Number(row?.total ?? 0);
         },
+/** Offset page of shipments with sort direction; uses shared list filter builder. */
         async listPageOffset(queryable, tenantId, filters, page, pageSize, sortDirection = 'desc') {
         const { conditions, params, nextParamIndex, joinClause } = buildListConditions(tenantId, filters);
         const offset = (page - 1) * pageSize;
@@ -224,6 +233,7 @@ export function createPostgresShipmentRepository() {
        LIMIT $${limitParam} OFFSET $${offsetParam}`, listParams, { operation: 'shipments.list_page_offset' });
         return result.rows.map((row) => toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row')));
         },
+/** Keyset (cursor) page of shipments ordered by created time within the tenant. */
         async listPage(queryable, tenantId, filters, limit, cursorCreatedAt, cursorId) {
         const conditions = ['tenant_id = $1'];
         const parameters = [tenantId];
@@ -253,6 +263,7 @@ export function createPostgresShipmentRepository() {
             items: result.rows.map((row) => toShipment(parseOrThrow(shipmentRowSchema, row, 'shipments row'))),
         };
         },
+/** Persists a new shipment row (and related lines when applicable) in the current transaction. */
         async insertShipment(transaction, shipment) {
         const p = shipment;
         await transaction.query(`INSERT INTO shipments (
@@ -273,6 +284,7 @@ export function createPostgresShipmentRepository() {
             p.updatedAt,
         ], { operation: 'shipments.insert' });
         },
+/** Updates mutable shipment columns; `tenant_id` and id constrain the row. */
         async updateShipment(transaction, shipment) {
         const p = shipment;
         await transaction.query(`UPDATE shipments SET
@@ -295,12 +307,14 @@ export function createPostgresShipmentRepository() {
             p.updatedAt,
         ], { operation: 'shipments.update' });
         },
+/** Persists a new shipment row (and related lines when applicable) in the current transaction. */
         async insertShipmentLine(transaction, line) {
         const p = line;
         await transaction.query(`INSERT INTO shipment_lines (
          id, tenant_id, shipment_id, order_line_id, quantity, created_at
        ) VALUES ($1,$2,$3,$4,$5,$6)`, [p.id, p.tenantId, p.shipmentId, p.orderLineId, p.quantity, p.createdAt], { operation: 'shipment_lines.insert' });
         },
+/** Lists child rows for a shipment within the tenant. */
         async listShipmentLines(queryable, tenantId, shipmentId) {
         const result = await queryable.query(`SELECT ${shipmentLineSelect}
        FROM shipment_lines
@@ -308,6 +322,7 @@ export function createPostgresShipmentRepository() {
        ORDER BY created_at`, [tenantId, shipmentId], { operation: 'shipment_lines.list' });
         return result.rows.map((row) => toShipmentLine(parseOrThrow(shipmentLineRowSchema, row, 'shipment_lines row')));
         },
+/** `SELECT … FOR UPDATE` row lock on the shipment (and tenant) inside a transaction. */
         async lockShipmentForUpdate(transaction, tenantId, shipmentId) {
         const result = await transaction.query(`SELECT ${shipmentSelect}
        FROM shipments

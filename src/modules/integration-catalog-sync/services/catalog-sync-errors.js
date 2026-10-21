@@ -19,6 +19,7 @@ export class CatalogSyncRetryError extends Error {
 
 /** Permanent failure — job must not retry. */
 export class CatalogSyncPermanentError extends AppError {
+    /** @param {string} message @param {object} [safeDetails] */
     constructor(message, safeDetails) {
         super({
             code: ErrorCode.BUSINESS_RULE_VIOLATION,
@@ -31,6 +32,7 @@ export class CatalogSyncPermanentError extends AppError {
 }
 
 export class UnsupportedMarketplaceAdapterError extends CatalogSyncPermanentError {
+    /** @param {string} marketplaceKey */
     constructor(marketplaceKey) {
         super('No marketplace catalog adapter is registered for this marketplace', {
             marketplaceKey,
@@ -41,6 +43,7 @@ export class UnsupportedMarketplaceAdapterError extends CatalogSyncPermanentErro
 
 /** Stale or irrelevant job — treated as successful skip. */
 export class CatalogSyncSkippedError extends AppError {
+    /** @param {string} message @param {object} [safeDetails] */
     constructor(message, safeDetails) {
         super({
             code: ErrorCode.BUSINESS_RULE_VIOLATION,

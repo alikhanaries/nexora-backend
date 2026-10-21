@@ -1,3 +1,6 @@
+/**
+ * Use case: define a new tenant-scoped role and its permission set.
+ */
 import { ConflictError, ValidationError } from '../../../shared/errors/index.js';
 import { requireAuthorizationDeps } from './require-deps.js';
 

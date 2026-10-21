@@ -11,6 +11,11 @@ export class CompatV2IntegrationListQuery {
         this.deps = deps;
     }
 
+    /**
+     * GET `/api/v2/ce/channels` — lists tenant commerce integrations mapped to CE channel envelope.
+     * @param {object} input `{ tenantId }` from authenticated actor.
+     * @returns {Promise<object>} Success/Content collection; read-only, no idempotency.
+     */
     async listCommerceIntegrations(input) {
         const channels = await this.deps.commerceIntegrationQueryService.listCommerceIntegrations(input.tenantId, {});
         return mapIntegrationsToCompatV2Collection(channels);

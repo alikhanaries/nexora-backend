@@ -1,3 +1,6 @@
+/**
+ * API HTTP server facade: Nest boot, `listen`/`close`, and in-process `inject` for tests.
+ */
 import { injectExpress } from '../../shared/http/express-inject.js';
 import { createNestApplication } from './create-nest-application.js';
 
@@ -17,6 +20,7 @@ export async function createNestHttpServer(config, infra, coreServices) {
 
   const expressInstance = nestApp.getHttpAdapter().getInstance();
 
+  /** In-process HTTP against Express (integration tests). */
   const inject = (options) => injectExpress(expressInstance, options);
 
   return {

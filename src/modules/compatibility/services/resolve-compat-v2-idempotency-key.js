@@ -31,6 +31,11 @@ export function stableIdempotencyFingerprint(value) {
     return JSON.stringify(sortValue(value));
 }
 
+/**
+ * Deep-sorts object keys for stable JSON idempotency fingerprints (arrays preserve order).
+ * @param {unknown} value Body or nested structure to normalise.
+ * @returns {unknown} Structure safe for `JSON.stringify` in {@link stableIdempotencyFingerprint}.
+ */
 function sortValue(value) {
     if (value === null || typeof value !== 'object') {
         return value;

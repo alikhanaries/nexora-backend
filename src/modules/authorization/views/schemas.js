@@ -34,6 +34,7 @@ export const effectivePermissionsResponseSchema = z.object({
     membershipId: z.string().uuid(),
     permissions: z.array(z.string()),
 });
+/** Standard `{ success: true, data }` zod wrapper for authorization HTTP responses. */
 export const successEnvelope = (dataSchema) => z.object({
     success: z.literal(true),
     data: dataSchema,

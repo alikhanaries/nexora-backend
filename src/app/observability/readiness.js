@@ -1,6 +1,10 @@
+/**
+ * Kubernetes-style readiness: optional dependency probes plus a process-level traffic gate.
+ */
 export class ReadinessService {
     probes;
     acceptingTraffic = true;
+    /** @param {Array<{ name: string, check: () => Promise<void> }>} probes */
     constructor(probes) {
         this.probes = probes;
     }
@@ -10,12 +14,15 @@ export class ReadinessService {
     registerProbe(probe) {
         this.probes.push(probe);
     }
+    /** Stops accepting traffic (e.g. during shutdown) without failing individual dependency probes. */
     markNotReady() {
         this.acceptingTraffic = false;
     }
+    /** Process-level gate checked before running dependency probes. */
     isAcceptingTraffic() {
         return this.acceptingTraffic;
     }
+    /** Runs all probes; returns aggregate ready flag and per-check status map. */
     async evaluate() {
         if (!this.acceptingTraffic) {
             return { ready: false, checks: { process: 'failed' } };
@@ -35,6 +42,7 @@ export class ReadinessService {
         return { ready, checks };
     }
 }
+/** Standard API probes (postgres, redis, queue, storage). */
 export function createDefaultProbes(deps) {
     return [
         { name: 'postgres', check: () => deps.database.healthCheck() },
@@ -43,6 +51,7 @@ export function createDefaultProbes(deps) {
         { name: 'storage', check: () => deps.storage.healthCheck() },
     ];
 }
+/** Worker process probes including registered BullMQ consumers. */
 export function createWorkerReadinessProbes(deps) {
     return [
         { name: 'postgres', check: () => deps.database.healthCheck() },

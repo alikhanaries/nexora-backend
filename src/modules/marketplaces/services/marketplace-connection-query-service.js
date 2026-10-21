@@ -15,6 +15,9 @@ export class MarketplaceConnectionQueryService {
         this.deps = deps;
     }
 
+    /**
+     * Reads redacted connection DTO for tenant + channel.
+     */
     async getMarketplaceConnection(input) {
         this.deps.authorization.requirePermission(input.actorPermissions, 'channels.read');
         return this.deps.queryable.execute(async (tx) => {

@@ -1,3 +1,6 @@
+/**
+ * Revokes the refresh session backing the presented refresh token (idempotent logout).
+ */
 import { hashSecret } from '../../../../shared/security/index.js';
 import { InvalidCredentialsError } from '../../models/index.js';
 
@@ -6,6 +9,7 @@ import { InvalidCredentialsError } from '../../models/index.js';
  * @returns {{ execute: Function }}
  */
 export function createLogout(deps) {
+    /** Revokes refresh token session family; safe to call twice. */
     async function execute(input) {
         const tokenHash = hashSecret(input.refreshToken);
         const now = new Date();

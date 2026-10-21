@@ -16,12 +16,14 @@ export class BullMqWorkerRuntime {
     metrics;
     workers = [];
     logger;
+    /** @param {import('ioredis').Redis} connection */
     constructor(connection, config, logger, metrics) {
         this.connection = connection;
         this.config = config;
         this.metrics = metrics;
         this.logger = logger.child({ component: 'worker-runtime' });
     }
+    /** True when at least one BullMQ worker has been registered. */
     hasRegisteredWorkers() {
         return this.workers.length > 0;
     }
@@ -57,6 +59,7 @@ export class BullMqWorkerRuntime {
         this.workers.length = 0;
         this.logger.info({}, 'Workers closed');
     }
+    /** Runs handler inside request context, records metrics, rethrows for BullMQ retries. */
     async runJob(queueName, job, handler) {
         const startedAt = performance.now();
         const payload = isPayload(job.data) ? job.data : {};
@@ -87,6 +90,7 @@ export class BullMqWorkerRuntime {
             throw error;
         }
     }
+    /** Emits queue job duration/outcome metrics. */
     record(queue, jobName, outcome, startedAt) {
         this.metrics.recordQueueJob({
             queue,
@@ -96,9 +100,11 @@ export class BullMqWorkerRuntime {
         });
     }
 }
+/** True for plain object job payloads (not arrays/null). */
 function isPayload(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
+/** Reads string `correlationId` from job payload when present. */
 function readCorrelationId(payload) {
     const value = payload['correlationId'];
     return typeof value === 'string' && value.length > 0 ? value : undefined;

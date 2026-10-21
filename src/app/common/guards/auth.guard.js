@@ -1,3 +1,8 @@
+/**
+ * Global Nest guard: JWT Bearer, Wasl API keys (`nxk_` / `X-Api-Key`), merchant
+ * compat query/`X-CE-KEY` on `/api/v2` paths, and Stock Connect Bearer keys.
+ * Resolves principals via `coreServices` and populates request context for handlers.
+ */
 import { Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { isMerchantCompatQueryAuthPath } from '../../../shared/auth/merchant-compat-route-prefix.js';
@@ -13,6 +18,7 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import { isPublicRoute } from '../auth/public-route.js';
 import { parseApiKey } from '../../../modules/api-keys/models/api-key-secret.js';
 
+/** Parses `Authorization: Bearer <token>`; returns the token string or null if missing/invalid. */
 function readBearerToken(authorization) {
   if (typeof authorization !== 'string') {
     return null;
@@ -21,10 +27,16 @@ function readBearerToken(authorization) {
   return match?.[1] ?? null;
 }
 
+/** True when the Bearer value is a Wasl API key (`nxk_` prefix). */
 function isNexoraApiKeyBearer(token) {
   return typeof token === 'string' && token.startsWith('nxk_');
 }
 
+/**
+ * Reads an API key from `X-Api-Key` or `Authorization: ApiKey <key>`.
+ * @param {Record<string, string | string[] | undefined>} headers
+ * @returns {string | null}
+ */
 function readApiKey(headers) {
   const headerKey = headers['x-api-key'];
   if (typeof headerKey === 'string' && headerKey.length > 0) {
@@ -52,6 +64,7 @@ function readBearerApiKeyRaw(bearer) {
   return trimmed;
 }
 
+/** Returns trimmed `X-Tenant-Id` when present and non-empty. */
 function readTenantIdHeader(headers) {
   const raw = headers['x-tenant-id'];
   if (typeof raw === 'string' && raw.trim().length > 0) {
@@ -60,6 +73,11 @@ function readTenantIdHeader(headers) {
   return null;
 }
 
+/**
+ * When the client sends `X-Tenant-Id`, it must match the authenticated tenant or an authorization error is thrown.
+ * @param {Record<string, string | string[] | undefined>} headers
+ * @param {string} tenantId
+ */
 function assertTenantHeaderMatchesPrincipal(headers, tenantId) {
   const requestedTenantId = readTenantIdHeader(headers);
   if (requestedTenantId === null) {
@@ -72,13 +90,21 @@ function assertTenantHeaderMatchesPrincipal(headers, tenantId) {
   }
 }
 
+/** Authenticates every non-public HTTP request before controller code runs. */
 @Injectable()
 class AuthGuard {
+  /** @param {import('../../di/core-services.module.js').CoreServices} coreServices */
   constructor(@Inject(CORE_SERVICES) coreServices, @Inject(Reflector) reflector) {
     this.coreServices = coreServices;
     this.reflector = reflector;
   }
 
+  /**
+   * Skips public routes; otherwise verifies JWT, API key, Stock Connect Bearer key, or merchant compat key,
+   * enriches request context with the principal, records auth metrics, and returns true on success.
+   * @param {import('@nestjs/common').ExecutionContext} context
+   * @returns {Promise<boolean>}
+   */
   async canActivate(context) {
     const http = context.switchToHttp();
     const request = http.getRequest();

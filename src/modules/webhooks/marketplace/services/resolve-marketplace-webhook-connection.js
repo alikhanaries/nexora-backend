@@ -8,6 +8,9 @@ export class ResolveMarketplaceWebhookConnection {
     /** @param {import('../../../../infrastructure/postgres/postgres-database.js').PostgresDatabase} database */
     database;
 
+    /**
+     * Injects module dependencies (database, repositories, authorization, event recorder).
+     */
     constructor(database) {
         this.database = database;
     }

@@ -5,6 +5,11 @@ import { optionalReferenceFields } from '../optional-fields.js';
  * @returns {{ execute: Function }}
  */
 export function createReleaseInventory(deps) {
+    /**
+     * HTTP use-case entry for releasing a prior inventory reservation.
+     * Requires `inventory.reserve`, forwards caller-supplied `tenantId` and release fields
+     * to the domain service (tenant boundary is established upstream, not re-validated here).
+     */
     async function execute(input) {
         deps.authorization.requirePermission(input.actorPermissions, 'inventory.reserve');
         return deps.inventoryService.release({

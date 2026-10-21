@@ -1,14 +1,19 @@
+/**
+ * CLI entry for Postgres schema migrations (`npm run migrate` / `migrate:status`).
+ */
 import { Pool } from 'pg';
 import { loadConfigFromEnvironment } from './config/index.js';
 import { describeErrorForLog } from '../shared/errors/index.js';
 import { createPinoLogger } from '../infrastructure/observability/pino-logger.js';
 import { migrateUp, migrationStatus } from '../infrastructure/postgres/migrator.js';
+/** @returns {'up' | 'status'} */
 function parseCommand(argv) {
     const command = argv[2];
     if (command === 'up' || command === 'status')
         return command;
     throw new Error(`Unknown command "${command ?? ''}". Usage: migrate-cli.js <up|status>`);
 }
+/** Runs `up` or `status` against Postgres using a single-connection pool, then flushes logs. */
 async function main() {
     const command = parseCommand(process.argv);
     const config = loadConfigFromEnvironment();

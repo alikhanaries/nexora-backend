@@ -6,6 +6,7 @@ import { toProductContentDto } from './product-dto.js';
  * @returns {{ execute: Function }}
  */
 export function createGetProductContent(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         deps.authorization.requirePermission(input.actorPermissions, 'products.read');
         const product = await deps.products.findById(deps.database, input.tenantId, input.productId);

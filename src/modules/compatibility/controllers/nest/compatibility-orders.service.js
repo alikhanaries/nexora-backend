@@ -1,3 +1,7 @@
+/**
+ * Nest injectable for compatibility order list/create/acknowledge flows.
+ * Applies compatibility rate limits then calls `CORE_SERVICES.compatibility.routeDeps` use cases.
+ */
 import { Inject, Injectable } from '@nestjs/common';
 import { COMPATIBILITY_RATE_LIMIT_POLICIES } from '../../../../shared/auth/rate-limit-policies.js';
 import { requireActorContext } from '../../../../shared/context/require-principal.js';
@@ -11,16 +15,23 @@ import {
 import { commerceActorFields } from '../../../../app/common/commerce-actor.js';
 import { CORE_SERVICES } from '../../../../app/di/core-services.tokens.js';
 
+/** Order-specific compatibility adapter used by v2 and CE order controllers. */
 @Injectable()
 class CompatibilityOrdersService {
+  /** @param {import('../../../../app/di/core-services.module.js').CoreServices} coreServices Wired CORE_SERVICES root. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.coreServices = coreServices;
   }
 
+  /** Compatibility module facades (queries/commands, rate limiter, idempotency) for HTTP adapters. */
   get routeDeps() {
     return this.coreServices.compatibility.routeDeps;
   }
 
+  /**
+   * Applies compatibility read rate limit for the current actor (tenant + principal).
+   * @returns {Promise<void>} Throws when limit exceeded; no data mutation.
+   */
   async enforceReadRateLimit() {
     const actor = requireActorContext();
     await enforceCompatibilityRateLimit({
@@ -31,6 +42,10 @@ class CompatibilityOrdersService {
     });
   }
 
+  /**
+   * Applies compatibility mutation rate limit before write routeDeps calls.
+   * @returns {Promise<void>}
+   */
   async enforceMutationRateLimit() {
     const actor = requireActorContext();
     await enforceCompatibilityRateLimit({
@@ -102,6 +117,13 @@ class CompatibilityOrdersService {
     });
   }
 
+  /**
+   * POST `/api/v2/orders/channel-fulfilled` handler body — pre-fulfilled integration order create.
+   * @param {object} body Channel order payload.
+   * @param {string | string[] | undefined} idempotencyKeyHeader Required idempotency header.
+   * @param {string | string[] | undefined} channelReferenceHeader Optional `x-channel-reference`.
+   * @returns {Promise<object>} External order response; idempotent via order command + store.
+   */
   async createIntegrationFulfilledOrderV2(body, idempotencyKeyHeader, channelReferenceHeader) {
     await this.enforceMutationRateLimit();
     const actor = requireActorContext();
@@ -155,6 +177,11 @@ class CompatibilityOrdersService {
     });
   }
 
+  /**
+   * Loads order metadata and returns generated PDF bytes for `/api/v2/ce/orders/:merchantOrderNo/invoice`.
+   * @param {string} merchantOrderNo Tenant-scoped merchant order number.
+   * @returns {Promise<{ contentType: string, body: Buffer }>} PDF stream payload; read-only, no idempotency.
+   */
   async getCeOrderInvoice(merchantOrderNo) {
     await this.enforceReadRateLimit();
     const actor = requireActorContext();

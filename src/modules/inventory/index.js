@@ -1,3 +1,7 @@
+/**
+ * Inventory and stock locations: reservation lifecycle and stock-location CRUD use cases.
+ * Re-exports `createDefaultInventoryService` for other domains.
+ */
 import { createDefaultAuthorizationService } from '../authorization/public/index.js';
 import {
     createAdjustInventory,
@@ -12,6 +16,15 @@ import {
 } from './services/index.js';
 import { createPostgresInventoryRepository, createPostgresStockLocationRepository } from './repositories/index.js';
 
+/**
+ * @param {object} deps
+ * @param {import('../../infrastructure/postgres/postgres-transaction-manager.js').PostgresTransactionManager} deps.transactionManager
+ * @param {import('../../infrastructure/postgres/postgres-database.js').PostgresDatabase} deps.queryable
+ * @param {import('../products/public/index.js').DefaultProductQueryService} deps.productQueryService
+ * @param {import('../../shared/events/event-recorder.port.js').EventRecorderPort} deps.eventRecorder
+ * @param {import('../audit/public/index.js').AuditRecorder} [deps.auditRecorder]
+ * @returns {{ inventoryService: import('./public/index.js').DefaultInventoryService, useCases: object }}
+ */
 export function createInventoryModule(deps) {
     const stockLocationRepository = createPostgresStockLocationRepository();
     const inventoryRepository = createPostgresInventoryRepository();

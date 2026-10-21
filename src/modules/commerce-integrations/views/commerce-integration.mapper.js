@@ -1,3 +1,4 @@
+/** Maps domain channel to ISO-dated API response DTO. */
 export function toCommerceIntegrationResponse(channel) {
     return {
         id: channel.id,

@@ -1,3 +1,6 @@
+/**
+ * Password login: verify credentials, issue tokens, audit success/failure, rate-limit abuse.
+ */
 import { auditRequestFields } from '../../../audit/public/index.js';
 import {
     canAuthenticate,
@@ -17,6 +20,7 @@ import { createRefreshSessionDraft } from '../auth-tokens.js';
  * @returns {{ execute: Function }}
  */
 export function createLogin(deps) {
+    /** Writes LOGIN_FAILURE audit (tenant optional when slug unknown). */
     async function recordFailure(tenantId, tx) {
         const event = {
             tenantId: tenantId ?? null,
@@ -35,6 +39,7 @@ export function createLogin(deps) {
         }
     }
 
+    /** Validates tenant/user/password, creates refresh session, returns tokens. Public; rate-limited. */
     async function execute(input) {
         validateTenantSlug(input.tenantSlug);
         const tenantSlug = normalizeTenantSlug(input.tenantSlug);

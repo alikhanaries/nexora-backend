@@ -1,3 +1,7 @@
+/**
+ * Integration catalog sync: enqueue and execute channel catalog jobs (product, offer, price, inventory)
+ * via marketplace adapters; optional reconciliation tick. Re-exports job planning helpers for workers.
+ */
 import { CatalogSyncEnqueueService } from './services/catalog-sync-enqueue-service.js';
 import { CatalogSyncReconciliationService } from './services/catalog-sync-reconciliation-service.js';
 import { IntegrationCatalogSyncService } from './services/integration-catalog-sync-service.js';
@@ -26,6 +30,8 @@ import { MarketplaceCatalogAdapterRegistry } from './public/marketplace-catalog-
  * @param {import('../marketplaces/services/marketplace-adapter-runtime-factory.js').MarketplaceAdapterRuntimeFactory} [deps.marketplaceAdapterRuntimeFactory]
  * @param {(registry: MarketplaceCatalogAdapterRegistry) => void} [deps.registerMarketplaceAdapters]
  * @param {import('./public/marketplace-entity-mapping-recorder.port.js').MarketplaceEntityMappingRecorder} [deps.marketplaceEntityMappingRecorder]
+ * @param {{ enabled?: boolean, offerBatchSize?: number, maxJobsPerTick?: number }} [deps.catalogSyncReconciliation]
+ * @returns {{ channelCatalogSyncService: IntegrationCatalogSyncService, catalogSyncReconciliationService: CatalogSyncReconciliationService, adapterRegistry: MarketplaceCatalogAdapterRegistry }}
  */
 export function createIntegrationCatalogSyncModule(deps) {
     const adapterRegistry = new MarketplaceCatalogAdapterRegistry();

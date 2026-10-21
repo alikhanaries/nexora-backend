@@ -1,3 +1,6 @@
+/**
+ * Inbound marketplace webhook handler: verify adapter, idempotency, enqueue lifecycle work.
+ */
 import { fingerprintRequest } from '../../../../shared/idempotency/index.js';
 import { parseOrThrow } from '../../../../shared/validation/index.js';
 import { recordMarketplaceWebhookOutcome } from '../../../../shared/metrics/record-marketplace-webhook.js';
@@ -13,6 +16,7 @@ import { ServiceUnavailableError } from '../../../../shared/errors/index.js';
 
 const ROUTE_ID = 'POST /api/v1/inbound/marketplace-webhooks/:ingressToken';
 
+/** Orchestrates signature-validated webhook ingress into the order lifecycle queue. */
 export class ReceiveMarketplaceWebhook {
     deps;
 

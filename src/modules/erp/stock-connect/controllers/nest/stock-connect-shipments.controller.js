@@ -1,3 +1,7 @@
+/**
+ * Nest adapter for StockConnect shipment create and status transitions.
+ * Routes under `/api/v2/stock-connect/shipments*`; delegates to StockConnectIntegrationService.
+ */
 import {
   Body,
   Controller,
@@ -19,14 +23,15 @@ import { parseOrThrow } from '../../../../../shared/validation/index.js';
 import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.js';
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
-/** StockConnect Integration — shipments */
 @Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectShipmentsController {
+  /** @param {StockConnectIntegrationService} stockConnectIntegrationService */
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
     this.stockConnectIntegrationService = stockConnectIntegrationService;
   }
 
+  /** Creates a shipment for an order; requires `idempotency-key`. */
   @Post('/api/v2/stock-connect/orders/:orderId/shipments')
   @HttpCode(200)
   async createForOrder(
@@ -39,12 +44,14 @@ class StockConnectShipmentsController {
     return this.stockConnectIntegrationService.createShipment(orderId, parsed, idempotencyKey);
   }
 
+  /** Shipment detail by id. */
   @Get('/api/v2/stock-connect/shipments/:shipmentId')
   async getById(@Param() params) {
     const { shipmentId } = parseOrThrow(stockConnectShipmentIdParamsSchema, params, 'shipment params');
     return this.stockConnectIntegrationService.getShipment(shipmentId);
   }
 
+  /** Marks a shipment shipped (carrier, service, tracking). */
   @Post('/api/v2/stock-connect/shipments/:shipmentId/ship')
   @HttpCode(200)
   async ship(@Param() params, @Body() body) {

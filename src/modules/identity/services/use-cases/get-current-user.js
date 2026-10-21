@@ -1,3 +1,6 @@
+/**
+ * Resolves the authenticated user, active session, and membership for `/auth/me`-style routes.
+ */
 import { AuthenticationError } from '../../../../shared/errors/index.js';
 import { canAuthenticate, isRefreshSessionExpired, membershipGrantsAccess } from '../../models/index.js';
 
@@ -6,6 +9,7 @@ import { canAuthenticate, isRefreshSessionExpired, membershipGrantsAccess } from
  * @returns {{ execute: Function }}
  */
 export function createGetCurrentUser(deps) {
+    /** Resolves user, tenant membership, and permissions from access token. */
     async function execute(input) {
         let payload;
         try {

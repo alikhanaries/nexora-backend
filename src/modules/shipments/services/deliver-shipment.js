@@ -10,6 +10,7 @@ import { requireShipmentsUpdate } from './shipment-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createDeliverShipment(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requireShipmentsUpdate(deps.authorization, input.actorPermissions);
         const shipment = await deps.database.execute(async (tx) => {

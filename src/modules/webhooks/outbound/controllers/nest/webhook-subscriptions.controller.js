@@ -28,6 +28,9 @@ import { commerceActorFields } from '../../../../../app/common/commerce-actor.js
 import { CORE_SERVICES } from '../../../../../app/di/core-services.tokens.js';
 import { WEBHOOK_ROUTES } from '../../routes/webhook.routes.js';
 
+/**
+ * Extracts actorId/kind from Nest request context for audit on subscription mutations.
+ */
 function actorFields(actor) {
   const { actorId, actorKind } = commerceActorFields(actor);
   return {
@@ -40,21 +43,30 @@ function actorFields(actor) {
 /**
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/ (webhook command/query services); paths live in routes/.
+ * Route family `/api/v1/webhooks` (WEBHOOK_ROUTES); handlers call `CORE_SERVICES.webhooks` command/query services.
  */
 @Controller()
 class WebhookSubscriptionsController {
+  /** Resolves outbound webhook command/query services from core DI. */
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.webhooks;
   }
 
+  /**
+   * Accessor for webhook command/query service facades from core DI.
+   */
   get command() {
     return this.useCases.webhookCommandService;
   }
 
+  /** Accessor for webhook query service (reads subscriptions/deliveries). */
   get query() {
     return this.useCases.webhookQueryService;
   }
 
+  /**
+   * HTTP handler: create webhook subscription/delivery resource (tenant from actor, webhooks permissions).
+   */
   @Post(WEBHOOK_ROUTES.create.path)
   @HttpCode(201)
   async create(@Body() body) {
@@ -79,6 +91,9 @@ class WebhookSubscriptionsController {
     };
   }
 
+  /**
+   * HTTP handler: list webhook subscription/delivery resource (tenant from actor, webhooks permissions).
+   */
   @Get(WEBHOOK_ROUTES.list.path)
   async list(@Query() query) {
     const parsed = parseOrThrow(listWebhooksQuerySchema, query, 'list query');
@@ -102,6 +117,9 @@ class WebhookSubscriptionsController {
     };
   }
 
+  /**
+   * HTTP handler: getById webhook subscription/delivery resource (tenant from actor, webhooks permissions).
+   */
   @Get(WEBHOOK_ROUTES.getById.path)
   async getById(@Param() params) {
     const { webhookId } = parseOrThrow(webhookIdParamsSchema, params, 'webhook params');
@@ -116,6 +134,9 @@ class WebhookSubscriptionsController {
     return { success: true, data: toWebhookSubscriptionResponse(result.subscription) };
   }
 
+  /**
+   * HTTP handler: update webhook subscription/delivery resource (tenant from actor, webhooks permissions).
+   */
   @Patch(WEBHOOK_ROUTES.update.path)
   async update(@Param() params, @Body() body) {
     const { webhookId } = parseOrThrow(webhookIdParamsSchema, params, 'webhook params');
@@ -136,6 +157,9 @@ class WebhookSubscriptionsController {
     return { success: true, data: toWebhookSubscriptionResponse(result.subscription) };
   }
 
+  /**
+   * HTTP handler: delete webhook subscription/delivery resource (tenant from actor, webhooks permissions).
+   */
   @Delete(WEBHOOK_ROUTES.delete.path)
   async delete(@Param() params) {
     const { webhookId } = parseOrThrow(webhookIdParamsSchema, params, 'webhook params');
@@ -151,6 +175,9 @@ class WebhookSubscriptionsController {
     return { success: true, data: { deleted: true } };
   }
 
+  /**
+   * HTTP handler: rotateSecret webhook subscription/delivery resource (tenant from actor, webhooks permissions).
+   */
   @Post(WEBHOOK_ROUTES.rotateSecret.path)
   @HttpCode(200)
   async rotateSecret(@Param() params) {
@@ -177,6 +204,9 @@ class WebhookSubscriptionsController {
     };
   }
 
+  /**
+   * HTTP handler: listDeliveries webhook subscription/delivery resource (tenant from actor, webhooks permissions).
+   */
   @Get(WEBHOOK_ROUTES.listDeliveries.path)
   async listDeliveries(@Param() params, @Query() query) {
     const { webhookId } = parseOrThrow(webhookIdParamsSchema, params, 'webhook params');
@@ -203,6 +233,9 @@ class WebhookSubscriptionsController {
     };
   }
 
+  /**
+   * HTTP handler: getDelivery webhook subscription/delivery resource (tenant from actor, webhooks permissions).
+   */
   @Get(WEBHOOK_ROUTES.getDelivery.path)
   async getDelivery(@Param() params) {
     const { webhookId, deliveryId } = parseOrThrow(

@@ -14,6 +14,7 @@ const channelRowSchema = z.object({
     created_at: z.date(),
     updated_at: z.date(),
 });
+/** Validates row and reconstitutes domain commerce integration entity. */
 function toChannel(row) {
     return reconstituteCommerceIntegration({
         id: row.id,
@@ -28,8 +29,10 @@ function toChannel(row) {
         updatedAt: row.updated_at,
     });
 }
+/** Postgres `channels` table persistence (tenant-scoped). */
 export function createPostgresCommerceIntegrationRepository() {
     return {
+        /** Loads channel by tenant + id or null. */
         async findById(queryable, tenantId, channelId) {
             const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
               configuration_reference, default_stock_location_id, created_at, updated_at
@@ -40,6 +43,7 @@ export function createPostgresCommerceIntegrationRepository() {
                 return null;
             return toChannel(parseOrThrow(channelRowSchema, row, 'channels row'));
         },
+        /** First channel matching tenant external reference (compat lookups). */
         async findByExternalReference(queryable, tenantId, externalReference) {
             const result = await queryable.query(`SELECT id, tenant_id, marketplace_id, name, external_reference, status,
               configuration_reference, default_stock_location_id, created_at, updated_at
@@ -52,6 +56,7 @@ export function createPostgresCommerceIntegrationRepository() {
                 return null;
             return toChannel(parseOrThrow(channelRowSchema, row, 'channels row'));
         },
+        /** Filtered list (status, marketplaceId) newest first. */
         async list(queryable, tenantId, filters) {
             const conditions = ['tenant_id = $1'];
             const parameters = [tenantId];
@@ -70,6 +75,7 @@ export function createPostgresCommerceIntegrationRepository() {
        ORDER BY created_at DESC`, parameters, { operation: 'channels.list' });
             return result.rows.map((row) => toChannel(parseOrThrow(channelRowSchema, row, 'channels row')));
         },
+        /** Inserts full channel row (create use case). */
         async insert(transaction, channel) {
             await transaction.query(`INSERT INTO channels (
          id, tenant_id, marketplace_id, name, external_reference, status,
@@ -87,6 +93,7 @@ export function createPostgresCommerceIntegrationRepository() {
                 channel.updatedAt,
             ], { operation: 'channels.insert' });
         },
+        /** Updates mutable channel fields and status (tenant + id scoped). */
         async update(transaction, channel) {
             await transaction.query(`UPDATE channels
        SET name = $3,

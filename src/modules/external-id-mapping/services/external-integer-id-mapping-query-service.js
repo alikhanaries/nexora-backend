@@ -1,4 +1,6 @@
+/** Tenant-scoped read facade over mapping repository (optional tx or withTenant). */
 export function createDefaultExternalIntegerIdMappingQueryService(deps) {
+    /** Runs lookup on provided tx, or opens tenant-scoped queryable via database.withTenant. */
     async function withQueryable(tenantId, tx, work) {
         if (tx !== undefined) {
             return work(tx);

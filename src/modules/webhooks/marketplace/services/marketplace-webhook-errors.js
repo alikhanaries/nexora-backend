@@ -6,6 +6,7 @@ import {
 
 /** Adapter rejected webhook authenticity (signature, token, etc.). */
 export class MarketplaceWebhookAuthenticationError extends AuthenticationError {
+    /** @param {string} [message] @param {Record<string, unknown>} [safeDetails] */
     constructor(message = 'Marketplace webhook authentication failed', safeDetails) {
         super(message, safeDetails);
         this.name = 'MarketplaceWebhookAuthenticationError';
@@ -14,6 +15,7 @@ export class MarketplaceWebhookAuthenticationError extends AuthenticationError {
 
 /** Marketplace or event type does not support inbound webhooks yet. */
 export class MarketplaceWebhookUnsupportedError extends BusinessRuleError {
+    /** @param {string} [message] @param {Record<string, unknown>} [safeDetails] */
     constructor(message = 'Marketplace webhook capability is not supported', safeDetails) {
         super(message, safeDetails);
         this.name = 'MarketplaceWebhookUnsupportedError';
@@ -22,6 +24,7 @@ export class MarketplaceWebhookUnsupportedError extends BusinessRuleError {
 
 /** Normalized event kind or payload cannot be processed; do not retry. */
 export class MarketplaceWebhookPermanentError extends BusinessRuleError {
+    /** @param {string} message @param {Record<string, unknown>} [safeDetails] Non-retryable normalized webhook handling failure. */
     constructor(message, safeDetails) {
         super(message, safeDetails);
         this.name = 'MarketplaceWebhookPermanentError';

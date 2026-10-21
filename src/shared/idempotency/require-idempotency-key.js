@@ -1,5 +1,6 @@
 import { ValidationError } from '../errors/index.js';
 
+/** Validates non-empty `Idempotency-Key` header value. */
 export function requireIdempotencyKey(header) {
     const value = Array.isArray(header) ? header[0] : header;
     if (value === undefined || value.trim().length === 0) {

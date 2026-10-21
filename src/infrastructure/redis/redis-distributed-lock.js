@@ -24,10 +24,12 @@ return 0
 export class RedisDistributedLock {
     connection;
     keys;
+    /** @param {import('./redis-client.js').RedisConnection} connection */
     constructor(connection, keys) {
         this.connection = connection;
         this.keys = keys;
     }
+    /** SET NX with token and TTL; returns handle when acquired. */
     async acquire(resource, ttlSeconds) {
         if (ttlSeconds <= 0) {
             throw new Error('Distributed locks must have a positive TTL');
@@ -40,10 +42,12 @@ export class RedisDistributedLock {
             return undefined;
         return { resource, token, expiresAt: Date.now() + ttlSeconds * 1_000 };
     }
+    /** Lua compare-and-delete; returns true when this token owned the lock. */
     async release(handle) {
         const released = await this.connection.run('lock.release', () => this.connection.client.eval(RELEASE_SCRIPT, 1, this.keys.lock(handle.resource), handle.token));
         return released === 1;
     }
+    /** Runs `work` when lock acquired; always releases in `finally`; undefined if not acquired. */
     async withLock(resource, ttlSeconds, work) {
         const handle = await this.acquire(resource, ttlSeconds);
         if (handle === undefined)

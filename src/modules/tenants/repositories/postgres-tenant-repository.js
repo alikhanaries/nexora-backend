@@ -37,6 +37,7 @@ function toTenant(row) {
  */
 export function createPostgresTenantRepository() {
     return {
+        /** Tenant row by id or null. */
         async findById(queryable, id) {
             const result = await queryable.query(
                 `SELECT id, slug, name, status, created_at, updated_at
@@ -52,6 +53,7 @@ export function createPostgresTenantRepository() {
             return toTenant(parseOrThrow(tenantRowSchema, row, 'tenants row'));
         },
 
+        /** Tenant row by unique slug or null. */
         async findBySlug(queryable, slug) {
             const result = await queryable.query(
                 `SELECT id, slug, name, status, created_at, updated_at
@@ -67,6 +69,7 @@ export function createPostgresTenantRepository() {
             return toTenant(parseOrThrow(tenantRowSchema, row, 'tenants row'));
         },
 
+        /** Inserts tenant on registration/bootstrap. */
         async insert(transaction, tenant) {
             await transaction.query(
                 `INSERT INTO tenants (id, slug, name, status, created_at, updated_at)
@@ -76,6 +79,7 @@ export function createPostgresTenantRepository() {
             );
         },
 
+        /** Updates tenant status and updated_at (lifecycle transitions). */
         async update(transaction, tenant) {
             await transaction.query(
                 `UPDATE tenants

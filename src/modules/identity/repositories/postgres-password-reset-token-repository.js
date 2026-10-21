@@ -10,6 +10,7 @@ import { mapPasswordResetTokenRow } from './row-mappers.js';
  */
 export function createPostgresPasswordResetTokenRepository() {
     return {
+        /** Inserts password reset token row. */
         async save(tx, token) {
             await tx.query(`INSERT INTO password_reset_tokens (
          id, user_id, token_hash, status, expires_at, created_at, used_at
@@ -24,6 +25,7 @@ export function createPostgresPasswordResetTokenRepository() {
             ], { operation: 'identity.password_reset_tokens.save' });
         },
 
+        /** Active reset token by hashed wire token or null. */
         async findActiveByTokenHash(tx, tokenHash) {
             const result = await tx.query(`SELECT id, user_id, token_hash, status, expires_at, created_at, used_at
        FROM password_reset_tokens
@@ -34,10 +36,12 @@ export function createPostgresPasswordResetTokenRepository() {
             return mapPasswordResetTokenRow(result.rows[0]);
         },
 
+        /** Marks token USED after successful password change. */
         async markUsed(tx, id, usedAt) {
             await tx.query(`UPDATE password_reset_tokens SET status = 'USED', used_at = $2 WHERE id = $1`, [id, usedAt], { operation: 'identity.password_reset_tokens.mark_used' });
         },
 
+        /** Revokes outstanding ACTIVE tokens when issuing a new reset. */
         async revokeActiveForUser(tx, userId) {
             await tx.query(`UPDATE password_reset_tokens SET status = 'REVOKED'
        WHERE user_id = $1 AND status = 'ACTIVE'`, [userId], { operation: 'identity.password_reset_tokens.revoke_active' });

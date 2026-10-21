@@ -1,3 +1,6 @@
+/**
+ * Nest dynamic module wiring logger, metrics, Postgres, and readiness probes from boot `infra`.
+ */
 import { Module } from '@nestjs/common';
 import { ReadinessService } from '../observability/readiness.js';
 import { NEST_READINESS } from '../../modules/health/controllers/nest/readiness.provider.js';
@@ -10,6 +13,7 @@ export { WASL_DATABASE, WASL_LOGGER, WASL_METRICS } from './database.tokens.js';
  * @param {{ logger: object, metrics: object, database: object | null, readiness?: object }} infra
  */
 export class DatabaseModule {
+  /** Registers global Nest providers for logger, metrics, DB handle, readiness, and {@link DatabaseService}. */
   static register(infra) {
     const readinessProvider =
       infra.readiness !== undefined && infra.readiness !== null

@@ -1,3 +1,6 @@
+/**
+ * Creates orders already fulfilled by an external commerce integration (channel-fulfilled ingest).
+ */
 import { randomUUID } from 'node:crypto';
 import { auditRequestFields } from '../../audit/public/index.js';
 import { AppError, BusinessRuleError, ConflictError, ValidationError, } from '../../../shared/errors/index.js';
@@ -228,6 +231,9 @@ export function createCreateIntegrationFulfilledOrder(deps) {
         };
     }
 
+    /**
+     * Order command/query step: tenant isolation on all repository calls; may emit order.* events for outbound webhooks.
+     */
     async function execute(input) {
         requireOrdersIngestChannelFulfilled(deps.authorization, input.actorPermissions);
         if (input.lines.length === 0) {
@@ -261,6 +267,9 @@ export function createCreateIntegrationFulfilledOrder(deps) {
         if (totalMinor < 0) {
             throw new BusinessRuleError('Order total cannot be negative');
         }
+        /**
+         * Transactional body run inside idempotency or database.execute (same tenant throughout).
+         */
         const work = async (tx) => {
             const existing = await deps.orders.findByChannelAndExternalReference(
                 tx,

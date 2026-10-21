@@ -1,7 +1,9 @@
 import { getRequestContext } from '../../../shared/context/request-context.js';
+/** Reads the current request id from async context for outbound domain events. */
 function correlationId() {
     return getRequestContext()?.requestId ?? null;
 }
+/** Serializes offer fields needed by downstream consumers (tenant id included). */
 function offerPayload(offer) {
     return {
         id: offer.id,
@@ -14,6 +16,7 @@ function offerPayload(offer) {
         listingStatus: offer.listingStatus,
     };
 }
+/** Builds a versioned integration event envelope for the offer aggregate. */
 export function offerCreatedEvent(offer) {
     return {
         type: 'offer.created',
@@ -25,6 +28,7 @@ export function offerCreatedEvent(offer) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the offer aggregate. */
 export function offerUpdatedEvent(offer, changes) {
     return {
         type: 'offer.updated',
@@ -39,6 +43,7 @@ export function offerUpdatedEvent(offer, changes) {
         correlationId: correlationId(),
     };
 }
+/** Builds a versioned integration event envelope for the offer aggregate. */
 export function offerStatusChangedEvent(offer, previousStatus) {
     return {
         type: 'offer.status_changed',

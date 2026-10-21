@@ -1,3 +1,7 @@
+/**
+ * Nest module for compatibility v2 and CE order endpoints.
+ * Registers order controllers and exports CompatibilityOrdersService for sibling compatibility modules.
+ */
 import { Module } from '@nestjs/common';
 import { CompatV2OrdersController } from './compat-v2-orders.controller.js';
 import { CompatibilityOrdersService } from './compatibility-orders.service.js';

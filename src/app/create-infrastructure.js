@@ -1,3 +1,12 @@
+/**
+ * Shared process infrastructure (API and worker).
+ *
+ * Builds logger/metrics/tracing, Postgres (runs migrations), Redis cache/locks/
+ * rate-limit, BullMQ queue + worker runtime, S3, outbox/inbox/idempotency, and
+ * retention cleanup. Pass `{ processKind: 'worker' }` so Prometheus/OTEL use the
+ * worker service name (ADR-026). Domain wiring happens in `createApplication` /
+ * worker handlers — not here.
+ */
 import { createFetchHttpClient } from '../infrastructure/http/fetch-http-client.js';
 import { PostgresInboxRepository } from '../infrastructure/postgres/inbox-repository.js';
 import { PostgresIdempotencyService } from '../infrastructure/postgres/idempotency-service.js';
@@ -19,6 +28,11 @@ import { createRedisKeyBuilder } from '../infrastructure/redis/redis-keys.js';
 import { RedisRateLimiter } from '../infrastructure/redis/redis-rate-limiter.js';
 import { S3StorageProvider } from '../infrastructure/storage/s3-storage-provider.js';
 import { noopMetricsRecorder } from '../shared/metrics/index.js';
+
+/**
+ * @param {object} config Parsed env config from `loadConfigFromEnvironment`
+ * @param {{ processKind?: 'api' | 'worker' }} [options]
+ */
 export async function createInfrastructure(config, options = {}) {
     const processKind = options.processKind ?? 'api';
     const metricsServiceName = processKind === 'worker'

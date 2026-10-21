@@ -1,3 +1,6 @@
+/**
+ * Serves OpenAPI snapshot and Swagger UI when `config.docsEnabled` is true.
+ */
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +30,7 @@ export function configureApiDocsExpress(expressApp, config) {
     }
   }
 
+  /** Serves the loaded OpenAPI snapshot as JSON. */
   const sendSpec = (_req, res) => {
     res.json(openApiDocument);
   };

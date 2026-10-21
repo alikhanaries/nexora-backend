@@ -1,3 +1,6 @@
+/**
+ * Concurrency-safe guard: never leave a tenant without a `tenant.admin` holder.
+ */
 import { BusinessRuleError } from '../../../shared/errors/index.js';
 import { TENANT_ADMIN_PERMISSION } from '../models/permission.js';
 import { requireAuthorizationDeps } from './require-deps.js';

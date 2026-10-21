@@ -1,3 +1,4 @@
+/** Public command facade delegating to assign use case (must run inside caller transaction). */
 export function createDefaultExternalIntegerIdMappingCommandService(deps) {
     return {
         /**

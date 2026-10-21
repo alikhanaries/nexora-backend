@@ -21,6 +21,7 @@ export class RetentionCleanupService {
     config;
     logger;
     metrics;
+    /** Wires repositories and retention day/batch settings from app config. */
     constructor(outbox, inbox, idempotency, webhookDeliveries, config, logger, metrics) {
         this.outbox = outbox;
         this.inbox = inbox;
@@ -30,6 +31,7 @@ export class RetentionCleanupService {
         this.logger = logger;
         this.metrics = metrics;
     }
+    /** Purges outbox, inbox, idempotency, and webhook delivery rows by retention policy; records metrics. */
     async run(now = new Date()) {
         const startedAt = Date.now();
         const stats = {
@@ -101,18 +103,23 @@ export class RetentionCleanupService {
         }, 'Retention cleanup finished with failures');
         throw new RetentionCleanupError(failures, stats);
     }
+    /** Deletes published outbox rows older than `cutoff` in bounded batches. */
     async purgeOutbox(cutoff) {
         return this.purgeInBatches((batchSize) => this.outbox.purgePublishedBefore(cutoff, batchSize));
     }
+    /** Deletes processed inbox rows older than `cutoff` in bounded batches. */
     async purgeInbox(cutoff) {
         return this.purgeInBatches((batchSize) => this.inbox.purgeProcessedBefore(cutoff, batchSize));
     }
+    /** Deletes expired idempotency records before `cutoff` in bounded batches. */
     async purgeIdempotency(cutoff) {
         return this.purgeInBatches((batchSize) => this.idempotency.purgeExpiredBefore(cutoff, batchSize));
     }
+    /** Deletes terminal webhook delivery rows older than `cutoff` in bounded batches. */
     async purgeWebhookDeliveries(cutoff) {
         return this.purgeInBatches((batchSize) => this.webhookDeliveries.purgeTerminalBefore(cutoff, batchSize));
     }
+    /** Repeats `purgeBatch` until a batch returns fewer rows than the configured batch size. */
     async purgeInBatches(purgeBatch) {
         let total = 0;
         let deleted;
@@ -123,6 +130,7 @@ export class RetentionCleanupService {
         return total;
     }
 }
+/** Human-readable failure message, appending DB operation from safe details when present. */
 function retentionFailureSummary(error) {
     const message = toErrorMessage(error);
     if (AppError.isAppError(error) && error.safeDetails?.operation !== undefined) {
@@ -133,6 +141,7 @@ function retentionFailureSummary(error) {
 export class RetentionCleanupError extends Error {
     failures;
     stats;
+    /** Aggregates per-resource failures after a partially successful retention run. */
     constructor(failures, stats) {
         super(`Retention cleanup failed for: ${failures.map((failure) => failure.resource).join(', ')}`);
         this.name = 'RetentionCleanupError';

@@ -5,6 +5,7 @@ import { requireReturnsRead } from './return-permissions.js';
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
 
+/** Validates and bounds offset-pagination inputs (defaults and max page size). */
 function clampPageSize(pageSize) {
     const requested = pageSize ?? DEFAULT_PAGE_SIZE;
     if (!Number.isInteger(requested) || requested < 1) {
@@ -13,6 +14,7 @@ function clampPageSize(pageSize) {
     return Math.min(requested, MAX_PAGE_SIZE);
 }
 
+/** Validates and bounds offset-pagination inputs (defaults and max page size). */
 function clampPage(page) {
     const requested = page ?? 1;
     if (!Number.isInteger(requested) || requested < 1) {
@@ -28,6 +30,12 @@ function clampPage(page) {
  * @param {import('../repositories/postgres-return-repository.js').PostgresReturnRepository} deps.returns
  */
 export function createReturnQueryService(deps) {
+/**
+     * Loads return with lines for the tenant or throws `NotFoundError`.
+     * @param {string} tenantId Tenant scope.
+     * @param {string} returnId Return id.
+     * @param {object|undefined} tx Optional transaction.
+     */
     async function getReturnById(tenantId, returnId, tx) {
         const queryable = tx ?? deps.queryable;
         const returnEntity = await deps.returns.findById(queryable, tenantId, returnId);
@@ -38,6 +46,11 @@ export function createReturnQueryService(deps) {
         return toReturnDetailDto(returnEntity, lines);
     }
 
+/**
+     * Loads return header without lines.
+     * @param {string} tenantId Tenant scope.
+     * @param {string} returnId Return id.
+     */
     async function getReturnHeaderById(tenantId, returnId, tx) {
         const queryable = tx ?? deps.queryable;
         const returnEntity = await deps.returns.findById(queryable, tenantId, returnId);
@@ -47,6 +60,11 @@ export function createReturnQueryService(deps) {
         return toReturnDto(returnEntity);
     }
 
+/**
+     * Resolves a return by external reference within the tenant (ingestion/idempotency).
+     * @param {string} tenantId Tenant scope.
+     * @param {string} externalReference External key from the channel.
+     */
     async function findReturnByExternalReference(tenantId, externalReference, tx) {
         const queryable = tx ?? deps.queryable;
         const trimmed = externalReference.trim();
@@ -61,6 +79,10 @@ export function createReturnQueryService(deps) {
         return toReturnDetailDto(returnEntity, lines);
     }
 
+/**
+     * Offset listing with filters; enforces `returns.read` on the actor.
+     * @param {object} input Tenant, pagination, filters, permissions.
+     */
     async function listReturns(input) {
         requireReturnsRead(deps.authorization, input.actorPermissions);
         const page = clampPage(input.page);

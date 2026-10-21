@@ -6,6 +6,7 @@ import { requirePricingCreate } from './pricing-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createCreatePrice(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requirePricingCreate(deps.authorization, input.actorPermissions);
         const price = await deps.database.execute(async (tx) => {

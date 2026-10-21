@@ -18,6 +18,9 @@ const ORDER_REFERENCE_TYPE = 'ORDER';
  * @returns {{ execute: Function }}
  */
 export function createCreateOrder(deps) {
+    /**
+     * Order command/query step: tenant isolation on all repository calls; may emit order.* events for outbound webhooks.
+     */
     async function execute(input) {
         requireOrdersCreate(deps.authorization, input.actorPermissions);
         if (input.lines.length === 0) {
@@ -54,6 +57,9 @@ export function createCreateOrder(deps) {
         const externalOrderReference = input.externalOrderReference === undefined || input.externalOrderReference === null
             ? null
             : input.externalOrderReference.trim() || null;
+        /**
+         * Transactional body run inside idempotency or database.execute (same tenant throughout).
+         */
         const work = async (tx) => {
             for (const line of resolvedLines) {
                 await deps.inventoryService.reserve({

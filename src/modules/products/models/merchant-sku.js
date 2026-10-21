@@ -5,6 +5,7 @@ export function normalizeMerchantSku(raw) {
     validateMerchantSku(normalized);
     return normalized;
 }
+/** Normalizes and validates merchant SKU format for product creation. */
 export function validateMerchantSku(sku) {
     if (sku.length === 0) {
         throw new ValidationError('Merchant SKU is required');

@@ -13,6 +13,7 @@ const RETURN_REFERENCE_TYPE = 'RETURN';
  * @returns {{ execute: Function }}
  */
 export function createReceiveReturn(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requireReturnsUpdate(deps.authorization, input.actorPermissions);
         const returnDetail = await deps.database.execute(async (tx) => {

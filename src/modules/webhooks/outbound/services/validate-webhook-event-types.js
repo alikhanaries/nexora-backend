@@ -1,6 +1,9 @@
 import { findUndeliverableEventTypes } from '../../../../shared/events/index.js';
 import { ValidationError } from '../../../../shared/errors/index.js';
 
+/**
+ * Ensures subscription event types are allowlisted before persist.
+ */
 export function validateWebhookEventTypes(eventTypes) {
     if (!Array.isArray(eventTypes) || eventTypes.length === 0) {
         throw new ValidationError('At least one event type is required');

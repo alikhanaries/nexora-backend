@@ -1,3 +1,6 @@
+/**
+ * Shared Redis rate limit gate invoked at the start of compatibility route handlers.
+ */
 import { compatibilityRateLimitSubject } from '../../../shared/auth/compatibility-rate-limit-subject.js';
 import { RateLimitError } from '../../../shared/errors/index.js';
 

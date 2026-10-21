@@ -85,6 +85,9 @@ export class AmazonSpApiClient {
         });
     }
 
+    /**
+     * Patches a listing via SP-API PATCH /listings (catalog offer/inventory updates); uses tenant connection tokens from runtime.
+     */
     async patchListingItem(runtime, sku, patches) {
         const host = resolveAmazonSpApiHost(runtime.configuration ?? {});
         const sellerId = readAmazonSellerId(runtime.credentials);

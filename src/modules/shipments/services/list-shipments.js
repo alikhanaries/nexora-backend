@@ -8,6 +8,7 @@ import { requireShipmentsRead } from './shipment-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createListShipments(deps) {
+/** Application workflow entry for this command/query (tenant-scoped, permission-checked). */
     async function execute(input) {
         requireShipmentsRead(deps.authorization, input.actorPermissions);
         const limit = clampCursorLimit(input.limit);

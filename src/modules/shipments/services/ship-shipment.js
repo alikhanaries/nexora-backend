@@ -12,10 +12,14 @@ import { requireShipmentsUpdate } from './shipment-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createShipShipment(deps) {
+/**
+   * Marks shipment shipped: validates transition, fulfills inventory reservations, records tracking timestamps.
+   */
     async function execute(input) {
         if (input.skipAuthorization !== true) {
             requireShipmentsUpdate(deps.authorization, input.actorPermissions);
         }
+/** Transactional unit of work executed inside idempotency/database `execute`. */
         const work = async (tx) => {
             const existing = await deps.shipments.lockShipmentForUpdate(tx, input.tenantId, input.shipmentId);
             if (existing === null) {

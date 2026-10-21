@@ -8,6 +8,10 @@ import { requireCancellationsRead } from './cancellation-permissions.js';
  * @returns {{ execute: Function }}
  */
 export function createListCancellations(deps) {
+/**
+   * Cursor-paginated cancellation list for the public API (order/status filters).
+   * @param {object} input tenantId, actorPermissions, optional limit/cursor/orderId/status.
+   */
     async function execute(input) {
         requireCancellationsRead(deps.authorization, input.actorPermissions);
         const limit = clampCursorLimit(input.limit);
