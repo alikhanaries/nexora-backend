@@ -10,7 +10,6 @@
     "emitDecoratorMetadata": true,
     "strictNullChecks": false,
     "noEmit": true,
-    "baseUrl": ".",
     "skipLibCheck": true
   },
   "include": ["src/**/*", "test/**/*", "tests/**/*"],

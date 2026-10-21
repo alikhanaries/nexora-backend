@@ -12,6 +12,7 @@ name: wasl
 services:
   postgres:
     image: postgres:17-alpine
+    container_name: wasl-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: nexora
@@ -30,6 +31,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: wasl-redis
     restart: unless-stopped
     # BullMQ requires `noeviction`: evicting queue keys silently loses jobs.
     command: ['redis-server', '--maxmemory-policy', 'noeviction', '--appendonly', 'yes']
@@ -48,6 +50,7 @@ services:
   # bitnamilegacy/minio is S3-compatible and pullable from Docker Hub (same env vars / ports).
   minio:
     image: bitnamilegacy/minio:latest
+    container_name: wasl-minio
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: nexora
@@ -68,6 +71,7 @@ services:
   # Ensures bucket exists (also created on first boot via MINIO_DEFAULT_BUCKETS).
   minio-init:
     image: bitnamilegacy/minio-client:latest
+    container_name: wasl-minio-init
     depends_on:
       minio:
         condition: service_healthy
@@ -81,6 +85,7 @@ services:
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.116.1
+    container_name: wasl-otel-collector
     profiles: ['observability']
     restart: unless-stopped
     command: ['--config=/etc/otel-collector.yaml']
@@ -91,6 +96,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.1.0
+    container_name: wasl-prometheus
     profiles: ['observability']
     restart: unless-stopped
     volumes:
