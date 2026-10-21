@@ -65,7 +65,7 @@ const ceDeliveryStateBodySchema = z
   })
   .passthrough();
 
-export @Controller()
+@Controller()
 @UseFilters(CompatibilityExceptionFilter)
 class CompatV2Controller {
   constructor(@Inject(CompatibilityHttpService) compatibilityHttpService) {
@@ -197,3 +197,4 @@ class CompatV2Controller {
     );
   }
 }
+export { CompatV2Controller };

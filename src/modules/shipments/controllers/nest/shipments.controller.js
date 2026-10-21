@@ -20,7 +20,7 @@ import { SHIPMENT_ROUTES } from '../../routes/shipment.routes.js';
  * Business rules live in services/; paths live in routes/.
  * Idempotency orchestration stays here (HTTP adaptation).
  */
-export @Controller()
+@Controller()
 class ShipmentsController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.shipments.useCases;
@@ -161,3 +161,4 @@ class ShipmentsController {
     return { success: true, data: toShipmentDetailResponse(shipment) };
   }
 }
+export { ShipmentsController };

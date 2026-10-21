@@ -32,7 +32,7 @@ import { COMMERCE_INTEGRATION_ROUTES } from '../../routes/commerce-integration.r
  * Business rules live in services/; paths live in routes/.
  * Uses `coreServices.channelRouteDeps` (commerce-integration use cases).
  */
-export @Controller()
+@Controller()
 class CommerceIntegrationsController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.deps = coreServices.channelRouteDeps;
@@ -227,3 +227,4 @@ class CommerceIntegrationsController {
     return { success: true };
   }
 }
+export { CommerceIntegrationsController };

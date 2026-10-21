@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ReturnsController } from './returns.controller.js';
 
-export @Module({
+@Module({
   controllers: [ReturnsController],
   providers: [],
 })
 class ReturnsModule {}
+export { ReturnsModule };

@@ -28,7 +28,7 @@ const merchantOrderNoParamsSchema = z.object({
   merchantOrderNo: z.string().min(1).max(250),
 });
 
-export @Controller()
+@Controller()
 @UseFilters(CompatibilityExceptionFilter)
 class CompatV2OrdersController {
   constructor(@Inject(CompatibilityOrdersService) compatibilityOrdersService) {
@@ -67,3 +67,4 @@ class CompatV2OrdersController {
     return this.compatibilityOrdersService.acknowledgeOrderCe(parsed, idempotencyKey);
   }
 }
+export { CompatV2OrdersController };

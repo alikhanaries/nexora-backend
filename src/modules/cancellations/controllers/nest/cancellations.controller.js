@@ -22,7 +22,7 @@ import { CANCELLATION_ROUTES } from '../../routes/cancellation.routes.js';
  * Idempotency orchestration stays here (HTTP adaptation).
  * Order cancel (`POST /api/v1/orders/:orderId/cancel`) lives on OrdersController.
  */
-export @Controller()
+@Controller()
 class CancellationsController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.cancellations.useCases;
@@ -104,3 +104,4 @@ class CancellationsController {
     return { success: true, data: toCancellationDetailResponse(cancellation) };
   }
 }
+export { CancellationsController };

@@ -14,7 +14,7 @@ import { AUTH_ROUTES } from '../../routes/auth.routes.js';
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  */
-export @Controller()
+@Controller()
 class AuthController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.identity.useCases;
@@ -62,3 +62,4 @@ class AuthController {
     return { success: true, data: result };
   }
 }
+export { AuthController };

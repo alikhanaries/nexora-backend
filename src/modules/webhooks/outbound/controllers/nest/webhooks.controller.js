@@ -25,7 +25,7 @@ function normalizeHeaders(headers) {
  * Thin Nest HTTP adapter for inbound marketplace webhook ingress.
  * Business rules live in webhooks/marketplace services; paths live in routes/.
  */
-export @Controller()
+@Controller()
 class WebhooksController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.marketplaceWebhookIngestion;
@@ -52,3 +52,4 @@ class WebhooksController {
     };
   }
 }
+export { WebhooksController };

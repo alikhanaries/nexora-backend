@@ -10,7 +10,7 @@ import { toApiKeySummary, toCreatedApiKeyResponse } from '../../views/api-key.ma
 /**
  * Thin Nest HTTP adapter — API methods only.
  */
-export @Controller()
+@Controller()
 class ApiKeysController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.apiKeys.useCases;
@@ -75,3 +75,4 @@ class ApiKeysController {
     return { success: true, data: { revoked: true } };
   }
 }
+export { ApiKeysController };

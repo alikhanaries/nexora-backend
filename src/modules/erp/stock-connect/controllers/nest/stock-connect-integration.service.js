@@ -28,7 +28,7 @@ function paginationEnvelope(page, mapItem) {
   };
 }
 
-export @Injectable()
+@Injectable()
 class StockConnectIntegrationService {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.coreServices = coreServices;
@@ -319,3 +319,4 @@ class StockConnectIntegrationService {
     }
   }
 }
+export { StockConnectIntegrationService };

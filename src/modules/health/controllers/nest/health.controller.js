@@ -9,7 +9,7 @@ const echoBodySchema = z.object({
   message: z.string().min(1).max(256),
 });
 
-export @Controller()
+@Controller()
 class HealthController {
   constructor(@Inject(NEST_READINESS) readiness) {
     this.readiness = readiness;
@@ -45,3 +45,4 @@ class HealthController {
     });
   }
 }
+export { HealthController };

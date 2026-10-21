@@ -18,7 +18,7 @@ import { OFFER_ROUTES } from '../../routes/offer.routes.js';
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  */
-export @Controller()
+@Controller()
 class OffersController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.offers.useCases;
@@ -146,3 +146,4 @@ class OffersController {
     return { success: true, data: toOfferResponse(offer) };
   }
 }
+export { OffersController };

@@ -24,7 +24,7 @@ import { toPermissionResponse, toRoleResponse } from '../../views/authorization.
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  */
-export @Controller()
+@Controller()
 class AuthorizationController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.authorization.useCases;
@@ -110,3 +110,4 @@ class AuthorizationController {
     return { success: true, data: { removed: true } };
   }
 }
+export { AuthorizationController };

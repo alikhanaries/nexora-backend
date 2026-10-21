@@ -9,7 +9,7 @@ import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
 /** StockConnect Integration — inventory */
-export @Controller()
+@Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectInventoryController {
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
@@ -30,3 +30,4 @@ class StockConnectInventoryController {
     return this.stockConnectIntegrationService.adjustInventory(parsed, idempotencyKey);
   }
 }
+export { StockConnectInventoryController };

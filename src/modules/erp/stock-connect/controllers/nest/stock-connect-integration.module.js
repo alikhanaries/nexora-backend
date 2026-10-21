@@ -9,7 +9,7 @@ import { StockConnectProductsController } from './stock-connect-products.control
 import { StockConnectShipmentsController } from './stock-connect-shipments.controller.js';
 
 /** Live StockConnect HTTP surface — split controllers; ping owned by MetaController. */
-export @Module({
+@Module({
   controllers: [
     StockConnectMetaController,
     StockConnectProductsController,
@@ -21,3 +21,4 @@ export @Module({
   providers: [StockConnectIntegrationService, StockConnectIntegrationGuard],
 })
 class StockConnectIntegrationModule {}
+export { StockConnectIntegrationModule };

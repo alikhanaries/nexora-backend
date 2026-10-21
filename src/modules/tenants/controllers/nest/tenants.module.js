@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TenantsController } from './tenants.controller.js';
 
-export @Module({
+@Module({
   controllers: [TenantsController],
   providers: [],
 })
 class TenantsModule {}
+export { TenantsModule };

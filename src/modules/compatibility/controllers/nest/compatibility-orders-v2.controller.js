@@ -19,7 +19,7 @@ import { parseOrThrow } from '../../../../shared/validation/index.js';
 import { CompatibilityExceptionFilter } from '../../../../app/common/filters/compatibility-exception.filter.js';
 import { CompatibilityOrdersService } from './compatibility-orders.service.js';
 
-export @Controller()
+@Controller()
 @UseFilters(CompatibilityExceptionFilter)
 class CompatibilityOrdersV2Controller {
   constructor(@Inject(CompatibilityOrdersService) compatibilityOrdersService) {
@@ -71,3 +71,4 @@ class CompatibilityOrdersV2Controller {
     return this.compatibilityOrdersService.acknowledgeOrderV2(parsed, idempotencyKey);
   }
 }
+export { CompatibilityOrdersV2Controller };

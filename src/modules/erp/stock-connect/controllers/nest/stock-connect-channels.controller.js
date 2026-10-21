@@ -3,7 +3,7 @@ import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
 /** StockConnect Integration — marketplace channels */
-export @Controller()
+@Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectCommerceIntegrationsController {
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
@@ -15,3 +15,4 @@ class StockConnectCommerceIntegrationsController {
     return this.stockConnectIntegrationService.listCommerceIntegrations();
   }
 }
+export { StockConnectCommerceIntegrationsController };

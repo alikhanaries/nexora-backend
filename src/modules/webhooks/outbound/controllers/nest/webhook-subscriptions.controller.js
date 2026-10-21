@@ -41,7 +41,7 @@ function actorFields(actor) {
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/ (webhook command/query services); paths live in routes/.
  */
-export @Controller()
+@Controller()
 class WebhookSubscriptionsController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.webhooks;
@@ -222,3 +222,4 @@ class WebhookSubscriptionsController {
     return { success: true, data: toWebhookDeliveryResponse(result.delivery) };
   }
 }
+export { WebhookSubscriptionsController };

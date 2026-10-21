@@ -17,7 +17,7 @@ import { PRICE_ROUTES } from '../../routes/price.routes.js';
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  */
-export @Controller()
+@Controller()
 class PricingController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.pricing.useCases;
@@ -116,3 +116,4 @@ class PricingController {
     return { success: true, data: toPriceResponse(price) };
   }
 }
+export { PricingController };

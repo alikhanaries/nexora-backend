@@ -4,7 +4,7 @@ import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
 /** StockConnect Integration — metadata */
-export @Controller()
+@Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectMetaController {
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
@@ -17,3 +17,4 @@ class StockConnectMetaController {
     return this.stockConnectIntegrationService.ping();
   }
 }
+export { StockConnectMetaController };

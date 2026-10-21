@@ -19,7 +19,7 @@ import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
 /** StockConnect Integration — orders */
-export @Controller()
+@Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectOrdersController {
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
@@ -51,3 +51,4 @@ class StockConnectOrdersController {
     return this.stockConnectIntegrationService.cancelOrder(orderId, idempotencyKey);
   }
 }
+export { StockConnectOrdersController };

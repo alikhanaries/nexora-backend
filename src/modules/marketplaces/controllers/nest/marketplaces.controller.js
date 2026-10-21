@@ -16,7 +16,7 @@ import { MARKETPLACE_ROUTES } from '../../routes/marketplace.routes.js';
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  */
-export @Controller()
+@Controller()
 class MarketplacesController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.marketplaces.useCases;
@@ -97,3 +97,4 @@ class MarketplacesController {
     return { success: true, data: toMarketplaceResponse(marketplace) };
   }
 }
+export { MarketplacesController };

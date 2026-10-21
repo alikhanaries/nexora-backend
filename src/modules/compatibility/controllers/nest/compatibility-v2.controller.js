@@ -42,7 +42,7 @@ import { parseOrThrow } from '../../../../shared/validation/index.js';
 import { CompatibilityExceptionFilter } from '../../../../app/common/filters/compatibility-exception.filter.js';
 import { CompatibilityHttpService } from './compatibility-http.service.js';
 
-export @Controller()
+@Controller()
 @UseFilters(CompatibilityExceptionFilter)
 class CompatibilityV2Controller {
   constructor(@Inject(CompatibilityHttpService) compatibilityHttpService) {
@@ -201,3 +201,4 @@ class CompatibilityV2Controller {
     return this.compatibilityHttpService.updateOfferStockV2(parsed, idempotencyKey, channelReference);
   }
 }
+export { CompatibilityV2Controller };

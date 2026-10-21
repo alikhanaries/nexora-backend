@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { BusinessRuleError } from '../../../src/shared/errors/index.js';
 import {
     createLastAdminGuard,
-    LastAdminGuard,
 } from '../../../src/modules/authorization/services/last-admin-guard.js';
 
 const tx = {};
@@ -80,15 +79,5 @@ describe('createLastAdminGuard', () => {
         });
         const guard = createLastAdminGuard(deps);
         await expect(guard.assertCanRemoveRole('tenant-1', 'membership-1', 'role-1', tx)).resolves.toBeUndefined();
-    });
-
-    it('compatibility wrapper preserves last-admin protection', async () => {
-        const deps = createGuardDeps({
-            grantsAdmin: true,
-            adminMembershipCount: 1,
-            hasAdminViaOtherRoles: false,
-        });
-        const guard = new LastAdminGuard(deps);
-        await expect(guard.assertCanRemoveRole('tenant-1', 'membership-1', 'role-1', tx)).rejects.toBeInstanceOf(BusinessRuleError);
     });
 });

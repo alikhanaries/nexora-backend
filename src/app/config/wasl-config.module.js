@@ -3,7 +3,7 @@ import { loadConfigFromEnvironment } from './index.js';
 
 export const WASL_CONFIG = Symbol('WASL_CONFIG');
 
-export @Global()
+@Global()
 @Module({
   providers: [
     {
@@ -14,3 +14,4 @@ export @Global()
   exports: [WASL_CONFIG],
 })
 class WaslConfigModule {}
+export { WaslConfigModule };

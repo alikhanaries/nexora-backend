@@ -23,7 +23,7 @@ import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
 /** StockConnect Integration — products */
-export @Controller()
+@Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectProductsController {
   constructor(@Inject(StockConnectIntegrationService) stockConnectIntegrationService) {
@@ -69,3 +69,4 @@ class StockConnectProductsController {
     return this.stockConnectIntegrationService.publishProduct(productId, parsed, idempotencyKey);
   }
 }
+export { StockConnectProductsController };

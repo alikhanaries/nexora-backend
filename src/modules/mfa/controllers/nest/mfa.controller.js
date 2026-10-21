@@ -15,7 +15,7 @@ import {
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  */
-export @Controller()
+@Controller()
 class MfaController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.mfa.useCases;
@@ -114,3 +114,4 @@ class MfaController {
     return { success: true, data };
   }
 }
+export { MfaController };

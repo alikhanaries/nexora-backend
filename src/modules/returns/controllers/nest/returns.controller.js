@@ -19,7 +19,7 @@ import { RETURN_ROUTES } from '../../routes/return.routes.js';
  * Business rules live in services/; paths live in routes/.
  * Idempotency orchestration stays here (HTTP adaptation).
  */
-export @Controller()
+@Controller()
 class ReturnsController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.returns.useCases;
@@ -158,3 +158,4 @@ class ReturnsController {
     return { success: true, data: toReturnResponse(returnDetail) };
   }
 }
+export { ReturnsController };

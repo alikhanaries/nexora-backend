@@ -23,7 +23,7 @@ import { ORDER_ROUTES } from '../../routes/order.routes.js';
  * Business rules live in services/; paths live in routes/.
  * Idempotency orchestration stays here (HTTP adaptation); request mapping is in views/.
  */
-export @Controller()
+@Controller()
 class OrdersController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.orders.useCases;
@@ -158,3 +158,4 @@ class OrdersController {
     return { success: true, data: toCancellationDetailResponse(cancellation) };
   }
 }
+export { OrdersController };

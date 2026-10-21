@@ -14,7 +14,7 @@ import { TENANT_ROUTES } from '../../routes/tenant.routes.js';
  * Thin Nest HTTP adapter — API methods only.
  * Business rules live in services/; paths live in routes/.
  */
-export @Controller()
+@Controller()
 class TenantsController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.useCases = coreServices.tenants.useCases;
@@ -76,3 +76,4 @@ class TenantsController {
     return { success: true, data: toTenantResponse(tenant) };
   }
 }
+export { TenantsController };

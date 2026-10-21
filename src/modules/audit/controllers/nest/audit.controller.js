@@ -9,7 +9,7 @@ import { toAuditEventResponse } from '../../views/audit.mapper.js';
 /**
  * Thin Nest HTTP adapter — API methods only.
  */
-export @Controller()
+@Controller()
 class AuditController {
   constructor(@Inject(CORE_SERVICES) coreServices) {
     this.auditService = coreServices.audit.auditService;
@@ -35,3 +35,4 @@ class AuditController {
     };
   }
 }
+export { AuditController };
