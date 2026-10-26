@@ -12,4 +12,9 @@ describe('SQLSTATE mapping', () => {
         expect(mapped.code).toBe(ErrorCode.DATABASE_UNAVAILABLE);
         expect(mapped.exposeMessage).toBe(false);
     });
+    it('tags insufficient privilege SQLSTATE in error details for internal diagnostics', () => {
+        const mapped = mapPostgresError({ code: '42501' }, 'external_integer_id_mappings.insert');
+        expect(mapped.code).toBe(ErrorCode.DATABASE_UNAVAILABLE);
+        expect(mapped.safeDetails).toMatchObject({ operation: 'external_integer_id_mappings.insert', pgCode: '42501' });
+    });
 });

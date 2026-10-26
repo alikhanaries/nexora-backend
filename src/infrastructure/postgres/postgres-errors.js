@@ -65,6 +65,11 @@ export function mapPostgresError(error, operation) {
             return new ConflictError('Concurrent modification, please retry', details, error);
         case SQLSTATE.QUERY_CANCELED:
             return new DatabaseError('Database query timed out', error, details);
+        case SQLSTATE.INSUFFICIENT_PRIVILEGE:
+            return new DatabaseError('Database operation failed', error, {
+                ...details,
+                pgCode: pgError.code,
+            });
         default:
             return new DatabaseError('Database operation failed', error, details);
     }

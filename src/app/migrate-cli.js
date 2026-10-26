@@ -18,8 +18,9 @@ async function main() {
     const command = parseCommand(process.argv);
     const config = loadConfigFromEnvironment();
     const logger = createPinoLogger(config).child({ component: 'migrator' });
+    const migrationConnectionString = config.database.migrationUrl?.trim() || config.database.url;
     const pool = new Pool({
-        connectionString: config.database.url,
+        connectionString: migrationConnectionString,
         max: 1,
         connectionTimeoutMillis: config.database.pool.connectionTimeoutMs,
         ...(config.database.ssl ? { ssl: { rejectUnauthorized: true } } : {}),
