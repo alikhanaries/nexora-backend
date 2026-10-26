@@ -54,7 +54,7 @@ describe('webhook delivery worker integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://example.com/webhooks/nexora',
+            url: 'https://example.com/webhooks/wasl',
             eventTypes: ['order.created'],
         });
         const eventId = randomUUID();
@@ -102,9 +102,9 @@ describe('webhook delivery worker integration', () => {
             eventId,
             eventType: 'order.created',
         }, buildDeliveryContext());
-        expect(capturedRequest?.headers['X-Nexora-Signature']).toMatch(/^v1=/);
+        expect(capturedRequest?.headers['X-Wasl-Signature']).toMatch(/^v1=/);
         expect(capturedRequest?.body).toContain('"orderNumber":"ORD-100"');
-        expect(verifyWebhookRequestBody(created.secret, capturedRequest.body, capturedRequest.headers['X-Nexora-Signature'])).toBe(true);
+        expect(verifyWebhookRequestBody(created.secret, capturedRequest.body, capturedRequest.headers['X-Wasl-Signature'])).toBe(true);
         const updated = await infra.database.execute(async (tx) => app.webhooks.repositories.deliveries.findById(tx, tenant.tenantId, delivery.id), { tenantId: tenant.tenantId });
         expect(updated?.status).toBe('DELIVERED');
         expect(updated?.lastHttpStatus).toBe(200);
@@ -124,7 +124,7 @@ describe('webhook delivery worker integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://example.com/webhooks/nexora',
+            url: 'https://example.com/webhooks/wasl',
             eventTypes: ['order.created'],
         });
         await app.webhooks.webhookCommandService.updateWebhookSubscription({
@@ -178,7 +178,7 @@ describe('webhook delivery worker integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://example.com/webhooks/nexora',
+            url: 'https://example.com/webhooks/wasl',
             eventTypes: ['order.created'],
         });
         const eventId = randomUUID();

@@ -18,7 +18,7 @@ Wasl must **not**:
 
 - Call another commerce platform's API for core functionality
 - Proxy native requests to an external platform
-- Use an external platform as Nexora's source of truth
+- Use an external platform as Wasl's source of truth
 - Copy an external platform's database schema or internal architecture
 - Import an external commerce SDK as a core runtime dependency
 - Require external credentials for native `/api/v1` operation
@@ -65,7 +65,7 @@ Wasl public contracts
       PostgreSQL
 ```
 
-Compatibility translates external requests to Wasl operations against **Nexora's own database**. It does not call an external commerce API to fulfil native or compatibility reads/writes unless the feature is an **explicit outbound integration** (customer-connected external system).
+Compatibility translates external requests to Wasl operations against **Wasl's own database**. It does not call an external commerce API to fulfil native or compatibility reads/writes unless the feature is an **explicit outbound integration** (customer-connected external system).
 
 ## Independence test
 
@@ -89,7 +89,7 @@ Use generic concepts internally (`externalOrderReference`, `externalReference`) 
 
 ## Database
 
-Nexora-owned tables (`orders`, `products`, `inventory_balances`, …) are the source of truth. External identifiers use generic columns such as `external_order_reference` where needed — not provider-specific table or column names.
+Wasl-owned tables (`orders`, `products`, `inventory_balances`, …) are the source of truth. External identifiers use generic columns such as `external_order_reference` where needed — not provider-specific table or column names.
 
 ## Configuration
 
@@ -111,7 +111,7 @@ See [module-boundaries.md](module-boundaries.md) for enforceable dependency rule
 
 ## External ERP / OMS consumers
 
-StockConnect and future ERPs are **external consumers** of Wasl APIs. They must not become the definition of Nexora's core model.
+StockConnect and future ERPs are **external consumers** of Wasl APIs. They must not become the definition of Wasl's core model.
 
 - HTTP: compatibility routes and mappers (`/api/v2`, `/api/v2/ce/*`).
 - Webhooks: optional `WebhookPayloadStrategy` registrations at the worker composition root ([external-integration.md](external-integration.md)).

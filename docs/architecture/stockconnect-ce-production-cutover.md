@@ -93,7 +93,7 @@ Auth for CE routes: query `apiKey` / `apikey` or header `X-CE-KEY` on `/api/v2/c
 | Item | Verify | Status |
 | ---- | ------ | ------ |
 | `CHANNEL_ENGINE_BASE_URL` | Points to Wasl production host with `/api/v2/ce/` prefix | PRODUCTION NOT YET VERIFIED |
-| CE API key | Nexora-issued key for correct tenant; scopes match usage | PRODUCTION NOT YET VERIFIED |
+| CE API key | Wasl-issued key for correct tenant; scopes match usage | PRODUCTION NOT YET VERIFIED |
 | Tenant mapping | One key → one Wasl tenant (no shared/fallback tenant) | PRODUCTION NOT YET VERIFIED |
 | Webhook URL | StockConnect `POST /orders/channelengine-webhook` reachable from Wasl workers | PRODUCTION NOT YET VERIFIED |
 | Webhook secret | Stored in Wasl subscription (encrypted); paired with StockConnect | PRODUCTION NOT YET VERIFIED |
@@ -121,7 +121,7 @@ Auth for CE routes: query `apiKey` / `apikey` or header `X-CE-KEY` on `/api/v2/c
 | ------- | ----- |
 | Subscription `description` | `stockconnect-ce-bridge` (exact) |
 | Event types | `order.created`, `order.confirmed`, `order.status_changed`, `order.cancelled` (subset allowed) |
-| Delivery | HMAC on body (`X-Nexora-Signature`); idempotent delivery records; retries via existing webhook worker |
+| Delivery | HMAC on body (`X-Wasl-Signature`); idempotent delivery records; retries via existing webhook worker |
 
 ---
 
@@ -206,8 +206,8 @@ Use existing logs and metrics (no new monitoring product required).
 ## Rollback strategy
 
 1. **Revert StockConnect `CHANNEL_ENGINE_BASE_URL`** to the previous ChannelEngine production base URL (Ops config change).
-2. **Stop Wasl CE traffic** — StockConnect no longer calls Nexora; no Wasl code rollback required for immediate traffic stop.
-3. **In-flight webhooks** — Nexora may still enqueue deliveries until subscription disabled or URL points elsewhere; disable or pause `stockconnect-ce-bridge` subscription before cutover if a clean boundary is required.
+2. **Stop Wasl CE traffic** — StockConnect no longer calls Wasl; no Wasl code rollback required for immediate traffic stop.
+3. **In-flight webhooks** — Wasl may still enqueue deliveries until subscription disabled or URL points elsewhere; disable or pause `stockconnect-ce-bridge` subscription before cutover if a clean boundary is required.
 4. **Queued webhook deliveries** — Existing BullMQ jobs drain per worker; dead-letter table retains failed rows for inspection.
 5. **Duplicate events after rollback** — StockConnect should treat CE order state from ChannelEngine as authoritative again; Wasl webhook deliveries after rollback should be disabled to avoid dual ingestion.
 6. **Already acknowledged orders** — Orders acknowledged in Wasl remain in Wasl DB; ChannelEngine may hold different state until reconciled manually per business process.

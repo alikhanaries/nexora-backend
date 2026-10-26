@@ -5,7 +5,7 @@
 
 ## Context
 
-Phases 1–6 delivered Nexora's commerce core, Merchant-compatible `/api/v2` outbound flows (poll, acknowledge, ship, cancel, return), and external webhook delivery. Phase 6.6 added infrastructure retention sweeps.
+Phases 1–6 delivered Wasl's commerce core, Merchant-compatible `/api/v2` outbound flows (poll, acknowledge, ship, cancel, return), and external webhook delivery. Phase 6.6 added infrastructure retention sweeps.
 
 ADR-018 deferred **Channel API** order ingestion to a separate future scope. The verified external contracts are distinct:
 
@@ -130,7 +130,7 @@ Phase 7 implements **Channel & Marketplace Inbound Connectivity** in sub-phases 
 
 ### Channel-fulfilled ingest (`POST /api/v2/orders/channel-fulfilled`)
 
-**Decision:** **Do not reserve inventory.** Fulfillment occurs outside the tenant's Nexora-managed warehouse; no stock should be held or deducted from merchant locations.
+**Decision:** **Do not reserve inventory.** Fulfillment occurs outside the tenant's Wasl-managed warehouse; no stock should be held or deducted from merchant locations.
 
 ---
 

@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/app/config/config.js';
 import { ConfigurationError } from '../../src/shared/errors/index.js';
 const baseEnv = {
-    DATABASE_URL: 'postgresql://nexora:nexora@localhost:5432/nexora',
+    DATABASE_URL: 'postgresql://wasl_app:wasl@localhost:5432/wasl',
     REDIS_URL: 'redis://localhost:6379',
-    STORAGE_BUCKET: 'nexora-local',
-    STORAGE_ACCESS_KEY_ID: 'nexora',
-    STORAGE_SECRET_ACCESS_KEY: 'nexora-secret',
+    STORAGE_BUCKET: 'wasl-local',
+    STORAGE_ACCESS_KEY_ID: 'wasl',
+    STORAGE_SECRET_ACCESS_KEY: 'wasl-secret',
     AUTH_JWT_SECRET: 'test-jwt-secret-for-unit-tests-only',
 };
 describe('configuration', () => {

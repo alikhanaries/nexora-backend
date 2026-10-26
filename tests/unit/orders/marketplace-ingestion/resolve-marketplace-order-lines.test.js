@@ -26,8 +26,8 @@ describe('resolveMarketplaceOrderLines', () => {
         const lines = await resolveMarketplaceOrderLines({
             marketplaceEntityMappingLookup: {
                 findByExternalEntity: vi.fn().mockResolvedValue({
-                    nexoraEntityType: 'offer',
-                    nexoraEntityId: 'offer-uuid',
+                    integrationEntityType: 'offer',
+                    integrationEntityId: 'offer-uuid',
                     externalEntityType: 'noon_offer',
                     externalEntityId: 'EXT-1',
                 }),

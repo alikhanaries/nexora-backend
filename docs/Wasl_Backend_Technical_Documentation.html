@@ -4513,7 +4513,7 @@ lodash-es/lodash.js:
    *)
 */
 globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
-//# sourceURL=C:\Users\The Computer Store\Videos\nexora-backend\docs\node_modules\mermaid\dist\mermaid.min.js</script></head>
+//# sourceURL=C:\Users\The Computer Store\Videos\wasl-backend\docs\node_modules\mermaid\dist\mermaid.min.js</script></head>
 <body>
   <section class="cover">
     <div class="cover-top">
@@ -6940,8 +6940,8 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
 <h3><a id="verified-security-limitations"></a><span class="secno">11.6</span> Verified security limitations</h3>
 <p>These are stated neutrally as facts about the current code, not as vulnerabilities with assessed severity.</p>
 <ol>
-<li><strong>Unscoped transactions on RLS-protected tables.</strong> Refresh, logout and API-key verification query <code>refresh_sessions</code> and <code>api_keys</code> through <code>database.execute()</code> <strong>without</strong> a <code>tenantId</code>, because the tenant is not yet known. With <code>app.current_tenant_id()</code> unset, an RLS policy would deny the rows. These paths therefore depend on the connecting role bypassing RLS, which is inconsistent with the <code>nexora_app</code> restricted-role model introduced by migration <code>0030_rls_hardening.sql</code>.</li>
-<li><strong>Hardcoded role password in a migration.</strong> <code>0030_rls_hardening.sql</code> creates the <code>nexora_app</code> role with a literal password, documented as a Docker development convenience.</li>
+<li><strong>Unscoped transactions on RLS-protected tables.</strong> Refresh, logout and API-key verification query <code>refresh_sessions</code> and <code>api_keys</code> through <code>database.execute()</code> <strong>without</strong> a <code>tenantId</code>, because the tenant is not yet known. With <code>app.current_tenant_id()</code> unset, an RLS policy would deny the rows. These paths therefore depend on the connecting role bypassing RLS, which is inconsistent with the <code>wasl_app</code> restricted-role model introduced by migration <code>0030_rls_hardening.sql</code>.</li>
+<li><strong>Hardcoded role password in a migration.</strong> <code>0030_rls_hardening.sql</code> creates the <code>wasl_app</code> role with a literal password, documented as a Docker development convenience.</li>
 <li><strong>Default MFA encryption key.</strong> <code>AUTH_MFA_ENCRYPTION_KEY</code> has a default value in the configuration schema; deployments that do not override it encrypt TOTP secrets with a known key.</li>
 <li><strong>No MFA at login.</strong> MFA gates step-up operations only.</li>
 <li><strong>Exact-match authorization only at runtime.</strong> Wildcard permission patterns apply at role seeding, not at request time.</li>
@@ -7285,7 +7285,7 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
 <li><strong>Row-level security policies.</strong> Tenant-scoped tables restrict rows to <code>tenant_id = app.current_tenant_id()</code>. The audit log additionally permits <code>tenant_id IS NULL</code> for system events.</li>
 <li><strong>Composite foreign keys.</strong> Migrations <code>0019</code>, <code>0020</code>, <code>0028</code> and <code>0046</code> add <code>(tenant_id, id)</code> composite keys so that a child row cannot reference a parent belonging to a different tenant, even if application code were to try.</li>
 </ol>
-<p>Migration <code>0030_rls_hardening.sql</code> adds <code>FORCE ROW LEVEL SECURITY</code> and the dedicated <code>nexora_app</code> role, with the expectation that migrations run under a privileged role via <code>DATABASE_MIGRATION_URL</code> while runtime traffic uses the restricted role.</p>
+<p>Migration <code>0030_rls_hardening.sql</code> adds <code>FORCE ROW LEVEL SECURITY</code> and the dedicated <code>wasl_app</code> role, with the expectation that migrations run under a privileged role via <code>DATABASE_MIGRATION_URL</code> while runtime traffic uses the restricted role.</p>
 <h3><a id="data-retention"></a><span class="secno">12.7</span> Data retention</h3>
 <p>A scheduled cleanup running on the worker deletes aged rows in bounded batches until fewer than a full batch remain.</p>
 <table>
@@ -7327,7 +7327,7 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
 <td align="right">3600000</td>
 </tr>
 </tbody></table>
-<p>The job holds a distributed lock named <code>retention-cleanup</code>, so running several worker replicas does not cause concurrent deletion. Per-resource failures are recorded individually and exported through <code>nexora_retention_cleanup_*</code> metrics.</p>
+<p>The job holds a distributed lock named <code>retention-cleanup</code>, so running several worker replicas does not cause concurrent deletion. Per-resource failures are recorded individually and exported through <code>wasl_retention_cleanup_*</code> metrics.</p>
 <hr>
 <h2><a id="channelengine-integration-for-stockconnect"></a><span class="secno">13</span> ChannelEngine integration for StockConnect</h2>
 <p>This chapter is the core of the document. It describes what the ChannelEngine relationship actually is in this codebase, how the compatibility surface is built, how each data domain is mapped, and where the implementation is complete, partial or absent.</p>
@@ -7961,7 +7961,7 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
 <p>A webhook subscription whose <strong><code>description</code> is exactly <code>stockconnect-ce-bridge</code></strong> is recognised by <code>isStockConnectCeBridgeSubscription</code>. For such subscriptions the worker substitutes a CE-shaped payload strategy, and <code>buildStockConnectCeWebhookBody</code> renders the body as <code>{ "Content": [ ceOrder ] }</code> using the same order mapper as the polling endpoint — so a webhook payload and a poll response describe an order identically.</p>
 <p>The bridged event types are exactly four:</p>
 <p><code>order.created</code>, <code>order.confirmed</code>, <code>order.status_changed</code>, <code>order.cancelled</code></p>
-<p>Delivery uses the standard signing and retry machinery described in the webhooks chapter, including the <code>X-Nexora-Signature</code> HMAC header. The description string is a magic value; changing it on a subscription silently reverts that subscription to the generic payload shape.</p>
+<p>Delivery uses the standard signing and retry machinery described in the webhooks chapter, including the <code>X-Wasl-Signature</code> HMAC header. The description string is a magic value; changing it on a subscription silently reverts that subscription to the generic payload shape.</p>
 <h3><a id="readiness-for-the-compatibility-surface"></a><span class="secno">13.17</span> Readiness for the compatibility surface</h3>
 <p>Two readiness probes are registered on the API process, <code>external_compat_ce_routes</code> and its legacy alias <code>stockconnect_ce_compat</code>. Both run the same synchronous check, <code>assertExternalCompatibilityCeRoutesWired</code>, confirming that four dependencies are present on the route dependency object: <code>stockConnectCeOrderCompatibilityQuery</code>, <code>stockConnectCeCatalogCommand</code>, <code>stockConnectCeOrderInvoiceQuery</code> and <code>stockConnectCeChannelCompatibilityQuery</code>.</p>
 <p>What this tells you is that composition did not silently drop a CE handler — a real risk in a manually wired application. What it does <strong>not</strong> tell you is whether PostgreSQL is reachable, whether StockConnect is up, or whether any CE request has ever succeeded. Those are covered by the <code>postgres</code>, <code>redis</code> and <code>queue</code> probes and by actual traffic.</p>
@@ -8260,7 +8260,7 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
 <tr>
 <td>Key prefix</td>
 <td><code>QUEUE_PREFIX</code></td>
-<td align="right"><code>nexora-queue</code></td>
+<td align="right"><code>wasl-queue</code></td>
 </tr>
 <tr>
 <td>Redis URL</td>
@@ -8571,19 +8571,19 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
 </tr>
 </thead>
 <tbody><tr>
-<td><code>X-Nexora-Signature</code></td>
+<td><code>X-Wasl-Signature</code></td>
 <td><code>v1=&lt;hex&gt;</code> HMAC-SHA256 of the request body using the subscription secret</td>
 </tr>
 <tr>
-<td><code>X-Nexora-Event</code></td>
+<td><code>X-Wasl-Event</code></td>
 <td>Event type</td>
 </tr>
 <tr>
-<td><code>X-Nexora-Event-Id</code></td>
+<td><code>X-Wasl-Event-Id</code></td>
 <td>Event identifier</td>
 </tr>
 <tr>
-<td><code>X-Nexora-Delivery-Id</code></td>
+<td><code>X-Wasl-Delivery-Id</code></td>
 <td>Delivery attempt identifier</td>
 </tr>
 </tbody></table>
@@ -8716,7 +8716,7 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
 </tr>
 <tr>
 <td>Retention</td>
-<td><code>nexora_retention_cleanup_deleted_total</code>, <code>_runs_total</code>, <code>_failures_total</code>, <code>_duration_seconds</code></td>
+<td><code>wasl_retention_cleanup_deleted_total</code>, <code>_runs_total</code>, <code>_failures_total</code>, <code>_duration_seconds</code></td>
 </tr>
 <tr>
 <td>Catalog sync</td>
@@ -9186,7 +9186,7 @@ npm run verify             # lint + arch:check + unit
 </tbody></table>
 <p>The worker observability listener binds <code>127.0.0.1</code> by default. In-cluster probes require <code>WORKER_OBSERVABILITY_HOST=0.0.0.0</code>, and ADR-026 is explicit that this port must never be exposed through a public load balancer.</p>
 <h3><a id="migrations-in-production"></a><span class="secno">22.4</span> Migrations in production</h3>
-<p>Run migrations as a separate step before rolling out new application pods, using a privileged role. Set <code>DATABASE_MIGRATION_URL</code> to that role's connection string and <code>DATABASE_URL</code> to the restricted <code>nexora_app</code> role, so that runtime traffic is subject to row-level security while DDL is not.</p>
+<p>Run migrations as a separate step before rolling out new application pods, using a privileged role. Set <code>DATABASE_MIGRATION_URL</code> to that role's connection string and <code>DATABASE_URL</code> to the restricted <code>wasl_app</code> role, so that runtime traffic is subject to row-level security while DDL is not.</p>
 <p>Migrations are forward-only. There are no down migrations; a bad migration is corrected by writing a new one.</p>
 <h3><a id="shutdown-behaviour"></a><span class="secno">22.5</span> Shutdown behaviour</h3>
 <p>On <code>SIGTERM</code> the process marks itself not ready, then closes listeners, schedulers, workers, queue, Redis, database and tracing in order, bounded by <code>SERVER_SHUTDOWN_TIMEOUT_MS</code>. The orchestrator's termination grace period should exceed that value, otherwise the process is killed mid-drain.</p>
@@ -9204,7 +9204,7 @@ npm run verify             # lint + arch:check + unit
 <td>The schema default is a known value</td>
 </tr>
 <tr>
-<td>Change the <code>nexora_app</code> password from the migration default</td>
+<td>Change the <code>wasl_app</code> password from the migration default</td>
 <td>Literal password in <code>0030_rls_hardening.sql</code></td>
 </tr>
 <tr>
@@ -9376,7 +9376,7 @@ npm run verify             # lint + arch:check + unit
 <tr>
 <td>Signature verification fails at the receiver</td>
 <td>Body must be verified exactly as transmitted</td>
-<td>Header is <code>X-Nexora-Signature: v1=&lt;hex&gt;</code>, HMAC-SHA256</td>
+<td>Header is <code>X-Wasl-Signature: v1=&lt;hex&gt;</code>, HMAC-SHA256</td>
 </tr>
 <tr>
 <td>Retries slower than expected</td>

@@ -10,10 +10,10 @@ const SKIP_DIR = new Set(['node_modules', '.git', 'dist']);
 const EXT = new Set(['.md', '.json', '.mjs']);
 
 function shouldSkipLine(line) {
-  if (/nexora_entity|nexoraEntityType|nexoraEntityId|nexora_entity_type|nexora_entity_id/.test(line)) {
+  if (/nexora_entity|integrationEntityType|integrationEntityId|wasl_entity_type|wasl_entity_id/.test(line)) {
     return true;
   }
-  if (/postgresql:\/\/nexora|nexora:nexora@|nexora-local|'nexora'/.test(line) && /DATABASE|STORAGE|docker/i.test(line)) {
+  if (/postgresql:\/\/nexora|nexora:nexora@|wasl-local|'nexora'/.test(line) && /DATABASE|STORAGE|docker/i.test(line)) {
     return true;
   }
   if (/stockconnect-ce-bridge|ce-compat:/.test(line)) {
@@ -23,17 +23,17 @@ function shouldSkipLine(line) {
 }
 
 const PAIRS = [
-  ['Nexora Backend Documentation', 'Wasl Backend Documentation'],
-  ['Nexora Backend API', 'Wasl Backend API'],
-  ['Nexora Backend', 'Wasl Backend'],
-  ['Nexora backend', 'Wasl backend'],
-  ['Nexora commerce', 'Wasl commerce'],
-  ['Nexora API', 'Wasl API'],
-  ['Nexora platform', 'Wasl platform'],
-  ['Nexora Local', 'Wasl Local'],
+  ['Wasl Backend Documentation', 'Wasl Backend Documentation'],
+  ['Wasl Backend API', 'Wasl Backend API'],
+  ['Wasl Backend', 'Wasl Backend'],
+  ['Wasl backend', 'Wasl backend'],
+  ['Wasl commerce', 'Wasl commerce'],
+  ['Wasl API', 'Wasl API'],
+  ['Wasl platform', 'Wasl platform'],
+  ['Wasl Local', 'Wasl Local'],
   ['the Nexora', 'the Wasl'],
-  ['Nexora ', 'Wasl '],
-  ['nexora-backend', 'wasl-backend'],
+  ['Wasl ', 'Wasl '],
+  ['wasl-backend', 'wasl-backend'],
   [
     'src/modules/channels/presentation/channel.routes.js',
     'src/modules/commerce-integrations/presentation/commerce-integration.routes.js',

@@ -15,9 +15,9 @@ import { createApplication } from '../../src/app/create-application.js';
 
 function buildAppRoleUrl(databaseUrl) {
     const url = new URL(databaseUrl);
-    url.username = 'nexora_app';
+    url.username = 'wasl_app';
     if (url.password === '') {
-        url.password = 'nexora';
+        url.password = 'wasl';
     }
     return url.toString();
 }
@@ -256,7 +256,7 @@ describe('external integer ID mapping integration', () => {
         await app.httpServer.close();
     });
 
-    it('enforces tenant RLS under the nexora_app runtime role', async () => {
+    it('enforces tenant RLS under the wasl_app runtime role', async () => {
         const infra = await getTestInfrastructure();
         const app = await createApplication(infra);
         await app.httpServer.ready();

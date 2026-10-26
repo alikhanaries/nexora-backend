@@ -23,20 +23,20 @@ Application checks and RLS are **complementary**. Neither replaces the other.
 
 | Role | Purpose | RLS |
 | ---- | ------- | --- |
-| `nexora` (Docker default owner) | Migrations, schema ownership | **Bypasses RLS** (superuser) |
-| `nexora_app` | Runtime application connections | **Subject to RLS** (non-superuser, not owner) |
+| `wasl` (Docker default owner) | Migrations, schema ownership | **Bypasses RLS** (superuser) |
+| `wasl_app` | Runtime application connections | **Subject to RLS** (non-superuser, not owner) |
 
 Migration `0030_rls_hardening.sql`:
 
-- Creates `nexora_app` (LOGIN, NOSUPERUSER, NOBYPASSRLS).
+- Creates `wasl_app` (LOGIN, NOSUPERUSER, NOBYPASSRLS).
 - Applies `FORCE ROW LEVEL SECURITY` on every table that already has RLS enabled.
-- Grants DML on `public` tables and `EXECUTE` on `app` functions to `nexora_app`.
+- Grants DML on `public` tables and `EXECUTE` on `app` functions to `wasl_app`.
 
 ## Configuration
 
 ```env
-DATABASE_URL=postgresql://nexora_app:nexora@localhost:5433/nexora
-DATABASE_MIGRATION_URL=postgresql://nexora:nexora@localhost:5433/nexora
+DATABASE_URL=postgresql://wasl_app:wasl@localhost:5433/wasl
+DATABASE_MIGRATION_URL=postgresql://wasl:wasl@localhost:5433/wasl
 ```
 
 When `DATABASE_MIGRATION_URL` is omitted, migrations run on the same connection as runtime (backward compatible for local experiments — **not recommended for production**).
@@ -53,16 +53,16 @@ Global catalog tables (`permissions`, `tenants`, `users`, …) and infrastructur
 
 ## Verification
 
-Integration test `tests/integration/postgres-rls.test.js` uses a dedicated `nexora_app` pool to assert:
+Integration test `tests/integration/postgres-rls.test.js` uses a dedicated `wasl_app` pool to assert:
 
 - Cross-tenant reads return zero rows under RLS.
 - Missing tenant context returns zero rows.
 - Same-tenant reads succeed.
 
-Tests using the default application pool validate end-to-end tenant isolation via HTTP (application + RLS when runtime role is `nexora_app`).
+Tests using the default application pool validate end-to-end tenant isolation via HTTP (application + RLS when runtime role is `wasl_app`).
 
 ## Limitations
 
-- **Superuser runtime bypasses all RLS.** Production and CI should use `nexora_app` for `DATABASE_URL`.
+- **Superuser runtime bypasses all RLS.** Production and CI should use `wasl_app` for `DATABASE_URL`.
 - **Superusers always bypass RLS** even with `FORCE ROW LEVEL SECURITY`. Only non-superuser runtime roles gain DB-level enforcement.
-- **Password in migration** matches local Docker defaults; production must rotate `nexora_app` credentials via deployment tooling.
+- **Password in migration** matches local Docker defaults; production must rotate `wasl_app` credentials via deployment tooling.

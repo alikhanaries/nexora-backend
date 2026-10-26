@@ -30,7 +30,7 @@ docker compose --profile observability up -d
 
 ## Docker Compose project name
 
-The repository root `docker-compose.yml` uses project name **`wasl`**. PostgreSQL credentials in that file remain **`nexora` / `nexora_app`** where required by deployed migrations (RLS role from `0030_rls_hardening.sql`). Redis and queue prefixes in your `.env` may still use `nexora` for existing local volumes; schema defaults are `wasl` / `wasl-queue` (see `WASL_NAMING`).
+The repository root `docker-compose.yml` uses project name **`wasl`**. Local PostgreSQL uses superuser **`wasl`**, database **`wasl`**, and runtime role **`wasl_app`** (see migrations `0030` and `0049`). Redis and queue defaults are `wasl` / `wasl-queue` (see `WASL_NAMING` and `.env.example`).
 
 ## Enabling tracing in the app
 

@@ -23,8 +23,8 @@ export class DefaultMarketplaceEntityMappingLookup {
         }
         const dto = toMarketplaceEntityMappingDto(row);
         return {
-            nexoraEntityType: dto.nexoraEntityType,
-            nexoraEntityId: dto.nexoraEntityId,
+            integrationEntityType: dto.integrationEntityType,
+            integrationEntityId: dto.integrationEntityId,
             externalEntityType: dto.externalEntityType,
             externalEntityId: dto.externalEntityId,
         };

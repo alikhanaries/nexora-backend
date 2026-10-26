@@ -8,9 +8,9 @@ import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 
 function buildAppRoleUrl(databaseUrl) {
     const url = new URL(databaseUrl);
-    url.username = 'nexora_app';
+    url.username = 'wasl_app';
     if (url.password === '') {
-        url.password = 'nexora';
+        url.password = 'wasl';
     }
     return url.toString();
 }
@@ -53,7 +53,7 @@ describe('postgres RLS integration', () => {
         await closeTestInfrastructure();
     });
 
-    it('denies cross-tenant reads under the nexora_app runtime role', async () => {
+    it('denies cross-tenant reads under the wasl_app runtime role', async () => {
         const infra = await getTestInfrastructure();
         const app = await createApplication(infra);
         await app.httpServer.ready();
@@ -80,7 +80,7 @@ describe('postgres RLS integration', () => {
         expect(result.rowCount).toBe(0);
     });
 
-    it('prevents cross-tenant mutation under the nexora_app runtime role', async () => {
+    it('prevents cross-tenant mutation under the wasl_app runtime role', async () => {
         const infra = await getTestInfrastructure();
         const app = await createApplication(infra);
         await app.httpServer.ready();

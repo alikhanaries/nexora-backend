@@ -23,12 +23,12 @@ describe('webhook persistence integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://example.com/webhooks/nexora',
+            url: 'https://example.com/webhooks/wasl',
             description: 'ERP notifications',
             eventTypes: ['order.created', 'shipment.shipped'],
         });
         expect(created.secret).toMatch(/^[A-Za-z0-9_-]+$/);
-        expect(created.subscription.url).toBe('https://example.com/webhooks/nexora');
+        expect(created.subscription.url).toBe('https://example.com/webhooks/wasl');
         expect(created.subscription.eventTypes).toEqual(['order.created', 'shipment.shipped']);
         expect(created.subscription).not.toHaveProperty('secretCiphertext');
         const fetched = await app.webhooks.webhookQueryService.getWebhookSubscription({
@@ -75,7 +75,7 @@ describe('webhook persistence integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://example.com/webhooks/nexora',
+            url: 'https://example.com/webhooks/wasl',
             eventTypes: ['marketplace.created'],
         })).rejects.toBeInstanceOf(ValidationError);
         await app.httpServer.close();
@@ -92,7 +92,7 @@ describe('webhook persistence integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://example.com/webhooks/nexora',
+            url: 'https://example.com/webhooks/wasl',
             eventTypes: ['order.created'],
         });
         const eventId = randomUUID();

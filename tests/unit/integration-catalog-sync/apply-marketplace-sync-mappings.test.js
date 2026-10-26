@@ -4,8 +4,8 @@ import { applyMarketplaceSyncMappings } from '../../../src/modules/integration-c
 describe('applyMarketplaceSyncMappings', () => {
     it('no-ops when recorder is undefined', async () => {
         await expect(applyMarketplaceSyncMappings(undefined, [{
-            nexoraEntityType: 'offer',
-            nexoraEntityId: '33333333-3333-4333-8333-333333333333',
+            integrationEntityType: 'offer',
+            integrationEntityId: '33333333-3333-4333-8333-333333333333',
             externalEntityType: 'listing',
             externalEntityId: 'ext-1',
         }], {
@@ -19,8 +19,8 @@ describe('applyMarketplaceSyncMappings', () => {
     it('delegates to recorder when hints exist', async () => {
         const recordMappings = vi.fn().mockResolvedValue(undefined);
         await applyMarketplaceSyncMappings({ recordMappings }, [{
-            nexoraEntityType: 'product',
-            nexoraEntityId: '33333333-3333-4333-8333-333333333333',
+            integrationEntityType: 'product',
+            integrationEntityId: '33333333-3333-4333-8333-333333333333',
             externalEntityType: 'listing',
             externalEntityId: 'ext-1',
         }], {

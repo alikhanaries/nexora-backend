@@ -88,7 +88,7 @@ npm run migrate
 npm run migrate:status
 ```
 
-Default connection: `postgresql://nexora:nexora@localhost:5432/nexora` (see `.env.example`).
+Default connection: `postgresql://wasl:wasl@localhost:5432/wasl` (see `.env.example`).
 
 ## Operations
 

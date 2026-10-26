@@ -31,8 +31,8 @@ export class MarketplaceEntityMappingService {
             input.tenantId,
             input.channelId,
             input.marketplaceKey,
-            input.nexoraEntityType,
-            input.nexoraEntityId,
+            input.integrationEntityType,
+            input.integrationEntityId,
         );
         if (row === null) {
             return { mapping: null };
@@ -45,7 +45,7 @@ export class MarketplaceEntityMappingService {
  * @param {object} input
  */
 function assertMappingInput(input) {
-    if (!isMarketplaceIntegrationEntityType(input.nexoraEntityType)) {
+    if (!isMarketplaceIntegrationEntityType(input.integrationEntityType)) {
         throw new ValidationError('Invalid commerce entity type for marketplace mapping');
     }
     if (typeof input.externalEntityType !== 'string' || input.externalEntityType.trim().length === 0) {

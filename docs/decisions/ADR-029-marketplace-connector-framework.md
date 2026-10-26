@@ -6,7 +6,7 @@
 
 ## 1. Context
 
-Phases 16–20 delivered Nexora-side catalog synchronization ([ADR-028](ADR-028-phase-15-catalog-sync-architecture.md)): integration events → `channel-catalog-sync` queue → `MarketplaceCatalogAdapter` port with a **foundation stub** only.
+Phases 16–20 delivered Wasl-side catalog synchronization ([ADR-028](ADR-028-phase-15-catalog-sync-architecture.md)): integration events → `channel-catalog-sync` queue → `MarketplaceCatalogAdapter` port with a **foundation stub** only.
 
 Production operation requires **tenant-scoped marketplace connections**, encrypted credentials, provider-specific HTTP clients, and real adapters — without coupling core commerce modules to Shopify, Amazon, Noon, or Namshi.
 
@@ -63,7 +63,7 @@ HTTP API (generic, not provider-specific paths):
 
 ## 6. Entity mapping
 
-Table `marketplace_entity_mappings` stores provider string IDs (e.g. Shopify GIDs) keyed by `(tenant, channel, marketplace_key, nexora entity)`. Separate from `external_integer_id_mappings` (compat_v2 integers).
+Table `marketplace_entity_mappings` stores provider string IDs (e.g. Shopify GIDs) keyed by `(tenant, channel, marketplace_key, Wasl entity)`. Separate from `external_integer_id_mappings` (compat_v2 integers).
 
 ## 7. Provider verification (Phase 21)
 

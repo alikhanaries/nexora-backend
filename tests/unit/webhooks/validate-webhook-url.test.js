@@ -4,8 +4,8 @@ import { validateWebhookUrl } from '../../../src/modules/webhooks/outbound/servi
 
 describe('validateWebhookUrl', () => {
     it('accepts HTTPS URLs that pass SSRF validation', async () => {
-        await expect(validateWebhookUrl('https://example.com/webhooks/nexora'))
-            .resolves.toBe('https://example.com/webhooks/nexora');
+        await expect(validateWebhookUrl('https://example.com/webhooks/wasl'))
+            .resolves.toBe('https://example.com/webhooks/wasl');
     });
 
     it('rejects non-HTTPS URLs', async () => {

@@ -1128,8 +1128,8 @@ ADR-012 defines seven seeded system roles per tenant, expanded from these keys t
 
 These are stated neutrally as facts about the current code, not as vulnerabilities with assessed severity.
 
-1. **Unscoped transactions on RLS-protected tables.** Refresh, logout and API-key verification query `refresh_sessions` and `api_keys` through `database.execute()` **without** a `tenantId`, because the tenant is not yet known. With `app.current_tenant_id()` unset, an RLS policy would deny the rows. These paths therefore depend on the connecting role bypassing RLS, which is inconsistent with the `nexora_app` restricted-role model introduced by migration `0030_rls_hardening.sql`.
-2. **Hardcoded role password in a migration.** `0030_rls_hardening.sql` creates the `nexora_app` role with a literal password, documented as a Docker development convenience.
+1. **Unscoped transactions on RLS-protected tables.** Refresh, logout and API-key verification query `refresh_sessions` and `api_keys` through `database.execute()` **without** a `tenantId`, because the tenant is not yet known. With `app.current_tenant_id()` unset, an RLS policy would deny the rows. These paths therefore depend on the connecting role bypassing RLS, which is inconsistent with the `wasl_app` restricted-role model introduced by migration `0030_rls_hardening.sql`.
+2. **Hardcoded role password in a migration.** `0030_rls_hardening.sql` creates the `wasl_app` role with a literal password, documented as a Docker development convenience.
 3. **Default MFA encryption key.** `AUTH_MFA_ENCRYPTION_KEY` has a default value in the configuration schema; deployments that do not override it encrypt TOTP secrets with a known key.
 4. **No MFA at login.** MFA gates step-up operations only.
 5. **Exact-match authorization only at runtime.** Wildcard permission patterns apply at role seeding, not at request time.
@@ -1275,7 +1275,7 @@ Three mechanisms work together:
 2. **Row-level security policies.** Tenant-scoped tables restrict rows to `tenant_id = app.current_tenant_id()`. The audit log additionally permits `tenant_id IS NULL` for system events.
 3. **Composite foreign keys.** Migrations `0019`, `0020`, `0028` and `0046` add `(tenant_id, id)` composite keys so that a child row cannot reference a parent belonging to a different tenant, even if application code were to try.
 
-Migration `0030_rls_hardening.sql` adds `FORCE ROW LEVEL SECURITY` and the dedicated `nexora_app` role, with the expectation that migrations run under a privileged role via `DATABASE_MIGRATION_URL` while runtime traffic uses the restricted role.
+Migration `0030_rls_hardening.sql` adds `FORCE ROW LEVEL SECURITY` and the dedicated `wasl_app` role, with the expectation that migrations run under a privileged role via `DATABASE_MIGRATION_URL` while runtime traffic uses the restricted role.
 
 ### Data retention
 
@@ -1290,7 +1290,7 @@ A scheduled cleanup running on the worker deletes aged rows in bounded batches u
 | Batch size | `RETENTION_CLEANUP_BATCH_SIZE` | 100 |
 | Interval | `RETENTION_CLEANUP_INTERVAL_MS` | 3600000 |
 
-The job holds a distributed lock named `retention-cleanup`, so running several worker replicas does not cause concurrent deletion. Per-resource failures are recorded individually and exported through `nexora_retention_cleanup_*` metrics.
+The job holds a distributed lock named `retention-cleanup`, so running several worker replicas does not cause concurrent deletion. Per-resource failures are recorded individually and exported through `wasl_retention_cleanup_*` metrics.
 
 ---
 
@@ -1704,7 +1704,7 @@ The bridged event types are exactly four:
 
 `order.created`, `order.confirmed`, `order.status_changed`, `order.cancelled`
 
-Delivery uses the standard signing and retry machinery described in the webhooks chapter, including the `X-Nexora-Signature` HMAC header. The description string is a magic value; changing it on a subscription silently reverts that subscription to the generic payload shape.
+Delivery uses the standard signing and retry machinery described in the webhooks chapter, including the `X-Wasl-Signature` HMAC header. The description string is a magic value; changing it on a subscription silently reverts that subscription to the generic payload shape.
 
 ### Readiness for the compatibility surface
 
@@ -1893,7 +1893,7 @@ All four are BullMQ queues backed by Redis, sharing one configuration:
 | Backoff base, exponential | `QUEUE_BACKOFF_BASE_MS` | 1000 |
 | Worker concurrency | `QUEUE_WORKER_CONCURRENCY` | 5 |
 | Job lock duration | `QUEUE_JOB_TIMEOUT_MS` | 30000 |
-| Key prefix | `QUEUE_PREFIX` | `nexora-queue` |
+| Key prefix | `QUEUE_PREFIX` | `wasl-queue` |
 | Redis URL | `QUEUE_REDIS_URL`, falling back to `REDIS_URL` | — |
 
 ### Worker architecture
@@ -2141,10 +2141,10 @@ Headers sent with every delivery:
 
 | Header | Content |
 | ------ | ------- |
-| `X-Nexora-Signature` | `v1=<hex>` HMAC-SHA256 of the request body using the subscription secret |
-| `X-Nexora-Event` | Event type |
-| `X-Nexora-Event-Id` | Event identifier |
-| `X-Nexora-Delivery-Id` | Delivery attempt identifier |
+| `X-Wasl-Signature` | `v1=<hex>` HMAC-SHA256 of the request body using the subscription secret |
+| `X-Wasl-Event` | Event type |
+| `X-Wasl-Event-Id` | Event identifier |
+| `X-Wasl-Delivery-Id` | Delivery attempt identifier |
 
 Response classification is explicit: 408, 425, 429 and any 5xx are retryable; all other non-2xx responses are permanent failures. A `Retry-After` header on a retryable response is honoured up to `WEBHOOK_DELIVERY_MAX_RETRY_AFTER_SECONDS`. When attempts are exhausted the delivery is marked dead-lettered and remains queryable through `GET /api/v1/webhooks/:webhookId/deliveries`.
 
@@ -2212,7 +2212,7 @@ Exposed at `/internal/metrics` on the API process and on the worker's observabil
 | Security | `rate_limit_hits_total`, `auth_events_total` |
 | Commerce | `commerce_operations_total` |
 | Webhooks | `webhook_delivery_attempts_total`, `webhook_delivery_duration_seconds` |
-| Retention | `nexora_retention_cleanup_deleted_total`, `_runs_total`, `_failures_total`, `_duration_seconds` |
+| Retention | `wasl_retention_cleanup_deleted_total`, `_runs_total`, `_failures_total`, `_duration_seconds` |
 | Catalog sync | `channel_catalog_sync_jobs_total`, `channel_catalog_reconciliation_*` |
 | Marketplace | `marketplace_order_ingestion_total`, `marketplace_webhook_total`, `marketplace_order_lifecycle_total`, `marketplace_lifecycle_worker_jobs_total` |
 
@@ -2468,7 +2468,7 @@ The worker observability listener binds `127.0.0.1` by default. In-cluster probe
 
 ### Migrations in production
 
-Run migrations as a separate step before rolling out new application pods, using a privileged role. Set `DATABASE_MIGRATION_URL` to that role's connection string and `DATABASE_URL` to the restricted `nexora_app` role, so that runtime traffic is subject to row-level security while DDL is not.
+Run migrations as a separate step before rolling out new application pods, using a privileged role. Set `DATABASE_MIGRATION_URL` to that role's connection string and `DATABASE_URL` to the restricted `wasl_app` role, so that runtime traffic is subject to row-level security while DDL is not.
 
 Migrations are forward-only. There are no down migrations; a bad migration is corrected by writing a new one.
 
@@ -2483,7 +2483,7 @@ Derived from the verified gaps recorded in this document.
 | Item | Reason |
 | ---- | ---- |
 | Override `AUTH_MFA_ENCRYPTION_KEY` | The schema default is a known value |
-| Change the `nexora_app` password from the migration default | Literal password in `0030_rls_hardening.sql` |
+| Change the `wasl_app` password from the migration default | Literal password in `0030_rls_hardening.sql` |
 | Set `DATABASE_MIGRATION_URL` distinct from `DATABASE_URL` | Keeps runtime under RLS |
 | Do not expose `/internal/metrics` or `/health/*` publicly | Unauthenticated by design |
 | Bind the worker observability port to the cluster network only | ADR-026 |
@@ -2536,7 +2536,7 @@ ChannelEngine and StockConnect issues have a dedicated table in that chapter. Th
 | ------- | ----- | ------------- |
 | Subscription rejected at creation | URL failed SSRF validation or event types not deliverable | HTTPS only, public address, allowlisted events |
 | Deliveries stop after several attempts | Dead-lettered after exhausting attempts | `GET /api/v1/webhooks/:id/deliveries` |
-| Signature verification fails at the receiver | Body must be verified exactly as transmitted | Header is `X-Nexora-Signature: v1=<hex>`, HMAC-SHA256 |
+| Signature verification fails at the receiver | Body must be verified exactly as transmitted | Header is `X-Wasl-Signature: v1=<hex>`, HMAC-SHA256 |
 | Retries slower than expected | `Retry-After` is honoured up to the configured cap | `WEBHOOK_DELIVERY_MAX_RETRY_AFTER_SECONDS` |
 | Inbound marketplace webhook returns 401 | Ingress token unknown, or provider authentication failed | Token hash lookup, then the provider adapter |
 

@@ -46,7 +46,7 @@ Read-only preparation checklist. Do **not** treat completed HTTP steps as proof 
 | Wasl API + Postgres + Redis (queue) | Same as local/prod compose |
 | `AUTH_MFA_ENCRYPTION_KEY` (32 bytes) | Encrypts marketplace connection credentials at rest (`.env.example`) |
 | Optional `NOON_API_BASE_URL`, `NOON_USER_AGENT` | Deployment defaults; override per connection `configuration` |
-| `DATABASE_MIGRATION_URL` | Owner role for migrations when `DATABASE_URL` is `nexora_app` |
+| `DATABASE_MIGRATION_URL` | Owner role for migrations when `DATABASE_URL` is `wasl_app` |
 | Worker process | `npm run dev:worker` / `start:worker` — required for catalog sync and lifecycle jobs after setup |
 
 Default Noon gateway when unset: `https://noon-api-gateway.noon.partners` (`noon-config.js`).

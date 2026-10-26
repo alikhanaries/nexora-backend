@@ -1,6 +1,6 @@
 # API Documentation
 
-Guide for Nexora's HTTP API surfaces.
+Guide for Wasl's HTTP API surfaces.
 
 ## Active surface: Native API (`/api/v1`)
 

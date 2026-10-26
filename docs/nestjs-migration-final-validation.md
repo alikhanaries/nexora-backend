@@ -176,11 +176,11 @@ Compatibility routes call `enforceCompatibilityRateLimit` with `COMPATIBILITY_RA
 | Check | Result | Notes |
 |-------|--------|-------|
 | Docker Compose `postgres`/`redis` | **NOT USED** | Daemon unavailable |
-| PostgreSQL | **PASS** | Local instance on **5432** (`nexora` database); session used `postgresql://nexora:nexora@localhost:5432/nexora` (matches `.env.example` credentials, not committed) |
+| PostgreSQL | **PASS** | Local instance on **5432** (`wasl` database); session used `postgresql://wasl:wasl@localhost:5432/wasl` (matches `.env.example` credentials, not committed) |
 | `.env` default `DATABASE_URL` port **5433** | **FAIL** | Compose Postgres not running — developers must start Docker **or** align URL with local Postgres |
 | Redis | **PASS** | `PING` OK via configured `REDIS_URL` |
 | Migrations | **PASS** | 47 migrations applied (schema up to date) |
-| Dev seed | **PASS** | `scripts/seed-dev-user.mjs` — tenant `nexora-dev`, user `admin@nexora.dev` |
+| Dev seed | **PASS** | `scripts/seed-dev-user.mjs` — tenant `wasl-dev`, user `admin@wasl.dev` |
 
 **Application**
 
@@ -196,8 +196,8 @@ Compatibility routes call `enforceCompatibilityRateLimit` with `COMPATIBILITY_RA
 
 ```bash
 # Example (after Nest on 3010, optional Fastify on 3000):
-DATABASE_URL=postgresql://nexora:nexora@localhost:5432/nexora \
-DATABASE_MIGRATION_URL=postgresql://nexora:nexora@localhost:5432/nexora \
+DATABASE_URL=postgresql://wasl:wasl@localhost:5432/Wasl \
+DATABASE_MIGRATION_URL=postgresql://wasl:wasl@localhost:5432/Wasl \
 NEST_SERVER_PORT=3010 node --env-file=.env src/app/nest-bootstrap.mjs
 
 NEST_BASE_URL=http://127.0.0.1:3010 FASTIFY_BASE_URL=http://127.0.0.1:3000 \

@@ -73,6 +73,8 @@ export function createPostgresWebhookDeliveryRepository() {
         ], { operation: 'webhooks.deliveries.insert' });
         },
         /**
+         * Loads a delivery by tenant-scoped id.
+         */
         async findById(queryable, tenantId, deliveryId) {
         const result = await queryable.query(`SELECT ${deliverySelect}
        FROM webhook_deliveries
@@ -95,6 +97,8 @@ export function createPostgresWebhookDeliveryRepository() {
         return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
         },
         /**
+         * Updates delivery attempt metadata and status.
+         */
         async update(queryable, delivery, options = {}) {
         const params = [
             delivery.tenantId,
@@ -151,6 +155,8 @@ export function createPostgresWebhookDeliveryRepository() {
         return toDelivery(parseOrThrow(deliveryRowSchema, row, 'webhook_deliveries row'));
         },
         /**
+         * Lists deliveries for a subscription (newest first).
+         */
         async listBySubscription(queryable, tenantId, subscriptionId, input = {}) {
         const limit = input.limit ?? 100;
         const result = await queryable.query(`SELECT ${deliverySelect}

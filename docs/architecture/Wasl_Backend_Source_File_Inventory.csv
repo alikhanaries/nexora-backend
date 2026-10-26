@@ -968,7 +968,7 @@ tests/integration/marketplace-webhook-ingestion.test.js,vitest
 tests/integration/mfa.test.js,vitest
 tests/integration/namshi-catalog-sync-mappings.test.js,vitest
 tests/integration/namshi-order-lifecycle.test.js,vitest
-tests/integration/nexora-external-integration-readiness.test.js,vitest
+tests/integration/wasl-external-integration-readiness.test.js,vitest
 tests/integration/node-swc-register.mjs,vitest
 tests/integration/noon-catalog-sync-mappings.test.js,vitest
 tests/integration/order-command-service.test.js,vitest

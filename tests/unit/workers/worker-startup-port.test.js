@@ -8,11 +8,11 @@ import { registerWorkerHandlers } from '../../../src/workers/handlers/queue-job-
 import { startWorkerObservabilityHttp } from '../../../src/workers/observability/start-worker-observability-http.js';
 
 const baseEnv = {
-    DATABASE_URL: 'postgresql://nexora:nexora@localhost:5432/nexora',
+    DATABASE_URL: 'postgresql://wasl_app:wasl@localhost:5432/wasl',
     REDIS_URL: 'redis://localhost:6379',
-    STORAGE_BUCKET: 'nexora-local',
-    STORAGE_ACCESS_KEY_ID: 'nexora',
-    STORAGE_SECRET_ACCESS_KEY: 'nexora-secret',
+    STORAGE_BUCKET: 'wasl-local',
+    STORAGE_ACCESS_KEY_ID: 'wasl',
+    STORAGE_SECRET_ACCESS_KEY: 'wasl-secret',
     AUTH_JWT_SECRET: 'test-jwt-secret-for-unit-tests-only',
 };
 

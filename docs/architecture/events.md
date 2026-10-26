@@ -218,8 +218,8 @@ Phase 6.4 implements `WebhookDeliveryService`, registered on the `webhook-delive
 5. Decrypt the signing secret immediately before signing; never log or persist plaintext secrets.
 6. POST the integration-event envelope JSON with headers:
    - `Content-Type: application/json; charset=utf-8`
-   - `X-Nexora-Event`, `X-Nexora-Event-Id`, `X-Nexora-Delivery-Id`
-   - `X-Nexora-Signature: v1=<hex-hmac-sha256>` over the exact request body bytes
+   - `X-Wasl-Event`, `X-Wasl-Event-Id`, `X-Wasl-Delivery-Id`
+   - `X-Wasl-Signature: v1=<hex-hmac-sha256>` over the exact request body bytes
 7. Classify HTTP responses:
    - `2xx` → `DELIVERED`
    - retryable (`408`, `425`, `429`, `5xx`, network/timeout) → `FAILED` and BullMQ retry until attempts exhausted
@@ -265,7 +265,7 @@ Configuration:
 Observability:
 
 - Structured Pino logs for start, per-resource counts, duration, and failures (no payloads or PII)
-- Prometheus: `nexora_retention_cleanup_deleted_total`, `nexora_retention_cleanup_runs_total`, `nexora_retention_cleanup_failures_total`, `nexora_retention_cleanup_duration_seconds`
+- Prometheus: `wasl_retention_cleanup_deleted_total`, `wasl_retention_cleanup_runs_total`, `wasl_retention_cleanup_failures_total`, `wasl_retention_cleanup_duration_seconds`
 
 Failure behaviour: each resource is cleaned independently; partial success is preserved, but the sweep fails overall when any category errors so the next scheduled run retries.
 

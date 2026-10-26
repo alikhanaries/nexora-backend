@@ -3,7 +3,7 @@
 **Status:** Phase 5 — scope locked ([ADR-018](../decisions/ADR-018-phase-5-merchant-compatible-scope.md))  
 **Last updated:** 2026-09-28 (Phase 60 Wasl external integration production readiness)
 
-This matrix tracks external contract support in Nexora's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
+This matrix tracks external contract support in Wasl's provider-neutral compatibility adapter (`src/modules/compatibility/`). External terminology belongs here and at the `/api/v2` presentation/mapper boundary only.
 
 ## Contract verification sources
 
@@ -70,7 +70,7 @@ Configure a tenant webhook subscription pointing at StockConnect `POST /orders/c
 | `description` | `stockconnect-ce-bridge` (exact match) |
 | `url` | StockConnect base URL + `/orders/channelengine-webhook` |
 | `eventTypes` | `order.created`, `order.confirmed`, `order.status_changed`, `order.cancelled` (subset allowed) |
-| Authentication | Standard Wasl webhook HMAC (`X-Nexora-Signature`) on the UTF-8 JSON body |
+| Authentication | Standard Wasl webhook HMAC (`X-Wasl-Signature`) on the UTF-8 JSON body |
 
 ### Phase 47 — StockConnect CE invoice (not CE async job API)
 
@@ -316,7 +316,7 @@ Live Amazon / Noon / Namshi → CE poll visibility remains **staging validation 
 | Delivery (`stockconnect-ce-bridge` body mapping) | **IMPLEMENTED** |
 | Idempotency | **IMPLEMENTED** |
 | Retries | **IMPLEMENTED** |
-| HMAC (`X-Nexora-Signature`) | **IMPLEMENTED** |
+| HMAC (`X-Wasl-Signature`) | **IMPLEMENTED** |
 | SSRF protection on subscription URLs | **IMPLEMENTED** |
 | Sanitized destination logging | **IMPLEMENTED** (Phase 52) |
 
@@ -389,7 +389,7 @@ These are **environment/deployment/validation tasks** and **do not represent mis
 
 **Environment gaps:** staging/production deploy, secrets provisioning, real external consumer E2E — **not application engineering defects**.
 
-**Final status:** **NEXORA PRODUCTION-READY FOR CONTROLLED DEPLOYMENT** (platform). External consumer cutover remains **environment / E2E** gated.
+**Final status:** **Wasl PRODUCTION-READY FOR CONTROLLED DEPLOYMENT** (platform). External consumer cutover remains **environment / E2E** gated.
 
 | External contract | External endpoint | Wasl route | Scope | Core contract | Status |
 | ----------------- | ----------------- | ------------ | ----- | ------------- | ------ |
@@ -945,7 +945,7 @@ Line, customer, currency, and product resolution match `POST /api/v2/orders`.
 | Control | Status |
 | ------- | ------ |
 | API key create requires `api_keys.manage` | **Enforced** in `CreateApiKeyUseCase` |
-| PostgreSQL RLS runtime role (`nexora_app`) | **Migration 0030** — see [postgres-rls.md](postgres-rls.md) |
+| PostgreSQL RLS runtime role (`wasl_app`) | **Migration 0030** — see [postgres-rls.md](postgres-rls.md) |
 | `/api/v2` rate limits | **`COMPATIBILITY_RATE_LIMIT_POLICIES`** — read + mutation categories |
 | Mutation idempotency convention | Documented — [compatibility-idempotency.md](compatibility-idempotency.md) |
 | Customer PII on order reads | **Open product decision** — `orders.read` exposes PII on v2 responses |

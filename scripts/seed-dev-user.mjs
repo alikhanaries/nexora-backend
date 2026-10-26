@@ -15,9 +15,9 @@ import { createArgon2PasswordHasher } from '../src/infrastructure/auth/argon2-pa
 import { ConflictError } from '../src/shared/errors/index.js';
 import { parseEmail } from '../src/modules/identity/models/index.js';
 
-const TENANT_SLUG = process.env.DEV_SEED_TENANT_SLUG ?? 'nexora-dev';
-const TENANT_NAME = process.env.DEV_SEED_TENANT_NAME ?? 'Nexora Dev';
-const EMAIL = process.env.DEV_SEED_EMAIL ?? 'admin@nexora.dev';
+const TENANT_SLUG = process.env.DEV_SEED_TENANT_SLUG ?? 'wasl-dev';
+const TENANT_NAME = process.env.DEV_SEED_TENANT_NAME ?? 'Wasl Dev';
+const EMAIL = process.env.DEV_SEED_EMAIL ?? 'admin@wasl.dev';
 const PASSWORD = process.env.DEV_SEED_PASSWORD ?? 'SecurePassword123!';
 
 const ADMIN_PERMISSIONS = [

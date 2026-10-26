@@ -65,6 +65,8 @@ export function createPostgresWebhookSubscriptionRepository() {
         ], { operation: 'webhooks.subscriptions.insert' });
         },
         /**
+         * Loads a subscription by tenant-scoped id.
+         */
         async findById(queryable, tenantId, subscriptionId) {
         const result = await queryable.query(`SELECT ${subscriptionSelect}
        FROM webhook_subscriptions
@@ -75,6 +77,8 @@ export function createPostgresWebhookSubscriptionRepository() {
         return toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row'));
         },
         /**
+         * Lists subscriptions for a tenant with optional status filter.
+         */
         async list(queryable, tenantId, input = {}) {
         const params = [tenantId];
         let sql = `SELECT ${subscriptionSelect}
@@ -124,6 +128,8 @@ export function createPostgresWebhookSubscriptionRepository() {
         return result.rows.map((row) => toSubscription(parseOrThrow(subscriptionRowSchema, row, 'webhook_subscriptions row')));
         },
         /**
+         * Persists subscription field updates.
+         */
         async update(queryable, subscription) {
         await queryable.query(`UPDATE webhook_subscriptions
        SET url = $3,

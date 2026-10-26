@@ -8,7 +8,7 @@ Connect the NestJS Express shell to the same **configuration**, **Pino logging**
 
 | Area | Approach |
 |------|----------|
-| Configuration | Existing `loadConfigFromEnvironment()` via `NexoraConfigModule` (unchanged) |
+| Configuration | Existing `loadConfigFromEnvironment()` via `WaslConfigModule` (unchanged) |
 | Logger | `createPinoLogger(config)` → `NestLoggerService` for Nest internal logs |
 | Metrics | `PrometheusMetrics` or `noopMetricsRecorder` (same as Fastify infra) |
 | Database | `PostgresDatabase` + migrations + health check via `createNestInfrastructure()` |

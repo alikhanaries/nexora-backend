@@ -189,7 +189,7 @@ Historical resources created before Phase 8.2 automatic assignment may lack `com
 
 **Execution:** `npm run backfill:external-ids` (optional `--tenant-id=<uuid>`). Implementation lives in `src/modules/external-id-mapping/` (`BackfillExternalIntegerIdMappings`, `PostgresExternalIdBackfillQueries`) and `src/app/external-id-backfill-cli.js`.
 
-**Semantics:** Nexora-assigned integers only (same PostgreSQL sequence mechanism as Phase 8.1). No import of legacy ChannelEngine IDs.
+**Semantics:** Wasl-assigned integers only (same PostgreSQL sequence mechanism as Phase 8.1). No import of legacy ChannelEngine IDs.
 
 After backfill, Phase 8.3 enrichment and Phase 8.4 inbound resolution behave unchanged — historical resources simply gain mappings.
 
