@@ -70,7 +70,7 @@ describe('Amazon catalog sync mapping persistence', () => {
             });
             const result = await tx.query(`SELECT external_entity_id FROM marketplace_entity_mappings
          WHERE tenant_id = $1 AND channel_id = $2 AND marketplace_key = 'amazon'
-           AND nexora_entity_type = 'product' AND nexora_entity_id = $3`, [
+           AND wasl_entity_type = 'product' AND wasl_entity_id = $3`, [
                 tenantId,
                 fixture.channelId,
                 fixture.productId,

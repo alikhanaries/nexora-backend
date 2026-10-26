@@ -537,7 +537,7 @@ wasl-backend/
 │   │   ├── mfa.test.js
 │   │   ├── namshi-catalog-sync-mappings.test.js
 │   │   ├── namshi-order-lifecycle.test.js
-│   │   ├── nexora-external-integration-readiness.test.js
+│   │   ├── wasl-external-integration-readiness.test.js
 │   │   ├── node-swc-register.mjs
 │   │   ├── noon-catalog-sync-mappings.test.js
 │   │   ├── order-command-service.test.js

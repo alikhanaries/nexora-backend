@@ -1,5 +1,5 @@
 {
-  "name": "nexora-docs-tooling",
+  "name": "wasl-docs-tooling",
   "version": "1.0.0",
   "description": "Documentation build tooling for the Wasl backend technical documentation PDF. Not part of the backend runtime and not referenced by src/.",
   "private": true,

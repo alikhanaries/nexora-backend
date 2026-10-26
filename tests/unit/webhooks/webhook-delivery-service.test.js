@@ -126,7 +126,7 @@ describe('WebhookDeliveryService', () => {
         const request = deps.httpClient.send.mock.calls[0][0];
         expect(request.body).toBe(ceBody);
         expect(request.body).toContain('MerchantOrderNo');
-        expect(verifyWebhookRequestBody('plain-secret', request.body, request.headers['X-Nexora-Signature'])).toBe(true);
+        expect(verifyWebhookRequestBody('plain-secret', request.body, request.headers['X-Wasl-Signature'])).toBe(true);
     });
 
     it('delivers a signed webhook and marks the delivery as DELIVERED', async () => {
@@ -151,7 +151,7 @@ describe('WebhookDeliveryService', () => {
         deps.subscriptions.findById.mockResolvedValue({
             id: job.subscriptionId,
             tenantId: job.tenantId,
-            url: 'https://hooks.example.com/nexora',
+            url: 'https://hooks.example.com/wasl',
             secretCiphertext: 'cipher',
             status: 'ACTIVE',
             eventTypes: ['order.created'],
@@ -172,8 +172,8 @@ describe('WebhookDeliveryService', () => {
         expect(deps.httpClient.send).toHaveBeenCalledOnce();
         const request = deps.httpClient.send.mock.calls[0][0];
         expect(request.body).not.toContain('plain-secret');
-        expect(request.headers['X-Nexora-Signature']).toMatch(/^v1=/);
-        expect(verifyWebhookRequestBody('plain-secret', request.body, request.headers['X-Nexora-Signature'])).toBe(true);
+        expect(request.headers['X-Wasl-Signature']).toMatch(/^v1=/);
+        expect(verifyWebhookRequestBody('plain-secret', request.body, request.headers['X-Wasl-Signature'])).toBe(true);
         expect(deps.deliveries.update).toHaveBeenCalledWith({}, expect.objectContaining({
             status: 'DELIVERED',
             lastHttpStatus: 200,
@@ -254,7 +254,7 @@ describe('WebhookDeliveryService', () => {
         deps.subscriptions.findById.mockResolvedValue({
             id: job.subscriptionId,
             tenantId: job.tenantId,
-            url: 'https://hooks.example.com/nexora',
+            url: 'https://hooks.example.com/wasl',
             secretCiphertext: 'cipher',
             status: 'ACTIVE',
         });
@@ -308,7 +308,7 @@ describe('WebhookDeliveryService', () => {
         deps.subscriptions.findById.mockResolvedValue({
             id: job.subscriptionId,
             tenantId: job.tenantId,
-            url: 'https://hooks.example.com/nexora',
+            url: 'https://hooks.example.com/wasl',
             secretCiphertext: 'cipher',
             status: 'ACTIVE',
         });
@@ -353,7 +353,7 @@ describe('WebhookDeliveryService', () => {
         deps.subscriptions.findById.mockResolvedValue({
             id: job.subscriptionId,
             tenantId: job.tenantId,
-            url: 'https://hooks.example.com/nexora',
+            url: 'https://hooks.example.com/wasl',
             secretCiphertext: 'cipher',
             status: 'ACTIVE',
         });

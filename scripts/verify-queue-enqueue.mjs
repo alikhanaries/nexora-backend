@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { config as loadEnv } from 'dotenv';
 
 loadEnv({ path: '.env', override: false });
-process.env.REDIS_URL = process.env.NEXORA_INTEGRATION_REDIS_URL ?? 'redis://localhost:6380';
+process.env.REDIS_URL = process.env.WASL_INTEGRATION_REDIS_URL ?? 'redis://localhost:6380';
 process.env.QUEUE_REDIS_URL = process.env.REDIS_URL;
 process.env.NODE_ENV ??= 'test';
 

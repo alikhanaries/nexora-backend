@@ -34,7 +34,7 @@
 | ----- | ----- | --- | -------------- |
 | 14 | Shipment fulfillment inventory | ADR-027 | **Done** |
 | 15 | Catalog sync architecture | ADR-028 | **Done** (spec) |
-| 16–20 | Outbound catalog sync + reconciliation | ADR-028 §23 | **Done** (Nexora-side; stub adapter) |
+| 16–20 | Outbound catalog sync + reconciliation | ADR-028 §23 | **Done** (Wasl-side; stub adapter) |
 | 21 | Marketplace connectors | ADR-029 | **Done** (branch) |
 | 22 | Connection test metadata + entity mappings | ADR-030 | **Done** |
 | 23 | Shopify production adapter | ADR-029 | **Done** (branch) |

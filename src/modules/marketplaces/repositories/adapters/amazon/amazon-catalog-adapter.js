@@ -138,14 +138,14 @@ export class AmazonCatalogAdapter extends BaseMarketplaceCatalogAdapter {
 }
 
 /**
- * @param {'product'|'offer'} nexoraEntityType
- * @param {string} nexoraEntityId
+ * @param {'product'|'offer'} integrationEntityType
+ * @param {string} integrationEntityId
  * @param {string} sku
  */
-function listingMappingHint(nexoraEntityType, nexoraEntityId, sku) {
+function listingMappingHint(integrationEntityType, integrationEntityId, sku) {
     return [{
-        nexoraEntityType,
-        nexoraEntityId,
+        integrationEntityType,
+        integrationEntityId,
         externalEntityType: AmazonExternalEntityType.LISTING,
         externalEntityId: sku,
     }];

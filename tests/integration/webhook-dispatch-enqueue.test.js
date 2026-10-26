@@ -55,7 +55,7 @@ describe('webhook dispatch enqueue integration', () => {
             actorId: user.userId,
             actorKind: 'user',
             actorPermissions: WEBHOOK_PERMISSIONS,
-            url: 'https://example.com/webhooks/nexora',
+            url: 'https://example.com/webhooks/wasl',
             eventTypes: ['order.created'],
         });
         const event = buildEvent({ tenantId: tenant.tenantId });

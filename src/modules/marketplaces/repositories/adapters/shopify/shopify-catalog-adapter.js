@@ -76,8 +76,8 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
                 },
             });
             return [{
-                nexoraEntityType: 'product',
-                nexoraEntityId: input.productId,
+                integrationEntityType: 'product',
+                integrationEntityId: input.productId,
                 externalEntityType: ShopifyExternalEntityType.INVENTORY_ITEM,
                 externalEntityId: inventoryItemId,
             }];
@@ -134,8 +134,8 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
             });
             await this.setProductStatus(runtime, variantContext.productGid, 'ACTIVE');
             return [{
-                nexoraEntityType: 'product',
-                nexoraEntityId: input.productId,
+                integrationEntityType: 'product',
+                integrationEntityId: input.productId,
                 externalEntityType: ShopifyExternalEntityType.PRODUCT,
                 externalEntityId: variantContext.productGid,
             }];
@@ -175,13 +175,13 @@ export class ShopifyCatalogAdapter extends BaseMarketplaceCatalogAdapter {
                 await this.setProductStatus(runtime, variantContext.productGid, 'ACTIVE');
             }
             return [{
-                nexoraEntityType: 'offer',
-                nexoraEntityId: input.offerId,
+                integrationEntityType: 'offer',
+                integrationEntityId: input.offerId,
                 externalEntityType: ShopifyExternalEntityType.PRODUCT_VARIANT,
                 externalEntityId: variantContext.variantGid,
             }, {
-                nexoraEntityType: 'product',
-                nexoraEntityId: input.productId,
+                integrationEntityType: 'product',
+                integrationEntityId: input.productId,
                 externalEntityType: ShopifyExternalEntityType.PRODUCT,
                 externalEntityId: variantContext.productGid,
             }];

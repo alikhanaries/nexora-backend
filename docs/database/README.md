@@ -1,19 +1,19 @@
 # Database Guide
 
-Practical guide for working with Nexora's PostgreSQL database.
+Practical guide for working with Wasl's PostgreSQL database.
 
 ## Connection
 
 Default local URL (from `.env.example`):
 
 ```
-postgresql://nexora:nexora@localhost:5432/nexora
+postgresql://wasl:wasl@localhost:5432/wasl
 ```
 
 Connect with any PostgreSQL client:
 
 ```bash
-docker compose exec postgres psql -U nexora -d nexora
+docker compose exec postgres psql -U Wasl -d wasl
 ```
 
 ## Migrations

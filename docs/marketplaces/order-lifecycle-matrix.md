@@ -2,7 +2,7 @@
 
 Authoritative summary of **implemented** lifecycle behavior. Legend:
 
-- **In** = inbound only (webhook/poll → Nexora)
+- **In** = inbound only (webhook/poll → Wasl)
 - **Out** = outbound only (Wasl → marketplace via `ExecuteOutboundMarketplaceOrderLifecycleCommand`)
 - **Both** = implemented in both directions
 - **—** = not implemented / not verified for generic contract

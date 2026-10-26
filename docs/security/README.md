@@ -17,8 +17,8 @@ All secrets are loaded via `src/app/config/schema.ts`. Required secrets for loca
 | Variable                    | Local default    | Production                   |
 | --------------------------- | ---------------- | ---------------------------- |
 | `DATABASE_URL`              | compose postgres | Managed DB connection string |
-| `STORAGE_ACCESS_KEY_ID`     | nexora           | IAM / scoped key             |
-| `STORAGE_SECRET_ACCESS_KEY` | nexora-secret    | Secret manager               |
+| `STORAGE_ACCESS_KEY_ID`     | Wasl           | IAM / scoped key             |
+| `STORAGE_SECRET_ACCESS_KEY` | wasl-secret    | Secret manager               |
 | `REDIS_URL`                 | compose redis    | Managed Redis TLS URL        |
 
 Rotate credentials if `.env` is ever committed or shared.

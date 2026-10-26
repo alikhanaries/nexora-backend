@@ -21,7 +21,7 @@ The worker process **already records** worker-relevant metrics into the same in-
 
 - `queue_jobs_total`, `queue_job_duration_seconds` — BullMQ handlers ([`bullmq-worker-runtime.js`](../../src/infrastructure/queue/bullmq-worker-runtime.js))
 - `webhook_delivery_*` — HTTP delivery worker ([`webhook-delivery-service.js`](../../src/modules/webhooks/outbound/services/webhook-delivery-service.js))
-- `nexora_retention_cleanup_*` — retention sweeps ([`retention-cleanup-service.js`](../../src/infrastructure/postgres/retention-cleanup-service.js))
+- `wasl_retention_cleanup_*` — retention sweeps ([`retention-cleanup-service.js`](../../src/infrastructure/postgres/retention-cleanup-service.js))
 - `db_*`, `redis_*`, Node.js default metrics — shared infrastructure adapters
 
 Until Phase 13, those series are **not scrapeable** from the worker: there is no HTTP listener on the worker process. Operators infer worker health from logs, queue depth, and API-side signals. [ADR-020](ADR-020-phase-7-channel-inbound-integration.md) deferred a **Worker metrics HTTP endpoint** as operational follow-up; Phases 10–12 closed the webhook retention and Retry-After deferrals.
@@ -153,7 +153,7 @@ Already emitted in the worker process today:
 | `queue_job_duration_seconds` | `queue`, `job_name` | Handler duration |
 | `webhook_delivery_attempts_total` | `outcome` | Webhook delivery |
 | `webhook_delivery_duration_seconds` | `outcome` | Successful / timed delivery |
-| `nexora_retention_cleanup_*` | `resource`, `outcome` | Retention scheduler |
+| `wasl_retention_cleanup_*` | `resource`, `outcome` | Retention scheduler |
 | `db_query_duration_seconds` | `operation`, `result` | PostgreSQL adapter |
 | `db_pool_connections` | `state` | Pool snapshot (implementation should run periodic `reportPoolMetrics` on worker, mirroring API) |
 | `redis_operations_total` / `redis_operation_duration_seconds` | `operation`, `result` | Redis adapter |

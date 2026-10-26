@@ -11,9 +11,9 @@ const WEBHOOK_PERMISSIONS = ['webhooks.read', 'webhooks.manage'];
 
 function buildAppRoleUrl(databaseUrl) {
     const url = new URL(databaseUrl);
-    url.username = 'nexora_app';
+    url.username = 'wasl_app';
     if (url.password === '') {
-        url.password = 'nexora';
+        url.password = 'wasl';
     }
     return url.toString();
 }

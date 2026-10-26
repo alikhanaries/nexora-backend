@@ -36,7 +36,7 @@ Provider adapters (HTTP only inside adapters)
 
 ## Ingress token
 
-Nexora-issued opaque token in the URL identifies the active `marketplace_connections` row. Only a SHA-256 hash is stored (`webhook_ingress_token_hash`). This is **routing**, not provider signature verification.
+Wasl-issued opaque token in the URL identifies the active `marketplace_connections` row. Only a SHA-256 hash is stored (`webhook_ingress_token_hash`). This is **routing**, not provider signature verification.
 
 Provider authenticity is enforced only inside the registered `MarketplaceWebhookAdapter` for that `marketplaces.key`.
 

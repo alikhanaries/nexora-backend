@@ -112,8 +112,8 @@ describe('ShopifyCatalogAdapter', () => {
         }, runtime);
         expect(fetchImpl).toHaveBeenCalledTimes(2);
         expect(result).toEqual([{
-            nexoraEntityType: 'product',
-            nexoraEntityId: '00000000-0000-4000-8000-000000000003',
+            integrationEntityType: 'product',
+            integrationEntityId: '00000000-0000-4000-8000-000000000003',
             externalEntityType: 'shopify_inventory_item',
             externalEntityId: 'gid://shopify/InventoryItem/9',
         }]);
@@ -242,8 +242,8 @@ describe('ShopifyCatalogAdapter', () => {
             correlationId: null,
         }, runtime);
         expect(hints).toEqual([{
-            nexoraEntityType: 'product',
-            nexoraEntityId: '00000000-0000-4000-8000-000000000003',
+            integrationEntityType: 'product',
+            integrationEntityId: '00000000-0000-4000-8000-000000000003',
             externalEntityType: 'shopify_product',
             externalEntityId: 'gid://shopify/Product/2001',
         }]);
@@ -285,14 +285,14 @@ describe('ShopifyCatalogAdapter', () => {
         }, runtime);
         expect(hints).toEqual([
             {
-                nexoraEntityType: 'offer',
-                nexoraEntityId: '00000000-0000-4000-8000-000000000010',
+                integrationEntityType: 'offer',
+                integrationEntityId: '00000000-0000-4000-8000-000000000010',
                 externalEntityType: 'shopify_product_variant',
                 externalEntityId: 'gid://shopify/ProductVariant/1001',
             },
             {
-                nexoraEntityType: 'product',
-                nexoraEntityId: '00000000-0000-4000-8000-000000000003',
+                integrationEntityType: 'product',
+                integrationEntityId: '00000000-0000-4000-8000-000000000003',
                 externalEntityType: 'shopify_product',
                 externalEntityId: 'gid://shopify/Product/2001',
             },

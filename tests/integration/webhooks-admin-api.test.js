@@ -49,7 +49,7 @@ describe('webhooks admin api integration', () => {
             url: '/api/v1/webhooks',
             headers: authHeaders(user.accessToken),
             payload: {
-                url: 'https://example.com/webhooks/nexora',
+                url: 'https://example.com/webhooks/wasl',
                 description: 'Order events',
                 eventTypes: ['order.created', 'order.status_changed'],
             },
@@ -58,7 +58,7 @@ describe('webhooks admin api integration', () => {
         const body = response.json();
         expect(body.success).toBe(true);
         expect(body.data.secret).toMatch(/^[A-Za-z0-9_-]+$/);
-        expect(body.data.url).toBe('https://example.com/webhooks/nexora');
+        expect(body.data.url).toBe('https://example.com/webhooks/wasl');
         expect(body.data).not.toHaveProperty('secretCiphertext');
         const row = await infra.database.execute(async (tx) => {
             const result = await tx.query('SELECT secret_ciphertext FROM webhook_subscriptions WHERE id = $1', [body.data.id]);
@@ -336,7 +336,7 @@ describe('webhooks admin api integration', () => {
             httpClient: {
                 send: vi.fn(async (request) => {
                     capturedBody = request.body;
-                    capturedSignature = request.headers['X-Nexora-Signature'];
+                    capturedSignature = request.headers['X-Wasl-Signature'];
                     return { status: 200, headers: {}, body: null, durationMs: 5, ok: true };
                 }),
             },

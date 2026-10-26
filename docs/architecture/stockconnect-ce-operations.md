@@ -17,7 +17,7 @@ Operational requirements for running Wasl as the ChannelEngine-compatible backen
 
 | Setting | Purpose |
 | ------- | ------- |
-| `CHANNEL_ENGINE_BASE_URL` | Must include the CE prefix, e.g. `https://<nexora-host>/api/v2/ce/` |
+| `CHANNEL_ENGINE_BASE_URL` | Must include the CE prefix, e.g. `https://<wasl-host>/api/v2/ce/` |
 
 Wasl does **not** read `CHANNEL_ENGINE_BASE_URL`; it is configured only in StockConnect.
 
@@ -30,7 +30,7 @@ Wasl does **not** read `CHANNEL_ENGINE_BASE_URL`; it is configured only in Stock
 | Channel `external_reference` | Must be a **numeric string** when StockConnect expects integer `ChannelId` / `GlobalChannelId` | IMPLEMENTED — non-numeric refs omit integer IDs (by design) |
 | CE order integer `Id` | Stored in `external_integer_id_mappings` (`compat_v2` provider); stable across repeated GET polls | IMPLEMENTED, TESTED LOCALLY (Phase 52 regression) |
 | Webhook subscription | `description` = `stockconnect-ce-bridge`, URL = StockConnect `POST /orders/channelengine-webhook`, event types for order lifecycle | IMPLEMENTED, TESTED LOCALLY |
-| Webhook secret | Stored encrypted in Nexora; never logged | IMPLEMENTED |
+| Webhook secret | Stored encrypted in Wasl; never logged | IMPLEMENTED |
 
 ## Wasl application environment
 
@@ -69,5 +69,5 @@ Full checklist, monitoring, rollback, smoke test, and cutover sequence: **[stock
 | Production traffic | **PRODUCTION NOT YET VERIFIED** |
 | Production configuration (secrets/URLs) | **PRODUCTION CONFIG READY** (checklist; Ops must populate) |
 
-**Phase 55 (production cutover execution):** Not executed. Do not point StockConnect production at Wasl until Phase 53 staging checklist shows **PASS — VERIFIED AGAINST STOCKCONNECT STAGING** for critical flows, Phase 54 runbook is approved, and change authorization is recorded. After cutover, set `CHANNEL_ENGINE_BASE_URL` to `https://<nexora-production-host>/api/v2/ce/` via StockConnect config only (never commit values). Monitor `stockconnect_ce_compat` on deployed Nexora; it confirms wiring only, not StockConnect compatibility.
+**Phase 55 (production cutover execution):** Not executed. Do not point StockConnect production at Wasl until Phase 53 staging checklist shows **PASS — VERIFIED AGAINST STOCKCONNECT STAGING** for critical flows, Phase 54 runbook is approved, and change authorization is recorded. After cutover, set `CHANNEL_ENGINE_BASE_URL` to `https://<wasl-production-host>/api/v2/ce/` via StockConnect config only (never commit values). Monitor `stockconnect_ce_compat` on deployed Wasl; it confirms wiring only, not StockConnect compatibility.
 

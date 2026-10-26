@@ -129,23 +129,23 @@ function shouldKeepOfferActive(input) {
 }
 
 /**
- * @param {'product'|'offer'} nexoraEntityType
- * @param {string} nexoraEntityId
+ * @param {'product'|'offer'} integrationEntityType
+ * @param {string} integrationEntityId
  * @param {string} partnerSku
  * @param {'product'|'offer'} [secondEntityType]
  * @param {string} [secondEntityId]
  */
-function partnerSkuMappingHints(nexoraEntityType, nexoraEntityId, partnerSku, secondEntityType, secondEntityId) {
+function partnerSkuMappingHints(integrationEntityType, integrationEntityId, partnerSku, secondEntityType, secondEntityId) {
     const hints = [{
-        nexoraEntityType,
-        nexoraEntityId,
+        integrationEntityType,
+        integrationEntityId,
         externalEntityType: NoonExternalEntityType.PARTNER_SKU,
         externalEntityId: partnerSku,
     }];
     if (secondEntityType !== undefined && secondEntityId !== undefined) {
         hints.push({
-            nexoraEntityType: secondEntityType,
-            nexoraEntityId: secondEntityId,
+            integrationEntityType: secondEntityType,
+            integrationEntityId: secondEntityId,
             externalEntityType: NoonExternalEntityType.PARTNER_SKU,
             externalEntityId: partnerSku,
         });
@@ -163,14 +163,14 @@ function buildOfferMappingHints(input, partnerSku, payload, countryCode) {
     /** @type {import('../../../../integration-catalog-sync/public/marketplace-entity-mapping-recorder.port.js').MarketplaceEntityMappingHint[]} */
     const hints = [
         {
-            nexoraEntityType: 'offer',
-            nexoraEntityId: input.offerId,
+            integrationEntityType: 'offer',
+            integrationEntityId: input.offerId,
             externalEntityType: NoonExternalEntityType.PARTNER_SKU,
             externalEntityId: partnerSku,
         },
         {
-            nexoraEntityType: 'product',
-            nexoraEntityId: input.productId,
+            integrationEntityType: 'product',
+            integrationEntityId: input.productId,
             externalEntityType: NoonExternalEntityType.PARTNER_SKU,
             externalEntityId: partnerSku,
         },
@@ -178,8 +178,8 @@ function buildOfferMappingHints(input, partnerSku, payload, countryCode) {
     const catalogSku = typeof payload?.sku === 'string' ? payload.sku.trim() : '';
     if (catalogSku.length > 0) {
         hints.push({
-            nexoraEntityType: 'product',
-            nexoraEntityId: input.productId,
+            integrationEntityType: 'product',
+            integrationEntityId: input.productId,
             externalEntityType: NoonExternalEntityType.CATALOG_SKU,
             externalEntityId: catalogSku,
         });
@@ -190,8 +190,8 @@ function buildOfferMappingHints(input, partnerSku, payload, countryCode) {
     const offerCode = typeof match?.offer_code === 'string' ? match.offer_code.trim() : '';
     if (offerCode.length > 0) {
         hints.push({
-            nexoraEntityType: 'offer',
-            nexoraEntityId: input.offerId,
+            integrationEntityType: 'offer',
+            integrationEntityId: input.offerId,
             externalEntityType: NoonExternalEntityType.OFFER,
             externalEntityId: offerCode,
         });

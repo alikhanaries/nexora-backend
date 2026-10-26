@@ -1,10 +1,10 @@
 import { createHmac } from 'node:crypto';
 
 export const WEBHOOK_SIGNATURE_VERSION = 'v1';
-export const WEBHOOK_SIGNATURE_HEADER = 'X-Nexora-Signature';
-export const WEBHOOK_EVENT_HEADER = 'X-Nexora-Event';
-export const WEBHOOK_EVENT_ID_HEADER = 'X-Nexora-Event-Id';
-export const WEBHOOK_DELIVERY_ID_HEADER = 'X-Nexora-Delivery-Id';
+export const WEBHOOK_SIGNATURE_HEADER = 'X-Wasl-Signature';
+export const WEBHOOK_EVENT_HEADER = 'X-Wasl-Event';
+export const WEBHOOK_EVENT_ID_HEADER = 'X-Wasl-Event-Id';
+export const WEBHOOK_DELIVERY_ID_HEADER = 'X-Wasl-Delivery-Id';
 
 /**
  * Computes the webhook HMAC signature over the exact request body bytes.

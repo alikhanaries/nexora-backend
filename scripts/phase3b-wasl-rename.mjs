@@ -152,8 +152,8 @@ const GLOBAL_REPLACEMENTS = [
   ['Channel.deactivate', 'CommerceIntegration.deactivate'],
   ['Channel.suspend', 'CommerceIntegration.suspend'],
   ['Nexora', 'Wasl'],
-  ['nexora-backend', 'wasl-backend'],
-  // DB columns stay nexora_entity_* (persisted contract); do not rename in SQL.
+  ['wasl-backend', 'wasl-backend'],
+  // Applied migration SQL is checksum-locked; column renames ship in forward migrations (0049+).
   ['MarketplaceCommerceEntityType', 'MarketplaceCommerceEntityType'],
 ];
 

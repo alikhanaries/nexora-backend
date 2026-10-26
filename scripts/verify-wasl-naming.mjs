@@ -21,6 +21,8 @@ const SKIP_FILES = new Set([
   'scripts/phase3b-wasl-rename.mjs',
   'scripts/phase3c-wasl-docs.mjs',
   'scripts/verify-wasl-naming.mjs',
+  'scripts/scrub-nexora-references.mjs',
+  'scripts/audit-nexora-remaining.mjs',
 ]);
 
 /** @param {string} dir @param {string[]} out */
@@ -47,10 +49,10 @@ const ALLOWLIST_VALUES = new Set(
 /** Additional literal allowlist (docker/local fixture usernames, historical ADR titles). */
 const EXTRA_ALLOWLIST = [
   'postgresql://nexora',
-  'nexora_app',
+  'wasl_app',
   'nexora@',
-  'nexora-local',
-  'nexora-secret',
+  'wasl-local',
+  'wasl-secret',
   'channelengine compatibility',
   'channel-engine compatibility',
   'adr-007-channelengine',
@@ -67,8 +69,8 @@ const EXTRA_ALLOWLIST = [
   'storage_access_key_id ??= \'nexora\'',
   "storage_access_key_id: 'nexora'",
   "storage_secret_access_key: 'nexora",
-  'nexora-local',
-  'nexora-secret',
+  'wasl-local',
+  'wasl-secret',
   'nexora_integration_redis_url',
 ];
 
@@ -102,7 +104,10 @@ function lineIsAllowlisted(line) {
   if (lower.includes('wasl_external_compatibility') || lower.includes('migrationplan')) {
     return true;
   }
-  if (lower.includes('nexora_entity') || lower.includes('nexoraentity')) {
+  if (lower.includes('wasl_entity') || lower.includes('waslentity')) {
+    return true;
+  }
+  if (lower.includes('0049_wasl_persisted_identifier_rename') || lower.includes('0045_marketplace_connections')) {
     return true;
   }
   return false;
@@ -123,6 +128,9 @@ const violations = [];
 for (const file of files) {
   const rel = relative(ROOT, file).replace(/\\/g, '/');
   if (rel === 'src/shared/config/wasl-naming.config.js' || rel === 'src/app/config/naming.config.js') {
+    continue;
+  }
+  if (rel.startsWith('src/infrastructure/postgres/migrations/')) {
     continue;
   }
   const lines = readFileSync(file, 'utf8').split('\n');

@@ -4,7 +4,7 @@ import { loadConfig } from '../../src/app/config/config.js';
 import { closeTestInfrastructure, getTestInfrastructure } from './helpers.js';
 
 /**
- * Tables introduced after 0030_rls_hardening must remain writable by nexora_app.
+ * Tables introduced after 0030_rls_hardening must remain writable by wasl_app.
  * Order creation assigns compat external IDs via external_integer_id_mappings.
  */
 const RUNTIME_ROLE_TABLES = [
@@ -18,14 +18,14 @@ const RUNTIME_ROLE_TABLES = [
 
 function buildAppRoleUrl(databaseUrl) {
     const url = new URL(databaseUrl);
-    url.username = 'nexora_app';
+    url.username = 'wasl_app';
     if (url.password === '') {
-        url.password = 'nexora';
+        url.password = 'wasl';
     }
     return url.toString();
 }
 
-describe('nexora_app table privileges (post-0030 migrations)', () => {
+describe('wasl_app table privileges (post-0030 migrations)', () => {
     /** @type {import('pg').Pool} */
     let appRolePool;
 
@@ -43,13 +43,13 @@ describe('nexora_app table privileges (post-0030 migrations)', () => {
         await closeTestInfrastructure();
     });
 
-    it.each(RUNTIME_ROLE_TABLES)('grants DML on %s to nexora_app', async (tableName) => {
+    it.each(RUNTIME_ROLE_TABLES)('grants DML on %s to wasl_app', async (tableName) => {
         const result = await appRolePool.query(
             `SELECT
-         has_table_privilege('nexora_app', $1, 'SELECT') AS can_select,
-         has_table_privilege('nexora_app', $1, 'INSERT') AS can_insert,
-         has_table_privilege('nexora_app', $1, 'UPDATE') AS can_update,
-         has_table_privilege('nexora_app', $1, 'DELETE') AS can_delete`,
+         has_table_privilege('wasl_app', $1, 'SELECT') AS can_select,
+         has_table_privilege('wasl_app', $1, 'INSERT') AS can_insert,
+         has_table_privilege('wasl_app', $1, 'UPDATE') AS can_update,
+         has_table_privilege('wasl_app', $1, 'DELETE') AS can_delete`,
             [tableName],
         );
         const row = result.rows[0];

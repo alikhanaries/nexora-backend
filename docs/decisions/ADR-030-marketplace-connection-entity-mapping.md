@@ -43,8 +43,8 @@ Direction: **Wasl entity → marketplace external identifier** (outbound sync).
 | Field | Purpose |
 | ----- | ------- |
 | `tenant_id`, `channel_id`, `marketplace_key` | Isolation (same as connection scope) |
-| `nexora_entity_type` | `product`, `offer`, `stock_location` (extensible via check constraint migration if needed) |
-| `nexora_entity_id` | Wasl entity UUID (column name unchanged) |
+| `wasl_entity_type` | `product`, `offer`, `stock_location` (extensible via check constraint migration if needed) |
+| `wasl_entity_id` | Wasl entity UUID (column name unchanged) |
 | `external_entity_type` | Adapter-defined string (e.g. `shopify_product_variant`, `amazon_listing_sku`) |
 | `external_entity_id` | Opaque provider string |
 

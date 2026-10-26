@@ -3,7 +3,7 @@
 **Status:** Phase 5.1 — convention locked for future `/api/v2` mutations  
 **Last updated:** 2026-09-21
 
-Merchant-compatible mutations (`POST /api/v2/orders/acknowledge`, shipments, cancellations, returns) must reuse Nexora's existing PostgreSQL idempotency ledger — **never** a compatibility-specific store.
+Merchant-compatible mutations (`POST /api/v2/orders/acknowledge`, shipments, cancellations, returns) must reuse Wasl's existing PostgreSQL idempotency ledger — **never** a compatibility-specific store.
 
 ## Flow
 

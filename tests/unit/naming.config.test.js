@@ -31,7 +31,7 @@ describe('Wasl naming configuration', () => {
 
   it('returns null for unknown external compatibility ids', () => {
     expect(getExternalCompatibilityEntry('does-not-exist')).toBeNull();
-    expect(getExternalCompatibilityEntry('webhook.header.signature')?.value).toBe('X-Nexora-Signature');
+    expect(getExternalCompatibilityEntry('webhook.header.signature')?.value).toBe('X-Wasl-Signature');
   });
 
   it('uses Wasl defaults in environment schema when unset', () => {

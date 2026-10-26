@@ -97,10 +97,10 @@ describe('marketplace connection and entity mapping foundation', () => {
 
         await database.execute(async (tx) => {
             await tx.query(`INSERT INTO marketplace_entity_mappings (
-          id, tenant_id, channel_id, marketplace_key, nexora_entity_type, nexora_entity_id,
+          id, tenant_id, channel_id, marketplace_key, wasl_entity_type, wasl_entity_id,
           external_entity_type, external_entity_id
         ) VALUES ($1, $2, $3, $4, 'offer', $5, 'listing', 'ext-a')
-        ON CONFLICT (tenant_id, channel_id, marketplace_key, nexora_entity_type, nexora_entity_id)
+        ON CONFLICT (tenant_id, channel_id, marketplace_key, wasl_entity_type, wasl_entity_id)
         DO UPDATE SET external_entity_id = EXCLUDED.external_entity_id, updated_at = now()`, [
                 randomUUID(),
                 tenantId,
@@ -109,10 +109,10 @@ describe('marketplace connection and entity mapping foundation', () => {
                 offerId,
             ]);
             await tx.query(`INSERT INTO marketplace_entity_mappings (
-          id, tenant_id, channel_id, marketplace_key, nexora_entity_type, nexora_entity_id,
+          id, tenant_id, channel_id, marketplace_key, wasl_entity_type, wasl_entity_id,
           external_entity_type, external_entity_id
         ) VALUES ($1, $2, $3, $4, 'offer', $5, 'listing', 'ext-b')
-        ON CONFLICT (tenant_id, channel_id, marketplace_key, nexora_entity_type, nexora_entity_id)
+        ON CONFLICT (tenant_id, channel_id, marketplace_key, wasl_entity_type, wasl_entity_id)
         DO UPDATE SET external_entity_id = EXCLUDED.external_entity_id, updated_at = now()`, [
                 randomUUID(),
                 tenantId,
@@ -121,7 +121,7 @@ describe('marketplace connection and entity mapping foundation', () => {
                 offerId,
             ]);
             const result = await tx.query(`SELECT external_entity_id FROM marketplace_entity_mappings
-         WHERE tenant_id = $1 AND nexora_entity_id = $2`, [tenantId, offerId]);
+         WHERE tenant_id = $1 AND wasl_entity_id = $2`, [tenantId, offerId]);
             expect(result.rows[0].external_entity_id).toBe('ext-b');
         }, { tenantId });
     });
