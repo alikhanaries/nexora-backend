@@ -20,6 +20,7 @@
     "dev:worker": "node --env-file=.env --watch src/workers/main.js",
     "start": "node --env-file=.env --import ./src/app/register-swc.mjs src/app/main.js",
     "start:worker": "node --env-file=.env src/workers/main.js",
+    "seed:dev-user": "node --env-file=.env --import ./src/app/register-swc.mjs scripts/seed-dev-user.mjs",
     "migrate": "node --env-file=.env src/app/migrate-cli.js up",
     "migrate:status": "node --env-file=.env src/app/migrate-cli.js status",
     "backfill:external-ids": "node --env-file=.env src/app/external-id-backfill-cli.js",

@@ -65,10 +65,30 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variable files
+# --- Secrets & local environment (never commit) ---------------------------
 .env
+.env.local
 .env.*
 !.env.example
+
+# --- OS, editor, IDE -------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.cursor/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Credentials & keys ----------------------------------------------------
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
 
 # Phase 56 staging evidence (may contain sanitized ops notes; never commit secrets)
 phase56-evidence/
@@ -148,6 +168,13 @@ vite.config.ts.timestamp-*
 # Local OpenAPI snapshot (docs:openapi-coverage)
 docs/.openapi-snapshot.json
 
-# Documentation PDF build artefacts
+# Generated documentation (PDF/HTML from docs/*.mjs — keep .md sources in git)
 docs/.pdf-pages/
+docs/**/*.pdf
+docs/**/*.html
+
+# Legacy generated doc paths (explicit; covered by patterns above)
 docs/Nexora_Backend_Technical_Documentation.html
+docs/Wasl_Backend_Technical_Documentation.html
+docs/architecture/Nexora_Backend_Complete_Architecture_and_Technology_Guide.html
+docs/architecture/Wasl_Backend_Complete_Architecture_and_Technology_Guide.html
