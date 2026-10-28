@@ -5,7 +5,7 @@ import { ShopifyOrderAdapter } from './shopify/shopify-order-adapter.js';
 
 /**
  * @param {import('../../../orders/marketplace-ingestion/public/marketplace-order-adapter-registry.js').MarketplaceOrderAdapterRegistry} registry
- * @param {{ httpClient?: import('../http/marketplace-http-client.js').MarketplaceHttpClient, shopifyAdminApiVersion?: string | null, amazonLwaTokenUrl?: string | null, noonApiBaseUrl?: string | null, noonUserAgent?: string | null }} [deps]
+ * @param {{ httpClient?: import('../http/marketplace-http-client.js').MarketplaceHttpClient, shopifyAdminApiVersion?: string | null, amazonLwaTokenUrl?: string | null, noonApiBaseUrl?: string | null, noonUserAgent?: string | null, noonTestLaneBlockHttp?: boolean, logger?: import('../../../../shared/logging/logger.port.js').Logger }} [deps]
  */
 export function registerMarketplaceOrderAdapters(registry, deps = {}) {
     registry.register(new ShopifyOrderAdapter({
@@ -21,5 +21,7 @@ export function registerMarketplaceOrderAdapters(registry, deps = {}) {
     registry.register(new NoonOrderAdapter({
         deploymentApiBaseUrl: deps.noonApiBaseUrl,
         deploymentUserAgent: deps.noonUserAgent,
+        testLaneBlockExternalHttp: deps.noonTestLaneBlockHttp ?? false,
+        ...(deps.logger === undefined ? {} : { logger: deps.logger }),
     }));
 }

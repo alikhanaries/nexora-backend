@@ -69,7 +69,6 @@ web_modules/
 .env
 .env.local
 .env.*
-!.env.example
 
 # --- OS, editor, IDE -------------------------------------------------------
 .DS_Store
@@ -172,5 +171,35 @@ docs/.openapi-snapshot.json
 docs/.pdf-pages/
 docs/**/Nexora_*
 dump.rdb
-.local-pg-bootstrap/*.dump
-.local-pg-bootstrap/nexora-*
+
+# --- Kept locally; omitted when migrating source to the official repo ------
+# Application code (src/, infrastructure/, package manifests, Dockerfile)
+# stays tracked. Paths below remain on disk and are not added by git.
+
+# Tests
+/tests/
+/test/
+
+# One-off migrations, probes, and local operator scripts
+/scripts/
+
+# Documentation (kept locally; not part of the source migration)
+/docs/
+
+# Every env file, including the example template
+.env
+.env.*
+/env.local
+/env.*.local
+/env.*.local.example
+*.local.env
+
+# Local probe output, backups, and scratch files
+/noon-*-output.txt
+*.bak
+/tmp/
+/tmp_arch_inventory.jsonl
+
+# Local binaries, database dumps, and bootstrap SQL (may contain local passwords)
+.local/
+.local-pg-bootstrap/

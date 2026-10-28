@@ -125,6 +125,9 @@ export async function createApplication(infra) {
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
         noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
         noonUserAgent: infra.config.marketplace.noonUserAgent,
+        noonCatalogWritesEnabled: infra.config.marketplace.noonCatalogWritesEnabled,
+        noonTestLaneBlockHttp: infra.config.marketplace.noonTestLaneBlockHttp,
+        logger: infra.logger,
     });
     const channelRouteDeps = {
         ...channels.useCases,
@@ -235,6 +238,7 @@ export async function createApplication(infra) {
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
         noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
         noonUserAgent: infra.config.marketplace.noonUserAgent,
+        noonTestLaneBlockHttp: infra.config.marketplace.noonTestLaneBlockHttp,
         orders: createPostgresOrderRepository(),
         confirmOrder: orders.useCases.confirmOrder,
         cancellationCommandService: cancellations.cancellationCommandService,
@@ -249,6 +253,8 @@ export async function createApplication(infra) {
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
         noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
         noonUserAgent: infra.config.marketplace.noonUserAgent,
+        noonTestLaneBlockHttp: infra.config.marketplace.noonTestLaneBlockHttp,
+        logger: infra.logger,
     });
     const marketplaceRepository = new PostgresMarketplaceRepository();
     const marketplaceLifecycleEnqueueService = createMarketplaceLifecycleEnqueueService({

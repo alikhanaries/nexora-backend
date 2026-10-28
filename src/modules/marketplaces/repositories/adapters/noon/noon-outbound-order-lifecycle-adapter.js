@@ -7,13 +7,15 @@ export class NoonOutboundOrderLifecycleAdapter extends BaseMarketplaceOrderAdapt
     api;
 
     /**
-     * @param {{ api?: NoonApiClient, deploymentApiBaseUrl?: string | null, deploymentUserAgent?: string | null }} [deps]
+     * @param {{ api?: NoonApiClient, deploymentApiBaseUrl?: string | null, deploymentUserAgent?: string | null, testLaneBlockExternalHttp?: boolean, logger?: import('../../../../../shared/logging/logger.port.js').Logger }} [deps]
      */
     constructor(deps = {}) {
         super(NOON_MARKETPLACE_KEY);
         this.api = deps.api ?? new NoonApiClient({
             deploymentApiBaseUrl: deps.deploymentApiBaseUrl,
             deploymentUserAgent: deps.deploymentUserAgent,
+            testLaneBlockExternalHttp: deps.testLaneBlockExternalHttp ?? false,
+            ...(deps.logger === undefined ? {} : { logger: deps.logger }),
         });
     }
 

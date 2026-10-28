@@ -54,6 +54,25 @@ export class MarketplaceValidationError extends MarketplaceError {
     }
 }
 
+export class NoonCatalogWritesDisabledError extends MarketplaceError {
+    /** Application guard blocked a Noon catalog mutation (NOON_CATALOG_WRITES_ENABLED). */
+    constructor(operation = 'noon_catalog_write') {
+        super('Noon catalog writes are disabled by configuration (NOON_CATALOG_WRITES_ENABLED)');
+        this.name = 'NoonCatalogWritesDisabledError';
+        this.operation = operation;
+    }
+}
+
+export class NoonTestLaneHttpBlockedError extends MarketplaceError {
+    /** Opt-in test lane blocked outbound HTTP to production Noon (NOON_TEST_LANE_BLOCK_HTTP). */
+    constructor(path = 'unknown', method = 'GET') {
+        super('Noon outbound HTTP is blocked by test-lane configuration (NOON_TEST_LANE_BLOCK_HTTP)');
+        this.name = 'NoonTestLaneHttpBlockedError';
+        this.path = path;
+        this.method = (method ?? 'GET').toUpperCase();
+    }
+}
+
 export class MarketplaceNotFoundError extends MarketplaceError {
     /** Remote entity (order, SKU, listing) was not found at the marketplace. */
     constructor(message = 'Marketplace resource was not found') {

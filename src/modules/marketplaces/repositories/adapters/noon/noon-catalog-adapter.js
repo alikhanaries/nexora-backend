@@ -19,7 +19,7 @@ export class NoonCatalogAdapter extends BaseMarketplaceCatalogAdapter {
     deploymentUserAgent;
 
     /**
-     * @param {{ api?: NoonApiClient, deploymentApiBaseUrl?: string | null, deploymentUserAgent?: string | null }} [deps]
+     * @param {{ api?: NoonApiClient, deploymentApiBaseUrl?: string | null, deploymentUserAgent?: string | null, catalogWritesEnabled?: boolean, testLaneBlockExternalHttp?: boolean, logger?: import('../../../../../shared/logging/logger.port.js').Logger }} [deps]
      */
     constructor(deps = {}) {
         super(NOON_MARKETPLACE_KEY);
@@ -28,6 +28,9 @@ export class NoonCatalogAdapter extends BaseMarketplaceCatalogAdapter {
         this.api = deps.api ?? new NoonApiClient({
             deploymentApiBaseUrl: deps.deploymentApiBaseUrl,
             deploymentUserAgent: deps.deploymentUserAgent,
+            catalogWritesEnabled: deps.catalogWritesEnabled ?? false,
+            testLaneBlockExternalHttp: deps.testLaneBlockExternalHttp ?? false,
+            ...(deps.logger === undefined ? {} : { logger: deps.logger }),
         });
     }
 
@@ -61,7 +64,9 @@ export class NoonCatalogAdapter extends BaseMarketplaceCatalogAdapter {
             this.assertCapability(this.getCapabilities(), 'supportsInventorySync', 'inventory sync');
             const partnerSku = resolveNoonPartnerSku(input.externalCatalogIdentifier, '');
             await this.api.updateStock(runtime, partnerSku, input.availableQuantity);
-            return partnerSkuMappingHints('product', input.productId, partnerSku);
+            // Stock update is keyed by partner_sku from the active offer; it does not return catalog
+            // product identity. Partner SKU is already on offers.external_reference for sync input.
+            return [];
         });
     }
 
@@ -73,7 +78,9 @@ export class NoonCatalogAdapter extends BaseMarketplaceCatalogAdapter {
             const partnerSku = resolveNoonPartnerSku(input.externalCatalogIdentifier, '');
             const price = input.amountMinor / 100;
             await this.api.upsertPricing(runtime, partnerSku, price);
-            return partnerSkuMappingHints('product', input.productId, partnerSku);
+            // Price upsert is keyed by partner_sku input; the response does not establish a new
+            // product identity. Persist catalog SKU / offer code from offer sync (getProductOffers).
+            return [];
         });
     }
 
@@ -97,7 +104,7 @@ export class NoonCatalogAdapter extends BaseMarketplaceCatalogAdapter {
             if (input.operation === 'deactivate' || !shouldKeepOfferActive(input)) {
                 this.assertCapability(this.getCapabilities(), 'supportsDeactivation', 'deactivation');
                 await this.api.setOfferActive(runtime, partnerSku, false);
-                return partnerSkuMappingHints('offer', input.offerId, partnerSku, 'product', input.productId);
+                return partnerSkuMappingHints('offer', input.offerId, partnerSku);
             }
             if (input.operation === 'activate') {
                 this.assertCapability(this.getCapabilities(), 'supportsActivation', 'activation');
@@ -165,12 +172,6 @@ function buildOfferMappingHints(input, partnerSku, payload, countryCode) {
         {
             integrationEntityType: 'offer',
             integrationEntityId: input.offerId,
-            externalEntityType: NoonExternalEntityType.PARTNER_SKU,
-            externalEntityId: partnerSku,
-        },
-        {
-            integrationEntityType: 'product',
-            integrationEntityId: input.productId,
             externalEntityType: NoonExternalEntityType.PARTNER_SKU,
             externalEntityId: partnerSku,
         },

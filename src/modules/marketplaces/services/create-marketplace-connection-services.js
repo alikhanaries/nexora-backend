@@ -14,6 +14,9 @@ import { PostgresMarketplaceRepository } from '../repositories/postgres-marketpl
  * @param {string | null | undefined} [deps.amazonLwaTokenUrl]
  * @param {string | null | undefined} [deps.noonApiBaseUrl]
  * @param {string | null | undefined} [deps.noonUserAgent]
+ * @param {boolean | undefined} [deps.noonCatalogWritesEnabled]
+ * @param {boolean | undefined} [deps.noonTestLaneBlockHttp]
+ * @param {import('../../shared/logging/logger.port.js').Logger | undefined} [deps.logger]
  */
 export function createMarketplaceConnectionServices(deps) {
     const authorization = createDefaultAuthorizationService();
@@ -23,6 +26,9 @@ export function createMarketplaceConnectionServices(deps) {
         amazonLwaTokenUrl: deps.amazonLwaTokenUrl,
         noonApiBaseUrl: deps.noonApiBaseUrl,
         noonUserAgent: deps.noonUserAgent,
+        noonCatalogWritesEnabled: deps.noonCatalogWritesEnabled ?? false,
+        noonTestLaneBlockHttp: deps.noonTestLaneBlockHttp ?? false,
+        ...(deps.logger === undefined ? {} : { logger: deps.logger }),
     });
     const shared = {
         authorization,

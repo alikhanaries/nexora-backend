@@ -5,7 +5,7 @@ import { ShopifyOrderLifecycleAdapter } from './shopify/shopify-order-lifecycle-
 
 /**
  * @param {import('../../services/marketplace-outbound-order-lifecycle-adapter-registry.js').MarketplaceOutboundOrderLifecycleAdapterRegistry} registry
- * @param {{ shopifyAdminApiVersion?: string | null, amazonLwaTokenUrl?: string | null, noonApiBaseUrl?: string | null, noonUserAgent?: string | null }} [deps]
+ * @param {{ shopifyAdminApiVersion?: string | null, amazonLwaTokenUrl?: string | null, noonApiBaseUrl?: string | null, noonUserAgent?: string | null, noonTestLaneBlockHttp?: boolean, logger?: import('../../../../shared/logging/logger.port.js').Logger }} [deps]
  */
 export function registerMarketplaceOutboundOrderLifecycleAdapters(registry, deps = {}) {
     registry.register(new ShopifyOrderLifecycleAdapter({
@@ -17,6 +17,8 @@ export function registerMarketplaceOutboundOrderLifecycleAdapters(registry, deps
     registry.register(new NoonOutboundOrderLifecycleAdapter({
         deploymentApiBaseUrl: deps.noonApiBaseUrl,
         deploymentUserAgent: deps.noonUserAgent,
+        testLaneBlockExternalHttp: deps.noonTestLaneBlockHttp ?? false,
+        ...(deps.logger === undefined ? {} : { logger: deps.logger }),
     }));
     registry.register(new NamshiOutboundOrderLifecycleAdapter({
         deploymentApiBaseUrl: deps.noonApiBaseUrl,

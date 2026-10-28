@@ -25,6 +25,7 @@ import { createPostgresProductRepository } from '../modules/products/repositorie
  * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
  * @param {string | null | undefined} [deps.amazonLwaTokenUrl]
  * @param {string | null | undefined} [deps.noonApiBaseUrl]
+ * @param {boolean | undefined} [deps.noonTestLaneBlockHttp]
  * @param {string | null | undefined} [deps.noonUserAgent]
  * @param {import('../modules/orders/repositories/postgres-order-repository.js').PostgresOrderRepository} [deps.orders]
  * @param {import('../modules/orders/services/confirm-order.js').ConfirmOrder} [deps.confirmOrder]
@@ -41,6 +42,8 @@ export function wireMarketplaceOrderIngestion(deps) {
             amazonLwaTokenUrl: deps.amazonLwaTokenUrl,
             noonApiBaseUrl: deps.noonApiBaseUrl,
             noonUserAgent: deps.noonUserAgent,
+            noonTestLaneBlockHttp: deps.noonTestLaneBlockHttp ?? false,
+            logger: deps.logger,
         }));
     const commerceIntegrationQueryService = createDefaultCommerceIntegrationQueryService({
         // Same as createChannelsModule: `database.withTenant` sets the RLS tenant
