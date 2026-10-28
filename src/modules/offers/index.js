@@ -30,7 +30,8 @@ export function createOffersModule(deps) {
     const offers = createPostgresOfferRepository();
     const offerQueryService = createDefaultOfferQueryService({
         queryable: deps.database,
-        offers
+        transactionManager: deps.database,
+        offers,
     });
     const lifecycleDeps = {
         authorization,

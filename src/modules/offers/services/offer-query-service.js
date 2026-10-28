@@ -20,6 +20,18 @@ export function createDefaultOfferQueryService(deps) {
         return toOfferDto(offer);
     }
 
+/** Repository operation on offer data (tenant-isolated SQL). */
+    async function getOffersByProduct(tenantId, productId, tx) {
+        if (tx === undefined) {
+            return deps.transactionManager.execute(
+                (innerTx) => getOffersByProduct(tenantId, productId, innerTx),
+                { tenantId },
+            );
+        }
+        const offers = await deps.offers.listByProduct(tx, tenantId, productId);
+        return offers.map(toOfferDto);
+    }
+
     return {
         getOfferById,
 /** Repository operation on offer data (tenant-isolated SQL). */
@@ -28,12 +40,7 @@ export function createDefaultOfferQueryService(deps) {
             const offer = await deps.offers.findByProductAndChannel(queryable, tenantId, productId, channelId);
             return offer === null ? null : toOfferDto(offer);
         },
-/** Repository operation on offer data (tenant-isolated SQL). */
-        async getOffersByProduct(tenantId, productId, tx) {
-            const queryable = tx ?? deps.queryable;
-            const offers = await deps.offers.listByProduct(queryable, tenantId, productId);
-            return offers.map(toOfferDto);
-        },
+        getOffersByProduct,
 /** Lists child rows for a offer within the tenant. */
         async listActiveOffersByChannel(tenantId, channelId, tx) {
             const queryable = tx ?? deps.queryable;

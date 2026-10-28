@@ -8,8 +8,8 @@ const rowSchema = z.object({
     tenant_id: z.string().uuid(),
     channel_id: z.string().uuid(),
     marketplace_key: z.string(),
-    nexora_entity_type: z.string(),
-    nexora_entity_id: z.string().uuid(),
+    wasl_entity_type: z.string(),
+    wasl_entity_id: z.string().uuid(),
     external_entity_type: z.string(),
     external_entity_id: z.string(),
     created_at: z.date(),
@@ -22,20 +22,20 @@ export class PostgresMarketplaceEntityMappingRepository {
      * @param {string} tenantId
      * @param {string} channelId
      * @param {string} marketplaceKey
-     * @param {string} nexoraEntityType
-     * @param {string} nexoraEntityId
+     * @param {string} integrationEntityType
+     * @param {string} integrationEntityId
      */
-    async findByWaslEntity(queryable, tenantId, channelId, marketplaceKey, nexoraEntityType, nexoraEntityId) {
-        const result = await queryable.query(`SELECT id, tenant_id, channel_id, marketplace_key, nexora_entity_type,
-              nexora_entity_id, external_entity_type, external_entity_id, created_at, updated_at
+    async findByWaslEntity(queryable, tenantId, channelId, marketplaceKey, integrationEntityType, integrationEntityId) {
+        const result = await queryable.query(`SELECT id, tenant_id, channel_id, marketplace_key, wasl_entity_type,
+              wasl_entity_id, external_entity_type, external_entity_id, created_at, updated_at
        FROM marketplace_entity_mappings
        WHERE tenant_id = $1 AND channel_id = $2 AND marketplace_key = $3
-         AND nexora_entity_type = $4 AND nexora_entity_id = $5`, [
+         AND wasl_entity_type = $4 AND wasl_entity_id = $5`, [
             tenantId,
             channelId,
             marketplaceKey,
-            nexoraEntityType,
-            nexoraEntityId,
+            integrationEntityType,
+            integrationEntityId,
         ], { operation: 'marketplace_entity_mappings.find_by_commerce_entity' });
         const row = result.rows[0];
         if (row === undefined) {
@@ -53,8 +53,8 @@ export class PostgresMarketplaceEntityMappingRepository {
      * @param {string} externalEntityId
      */
     async findByExternalEntity(queryable, tenantId, channelId, marketplaceKey, externalEntityType, externalEntityId) {
-        const result = await queryable.query(`SELECT id, tenant_id, channel_id, marketplace_key, nexora_entity_type,
-              nexora_entity_id, external_entity_type, external_entity_id, created_at, updated_at
+        const result = await queryable.query(`SELECT id, tenant_id, channel_id, marketplace_key, wasl_entity_type,
+              wasl_entity_id, external_entity_type, external_entity_id, created_at, updated_at
        FROM marketplace_entity_mappings
        WHERE tenant_id = $1 AND channel_id = $2 AND marketplace_key = $3
          AND external_entity_type = $4 AND external_entity_id = $5`, [
@@ -76,15 +76,15 @@ export class PostgresMarketplaceEntityMappingRepository {
      * @param {object} input
      */
     async upsert(transaction, input) {
-        if (!isMarketplaceIntegrationEntityType(input.nexoraEntityType)) {
+        if (!isMarketplaceIntegrationEntityType(input.integrationEntityType)) {
             throw new Error('Invalid platform entity type for marketplace mapping');
         }
         const id = input.id ?? randomUUID();
         await transaction.query(`INSERT INTO marketplace_entity_mappings (
-         id, tenant_id, channel_id, marketplace_key, nexora_entity_type, nexora_entity_id,
+         id, tenant_id, channel_id, marketplace_key, wasl_entity_type, wasl_entity_id,
          external_entity_type, external_entity_id, created_at, updated_at
        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), now())
-       ON CONFLICT (tenant_id, channel_id, marketplace_key, nexora_entity_type, nexora_entity_id)
+       ON CONFLICT (tenant_id, channel_id, marketplace_key, wasl_entity_type, wasl_entity_id)
        DO UPDATE SET
          external_entity_type = EXCLUDED.external_entity_type,
          external_entity_id = EXCLUDED.external_entity_id,
@@ -93,8 +93,8 @@ export class PostgresMarketplaceEntityMappingRepository {
             input.tenantId,
             input.channelId,
             input.marketplaceKey,
-            input.nexoraEntityType,
-            input.nexoraEntityId,
+            input.integrationEntityType,
+            input.integrationEntityId,
             input.externalEntityType,
             input.externalEntityId,
         ], { operation: 'marketplace_entity_mappings.upsert' });

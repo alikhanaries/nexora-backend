@@ -2,8 +2,8 @@
  * Resolve catalog sync entity mappings for inbound order lines.
  *
  * @typedef {object} MarketplaceEntityMappingLookupResult
- * @property {'product'|'offer'|'stock_location'} nexoraEntityType
- * @property {string} nexoraEntityId
+ * @property {'product'|'offer'|'stock_location'} integrationEntityType
+ * @property {string} integrationEntityId
  * @property {string} externalEntityType
  * @property {string} externalEntityId
  *

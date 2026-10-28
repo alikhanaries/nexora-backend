@@ -7,6 +7,7 @@
 import { CreateBucketCommand, DeleteObjectCommand, GetObjectCommand, HeadBucketCommand, HeadObjectCommand, PutObjectCommand, S3Client, } from '@aws-sdk/client-s3';
 import { Readable } from 'node:stream';
 import { NotFoundError, ServiceUnavailableError, toErrorMessage, } from '../../shared/errors/index.js';
+import { isS3BucketAlreadyExistsError, sanitizeS3Error } from './s3-error-sanitize.js';
 /** Type guard for Node readable streams from GetObject body. */
 function isReadable(value) {
     return value instanceof Readable;
@@ -138,17 +139,26 @@ export class S3StorageProvider {
     async ensureBucket() {
         if (this.bucketEnsured)
             return;
+        /** @type {unknown} */
+        let headError;
         try {
             await this.client.send(new HeadBucketCommand({ Bucket: this.config.bucket }));
         }
-        catch {
+        catch (error) {
+            headError = error;
             try {
                 await this.client.send(new CreateBucketCommand({ Bucket: this.config.bucket }));
                 this.logger.info({ bucket: this.config.bucket }, 'Created storage bucket');
             }
-            catch (error) {
+            catch (createError) {
+                if (isS3BucketAlreadyExistsError(createError)) {
+                    this.bucketEnsured = true;
+                    return;
+                }
                 throw new ServiceUnavailableError('Could not ensure storage bucket', {
-                    reason: toErrorMessage(error),
+                    reason: toErrorMessage(createError),
+                    headBucket: sanitizeS3Error(headError),
+                    createBucket: sanitizeS3Error(createError),
                 });
             }
         }

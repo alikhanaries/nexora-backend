@@ -8,6 +8,8 @@ import {
 } from './noon-config.js';
 import { assertNoonBatchItemsSucceeded } from './noon-batch-response.js';
 import { NoonAuthSessionProvider } from './noon-auth-session.js';
+import { assertNoonCatalogWritesEnabled } from './noon-catalog-write-guard.js';
+import { assertNoonTestLaneHttpAllowed } from './noon-test-lane-http-guard.js';
 
 export class NoonApiClient {
     http;
@@ -16,19 +18,30 @@ export class NoonApiClient {
     deploymentApiBaseUrl;
     /** @type {string | null | undefined} */
     deploymentUserAgent;
+    /** @type {boolean} */
+    catalogWritesEnabled;
+    /** @type {boolean} */
+    testLaneBlockExternalHttp;
+    /** @type {import('../../../../../shared/logging/logger.port.js').Logger | undefined} */
+    logger;
 
     /**
-     * @param {{ http?: MarketplaceHttpClient, auth?: NoonAuthSessionProvider, deploymentApiBaseUrl?: string | null, deploymentUserAgent?: string | null }} [deps]
+     * @param {{ http?: MarketplaceHttpClient, auth?: NoonAuthSessionProvider, deploymentApiBaseUrl?: string | null, deploymentUserAgent?: string | null, catalogWritesEnabled?: boolean, testLaneBlockExternalHttp?: boolean, logger?: import('../../../../../shared/logging/logger.port.js').Logger }} [deps]
      */
     constructor(deps = {}) {
         this.http = deps.http ?? new MarketplaceHttpClient();
+        this.testLaneBlockExternalHttp = deps.testLaneBlockExternalHttp ?? false;
         this.auth = deps.auth ?? new NoonAuthSessionProvider({
             http: this.http,
             deploymentApiBaseUrl: deps.deploymentApiBaseUrl,
             deploymentUserAgent: deps.deploymentUserAgent,
+            testLaneBlockExternalHttp: this.testLaneBlockExternalHttp,
+            logger: deps.logger,
         });
         this.deploymentApiBaseUrl = deps.deploymentApiBaseUrl;
         this.deploymentUserAgent = deps.deploymentUserAgent;
+        this.catalogWritesEnabled = deps.catalogWritesEnabled ?? false;
+        this.logger = deps.logger;
     }
 
     /**
@@ -123,6 +136,45 @@ export class NoonApiClient {
     }
 
     /**
+     * BatchGetPricing (read-only). Per-item failures (e.g. NOT_FOUND) are returned in `json.items`;
+     * callers must inspect `items[].status` before using price fields.
+     *
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {{ partner_sku: string, country_code: string }[]} items
+     */
+    async batchGetPricing(runtime, items) {
+        if (!Array.isArray(items) || items.length === 0) {
+            throw new MarketplaceValidationError('batchGetPricing requires at least one item');
+        }
+        const normalizedItems = items.map((item) => {
+            const partnerSku = String(item.partner_sku ?? '').trim();
+            const countryCode = String(item.country_code ?? '').trim().toLowerCase();
+            if (partnerSku.length === 0 || countryCode.length === 0) {
+                throw new MarketplaceValidationError('Each pricing item requires partner_sku and country_code');
+            }
+            return { partner_sku: partnerSku, country_code: countryCode };
+        });
+        return this.authenticatedRequest(runtime, {
+            path: '/pricing/v1/pricing/get',
+            method: 'POST',
+            body: { items: normalizedItems },
+        });
+    }
+
+    /**
+     * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
+     * @param {string} partnerSku
+     * @param {string} countryCode lowercase ae|sa|eg
+     */
+    async getPricing(runtime, partnerSku, countryCode) {
+        const response = await this.batchGetPricing(runtime, [{
+            partner_sku: partnerSku,
+            country_code: countryCode,
+        }]);
+        return response;
+    }
+
+    /**
      * FBPI GetFbpiOrder — full order details for lifecycle sync (Phase 35).
      *
      * @param {import('../../../../integration-catalog-sync/public/marketplace-adapter-runtime.port.js').MarketplaceAdapterRuntime} runtime
@@ -158,7 +210,20 @@ export class NoonApiClient {
      * @param {{ path: string, method?: string, body?: unknown }} request
      */
     async authenticatedRequest(runtime, request) {
+        assertNoonCatalogWritesEnabled(
+            this.catalogWritesEnabled,
+            request.method,
+            request.path,
+            this.logger,
+        );
         const baseUrl = resolveNoonApiBaseUrl(runtime.configuration ?? {}, this.deploymentApiBaseUrl);
+        assertNoonTestLaneHttpAllowed(
+            this.testLaneBlockExternalHttp,
+            baseUrl,
+            request.method,
+            request.path,
+            this.logger,
+        );
         const userAgent = resolveNoonUserAgent(runtime.configuration ?? {}, this.deploymentUserAgent);
         const cookieHeader = await this.auth.getCookieHeader(runtime);
         return this.http.request({

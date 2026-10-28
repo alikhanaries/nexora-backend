@@ -2,8 +2,8 @@
  * Optional mapping hints returned by adapters after a successful sync.
  *
  * @typedef {object} MarketplaceCatalogSyncMappingHint
- * @property {'product'|'offer'|'stock_location'} nexoraEntityType
- * @property {string} nexoraEntityId
+ * @property {'product'|'offer'|'stock_location'} integrationEntityType
+ * @property {string} integrationEntityId
  * @property {string} externalEntityType
  * @property {string} externalEntityId
  */

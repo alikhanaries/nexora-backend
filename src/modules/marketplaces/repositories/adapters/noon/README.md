@@ -36,6 +36,7 @@ Sessions are cached per connection (hash of key id + project + private key mater
 | ---------- | -------- | ----- |
 | Connection test | `GET /identity/v1/whoami` | After login |
 | Inventory sync | `POST /stock/v1/stock-update` | Absolute `qty` per `warehouse_code` + `partner_sku` |
+| Price read | `POST /pricing/v1/pricing/get` | BatchGetPricing — inspect `items[].status` before using `price` / `msrp` |
 | Price sync | `POST /pricing/v1/pricing/upsert` | `price` + `country_code`; does not recalculate Wasl pricing |
 | Offer sync | `GET /offer/v1/product/{partner_sku}` | Mapping hints only when not deactivating |
 | Activate | `POST /pricing/v1/pricing/upsert` | `is_active: true` (does not change price when omitted) |
@@ -47,11 +48,13 @@ Generic `deactivate` → BatchUpsertPricing `is_active: false` (not delete, not 
 
 ## External entity mappings
 
-| Type | Source |
-| ---- | ------ |
-| `noon_partner_sku` | Wasl `partner_sku` / offer external reference |
-| `noon_offer` | `offer_code` from GetProductOffers when present |
-| `noon_catalog_sku` | noon catalog `sku` field when returned |
+| Type | Source | Persisted by |
+| ---- | ------ | ------------ |
+| `noon_partner_sku` | Offer `external_reference` (partner SKU) | Offer **deactivate** sync only |
+| `noon_offer` | `offer_code` from GetProductOffers (country match) | Offer activate/sync after GetProductOffers |
+| `noon_catalog_sku` | `sku` from GetProductOffers response | Offer activate/sync after GetProductOffers |
+
+Price and inventory sync do **not** write mappings (partner SKU is already on the offer; those APIs do not return catalog identity).
 
 ## Inventory and price semantics
 
@@ -131,3 +134,31 @@ Authentication reuses the existing service-account session (`NoonApiClient` + `N
 ## Deployment env (optional)
 
 See root `.env.example`: `NOON_API_BASE_URL`, `NOON_USER_AGENT`.
+
+### Catalog write protection (`NOON_CATALOG_WRITES_ENABLED`)
+
+| Value | Behaviour |
+| ----- | --------- |
+| Unset / empty | **false** — catalog mutations blocked (fail-closed) |
+| `true`, `1`, `yes`, `on` | Catalog mutations may reach the Noon HTTP API |
+| `false`, `0`, `no`, `off` | Blocked before any HTTP request |
+| Any other string | Configuration load **fails** (same as other boolean env vars) |
+
+Enforcement is in `NoonApiClient.authenticatedRequest` via `noon-catalog-write-guard.js`.
+
+**Protected mutation paths (POST):**
+
+- `/stock/v1/stock-update` — `updateStock`
+- `/pricing/v1/pricing/upsert` — `upsertPricing`, `setOfferActive`
+
+**Still allowed when writes are disabled:**
+
+- `GET /identity/v1/whoami` — connection test
+- `GET /offer/v1/product/{partner_sku}` — `getProductOffers`
+- `POST /pricing/v1/pricing/get` — `batchGetPricing` / `getPricing` (read-only batch get)
+
+Blocked calls throw `NoonCatalogWritesDisabledError` (mapped to a permanent catalog-sync adapter error). A sanitized warning is logged with the operation name only.
+
+**Operational note:** Setting `NOON_CATALOG_WRITES_ENABLED=true` only removes this application guard. It does **not** replace pricing approval, tenant/channel verification, or runbook sign-off for live writes. With live credentials configured, enabled writes can change real Noon stock and prices.
+
+Non-catalog Noon HTTP (for example FBPI shipment create on the same client) is **not** gated by this flag.

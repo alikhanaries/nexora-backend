@@ -26,6 +26,10 @@ import { createPostgresPriceRepository } from '../modules/pricing/repositories/i
  * @param {{ enabled: boolean, offerBatchSize: number, maxJobsPerTick: number }} [deps.catalogSyncReconciliation]
  * @param {import('../shared/security/secret-encryptor.port.js').SecretEncryptorPort} deps.secretEncryptor
  * @param {string | null | undefined} [deps.shopifyAdminApiVersion]
+ * @param {string | null | undefined} [deps.noonApiBaseUrl]
+ * @param {string | null | undefined} [deps.noonUserAgent]
+ * @param {boolean | undefined} [deps.noonCatalogWritesEnabled]
+ * @param {boolean | undefined} [deps.noonTestLaneBlockHttp]
  */
 export function wireIntegrationCatalogSync(deps) {
     const commerceIntegrationQueryService = createDefaultCommerceIntegrationQueryService({
@@ -34,6 +38,7 @@ export function wireIntegrationCatalogSync(deps) {
     const offerRepository = createPostgresOfferRepository();
     const offerQueryService = createDefaultOfferQueryService({
         queryable: deps.database,
+        transactionManager: deps.database,
         offers: offerRepository,
     });
     const marketplaceRepository = new PostgresMarketplaceRepository();
@@ -103,6 +108,9 @@ export function wireIntegrationCatalogSync(deps) {
             amazonLwaTokenUrl: deps.amazonLwaTokenUrl,
             noonApiBaseUrl: deps.noonApiBaseUrl,
             noonUserAgent: deps.noonUserAgent,
+            noonCatalogWritesEnabled: deps.noonCatalogWritesEnabled ?? false,
+            noonTestLaneBlockHttp: deps.noonTestLaneBlockHttp ?? false,
+            logger: deps.logger,
         }),
         marketplaceEntityMappingRecorder: createMarketplaceEntityMappingRecorder(),
     });

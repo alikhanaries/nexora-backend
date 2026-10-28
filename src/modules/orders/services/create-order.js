@@ -163,5 +163,5 @@ export function createCreateOrder(deps) {
         return { order: detail };
     }
 
-    return { execute };
+    return { execute, deps };
 }

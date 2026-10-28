@@ -11,6 +11,7 @@ import {
     MarketplaceTransientError,
     MarketplaceUnsupportedError,
     MarketplaceValidationError,
+    NoonCatalogWritesDisabledError,
 } from '../models/marketplace-errors.js';
 
 /**
@@ -26,6 +27,12 @@ export function mapMarketplaceErrorToAdapterError(error) {
     if (error instanceof MarketplaceTransientError) {
         return new MarketplaceCatalogAdapterRetryError(error.message, {
             retryDelayMs: error.retryDelayMs ?? 5_000,
+        });
+    }
+    if (error instanceof NoonCatalogWritesDisabledError) {
+        return new MarketplaceCatalogAdapterPermanentError(error.message, {
+            reason: 'noon_catalog_writes_disabled',
+            operation: error.operation,
         });
     }
     if (error instanceof MarketplaceAuthenticationError ||

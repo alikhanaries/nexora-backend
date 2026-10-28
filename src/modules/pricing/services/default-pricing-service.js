@@ -163,7 +163,13 @@ export function createDefaultPricingService(deps) {
      * @param {object} input Tenant, filters, optional cursor/limit.
      */
     async function listPrices(input, tx) {
-        const queryable = tx ?? deps.queryable;
+        if (tx === undefined) {
+            return deps.transactionManager.execute(
+                (innerTx) => listPrices(input, innerTx),
+                { tenantId: input.tenantId },
+            );
+        }
+        const queryable = tx;
         const limit = clampCursorLimit(input.limit);
         const fetchLimit = limit + 1;
         let cursorCreatedAt = null;

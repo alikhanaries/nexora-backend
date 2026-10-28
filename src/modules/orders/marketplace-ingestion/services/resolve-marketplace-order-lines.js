@@ -56,23 +56,23 @@ async function resolveSingleLine(deps, context, line) {
             marketplaceKey: context.marketplaceKey,
         });
     }
-    if (mapping.nexoraEntityType === 'offer') {
-        return { offerId: mapping.nexoraEntityId };
+    if (mapping.integrationEntityType === 'offer') {
+        return { offerId: mapping.integrationEntityId };
     }
-    if (mapping.nexoraEntityType === 'product') {
+    if (mapping.integrationEntityType === 'product') {
         const product = await deps.productQueryService.getProductById(
             context.tenantId,
-            mapping.nexoraEntityId,
+            mapping.integrationEntityId,
             context.queryable,
         );
         if (product === null) {
             throw new NotFoundError('Mapped product was not found', {
-                productId: mapping.nexoraEntityId,
+                productId: mapping.integrationEntityId,
             });
         }
         return { merchantSku: product.merchantSku };
     }
     throw new ValidationError('Marketplace mapping type cannot be used for order line resolution', {
-        nexoraEntityType: mapping.nexoraEntityType,
+        integrationEntityType: mapping.integrationEntityType,
     });
 }

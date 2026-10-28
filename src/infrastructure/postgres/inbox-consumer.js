@@ -19,6 +19,9 @@ export class InboxConsumer {
     }
     /** Claims inbox row, invokes handler in one DB transaction, marks processed or failed. */
     async handle(event) {
+        const executeOptions = typeof event.tenantId === 'string' && event.tenantId.length > 0
+            ? { tenantId: event.tenantId }
+            : {};
         const claimed = await this.database.execute(async (tx) => {
             const reserved = await this.inbox.beginProcessing(tx, this.handler.consumerName, event.id, event.type);
             if (!reserved) {
@@ -34,7 +37,7 @@ export class InboxConsumer {
                 await this.inbox.markFailed(tx, this.handler.consumerName, event.id, toErrorMessage(error));
                 throw error;
             }
-        });
+        }, executeOptions);
         if (claimed === false)
             return;
     }

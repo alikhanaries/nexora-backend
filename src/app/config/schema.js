@@ -98,6 +98,10 @@ export const configSchema = z.object({
     /** Deployment-wide Noon gateway default; per-connection `configuration.apiBaseUrl` overrides. */
     NOON_API_BASE_URL: envOptionalString(),
     NOON_USER_AGENT: envOptionalString(),
+    /** When false/missing, Noon catalog mutations are blocked before HTTP (fail-closed). */
+    NOON_CATALOG_WRITES_ENABLED: envBoolean(false),
+    /** When true, blocks all outbound HTTP to production Noon gateway (GET/login included). Opt-in test lane only. */
+    NOON_TEST_LANE_BLOCK_HTTP: envBoolean(false),
     MARKETPLACE_LIFECYCLE_QUEUE_NAME: envString('marketplace-order-lifecycle'),
     MARKETPLACE_LIFECYCLE_JOB_ATTEMPTS: envInteger({ default: 0, min: 0, max: 50 }),
     MARKETPLACE_LIFECYCLE_BACKOFF_MS: envInteger({ default: 0, min: 0, max: 600_000 }),

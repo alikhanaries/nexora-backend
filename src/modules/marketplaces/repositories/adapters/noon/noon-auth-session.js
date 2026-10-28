@@ -7,6 +7,7 @@ import {
     resolveNoonUserAgent,
 } from './noon-config.js';
 import { createNoonLoginJwt } from './noon-jwt.js';
+import { assertNoonTestLaneHttpAllowed } from './noon-test-lane-http-guard.js';
 
 /** Session lifetime per Noon docs (~30 days); refresh before expiry. */
 const NOON_SESSION_TTL_MS = 29 * 24 * 60 * 60 * 1_000;
@@ -19,14 +20,20 @@ export class NoonAuthSessionProvider {
     deploymentUserAgent;
     /** @type {Map<string, { cookieHeader: string, expiresAtMs: number }>} */
     sessionCache;
+    /** @type {boolean} */
+    testLaneBlockExternalHttp;
+    /** @type {import('../../../../../shared/logging/logger.port.js').Logger | undefined} */
+    logger;
 
     /**
-     * @param {{ http?: MarketplaceHttpClient, deploymentApiBaseUrl?: string | null, deploymentUserAgent?: string | null }} [deps]
+     * @param {{ http?: MarketplaceHttpClient, deploymentApiBaseUrl?: string | null, deploymentUserAgent?: string | null, testLaneBlockExternalHttp?: boolean, logger?: import('../../../../../shared/logging/logger.port.js').Logger }} [deps]
      */
     constructor(deps = {}) {
         this.http = deps.http ?? new MarketplaceHttpClient();
         this.deploymentApiBaseUrl = deps.deploymentApiBaseUrl;
         this.deploymentUserAgent = deps.deploymentUserAgent;
+        this.testLaneBlockExternalHttp = deps.testLaneBlockExternalHttp ?? false;
+        this.logger = deps.logger;
         this.sessionCache = new Map();
     }
 
@@ -52,6 +59,13 @@ export class NoonAuthSessionProvider {
      */
     async login(runtime) {
         const baseUrl = resolveNoonApiBaseUrl(runtime.configuration ?? {}, this.deploymentApiBaseUrl);
+        assertNoonTestLaneHttpAllowed(
+            this.testLaneBlockExternalHttp,
+            baseUrl,
+            'POST',
+            '/identity/public/v1/api/login',
+            this.logger,
+        );
         const userAgent = resolveNoonUserAgent(runtime.configuration ?? {}, this.deploymentUserAgent);
         const { keyId, privateKeyPem, projectCode } = readNoonServiceAccount(
             runtime.credentials,

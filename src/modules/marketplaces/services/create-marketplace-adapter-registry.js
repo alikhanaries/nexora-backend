@@ -2,7 +2,7 @@ import { MarketplaceCatalogAdapterRegistry } from '../../integration-catalog-syn
 import { registerMarketplaceCatalogAdapters } from '../repositories/adapters/register-marketplace-catalog-adapters.js';
 
 /**
- * @param {{ amazonLwaTokenUrl?: string | null, noonApiBaseUrl?: string | null, noonUserAgent?: string | null }} [deps]
+ * @param {{ amazonLwaTokenUrl?: string | null, noonApiBaseUrl?: string | null, noonUserAgent?: string | null, noonCatalogWritesEnabled?: boolean, noonTestLaneBlockHttp?: boolean, logger?: import('../../../shared/logging/logger.port.js').Logger }} [deps]
  */
 export function createMarketplaceAdapterRegistry(deps = {}) {
     const registry = new MarketplaceCatalogAdapterRegistry();

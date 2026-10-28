@@ -1,5 +1,6 @@
 import { MarketplaceTransientError } from '../../models/marketplace-errors.js';
 import { mapHttpStatusToMarketplaceError } from './map-http-status-to-marketplace-error.js';
+import { extractSafeMarketplaceErrorDetail } from './safe-marketplace-error-detail.js';
 
 /**
  * Transport-only HTTP client for marketplace adapters.
@@ -41,10 +42,16 @@ export class MarketplaceHttpClient {
                 }
             }
             if (!response.ok) {
-                throw mapHttpStatusToMarketplaceError(response.status, {
+                const mapped = mapHttpStatusToMarketplaceError(response.status, {
                     retryAfterHeader: response.headers.get('retry-after'),
                     body: json ?? text,
                 });
+                attachSafeHttpContext(mapped, response.status, request.url);
+                const detail = extractSafeMarketplaceErrorDetail(json ?? text);
+                if (detail !== null) {
+                    mapped.marketplaceResponseDetail = detail;
+                }
+                throw mapped;
             }
             return {
                 status: response.status,
@@ -64,6 +71,28 @@ export class MarketplaceHttpClient {
         finally {
             clearTimeout(timer);
         }
+    }
+}
+
+/**
+ * @param {import('../../models/marketplace-errors.js').MarketplaceError} error
+ * @param {number} status
+ * @param {string} requestUrl
+ */
+function attachSafeHttpContext(error, status, requestUrl) {
+    error.httpStatus = status;
+    error.requestPath = extractSafeRequestPath(requestUrl);
+}
+
+/**
+ * @param {string} requestUrl
+ */
+function extractSafeRequestPath(requestUrl) {
+    try {
+        return new URL(requestUrl).pathname;
+    }
+    catch {
+        return null;
     }
 }
 

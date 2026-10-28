@@ -122,6 +122,8 @@ function toAppConfig(raw) {
             amazonLwaTokenUrl: raw.AMAZON_LWA_TOKEN_URL,
             noonApiBaseUrl: raw.NOON_API_BASE_URL,
             noonUserAgent: raw.NOON_USER_AGENT,
+            noonCatalogWritesEnabled: raw.NOON_CATALOG_WRITES_ENABLED,
+            noonTestLaneBlockHttp: raw.NOON_TEST_LANE_BLOCK_HTTP,
         },
         marketplaceLifecycle: {
             queueName: raw.MARKETPLACE_LIFECYCLE_QUEUE_NAME,

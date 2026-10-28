@@ -28,7 +28,7 @@ function readBearerToken(authorization) {
 }
 
 /** True when the Bearer value is a Wasl API key (`nxk_` prefix). */
-function isNexoraApiKeyBearer(token) {
+function isWaslApiKeyBearer(token) {
   return typeof token === 'string' && token.startsWith('nxk_');
 }
 
@@ -124,7 +124,7 @@ class AuthGuard {
     const bearerApiKey =
       bearer !== null && isStockConnectIntegrationPath(path) ? readBearerApiKeyRaw(bearer) : null;
     let apiKey = readApiKey(request.headers);
-    if (apiKey === null && bearer !== null && isNexoraApiKeyBearer(bearer) && bearerApiKey === null) {
+    if (apiKey === null && bearer !== null && isWaslApiKeyBearer(bearer) && bearerApiKey === null) {
       apiKey = bearer;
     }
     if (apiKey === null && isMerchantCompatQueryAuthPath(path)) {
@@ -134,7 +134,7 @@ class AuthGuard {
     }
 
     const jwtBearer =
-      bearer !== null && bearerApiKey === null && !isNexoraApiKeyBearer(bearer) ? bearer : null;
+      bearer !== null && bearerApiKey === null && !isWaslApiKeyBearer(bearer) ? bearer : null;
 
     if (jwtBearer !== null && apiKey !== null) {
       throw new AuthenticationError('Provide either Bearer token or API key, not both');

@@ -138,6 +138,9 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
         marketplaceAdapterRuntimeFactory,
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
+        noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
+        noonUserAgent: infra.config.marketplace.noonUserAgent,
+        noonTestLaneBlockHttp: infra.config.marketplace.noonTestLaneBlockHttp,
         orders: createPostgresOrderRepository(),
         confirmOrder: orders.useCases.confirmOrder,
         cancellationCommandService: cancellations.cancellationCommandService,
@@ -150,6 +153,10 @@ export function createWorkerMarketplaceCommerceDeps(infra, secretEncryptor) {
     registerMarketplaceOutboundOrderLifecycleAdapters(outboundOrderLifecycleAdapterRegistry, {
         shopifyAdminApiVersion: infra.config.marketplace.shopifyAdminApiVersion,
         amazonLwaTokenUrl: infra.config.marketplace.amazonLwaTokenUrl,
+        noonApiBaseUrl: infra.config.marketplace.noonApiBaseUrl,
+        noonUserAgent: infra.config.marketplace.noonUserAgent,
+        noonTestLaneBlockHttp: infra.config.marketplace.noonTestLaneBlockHttp,
+        logger: infra.logger,
     });
     const executeOutboundMarketplaceOrderLifecycle = new ExecuteOutboundMarketplaceOrderLifecycleCommand({
         lifecycleAdapterRegistry: outboundOrderLifecycleAdapterRegistry,

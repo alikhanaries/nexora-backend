@@ -22,10 +22,12 @@ import { wireIntegrationCatalogSync } from './wire-integration-catalog-sync.js';
 import { wireMarketplaceLifecycleWorker } from './wire-marketplace-lifecycle-worker.js';
 import { createWorkerMarketplaceCommerceDeps } from './create-worker-marketplace-commerce-deps.js';
 import { startWorkerObservabilityHttp } from './observability/start-worker-observability-http.js';
+import { runNoonTestLaneWorkerPreflight } from './noon-test-lane-preflight.js';
 /** Worker boot: infra, handlers, schedulers, observability HTTP, and graceful shutdown. */
 async function main() {
     const config = loadConfigFromEnvironment();
     const infra = await createInfrastructure(config, { processKind: 'worker' });
+    await runNoonTestLaneWorkerPreflight({ config, queue: infra.queue });
     const secretEncryptor = new AesSecretEncryptor(config.auth.mfaEncryptionKey);
     const webhookDispatchService = createWebhookDispatchService({
         database: infra.database,
@@ -40,6 +42,10 @@ async function main() {
         catalogSyncReconciliation: config.catalogSyncReconciliation,
         secretEncryptor,
         shopifyAdminApiVersion: config.marketplace.shopifyAdminApiVersion,
+        noonApiBaseUrl: config.marketplace.noonApiBaseUrl,
+        noonUserAgent: config.marketplace.noonUserAgent,
+        noonCatalogWritesEnabled: config.marketplace.noonCatalogWritesEnabled,
+        noonTestLaneBlockHttp: config.marketplace.noonTestLaneBlockHttp,
     });
     const catalogSyncReconciliationLockTtlSeconds = Math.max(300, Math.ceil(config.catalogSyncReconciliation.intervalMs / 1_000));
     const catalogSyncReconciliationScheduler = new CatalogSyncReconciliationScheduler(catalogSyncReconciliationService, infra.lock, config.catalogSyncReconciliation, infra.logger, catalogSyncReconciliationLockTtlSeconds);

@@ -3,11 +3,10 @@
  * Route `/api/v2/stock-connect/ping`; delegates to StockConnectIntegrationService (CORE_SERVICES-backed commands).
  */
 import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
-import { Public } from '../../../../../app/common/decorators/public.decorator.js';
 import { StockConnectIntegrationGuard } from './stock-connect-integration.guard.js';
 import { StockConnectIntegrationService } from './stock-connect-integration.service.js';
 
-/** Public ping for StockConnect integration health. */
+/** Stock Connect integration metadata (authenticated ping). */
 @Controller()
 @UseGuards(StockConnectIntegrationGuard)
 class StockConnectMetaController {
@@ -16,8 +15,7 @@ class StockConnectMetaController {
     this.stockConnectIntegrationService = stockConnectIntegrationService;
   }
 
-  /** Public liveness probe for the Stock Connect integration API. */
-  @Public()
+  /** Authenticated liveness probe for the Stock Connect integration API. */
   @Get('/api/v2/stock-connect/ping')
   ping() {
     return this.stockConnectIntegrationService.ping();
